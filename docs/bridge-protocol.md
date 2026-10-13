@@ -50,3 +50,8 @@ It requires neither inference nor an enabled AI grant, but still rejects cap,
 rookie, ownership, stale-state, expired-request and disconnected-client failures.
 Clients must deliberately select this operation; AI errors never trigger it
 automatically. This engine path is not yet connected to an actual game UI.
+
+The native transport compiled and executed on Windows at `dd1ed9e`, CI run
+38464795249. That revision verifies handshake/preview/dialogue/restart and launch
+failure exits. The expanded manual-signing/cap-rejection native fixture requires
+its own subsequent passing Windows run. Neither fixture exercises the actual game.

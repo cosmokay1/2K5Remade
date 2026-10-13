@@ -42,8 +42,9 @@ the required inputs once when an otherwise ready milestone reaches that gate.
 - [x] Commit/push development work without publishing installers.
 - [x] Add automated portable financial/negotiation tests to fork CI.
       Published at `589a2bd`; run `38457090392` passed on Linux and Windows.
-- [ ] Add asset-free Windows checks for our bridge/runtime additions; clearly
-      distinguish these from a full game build/test.
+- [x] Add asset-free Windows checks for our bridge/runtime additions; clearly
+      distinguish these from a full game build/test. Native pipe compile/execution
+      verified at `dd1ed9e`, run `38464795249`; no guest assets or game exercised.
 - [ ] Keep public configuration free of credentials and retail assets.
 
 Done when a fresh checkout can run the engine tests and CI reports their results.

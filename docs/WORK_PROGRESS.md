@@ -380,3 +380,17 @@ post-June-1 designations are not supported. This component does NOT authorize
 release: base guarantees, earned salary, injury/termination protections and
 roster replacement costs remain required before a full transaction exists.
 No game fields were changed or guessed. Remote verification remains pending.
+
+## October 13, 2026 — Verified native Windows transport; transaction fixture expansion
+
+Repaired native client `dd1ed9e` passed actual Windows compilation/execution in
+[run 38464795249](https://github.com/cosmokay1/2K5Remade/actions/runs/38464795249).
+Verified handshake, exact preview, durable rejection/restart and failure exits for
+missing database/nonexistent Python. Marked M0's asset-free native checks complete.
+This proves a transport fixture only, not game build/playability or guest hooks.
+
+Expanded the C++ requests and verifier to require an over-cap manual rejection,
+legal manual signing, and identical agreement recall from a second native process.
+The final database must have exactly one signing revision, ten dollars in charges
+and the earlier rejection plus manual story. New Windows evidence pending; local
+112 portable tests remain passing. Original build/rights/real-save gates persist.
