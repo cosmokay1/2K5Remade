@@ -793,3 +793,21 @@ explicit-file streaming ZIP builder with hashes of archived bytes, no-overwrite 
 Proton runtime and Deck acceptance requirements. No game binary or assets are
 available to package; this is tooling, not a runnable game. Windows Python and
 Win32 pipe/job behavior under Proton remain unverified.
+
+## October 13, 2026 — Draft comparison input
+
+Added read-only typed prospect comparison context with sourced competition, role,
+personality, observation windows and contract estimates. Missing opportunity data
+is retained as unknown; recognizable hidden rating fields reject across context.
+Candidates require matching declared draft-round rookie classification and use the
+existing shared cap/pool preview. Comparison detects stale financial revisions,
+does not sign prospects or reserve funds, and does not imply all future picks fit.
+Verified adapter slot assignment, AI selection, draft-wide pick/ownership and
+reservation transactions, history, remote access enforcement at selection, and
+real-game hooks remain unfinished. 163 local tests pass, including independent
+cap/pool failures, unknown evidence, rating rejection and concurrent budget change.
+
+Steam Deck/cohort source commit `a5c062c` passed Franchise AI checks on Windows
+and Linux, including native protocol/pipe checks, in run 38473300500. Upstream
+build check also passed in run 38473300526. These checks exercised no game assets
+and establish no Proton or gameplay compatibility.
