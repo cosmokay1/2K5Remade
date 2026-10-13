@@ -1200,3 +1200,14 @@ reopening and retrying returns identical posting without another revision. Histo
 and fresh advice coexist and room reflects one reservation. 225 local tests pass.
 AI pick source CI 38479996558/38479996594 and cross-team fixtures were confirmed in
 progress. This is a synthetic draft engine scenario, not guest-game execution.
+
+## October 13, 2026 — Money audit scope refresh
+
+Current audit verified 5,050 exact bonus-conservation cases and durable restart,
+exclusive ownership and zero-room cap enforcement. Corrected stale output that
+called all cash/guarantee and roster-phase work unimplemented: output now explicitly
+names implemented components and distinguishes incomplete settlement/vesting, full
+Team Salary/phase transitions and authoritative releases. Release/trade/restructure,
+year rollover/options and real guest import remain unresolved. This output change
+adds no financial authority. Cross-team fix f6bd2ec passed Franchise AI run
+38479859663 and Build check 38479859594; later source checks remain pending.

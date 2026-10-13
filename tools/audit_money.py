@@ -128,8 +128,15 @@ def main():
                 verified += 1
     print(json.dumps({"observations": observations,
                       "durable_path": durable_findings(),
-                      "unimplemented_accounting": ["cash payments and guarantees", "complete releases and trades",
-                          "extensions and restructures", "top-51/roster phases", "season rollover and carryover",
+                      "implemented_component_scope": {
+                          "cash": "Nominal sourced obligations, component-allocated payments and guarantee present-value projections; full settlement/vesting is incomplete.",
+                          "guarantees": "Explicit fully guaranteed base salary terms; no partial injury/skill/cap protection or automatic vesting.",
+                          "roster": "Read-only sourced top-51 and regular-season supported salary/bonus projections; not complete Team Salary or a phase transition.",
+                          "termination": "Read-only signing-bonus acceleration from original layers and actual June-1 timing; not an authorized release.",
+                          "draft": "Durable ordered rights and management funding reservations; actual game pick/contract posting remains unverified.",
+                      },
+                      "unimplemented_accounting": ["complete cash settlement and guarantee protections/vesting", "complete releases and trades",
+                          "extensions and restructures", "complete Team Salary and roster-phase transitions", "season rollover and carryover",
                           "complete rookie options/escalators", "verified game import/posting"],
                       "bonus_conservation_cases_verified": verified}, indent=2, default=json_amount))
 
