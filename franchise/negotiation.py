@@ -95,6 +95,10 @@ class Negotiation:
                 self._events.append(recorded)
             self._signed = self._signed or recorded["outcome"] == "signed"
             return json.loads(json.dumps(recorded))
+        fresh = self.ledger.negotiation_history(self.player_id)
+        if fresh:
+            self._events = fresh
+            self._signed = any(event["outcome"] == "signed" for event in fresh)
         if self._signed:
             raise ValueError("Negotiation is already signed")
         snapshot = self.ledger.negotiation_context(self.player_id)
@@ -106,7 +110,8 @@ class Negotiation:
         event = {"request_id": request_id, "offer": asdict(offer),
                  "action": decision.action, "reason": decision.reason,
                  "counter": asdict(decision.counter) if decision.counter else None,
-                 "outcome": "pending"}
+                 "outcome": "pending",
+                 "history_request_ids": [entry["request_id"] for entry in context["history"]]}
         if decision.action == "accept":
             try:
                 receipt = self.ledger.commit_negotiation(

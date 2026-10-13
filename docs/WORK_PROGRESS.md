@@ -268,3 +268,19 @@ inputs; no actual-game extraction or playable-build evidence is claimed. CI pend
 
 Verified preceding dialogue persistence `80847b8` on Windows/Linux in
 [run 38463714527](https://github.com/cosmokay1/2K5Remade/actions/runs/38463714527).
+
+## October 13, 2026 — Reject obsolete model conversation responses
+
+Model-backed responses record the prior conversation request IDs. Signing and
+dialogue writes verify that sequence inside the same database write transaction.
+Another session's counter/rejection invalidates an in-flight response even when
+financial revision is unchanged. Active sessions refresh durable history before
+new inference. No obsolete acceptance commits a contract or an obsolete dialogue.
+Historical/manual events without the new context field remain replayable.
+
+100 local tests pass, including interleaved acceptance/counter responses with a
+concurrent rejection and a subsequent fresh request seeing the current history.
+The prior actor-persistence commit `5573e4a` passed Windows/Linux in
+[run 38463887477](https://github.com/cosmokay1/2K5Remade/actions/runs/38463887477).
+This closes a prerequisite for asynchronous bridge work; game responsiveness and
+actual native integration remain unimplemented/unverified. New CI pending.

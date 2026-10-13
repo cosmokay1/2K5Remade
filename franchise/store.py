@@ -173,6 +173,8 @@ class FranchiseStore:
                 return ledger.sign(request_id, offer, expected_revision, access_check=access_check)
             if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (offer.player_id,)).fetchone():
                 raise Rejected("Player already belongs to a team")
+            if story is not None:
+                self._check_history(db, team_id, offer.player_id, story)
             receipt = ledger.sign(request_id, offer, expected_revision, access_check=access_check)
             payload["posting"] = ledger.financial_snapshot()
             payload["contract_charges"] = [json_amount(value) for value in receipt.charges]
@@ -246,6 +248,22 @@ class FranchiseStore:
         if event["outcome"] != expected[decision.action] or (counter and counter["player_id"] != data["player_id"]):
             raise ValueError("Dialogue decision and outcome disagree")
 
+    @staticmethod
+    def _check_history(db, team_id, player_id, event):
+        expected = event.get("history_request_ids")
+        if expected is None:  # Historical/manual callers without model context.
+            return
+        if type(expected) is not list or any(type(key) is not str for key in expected):
+            raise ValueError("Invalid negotiation history revision")
+        actual = []
+        for kind, serialized in db.execute("SELECT kind, payload FROM events WHERE team_id=? AND kind IN ('sign', 'dialogue') ORDER BY id", (team_id,)):
+            payload = json.loads(serialized)
+            previous = payload["event"] if kind == "dialogue" else payload["story"]
+            if previous is not None and previous["offer"]["player_id"] == player_id:
+                actual.append(previous["request_id"])
+        if actual != expected:
+            raise Rejected("Response was based on stale negotiation history")
+
     def record_negotiation(self, team_id, event, *, access_check):
         self._validate_dialogue(event)
         event = json.loads(json.dumps(event, allow_nan=False))
@@ -262,6 +280,7 @@ class FranchiseStore:
                 if recorded != event:
                     raise Rejected("Negotiation request already recorded differently")
                 return recorded
+            self._check_history(db, team_id, event["offer"]["player_id"], event)
             payload = {"event": event, "posting": ledger.financial_snapshot()}
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'dialogue', ?)",
                        (team_id, key, json.dumps(payload, allow_nan=False)))

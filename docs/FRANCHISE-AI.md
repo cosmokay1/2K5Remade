@@ -237,3 +237,8 @@ a negotiation session is created. Later sessions reuse them; changing constructo
 defaults does not reset the player. Personality follows the player across clubs,
 while relationships are team-specific. Performance evidence can refresh each
 session. Explicit bounded relationship/personality evolution is pending.
+
+Model-backed writes verify the conversation request sequence as well as financial
+state. A concurrent response invalidates an in-flight acceptance/counter, even if
+cap revision did not change. The caller should submit a new request after refreshing
+history; an obsolete response is not committed or silently regenerated.

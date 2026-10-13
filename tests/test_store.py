@@ -121,6 +121,45 @@ class StoreTests(unittest.TestCase):
             self.assertEqual(db.execute("SELECT count(*) FROM events").fetchone()[0], 0)
         self.assertEqual(self.store.load_team("a").revision, 0)
 
+    def test_concurrent_dialogue_invalidates_inflight_model_acceptance(self):
+        self.store.create_team("a", self.ledger())
+        def session():
+            return Negotiation(StoredLedger(self.store, "a"), player_id="v", personality={},
+                               performance={}, relationships={}, access_check=lambda: None)
+        first, second = session(), session()
+        offer = Offer("v", (10,), 0)
+        reject = lambda _: json.dumps(dict(action="reject", reason="No", salaries=None, signing_bonus=None))
+        def interrupted_provider(context):
+            second.respond("other", offer, reject)
+            return json.dumps(dict(action="accept", reason="Yes", salaries=None, signing_bonus=None))
+        with self.assertRaisesRegex(Rejected, "stale negotiation"):
+            first.respond("inflight", offer, interrupted_provider)
+        self.assertEqual(self.store.load_team("a").revision, 0)
+        history = self.store.negotiation_history("a", "v")
+        self.assertEqual([event["request_id"] for event in history], ["other"])
+        seen = []
+        def refreshed(context):
+            seen.append(context)
+            return reject(context)
+        first.respond("fresh", offer, refreshed)
+        self.assertEqual(seen[0]["history"], history)
+
+    def test_concurrent_dialogue_invalidates_inflight_counter(self):
+        self.store.create_team("a", self.ledger())
+        def session():
+            return Negotiation(StoredLedger(self.store, "a"), player_id="v", personality={},
+                               performance={}, relationships={}, access_check=lambda: None)
+        first, second = session(), session()
+        offer = Offer("v", (10,), 0)
+        def provider(_):
+            second.respond("other", offer, lambda _: json.dumps(dict(
+                action="reject", reason="No", salaries=None, signing_bonus=None)))
+            return json.dumps(dict(action="counter", reason="More", salaries=[12], signing_bonus=0))
+        with self.assertRaisesRegex(Rejected, "stale negotiation"):
+            first.respond("old", offer, provider)
+        self.assertEqual(len(self.store.negotiation_history("a", "v")), 1)
+        self.assertEqual(self.store.load_team("a").revision, 0)
+
     def test_restart_restores_contract_pool_revision_and_receipt(self):
         self.store.create_team("a", self.ledger())
         offer = Offer("r", (4,) * 4, 4)
