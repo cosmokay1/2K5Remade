@@ -109,3 +109,17 @@ class DraftRightsTests(unittest.TestCase):
                     access_check=lambda:None,decision_mode='ai',scouting_request_id='advice')
             self.assertEqual(store.load_team('a').financial_snapshot(),before)
             self.assertEqual(store.load_team('b').revision,0)
+            from dataclasses import replace
+            updated=replace(prospect,personality={'money':0.8},personality_source='saved fictional actor')
+            DraftScouting(StoredLedger(store,'a'),access_check=lambda:None).recommend('fresh',lambda _:json.dumps(
+                {'action':'recommend','player_id':'p','reason':'Role and established priorities fit','uncertainty':'Production unavailable'}),
+                expected_revision=0,draft_round=1,overall_pick=1,prospects=(updated,),team_needs=[])
+            posting=store.commit_draft_pick('a','fresh-pick','fixture-draft',1,offer,0,funding_source='fixture estimate',
+                access_check=lambda:None,decision_mode='ai',scouting_request_id='fresh')
+            reopened=FranchiseStore(store.path)
+            self.assertEqual(reopened.load_team('a').financial_snapshot(),posting)
+            self.assertEqual(reopened.commit_draft_pick('a','fresh-pick','fixture-draft',1,offer,0,
+                funding_source='fixture estimate',access_check=lambda:None,decision_mode='ai',scouting_request_id='fresh'),posting)
+            self.assertEqual(reopened.load_team('a').revision,1)
+            self.assertEqual(reopened.load_team('a').room,20)
+            self.assertEqual([item['request_id'] for item in reopened.load_team('a').scouting_history()],['advice','fresh'])

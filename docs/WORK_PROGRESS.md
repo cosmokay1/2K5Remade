@@ -1191,3 +1191,12 @@ but a later contradictory actor assignment requires refreshed advice before an A
 pick. Manual picks retain explicit manual authority. Regression verifies stale advice
 cannot create rights/reservations and preserves both teams' financial state.
 225 local tests pass; guest draft execution remains unverified.
+
+## October 13, 2026 — Refreshed personality advice completes durable pick
+
+Extended the stale-personality pick acceptance scenario through recovery: fresh
+canonical scouting advice permits the ordered AI pick and funding reservation;
+reopening and retrying returns identical posting without another revision. Historical
+and fresh advice coexist and room reflects one reservation. 225 local tests pass.
+AI pick source CI 38479996558/38479996594 and cross-team fixtures were confirmed in
+progress. This is a synthetic draft engine scenario, not guest-game execution.
