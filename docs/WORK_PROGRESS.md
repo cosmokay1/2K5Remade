@@ -1370,3 +1370,15 @@ unaffordable signing rejection without mutation. Synthetic zero-rate/prototype s
 is explicit. Audit succeeds alongside5,050 bonus-conservation checks. Durable release
 d108266 passed Franchise AI38481644411 and Build check38481644391; reviewed identity
 fix9b94fee CI remained in progress. Actual game import/execution remains unverified.
+
+## October 13, 2026 — Primary CBA rounding scope clarified
+
+Independent primary-source research confirms Article2§5 nearest-$1000 for Team Salary,
+but no verified component/aggregate order or halfway tie convention. Signing-bonus
+proration, guarantee PV and rookie compensation provisions do not independently
+specify a posting stage; compensatory rookie allotment expressly uses nearest dollar.
+Added exact article/printed/PDF references and no-tie counterexample demonstrating
+material order ambiguity. Exact engine accounting remains experimental internal
+limiting, not a claim of official rounded NFL postings. Authoritative reconciliation
+and sourced policy remain necessary; no guessed rounding or money mutation added.
+Reviewed-release9b94fee and audit42781f3 CI were confirmed in progress earlier.
