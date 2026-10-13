@@ -196,6 +196,40 @@ class FranchiseStore:
         with self._connection() as db:
             return self._load(db, team_id)
 
+    def termination_components(self, team, player, *, removed_on, discount, payment_year_offsets):
+        """Read-only covered-bonus/base components; no release or cap-room grant."""
+        from franchise.guarantees import DiscountProfile, guaranteed_base_liability
+        from franchise.termination import signing_bonus_acceleration
+        if not isinstance(discount, DiscountProfile):
+            raise ValueError("Explicit discount profile required")
+        ledger = self.load_team(team)
+        contract = ledger.active_contract(player)
+        if (ledger._veteran_minimum_profile is not None
+                and ledger._veteran_minimum_profile.start_year != discount.league_year):
+            raise Rejected("Termination year disagrees with franchise salary profile")
+        cash = ledger.guarantee_cash(player)
+        if cash is None:
+            raise Rejected("Unpaid guarantee allocation is unavailable")
+        guarantees = cash["unpaid_guaranteed_base_by_original_year"]
+        if any(guarantees[:contract.elapsed_years]):
+            raise Rejected("Unsettled prior-year guarantees require separate reconciliation")
+        bonus = signing_bonus_acceleration(contract, league_year=discount.league_year,
+            removed_on=removed_on, record_id="bonus:" + player)
+        base = guaranteed_base_liability(contract,
+            unpaid_by_year=tuple(guarantees[contract.elapsed_years:]),
+            payment_year_offsets=payment_year_offsets, discount=discount,
+            record_id="protected-base:" + player)
+        return {"revision": ledger.revision, "player_id": player,
+                "bonus_retained_charges": [json_amount(value) for value in bonus.annual_charges],
+                "covered_base_present_value_charge": json_amount(base.cap_charge.annual_charges[0]),
+                "nominal_unpaid_protected_base": base.nominal_unpaid,
+                "nominal_unpaid_signing_bonus": cash["unpaid_signing_bonus"],
+                "contract_source": contract.source, "rate_source": discount.rate_source,
+                "release_authorized": False,
+                "unresolved": ["covered termination facts and guarantee voids/offsets",
+                               "earned salary, termination pay and injury protections",
+                               "roster replacement/phase accounting"]}
+
     @staticmethod
     def _check_cash_components(ledger):
         if ledger._cash is None:

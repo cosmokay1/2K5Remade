@@ -115,6 +115,7 @@ class Ledger:
         self._charges = tuple(existing_charges)
         self._opening_books = opening_books
         self._contracts = {item.offer.player_id: item.offer for item in opening_books.contracts} if opening_books else {}
+        self._active_contracts = {item.offer.player_id: item for item in opening_books.contracts} if opening_books else {}
         self._cash = None
         if type(max_bonus_years) is not int or not 1 <= max_bonus_years <= 5:
             raise ValueError("Bonus allocation limit must be between one and five years")
@@ -179,6 +180,12 @@ class Ledger:
                    signed_player_ids=frozenset(item.offer.player_id for item in books.contracts),
                    rookie_tenders={item.player_id: item.amount for item in books.tenders},
                    opening_books=books, **rules)
+
+    def active_contract(self, player_id):
+        with self._lock:
+            if player_id not in self._active_contracts:
+                raise Rejected("Original active contract and elapsed years unavailable")
+            return self._active_contracts[player_id]
 
     def contract_terms(self, player_id):
         with self._lock:
@@ -385,6 +392,9 @@ class Ledger:
         self._charges = updated
         self._players.add(offer.player_id)
         self._contracts[offer.player_id] = offer
+        from franchise.books import ActiveContract
+        self._active_contracts[offer.player_id] = ActiveContract(offer, "sign:" + request_id,
+            bonus_years=4 if scale is not None else self.max_bonus_years)
         self._requests[request_id] = receipt
         self._tenders.pop(offer.player_id, None)
         if scale is not None:

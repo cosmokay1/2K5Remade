@@ -611,3 +611,21 @@ switch reads across enabled→disabled→unavailable results, no owner ADC fallb
 forced refresh timeout, expired-refresh rejection and sensitive-error redaction.
 These are offline credential-boundary tests, not effective live impersonation
 verification. No cloud grants, switch writes or paid inference performed. CI pending.
+
+## October 13, 2026 — Termination liability components from durable state
+
+Ledger now retains original ActiveContract metadata through sign/replay, including
+elapsed years and actual bonus horizon. Read-only `termination_components` joins
+that contract with source-reconciled payment allocations and explicit discount
+inputs. It reports retained bonus cap charges separately from nominal unpaid bonus
+and covered base present value separately from nominal protected bases. Missing
+allocations, unresolved prior-year protected bases and salary-profile/year mismatch
+reject. No guesses from paid cash to cap proration or vice versa.
+
+138 local tests pass, including an elapsed imported contract with a fully paid
+bonus that still has retained cap proration, partial current base payment, exact
+protected present value and unchanged financial/roster state. Result explicitly
+sets release_authorized=false and lists unresolved covered-release/offset/void,
+earned/termination/injury and roster-phase facts. This integrates the components
+with authoritative records; a complete release transaction still remains.
+New Windows/Linux CI pending; actual-game gates remain unchanged.

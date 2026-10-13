@@ -311,3 +311,11 @@ require payment `component`; historical unknown allocations remain unavailable.
 known, or `None` otherwise. It does not infer payment dates, covered termination
 rights, offsets or guarantee voiding. Existing legacy records are not silently
 converted to known zero allocations.
+
+`store.termination_components` uses stored original active terms, elapsed years
+and known component payments. Supply removal date, DiscountProfile and explicit
+payment-year offsets. It reports separate bonus/base cap components and nominal
+unpaid amounts without changing ownership or finances. Missing allocations or
+unsettled prior-year protected bases reject. `release_authorized` remains false:
+covered-release facts, offsets/voids, earned/termination/injury liabilities and
+phase/roster costs still require complete settlement handling.
