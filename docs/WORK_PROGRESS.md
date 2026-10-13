@@ -232,3 +232,21 @@ claimed, inferred from outcomes, or fabricated from ratings.
 Local validation: 94 tests pass, including provider-visible null provenance,
 observed zero, inconsistent opportunities, actor-field ratings and player identity.
 Actual game statistics and event attribution remain M5/M3 work. CI pending.
+
+## October 13, 2026 — Durable counteroffers and rejections
+
+Noncommitted negotiation events now persist alongside verified financial postings.
+Restart restores a player's team-specific conversation history, including counters,
+rejections and failed accounting acceptances. Request retries recall the recorded
+response without inference; changed terms and signing/dialogue request-ID collisions
+reject. Signed agreements retain their existing atomic contract/story transaction.
+The write boundary checks AI access before recording dialogue. Replay validates
+that dialogue did not mutate the recorded financial state.
+
+Local validation: 96 tests pass. New cases exercise restarted counter/rejection
+history, inference suppression, conflicting retries, shutdown at write and SQL
+rollback. Actor personality updates, deadlines and multi-conversation lifecycle
+remain incomplete. No game integration is claimed. Remote CI pending.
+
+Verified prior performance-context commit `ea400fb` on Windows/Linux in
+[run 38463545574](https://github.com/cosmokay1/2K5Remade/actions/runs/38463545574).

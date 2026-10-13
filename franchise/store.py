@@ -124,6 +124,8 @@ class FranchiseStore:
                 receipt = ledger.sign(payload["request_id"], Offer(data["player_id"], tuple(data["salaries"]), data["signing_bonus"]), payload["expected_revision"])
                 if payload.get("contract_charges") != [json_amount(value) for value in receipt.charges]:
                     raise ValueError("Recorded contract charges disagree with replay")
+            elif kind == "dialogue":
+                self._validate_dialogue(payload["event"])
             elif kind == "budget":
                 ledger.update_budget(**{key: payload[key] for key in ("cap", "roster_reserve", "expected_revision")})
             else:
@@ -157,6 +159,8 @@ class FranchiseStore:
         serialized = json.dumps(payload, allow_nan=False)
         with self._connection(write=True) as db:
             ledger = self._load(db, team_id)
+            if db.execute("SELECT 1 FROM events WHERE team_id=? AND request_key=?", (team_id, "dialogue:" + request_id)).fetchone():
+                raise Rejected("Request already belongs to a recorded negotiation")
             prior = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, "sign:" + request_id)).fetchone()
             if prior:
                 previous = json.loads(prior[0])
@@ -189,12 +193,74 @@ class FranchiseStore:
             return [payload["story"] for (text,) in db.execute("SELECT payload FROM events WHERE team_id=? AND kind='sign' ORDER BY id", (team_id,))
                     if (payload := json.loads(text))["story"] is not None]
 
+    @staticmethod
+    def _validate_dialogue(event):
+        if type(event) is not dict or event.get("outcome") not in {
+                "counteroffer", "player_rejected", "accounting_rejected"}:
+            raise ValueError("Noncommitted negotiation event required")
+        if type(event.get("request_id")) is not str or not event["request_id"].strip():
+            raise ValueError("Negotiation request ID required")
+        from franchise.negotiation import Decision
+        data = event["offer"]
+        Offer(data["player_id"], tuple(data["salaries"]), data["signing_bonus"])
+        counter = event.get("counter")
+        decision = Decision.parse(json.dumps({"action": event["action"], "reason": event["reason"],
+            "salaries": counter["salaries"] if counter else None,
+            "signing_bonus": counter["signing_bonus"] if counter else None}), data["player_id"])
+        expected = {"counter": "counteroffer", "reject": "player_rejected", "accept": "accounting_rejected"}
+        if event["outcome"] != expected[decision.action] or (counter and counter["player_id"] != data["player_id"]):
+            raise ValueError("Dialogue decision and outcome disagree")
+
+    def record_negotiation(self, team_id, event, *, access_check):
+        self._validate_dialogue(event)
+        event = json.loads(json.dumps(event, allow_nan=False))
+        with self._connection(write=True) as db:
+            ledger = self._load(db, team_id)
+            access_check()
+            key = "dialogue:" + event["request_id"]
+            if db.execute("SELECT 1 FROM events WHERE team_id=? AND request_key=?",
+                          (team_id, "sign:" + event["request_id"])).fetchone():
+                raise Rejected("Request already belongs to a signing")
+            prior = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, key)).fetchone()
+            if prior:
+                recorded = json.loads(prior[0])["event"]
+                if recorded != event:
+                    raise Rejected("Negotiation request already recorded differently")
+                return recorded
+            payload = {"event": event, "posting": ledger.financial_snapshot()}
+            db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'dialogue', ?)",
+                       (team_id, key, json.dumps(payload, allow_nan=False)))
+            return event
+
+    def negotiation_history(self, team_id, player_id):
+        with self._connection() as db:
+            ledger = self._load(db, team_id)
+            history = []
+            for kind, serialized in db.execute("SELECT kind, payload FROM events WHERE team_id=? ORDER BY id", (team_id,)):
+                payload = json.loads(serialized)
+                if kind == "dialogue":
+                    event = payload["event"]
+                elif kind == "sign" and payload["story"] is not None:
+                    event = {**payload["story"], "charges": payload["contract_charges"]}
+                else:
+                    continue
+                if event["offer"]["player_id"] == player_id:
+                    history.append(event)
+            return history
+
     def recalled_negotiation(self, team_id: str, request_id: str, offer: Offer):
         with self._connection() as db:
             ledger = self._load(db, team_id)
             row = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, "sign:" + request_id)).fetchone()
             if row is None:
-                return None
+                dialogue = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?",
+                                      (team_id, "dialogue:" + request_id)).fetchone()
+                if dialogue is None:
+                    return None
+                event = json.loads(dialogue[0])["event"]
+                if event["offer"] != json.loads(json.dumps(asdict(offer))):
+                    raise Rejected("Negotiation request already recorded with different terms")
+                return event
             payload = json.loads(row[0])
             if payload["offer"] != json.loads(json.dumps(asdict(offer))):
                 raise Rejected("Negotiation request already committed with different terms")
@@ -219,6 +285,12 @@ class StoredLedger:
     def commit_negotiation(self, request_id, offer, expected_revision, *, access_check, story):
         return self.store.sign(self.team_id, request_id, offer, expected_revision,
                                access_check=access_check, story=story)
+
+    def record_negotiation(self, event, *, access_check):
+        return self.store.record_negotiation(self.team_id, event, access_check=access_check)
+
+    def negotiation_history(self, player_id):
+        return self.store.negotiation_history(self.team_id, player_id)
 
     def recalled_negotiation(self, request_id, offer):
         return self.store.recalled_negotiation(self.team_id, request_id, offer)

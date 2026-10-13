@@ -247,6 +247,13 @@ class Ledger:
         """In-memory commit; the durable adapter persists story with finances."""
         return self.sign(request_id, offer, expected_revision, access_check=access_check)
 
+    def negotiation_history(self, player_id: str):
+        return []
+
+    def record_negotiation(self, event: dict, *, access_check):
+        access_check()  # In-memory sessions retain their own dialogue.
+        return event
+
     def recalled_negotiation(self, request_id: str, offer: Offer):
         return None  # In-memory sessions retain their own replies.
 

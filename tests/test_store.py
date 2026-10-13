@@ -45,6 +45,48 @@ class StoreTests(unittest.TestCase):
             self.store.sign("a", "attempt", offer, 0)
         self.assertEqual(self.store.load_team("a").revision, 0)
 
+    def test_counter_and_rejection_survive_restart_without_new_inference(self):
+        self.store.create_team("a", self.ledger())
+        def session(store):
+            return Negotiation(StoredLedger(store, "a"), player_id="v", personality={},
+                               performance={}, relationships={}, access_check=lambda: None)
+        offer = Offer("v", (10,), 0)
+        counter = session(self.store).respond("round1", offer, lambda _: json.dumps(
+            dict(action="counter", reason="More upfront", salaries=[12], signing_bonus=1)))
+        reopened = FranchiseStore(self.path)
+        resumed = session(reopened)
+        recalled = resumed.respond("round1", offer, lambda _: self.fail("Repeated inference"))
+        self.assertEqual(recalled, counter)
+        self.assertEqual(len(resumed.events), 1)
+        seen = []
+        def reject(context):
+            seen.append(context)
+            return json.dumps(dict(action="reject", reason="Still too low", salaries=None, signing_bonus=None))
+        resumed.respond("round2", Offer("v", (11,), 0), reject)
+        self.assertEqual(seen[0]["history"], [counter])
+        self.assertEqual(len(session(FranchiseStore(self.path)).events), 2)
+        self.assertEqual(reopened.load_team("a").revision, 0)
+        with self.assertRaisesRegex(Rejected, "different terms"):
+            session(reopened).respond("round1", Offer("v", (9,), 0), reject)
+        with self.assertRaisesRegex(Rejected, "recorded negotiation"):
+            reopened.sign("a", "round1", offer, 0)
+
+    def test_dialogue_shutdown_at_write_and_database_failure_preserve_state(self):
+        self.store.create_team("a", self.ledger())
+        event = dict(request_id="round1", offer=dict(player_id="v", salaries=[10], signing_bonus=0),
+                     action="reject", reason="No", counter=None, outcome="player_rejected")
+        def disabled():
+            raise AccessDisabled("Disabled")
+        with self.assertRaises(AccessDisabled):
+            self.store.record_negotiation("a", event, access_check=disabled)
+        self.assertEqual(self.store.negotiation_history("a", "v"), [])
+        with closing(sqlite3.connect(self.path)) as db, db:
+            db.execute("CREATE TRIGGER fail_dialogue BEFORE INSERT ON events BEGIN SELECT RAISE(ABORT, 'failure'); END")
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.store.record_negotiation("a", event, access_check=lambda: None)
+        self.assertEqual(self.store.negotiation_history("a", "v"), [])
+        self.assertEqual(self.store.load_team("a").charges, (10,))
+
     def test_restart_restores_contract_pool_revision_and_receipt(self):
         self.store.create_team("a", self.ledger())
         offer = Offer("r", (4,) * 4, 4)

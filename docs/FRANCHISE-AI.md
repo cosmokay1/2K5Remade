@@ -224,3 +224,10 @@ Records require provenance and reject incompatible opportunity/outcome counts.
 They do not authenticate a source or implement game instrumentation. The shared
 model prompt preserves that uncertainty. Hidden rating keys are rejected in all
 actor context fields, including personality and relationships.
+
+Durable negotiations now retain counteroffers, rejections and accounting failures.
+A new session restores that player's history with the team; retries return recorded
+responses rather than generating new ones. Dialogue consumes no cap or ownership,
+and records the unchanged financial posting for replay verification. Signed
+contract/story writes remain atomic. Histories currently span the player's entire
+conversation with a team; deadlines and distinct negotiation campaigns are pending.

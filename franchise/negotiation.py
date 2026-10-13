@@ -62,9 +62,9 @@ class Negotiation:
         # Freeze the provided context as JSON so outside edits cannot alter history.
         self._actor = json.dumps({"personality": personality, "performance": performance,
                                   "relationships": relationships}, allow_nan=False)
-        self._events: list[dict] = []
+        self._events: list[dict] = ledger.negotiation_history(player_id)
         self._replies: dict[str, tuple[Offer, dict]] = {}
-        self._signed = False
+        self._signed = any(event["outcome"] == "signed" for event in self._events)
         self._lock = RLock()
 
     @property
@@ -90,8 +90,9 @@ class Negotiation:
         recorded = self.ledger.recalled_negotiation(request_id, offer)
         if recorded is not None:
             self._replies[request_id] = (offer, recorded)
-            self._events.append(recorded)
-            self._signed = True
+            if not any(event["request_id"] == request_id for event in self._events):
+                self._events.append(recorded)
+            self._signed = self._signed or recorded["outcome"] == "signed"
             return json.loads(json.dumps(recorded))
         if self._signed:
             raise ValueError("Negotiation is already signed")
@@ -121,7 +122,9 @@ class Negotiation:
             event["outcome"] = "counteroffer"
         else:
             event["outcome"] = "player_rejected"
-        # Model narration is a attributed reason, not a fabricated transaction.
+        if event["outcome"] != "signed":
+            event = self.ledger.record_negotiation(event, access_check=self._access_check)
+        # Model narration is an attributed reason, not a fabricated transaction.
         self._events.append(event)
         self._replies[request_id] = (offer, event)
         return json.loads(json.dumps(event))
