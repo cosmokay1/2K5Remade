@@ -158,3 +158,22 @@ class PromiseScoreTests(unittest.TestCase):
             self.assertTrue(context['negotiation_history_has_more'])
             self.assertEqual(len(full),13)
             self.assertEqual(store.load_team('a').charges[0],20)
+
+    def test_history_pages_remain_stable_when_new_stories_append(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store=self.setup_store(directory)
+            def append(index):
+                store.record_negotiation('a',{'request_id':'page-'+str(index),'offer':Offer('p',(20,),0).to_dict(),
+                    'action':'reject','reason':'Fixture '+str(index),'counter':None,'outcome':'player_rejected'},access_check=lambda:None)
+            for index in range(5): append(index)
+            first=store.negotiation_history_page('a','p',limit=2)
+            self.assertEqual([e['story']['request_id'] for e in first['events']],['page-3','page-4'])
+            append(5)
+            second=store.negotiation_history_page('a','p',limit=2,before_event_id=first['next_before_event_id'])
+            third=FranchiseStore(store.path).negotiation_history_page('a','p',limit=2,before_event_id=second['next_before_event_id'])
+            self.assertEqual([e['story']['request_id'] for e in third['events']+second['events']+first['events']],
+                             ['deal','page-0','page-1','page-2','page-3','page-4'])
+            self.assertIsNone(third['next_before_event_id'])
+            for invalid in (True,0,-1,'1'):
+                with self.assertRaises(ValueError):store.negotiation_history_page('a','p',before_event_id=invalid)
+            self.assertEqual(store.load_team('a').charges[0],20)

@@ -1277,3 +1277,14 @@ A 13-story reopen fixture confirms chronology, recent selection, full retention 
 unchanged charges. 228 local tests and portable CTest pass. Event-count limiting does
 not guarantee byte-sized frames; oversized evidence/promises and full browser history
 pagination remain unfinished. Source is not yet reloaded into the public origin.
+
+## October 13, 2026 — Stable saved-story pagination
+
+Added validated store and authenticated HTTP history pages with stable event-ID
+cursor, latest-first retrieval/chronological page display and explicit next cursor.
+Player filtering occurs before SQL page limit; manual signings without stories are
+excluded. New append does not shift older pages. Tests traverse old signed/rejected
+stories after append/reopen, reject invalid cursors/query fields, verify auth/unknown
+players and preserve charges. 229 local tests pass. Per-story byte bounds, browser
+rendering and actual game story presentation remain unfinished. New API is not yet
+reloaded into the public origin.

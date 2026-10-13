@@ -62,7 +62,7 @@ def make_server(store, team_id, token, *, port=8786, tls_cert=None, tls_key=None
                     'source': 'https://github.com/cosmokay1/2K5Remade',
                     'capabilities': ['authenticated_franchise_inspection', 'contract_preview'],
                     'game_integration': 'unfinished', 'paid_inference': False})
-            elif self.path.partition('?')[0] == '/api/player':
+            elif self.path.partition('?')[0] in ('/api/player','/api/history'):
                 if not self.authorized():
                     return
                 if store is None:
@@ -73,9 +73,21 @@ def make_server(store, team_id, token, *, port=8786, tls_cert=None, tls_key=None
                     if len(query) > 4096:
                         raise ValueError('Query too large')
                     fields = parse_qs(query,keep_blank_values=True,strict_parsing=True)
-                    if set(fields) != {'player_id'} or len(fields['player_id']) != 1:
+                    history=self.path.partition('?')[0] == '/api/history'
+                    allowed={'player_id','before_event_id','limit'} if history else {'player_id'}
+                    if 'player_id' not in fields or not set(fields) <= allowed or any(len(values)!=1 for values in fields.values()):
                         raise ValueError('Single player identity required')
-                    result = store.player_context(team_id,fields['player_id'][0])
+                    if history:
+                        numbers={}
+                        for name in ('before_event_id','limit'):
+                            if name in fields:
+                                value=fields[name][0]
+                                if not value.isascii() or not value.isdecimal():
+                                    raise ValueError('Integer history parameters required')
+                                numbers[name]=int(value)
+                        result=store.negotiation_history_page(team_id,fields['player_id'][0],**numbers)
+                    else:
+                        result = store.player_context(team_id,fields['player_id'][0])
                 except Rejected:
                     self.reply(404, {'error': 'player_unavailable'})
                 except (ValueError,TypeError):

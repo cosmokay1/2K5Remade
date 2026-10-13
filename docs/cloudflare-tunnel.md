@@ -111,3 +111,11 @@ identities, contract classifications and personality initialization flags with a
 single financial revision. It exposes no hidden ratings, inferred names or positions.
 These identities include declared free agents/prospects and are explicitly not proof
 of current guest roster membership. Reads create no actors and require no AI grant.
+
+Authenticated `GET /api/history?player_id=ID` returns the latest ten saved negotiation
+stories in chronological order, each with stable event_id. Supply `limit` (1–20)
+and `before_event_id` from `next_before_event_id` to retrieve older pages. Null next
+cursor means no older page. Appending new stories does not shift an existing cursor.
+Unknown players return 404; malformed/duplicate/extra query fields return 400.
+No inference or financial mutation occurs. Pages bound event count, not individual
+story byte size. This endpoint is committed source, not yet reloaded into the origin.

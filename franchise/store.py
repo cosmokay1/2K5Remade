@@ -309,6 +309,28 @@ class FranchiseStore:
             return {'team_id':team_id,'financial_revision':ledger.revision,'players':players,
                     'scope':'registered contract identities; guest roster membership unverified'}
 
+    def negotiation_history_page(self,team_id,player_id,*,before_event_id=None,limit=10):
+        if type(limit) is not int or not 1 <= limit <= 20:
+            raise ValueError('History page limit must be 1 through 20')
+        if before_event_id is not None and (type(before_event_id) is not int or before_event_id < 1):
+            raise ValueError('Positive history cursor required')
+        with self._connection() as db:
+            ledger=self._load(db,team_id)
+            ledger.negotiation_context(player_id)
+            rows=db.execute("""SELECT id,kind,payload FROM events WHERE team_id=?
+                AND (? IS NULL OR id < ?) AND
+                ((kind='dialogue' AND json_extract(payload,'$.event.offer.player_id')=?) OR
+                 (kind='sign' AND json_extract(payload,'$.story.offer.player_id')=?))
+                ORDER BY id DESC LIMIT ?""",(team_id,before_event_id,before_event_id,player_id,player_id,limit+1)).fetchall()
+            page=rows[:limit]
+            events=[]
+            for event_id,kind,serialized in reversed(page):
+                payload=json.loads(serialized)
+                event=payload['event'] if kind == 'dialogue' else {**payload['story'],'charges':payload['contract_charges']}
+                events.append({'event_id':event_id,'story':event})
+            return {'player_id':player_id,'financial_revision':ledger.revision,'events':events,
+                    'next_before_event_id':page[-1][0] if len(rows)>limit else None}
+
     def player_context(self,team_id,player_id):
         """One validated read snapshot; never generates/rebinds an actor."""
         if type(player_id) is not str or not player_id.strip():
