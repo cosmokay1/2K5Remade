@@ -8,6 +8,12 @@ history; all financial transactions obey the supported modern NFL cap/rookie
 rules; saves preserve contracts and stories; and remote shutdown stops AI
 decisions without corrupting the franchise.
 
+**Immersion rule:** observable stats, performance, opportunities and history drive
+franchise evaluation. Hidden overall/skill/potential ratings must not enter
+negotiation prompts, contract valuation, scouting comparisons, or player-facing
+explanations. Ratings used internally by the original on-field simulation are
+outside this decision-system change; replacing gameplay physics is not required.
+
 **A Python demo, a passing toolchain check, a synthetic bridge, or a compiled EXE
 alone does not meet this target. Actual game execution and save/load verification
 are required.** No completion date is promised before the runtime inputs exist.
@@ -85,6 +91,14 @@ invent future published NFL values: separate verified inputs from simulation pol
 - [ ] Add offer previews using the same financial validation as final commits.
 - [ ] Add player/agent and team/GM priorities with persistence and bounded updates.
 - [ ] Feed actual statistics, roles and relationship history; label missing evidence.
+- [ ] Evaluate production with opportunities/context: targets/snaps, efficiency,
+      drops, opponents/scheme, health, recency and sample size where available.
+- [ ] Exclude hidden skill/overall/potential ratings from franchise evaluations;
+      do not turn a generated composite grade into a new visible OVR.
+- [ ] Give scouts/agents/teams imperfect observations and uncertainty; rookies
+      require prospect evidence, not invented NFL statistics.
+- [ ] Test similar observed histories with different hidden ratings: franchise
+      decisions must not reveal or depend on the hidden ratings.
 - [ ] Implement team accept/reject/counter strategy within legal financial limits.
 - [ ] Make guarantees and supported nonfinancial promises meaningful negotiated terms.
 - [ ] Trigger stories from committed events and actual consequences, not invented facts.

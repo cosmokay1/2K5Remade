@@ -23,5 +23,11 @@ Next unblocked work: M0 portable CI, then M1 authoritative contract accounting,
 precision consistency, durability, ownership and tender replacement. Prefer
 small validated changes with evidence over expanding the roadmap.
 
+User clarified that hidden skill ratings break immersion. Franchise decisions
+must use observable stats/performance, opportunities/context and uncertainty.
+Added this to the delivery target, M3 acceptance, and model instructions; added
+a guardrail rejecting recognizable hidden rating fields, including nested fields.
+This is not yet the completed observation/scouting model.
+
 Record each continuation's completed items, commit, validation, and remaining
 gates here. Keep historical observations labeled with their actual revision.

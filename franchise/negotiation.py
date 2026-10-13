@@ -49,6 +49,7 @@ class Negotiation:
             raise ValueError("An access handshake is required")
         self._access_check = access_check
         self._access_check()
+        validate_performance(performance)
         self.ledger = ledger
         self.player_id = player_id
         # Freeze the provided context as JSON so outside edits cannot alter history.
@@ -110,3 +111,18 @@ class Negotiation:
         self._events.append(event)
         self._replies[request_id] = (offer, event)
         return json.loads(json.dumps(event))
+
+
+def validate_performance(value):
+    """Keep recognizable hidden game-rating fields out of performance evidence."""
+    if isinstance(value, dict):
+        for key, item in value.items():
+            normalized = str(key).lower().replace("-", "_").replace(" ", "_")
+            if (normalized in {"overall", "ovr", "rating", "ratings", "potential",
+                               "catching", "catching_skill", "skill_ratings"}
+                    or normalized.endswith(("_rating", "_ratings"))):
+                raise ValueError("Performance evidence cannot contain hidden game ratings")
+            validate_performance(item)
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            validate_performance(item)
