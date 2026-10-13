@@ -1,0 +1,8 @@
+{
+  "project": "llm-2k5",
+  "project_number": "326898036708",
+  "location": "global",
+  "model": "gemini-3.5-flash",
+  "control_bucket": "llm-2k5-control-326898036708",
+  "control_object": "ai-control.json"
+}

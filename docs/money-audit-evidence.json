@@ -1,0 +1,69 @@
+{
+  "observations": {
+    "F01_zero_salary_veteran": {
+      "request_id": "zero",
+      "offer": {
+        "player_id": "veteran",
+        "salaries": [
+          0
+        ],
+        "signing_bonus": 0
+      },
+      "charges": [
+        0
+      ],
+      "revision": 1
+    },
+    "F02_unknown_player": {
+      "accepted": true,
+      "charges": [
+        1
+      ]
+    },
+    "F02_omitted_rookie_registry": {
+      "one_year_contract_accepted": true,
+      "rookie_pool_unchanged": "(Fraction(10, 1), 40)"
+    },
+    "F03_bonus_proration_over_five_years": {
+      "accepted_at_one_dollar_room": true,
+      "charges": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "five_year_allocation_first_year": 2
+    },
+    "F04_cap_pool_rounding_disagreement": {
+      "current_cap_charge": 2,
+      "year_one_rookie_pool_charge": "5/4"
+    },
+    "F05_recreated_state_loses_receipts": {
+      "fresh_ledger_accepts_same_request_again": true,
+      "original_revision": 1,
+      "new_revision": 1
+    },
+    "F06_two_teams_can_sign_same_player": {
+      "team_a_revision": 1,
+      "team_b_revision": 1
+    },
+    "F07_cap_change_without_revision": {
+      "snapshot_cap": 10,
+      "current_cap": 100,
+      "accepted_using_old_revision": true
+    },
+    "F08_rookie_tender_not_replaced": {
+      "supplied_existing_draft_tender": 1,
+      "new_contract_year_one_charge": 1,
+      "recorded_team_charge": 2,
+      "expected_after_replacing_tender": 1
+    }
+  },
+  "bonus_conservation_cases_verified": 10100
+}

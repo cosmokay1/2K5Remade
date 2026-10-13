@@ -1,0 +1,2 @@
+# Optional: the accounting engine and offline demos use only the standard library.
+google-genai>=1.0,<2

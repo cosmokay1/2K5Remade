@@ -1,4 +1,11 @@
-[![Build check](https://github.com/BeyondTomrrow/2K5Remade/actions/workflows/build-check.yml/badge.svg?branch=master)](https://github.com/BeyondTomrrow/2K5Remade/actions/workflows/build-check.yml)
+> **Independent development fork:** [cosmokay1/2K5Remade](https://github.com/cosmokay1/2K5Remade)
+> derives from [BeyondTomrrow/2K5Remade](https://github.com/BeyondTomrrow/2K5Remade).
+> Credit for the native port belongs to its upstream maintainers and contributors.
+> Our franchise AI prototype is described in [FRANCHISE-AI.md](docs/FRANCHISE-AI.md).
+> It is not integrated into the game, and this fork is not an upstream-endorsed release.
+> See [fork attribution and permission status](FORK_NOTICE.md) before redistribution.
+
+[![Upstream build check](https://github.com/BeyondTomrrow/2K5Remade/actions/workflows/build-check.yml/badge.svg?branch=master)](https://github.com/BeyondTomrrow/2K5Remade/actions/workflows/build-check.yml)
 ---
 # ESPN NFL 2K5 Native PC
 

@@ -1,4 +1,10 @@
 /original/*
+# Local research checkouts and credentials; never publish these.
+/remade/
+/save-tools/
+/.venv/
+/.env
+*.pyc
 !/original/README.md
 /analysis/
 /build/
