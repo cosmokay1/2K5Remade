@@ -128,6 +128,7 @@ class FranchiseStore:
             raise Rejected("Unknown team")
         ledger = from_config(json.loads(row[0]))
         ledger._actors = {}
+        ledger._scouting = []
         relationship_sources = set()
         payment_references = set()
         for event_id, kind, serialized in db.execute("SELECT id, kind, payload FROM events WHERE team_id=? ORDER BY id", (team_id,)):
@@ -187,6 +188,10 @@ class FranchiseStore:
                 if actor != payload["actor_after"]:
                     raise ValueError("Relationship posting disagrees with replay")
                 ledger.revision += 1
+            elif kind == "draft_scouting":
+                from franchise.draft import validate_scouting
+                validate_scouting(payload["event"], ledger)
+                ledger._scouting.append(payload["event"])
             elif kind == "dialogue":
                 self._validate_dialogue(payload["event"])
             elif kind == "budget":
@@ -584,6 +589,33 @@ class FranchiseStore:
                        (team_id, key, json.dumps(payload, allow_nan=False)))
             return event
 
+    def record_scouting(self, team_id, event, *, access_check):
+        from franchise.draft import validate_scouting
+        event = json.loads(json.dumps(event, allow_nan=False))
+        with self._connection(write=True) as db:
+            ledger = self._load(db, team_id)
+            key = "draft-scouting:" + event["request_id"]
+            row = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, key)).fetchone()
+            if row:
+                previous = json.loads(row[0])["event"]
+                if previous != event:
+                    raise Rejected("Scouting request already recorded differently")
+                access_check()
+                return previous
+            validate_scouting(event, ledger)
+            access_check()  # Required inside the final durable transaction.
+            payload = {"event": event, "posting": ledger.financial_snapshot()}
+            db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,'draft_scouting',?)",
+                       (team_id, key, json.dumps(payload, allow_nan=False)))
+            return event
+
+    def recalled_scouting(self, team_id, request_id):
+        with self._connection() as db:
+            self._load(db, team_id)
+            row = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?",
+                             (team_id, "draft-scouting:" + request_id)).fetchone()
+            return json.loads(row[0])["event"] if row else None
+
     def negotiation_history(self, team_id, player_id):
         with self._connection() as db:
             ledger = self._load(db, team_id)
@@ -627,6 +659,15 @@ class StoredLedger:
     def __init__(self, store: FranchiseStore, team_id: str):
         self.store, self.team_id = store, team_id
         store.load_team(team_id)
+
+    def scouting_history(self):
+        return self.store.load_team(self.team_id).scouting_history()
+
+    def recalled_scouting(self, request_id):
+        return self.store.recalled_scouting(self.team_id, request_id)
+
+    def record_scouting(self, event, *, access_check):
+        return self.store.record_scouting(self.team_id, event, access_check=access_check)
 
     def management_context(self):
         return self.store.load_team(self.team_id).management_context()

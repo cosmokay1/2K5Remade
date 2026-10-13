@@ -89,6 +89,7 @@ def comparison_context(ledger, *, expected_revision, draft_round, overall_pick,
     return {'purpose': 'draft_comparison', 'financial_revision': expected_revision,
             'draft_round': draft_round, 'overall_pick': overall_pick,
             'team_needs': needs, 'management': management, 'prospects': candidates,
+            'history': ledger.scouting_history(),
             'instructions': 'Compare observed production, opportunities, role, competition and sourced personality. Explain uncertainty and missing evidence. Do not infer hidden ratings or treat unavailable counters as zero. Contract estimates are independently previewed and do not reserve cap or rookie allocation.'}
 
 DRAFT_VERTEX_SCHEMA = {
@@ -138,6 +139,17 @@ class DraftScouting:
             check()
             context = comparison_context(self.ledger, **comparison)
             frozen = json.dumps(context, sort_keys=True, allow_nan=False)
+            recalled = self.ledger.recalled_scouting(request_id)
+            if recalled is not None:
+                # A durable retry returns its original evidence, not new advice.
+                original = dict(recalled['evidence'])
+                current_retry = dict(context)
+                original.pop('history')
+                current_retry.pop('history')
+                if original != current_retry:
+                    raise ValueError('Scouting request ID reused with changed evidence')
+                check()
+                return recalled
             if request_id in self._replies:
                 previous_context, previous_reply = self._replies[request_id]
                 if frozen != previous_context:
@@ -169,6 +181,56 @@ class DraftScouting:
             reply = {'request_id': request_id, 'outcome': 'scouting_advice',
                      'decision': decision, 'evidence': context, 'pick_exercised': False}
             check()
+            reply = self.ledger.record_scouting(reply, access_check=check)
             serialized = json.dumps(reply, allow_nan=False)
             self._replies[request_id] = frozen, serialized
             return json.loads(serialized)
+
+
+def validate_scouting(event, ledger):
+    """Verify advice/accounting/history on write and chronological replay."""
+    if type(event) is not dict or set(event) != {'request_id', 'outcome', 'decision', 'evidence', 'pick_exercised'}:
+        raise ValueError('Unexpected scouting event fields')
+    if type(event['request_id']) is not str or not event['request_id'].strip() or event['outcome'] != 'scouting_advice' or event['pick_exercised'] is not False:
+        raise ValueError('Read-only identified scouting event required')
+    context, decision = event['evidence'], event['decision']
+    if type(context) is not dict or type(decision) is not dict or set(decision) != {'action', 'player_id', 'reason', 'uncertainty'}:
+        raise ValueError('Complete scouting decision and context required')
+    if any(type(decision[key]) is not str or not decision[key].strip() for key in ('reason', 'uncertainty')):
+        raise ValueError('Scouting reason and uncertainty required')
+    if type(context.get('financial_revision')) is not int or context['financial_revision'] != ledger.revision:
+        raise Rejected('Scouting advice used stale franchise state')
+    if context.get('management') != ledger.management_context() or context.get('history') != ledger.scouting_history():
+        raise Rejected('Scouting advice used stale management or history')
+    prospects = context.get('prospects')
+    if type(prospects) is not list or not prospects or any(type(item) is not dict for item in prospects):
+        raise ValueError('Scouting shortlist required')
+    identities = [item.get('player_id') for item in prospects]
+    if any(type(player) is not str or not player.strip() for player in identities) or len(set(identities)) != len(identities):
+        raise ValueError('Unique scouting prospect identities required')
+    if (context.get('purpose') != 'draft_comparison' or type(context.get('draft_round')) is not int
+            or not 1 <= context['draft_round'] <= 7 or type(context.get('overall_pick')) is not int
+            or context['overall_pick'] < 1):
+        raise ValueError('Identified draft comparison required')
+    for item in prospects:
+        validation = item.get('contract_validation')
+        if type(validation) is not dict or validation.get('status') not in ('eligible', 'ineligible'):
+            raise ValueError('Financial estimate validation required')
+        if validation['status'] == 'eligible':
+            offer = Offer.from_dict(item['contract_estimate'])
+            if offer.player_id != item['player_id']:
+                raise ValueError('Estimate belongs to another prospect')
+            accounting = ledger.negotiation_context(offer.player_id)
+            if accounting['rookie_type'] != 'drafted' or accounting['rookie_scale']['draft_round'] != context['draft_round']:
+                raise ValueError('Invalid draft round classification')
+            preview = ledger.preview_offer(offer, context['financial_revision'])
+            if json.loads(json.dumps(preview)) != validation.get('preview'):
+                raise ValueError('Recorded draft estimate disagrees with financial replay')
+    eligible = {item['player_id'] for item in prospects if item['contract_validation']['status'] == 'eligible'}
+    if decision['action'] == 'recommend':
+        if type(decision['player_id']) is not str or decision['player_id'] not in eligible:
+            raise ValueError('Recommendation outside eligible shortlist')
+    elif decision['action'] != 'defer' or decision['player_id'] is not None:
+        raise ValueError('Invalid scouting action')
+    validate_performance(context)
+    json.dumps(event, allow_nan=False)

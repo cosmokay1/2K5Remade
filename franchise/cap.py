@@ -310,6 +310,18 @@ class Ledger:
         with self._lock:
             return self._rookie_year_one, self._rookie_total
 
+    def scouting_history(self):
+        return [dict(request_id=event['request_id'], decision=dict(event['decision']),
+                     draft_round=event['evidence']['draft_round'], overall_pick=event['evidence']['overall_pick'])
+                for event in getattr(self, '_scouting', [])]
+
+    def recalled_scouting(self, request_id):
+        return None
+
+    def record_scouting(self, event, *, access_check):
+        access_check()
+        return event  # In-memory session cache; durable adapter records history.
+
     def management_context(self) -> dict:
         """Private team decision input; not exposed in player/agent prompts."""
         with self._lock:

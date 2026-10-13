@@ -54,6 +54,8 @@ class DraftComparisonTests(unittest.TestCase):
     def test_concurrent_budget_change_invalidates_comparison(self):
         ledger = self.ledger()
         class ChangedAfterPreview:
+            def scouting_history(self):
+                return []
             def management_context(self):
                 return ledger.management_context()
             def negotiation_context(self, player):
@@ -132,3 +134,59 @@ class DraftComparisonTests(unittest.TestCase):
         self.assertEqual(reply['decision']['action'], 'defer')
         self.assertIsNone(reply['decision']['player_id'])
         self.assertEqual(ledger.revision, 0)
+
+    def durable_scouting(self, directory):
+        from pathlib import Path
+        from franchise.books import OpeningBooks
+        from franchise.store import FranchiseStore, StoredLedger
+        store = FranchiseStore(Path(directory) / 'state.sqlite')
+        store.create_team('a', Ledger.from_opening(OpeningBooks(), cap=20, roster_reserve=0,
+            max_bonus_years=5, veteran_minimums={}, rookies=self.ledger()._rookies,
+            rookie_year_one_allocation=25, rookie_total_allocation=100))
+        inputs = dict(expected_revision=0, draft_round=2, overall_pick=40,
+                      prospects=(self.prospect('a', 10),), team_needs=[])
+        return store, StoredLedger(store, 'a'), inputs
+
+    def test_durable_scouting_restart_recall_and_story_history(self):
+        import json, tempfile
+        from franchise.draft import DraftScouting
+        from franchise.store import FranchiseStore, StoredLedger
+        with tempfile.TemporaryDirectory() as directory:
+            store, ledger, inputs = self.durable_scouting(directory)
+            choice = lambda _: json.dumps({'action':'recommend', 'player_id':'a', 'reason':'Observed production', 'uncertainty':'Targets unknown'})
+            first = DraftScouting(ledger, access_check=lambda: None).recommend('first', choice, **inputs)
+            reopened = StoredLedger(FranchiseStore(store.path), 'a')
+            def forbidden(_):
+                raise AssertionError('Restart retry must not regenerate advice')
+            session = DraftScouting(reopened, access_check=lambda: None)
+            self.assertEqual(session.recommend('first', forbidden, **inputs), first)
+            seen = []
+            def next_choice(context):
+                seen.append(context)
+                return choice(context)
+            session.recommend('second', next_choice, **inputs)
+            self.assertEqual(seen[0]['history'][0]['request_id'], 'first')
+            self.assertEqual([item['request_id'] for item in reopened.scouting_history()], ['first', 'second'])
+            self.assertEqual(store.load_team('a').revision, 0)
+            self.assertEqual(store.load_team('a').financial_snapshot()['signed_players'], [])
+
+    def test_concurrent_scouting_history_and_tampered_revision_reject(self):
+        import json, sqlite3, tempfile
+        from franchise.draft import DraftScouting
+        with tempfile.TemporaryDirectory() as directory:
+            store, ledger, inputs = self.durable_scouting(directory)
+            choice = lambda _: json.dumps({'action':'defer', 'player_id':None, 'reason':'Need more evidence', 'uncertainty':'Targets unknown'})
+            session = DraftScouting(ledger, access_check=lambda: None)
+            def concurrent(context):
+                DraftScouting(ledger, access_check=lambda: None).recommend('other', choice, **inputs)
+                return choice(context)
+            with self.assertRaisesRegex(Rejected, 'evidence changed'):
+                session.recommend('stale', concurrent, **inputs)
+            self.assertEqual([item['request_id'] for item in ledger.scouting_history()], ['other'])
+            with sqlite3.connect(store.path) as db:
+                row = db.execute("SELECT id,payload FROM events WHERE kind='draft_scouting'").fetchone()
+                payload = json.loads(row[1])
+                payload['event']['evidence']['financial_revision'] = 99
+                db.execute('UPDATE events SET payload=? WHERE id=?', (json.dumps(payload), row[0]))
+            with self.assertRaises(Rejected):
+                store.load_team('a')

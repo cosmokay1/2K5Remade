@@ -892,3 +892,18 @@ is not restart persistence. This step does not satisfy the complete draft milest
 
 Previous management/TLS commit `d396f59` passed Franchise AI run 38474883517
 and inherited Build check run 38474883715.
+
+## October 13, 2026 — Durable scouting memory
+
+Recorded scouting advice as source events in FranchiseStore with unchanged financial
+postings. Restart retries recall the original decision without inference, and later
+model contexts receive compact chronological advice history. Writes check financial
+revision, management context and history inside the transaction, then recheck remote
+access. Replay verifies these contexts and exact eligible contract previews; tampering
+fails closed. Advice grants no pick rights and changes no rookie pool/cap ownership.
+174 tests pass locally, including restart/no-regeneration, story continuity,
+concurrent-history rejection and tampered financial revision. Atomic draft ownership,
+ordering and money reservations remain unfinished. The site is not game integration.
+
+Prior advisor commit `b6dcef4` passed Franchise AI run 38475122079 and inherited
+Build check run 38475122081.

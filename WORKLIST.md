@@ -216,7 +216,7 @@ verified or the user cancels it.
 - [ ] Build a verified integrated Windows runtime with portable sidecar dependencies.
 - [ ] Validate Proton pipes, controller UI, gameplay, suspend/resume and save/load on Deck.
 - [ ] Package the verified runtime and record tested Proton version and file hashes.
-- [ ] Implement draft choices from observed prospect production, role, personality and evidence uncertainty; exclude hidden ratings. Read-only comparison context and strict model scouting advice now validate sourced evidence, per-candidate cap/pool estimates, shutdown and stale revisions; durable pick commitments and actual game draft choices remain.
+- [ ] Implement draft choices from observed prospect production, role, personality and evidence uncertainty; exclude hidden ratings. Read-only comparison context and strict model scouting advice now validate sourced evidence, per-candidate cap/pool estimates, shutdown and stale revisions; scouting history now also persists/replays with exact eligible preview checks; durable pick commitments and actual game draft choices remain.
 - [ ] Constrain draft commitments by source-backed rookie allocations and team cap; persist decisions and scouting history.
 - [ ] Validate actual in-game draft hooks and save round trips.
 
