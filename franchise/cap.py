@@ -102,7 +102,7 @@ class Ledger:
                  rookie_total_allocation: int | None = None,
                  rookie_tenders: dict[str, int] | None = None,
                  opening_books=None, veteran_minimum_profile=None,
-                 undrafted_bonus_reservation=None, undrafted_reservation_source=None):
+                 undrafted_bonus_reservation=None, undrafted_reservation_source=None, rookie_pool_opening=None):
         self._cap = money(cap)
         self._roster_reserve = money(roster_reserve)
         if type(existing_charges) is not tuple or not existing_charges:
@@ -156,6 +156,8 @@ class Ledger:
         from franchise.rookie import RookieScale, UndraftedScale
         if any(not isinstance(scale, (RookieScale, UndraftedScale)) for scale in self._rookies.values()):
             raise ValueError("Rookie registry must contain typed drafted or undrafted records")
+        self._rookie_pool_opening = rookie_pool_opening
+        self._prior_rookie_players = set()
         self._undrafted_bonus_initial = undrafted_bonus_reservation
         self._undrafted_reservation_source = undrafted_reservation_source
         self._undrafted_bonus_remaining = undrafted_bonus_reservation
@@ -190,8 +192,34 @@ class Ledger:
                     or self._tenders != {item.player_id: item.amount for item in opening_books.tenders}):
                 raise ValueError("Opening balances, ownership or tenders disagree with source books")
 
+        if rookie_pool_opening is not None:
+            from franchise.rookie_opening import RookiePoolOpening
+            if not isinstance(rookie_pool_opening, RookiePoolOpening) or opening_books is None:
+                raise ValueError("Typed cohort profile and original contracts required")
+            if (rookie_year_one_allocation != rookie_pool_opening.year_one_allocation
+                    or rookie_total_allocation != rookie_pool_opening.total_allocation
+                    or undrafted_bonus_reservation != rookie_pool_opening.undrafted_reservation
+                    or undrafted_reservation_source != rookie_pool_opening.source):
+                raise ValueError("Supplied allocation fields disagree with cohort source")
+            if veteran_minimum_profile is not None and veteran_minimum_profile.start_year != rookie_pool_opening.league_year:
+                raise ValueError("Salary and rookie profile years disagree")
+            self._prior_rookie_players = {item.offer.player_id for item in rookie_pool_opening.prior_contracts}
+            retained_ids = {item.record_id for item in opening_books.retained}
+            if any("rookie-prior:" + player not in retained_ids for player in self._prior_rookie_players):
+                raise ValueError("Prior rookie contract requires explicit retained cap/settlement record")
+            self._rookie_year_one, self._rookie_total, self._undrafted_bonus_remaining = rookie_pool_opening.derive_remaining(self._active_contracts, self._rookies)
+
     @classmethod
     def from_opening(cls, books, **rules):
+        profile = rules.get("rookie_pool_opening")
+        if profile is not None:
+            from franchise.rookie_opening import RookiePoolOpening
+            if not isinstance(profile, RookiePoolOpening):
+                raise ValueError("Typed rookie cohort profile required")
+            rules.setdefault("rookie_year_one_allocation", profile.year_one_allocation)
+            rules.setdefault("rookie_total_allocation", profile.total_allocation)
+            rules.setdefault("undrafted_bonus_reservation", profile.undrafted_reservation)
+            rules.setdefault("undrafted_reservation_source", profile.source)
         return cls(existing_charges=books.charges(),
                    signed_player_ids=frozenset(item.offer.player_id for item in books.contracts),
                    rookie_tenders={item.player_id: item.amount for item in books.tenders},
@@ -243,11 +271,12 @@ class Ledger:
                                          in self._veteran_minimums.items()},
                     "signed_player_ids": sorted(self._players),
                     "rookies": {key: asdict(value) for key, value in self._rookies.items()},
-                    "rookie_year_one_allocation": int(self._rookie_year_one),
-                    "rookie_total_allocation": self._rookie_total,
+                    "rookie_year_one_allocation": self._rookie_pool_opening.year_one_allocation if self._rookie_pool_opening else int(self._rookie_year_one),
+                    "rookie_total_allocation": self._rookie_pool_opening.total_allocation if self._rookie_pool_opening else self._rookie_total,
                     "rookie_tenders": dict(self._tenders),
                     "undrafted_bonus_reservation": self._undrafted_bonus_initial,
                     "undrafted_reservation_source": self._undrafted_reservation_source,
+                    "rookie_pool_opening": self._rookie_pool_opening.to_dict() if self._rookie_pool_opening else None,
                     "veteran_minimum_profile": self._veteran_minimum_profile.to_dict() if self._veteran_minimum_profile else None,
                     "opening_books": self._opening_books.to_dict() if self._opening_books else None}
 
@@ -294,6 +323,9 @@ class Ledger:
                     "existing_player_tender": self._tenders.get(player_id, 0),
                     "room_for_replacing_player_tender": json_amount(self.room + self._tenders.get(player_id, 0)),
                     "rookie_scale": asdict(scale) if scale else None,
+                    "rookie_allocation_profile": ({"league_year": self._rookie_pool_opening.league_year,
+                                                    "source": self._rookie_pool_opening.source}
+                                                   if self._rookie_pool_opening else None),
                     "rookie_type": ("drafted" if hasattr(scale, "draft_round") else "undrafted") if scale else None,
                     "undrafted_bonus_remaining": self._undrafted_bonus_remaining,
                     "rookie_available_to_player": ({
@@ -362,6 +394,8 @@ class Ledger:
             raise Rejected("Offer was based on stale franchise state")
         if offer.player_id in self._players:
             raise Rejected("Player is already signed; extensions are unsupported")
+        if offer.player_id in self._prior_rookie_players:
+            raise Rejected("Prior cohort contract requires unsupported rookie release/re-sign reconciliation")
         scale = self._rookies.get(offer.player_id)
         if scale is not None:
             from franchise.rookie import UndraftedScale

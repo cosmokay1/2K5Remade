@@ -779,3 +779,17 @@ cohort/pool reconciliation, annual growth/rounding, incentive/non-base component
 options/escalators and full rookie lifecycle remain required.
 Prior guarantee-chain `1b207fd` passed Windows/Linux in run 38471147416.
 New acquisition implementation CI pending; game integration remains unfinished.
+
+## October 13, 2026 — Imported rookie cohorts and Steam Deck scope
+
+Added explicit source-backed RookiePoolOpening reconciliation for active and prior
+current-cohort contracts, including UDFA reservations. New durable teams with
+signed rookies require declared cohort history; previous cohorts are excluded
+explicitly. All 159 tests pass locally, including package integrity/no-overwrite and invalid-path checks. Full release settlement remains
+unsupported. Prior acquisition CI run 38471920428 passed.
+
+Accepted draft evaluation and Steam Deck delivery into the worklist. Added a local
+explicit-file streaming ZIP builder with hashes of archived bytes, no-overwrite behavior and Windows path checks, plus
+Proton runtime and Deck acceptance requirements. No game binary or assets are
+available to package; this is tooling, not a runnable game. Windows Python and
+Win32 pipe/job behavior under Proton remain unverified.

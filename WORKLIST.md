@@ -2,8 +2,8 @@
 
 ## Delivery target
 
-A tested Windows build of the independent Remade fork in which actual franchise
-negotiations use persistent personalities, performance, relationships, and
+Tested Windows and Steam Deck (Proton) packages of the independent Remade fork in which actual franchise
+negotiations and draft decisions use persistent personalities, performance, relationships, and
 history; all financial transactions obey the supported modern NFL cap/rookie
 rules; saves preserve contracts and stories; and remote shutdown stops AI
 decisions without corrupting the franchise.
@@ -28,7 +28,7 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 |---|---|---|---|
 | B01 | Legally obtained Xbox `default.xbe` and extracted game assets | Verified guest addresses, financial field mapping, real gameplay | Financial engine, persistence, negotiation, diagnostics, bridge protocol, synthetic integration |
 | B02 | Raw franchise saves and companion metadata; controlled transaction pairs | Contract decoding, reconciliation and save round trips | Synthetic import fixtures, read-only diff tooling, state schema |
-| B03 | Windows machine/runner capable of running the user's legal game | Runtime reproduction, UI/gameplay validation, delivery acceptance | Portable engine tests and asset-free Windows compilation checks |
+| B03 | Windows runtime and Steam Deck capable of running the user's legal game | Runtime reproduction, UI/gameplay validation, delivery acceptance | Portable engine tests and asset-free Windows compilation checks |
 | B04 | Written upstream/third-party permission or suitable licenses | Redistribution of modified binaries and affected bundled components | Original source development, attribution, permission-request drafts |
 | B05 | Explicit approval for scoped runtime impersonation delegation | Live runtime-identity read/inference verification | Offline/native recovery and financial implementation |
 
@@ -209,3 +209,15 @@ to meaningful milestones, failures, new actionable blockers or verified delivery
 If every remaining item is externally blocked, record the exact gates and avoid
 repeated unchanged blocker messages. Disable the follow-up when delivery is
 verified or the user cancels it.
+
+## Steam Deck and draft delivery additions
+
+- [x] Prepare explicit-file local Proton candidate ZIP tooling and runtime requirements.
+- [ ] Build a verified integrated Windows runtime with portable sidecar dependencies.
+- [ ] Validate Proton pipes, controller UI, gameplay, suspend/resume and save/load on Deck.
+- [ ] Package the verified runtime and record tested Proton version and file hashes.
+- [ ] Implement draft choices from observed prospect production, role, personality and evidence uncertainty; exclude hidden ratings.
+- [ ] Constrain draft commitments by source-backed rookie allocations and team cap; persist decisions and scouting history.
+- [ ] Validate actual in-game draft hooks and save round trips.
+
+See packaging/steamdeck/README.md. Candidate packaging is not playable delivery.

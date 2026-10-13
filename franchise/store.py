@@ -19,6 +19,9 @@ from franchise.cash import CashBook, CashObligation
 
 def from_config(config: dict) -> Ledger:
     config = dict(config)
+    if config.get("rookie_pool_opening") is not None:
+        from franchise.rookie_opening import RookiePoolOpening
+        config["rookie_pool_opening"] = RookiePoolOpening.from_dict(config["rookie_pool_opening"])
     if config.get("veteran_minimum_profile") is not None:
         from franchise.salary_rules import VeteranMinimumProfile
         config["veteran_minimum_profile"] = VeteranMinimumProfile.from_dict(config["veteran_minimum_profile"])
@@ -103,6 +106,8 @@ class FranchiseStore:
         if type(team_id) is not str or not team_id.strip():
             raise ValueError("Stable team ID required")
         config = ledger.bootstrap_config()
+        if ledger._rookies.keys() & ledger._players and ledger._rookie_pool_opening is None:
+            raise ValueError("Durable starting rookie roster requires explicit cohort/pool source")
         if config["opening_books"] is None:
             raise ValueError("Durable teams require source opening books, not aggregate-only balances")
         with self._connection(write=True) as db:

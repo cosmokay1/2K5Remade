@@ -36,6 +36,8 @@ class RookieScale:
             raise ValueError("This validator supports drafted rookies in rounds 1-7")
         if type(self.minimum_salaries) is not tuple or len(self.minimum_salaries) != 4:
             raise ValueError("Four verified annual minimum salaries are required")
+        if any(money(value) == 0 for value in self.minimum_salaries):
+            raise ValueError("Drafted rookie minimum salaries must be positive")
         for amount in (*self.minimum_salaries, self.year_one_minimum,
                        self.year_one_maximum, self.total_maximum):
             money(amount)
