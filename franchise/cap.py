@@ -78,7 +78,7 @@ class Ledger:
                  rookie_year_one_allocation: int | None = None,
                  rookie_total_allocation: int | None = None,
                  rookie_tenders: dict[str, int] | None = None,
-                 opening_books=None):
+                 opening_books=None, veteran_minimum_profile=None):
         self._cap = money(cap)
         self._roster_reserve = money(roster_reserve)
         if type(existing_charges) is not tuple or not existing_charges:
@@ -102,6 +102,13 @@ class Ledger:
                 raise ValueError("Verified annual veteran minimums are required")
             if any(money(amount) == 0 for amount in minimums):
                 raise ValueError("Veteran minimum salaries must be positive")
+        self._veteran_minimum_profile = veteran_minimum_profile
+        if veteran_minimum_profile is not None:
+            from franchise.salary_rules import VeteranMinimumProfile
+            if not isinstance(veteran_minimum_profile, VeteranMinimumProfile):
+                raise ValueError("Typed veteran salary profile required")
+            if self._veteran_minimums != veteran_minimum_profile.floors():
+                raise ValueError("Veteran minimums disagree with annual source profile")
         self._players = set(signed_player_ids)
         self._requests: dict[str, Signing] = {}
         self.revision = 0
@@ -167,6 +174,7 @@ class Ledger:
                     "rookie_year_one_allocation": int(self._rookie_year_one),
                     "rookie_total_allocation": self._rookie_total,
                     "rookie_tenders": dict(self._tenders),
+                    "veteran_minimum_profile": self._veteran_minimum_profile.to_dict() if self._veteran_minimum_profile else None,
                     "opening_books": self._opening_books.to_dict() if self._opening_books else None}
 
     @property
@@ -203,6 +211,10 @@ class Ledger:
                     "annual_team_charges": [json_amount(value) for value in self._charges],
                     "roster_reserve": self.roster_reserve,
                     "veteran_minimum_salaries": self._veteran_minimums.get(player_id),
+                    "salary_floor_profile": ({"start_year": self._veteran_minimum_profile.start_year,
+                                              "rule_version": self._veteran_minimum_profile.rule_version,
+                                              "source": self._veteran_minimum_profile.source}
+                                             if self._veteran_minimum_profile else None),
                     "existing_player_tender": self._tenders.get(player_id, 0),
                     "room_for_replacing_player_tender": json_amount(self.room + self._tenders.get(player_id, 0)),
                     "rookie_scale": asdict(scale) if scale else None,

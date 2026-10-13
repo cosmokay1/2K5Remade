@@ -17,6 +17,9 @@ from franchise.books import OpeningBooks, parse_amount
 
 def from_config(config: dict) -> Ledger:
     config = dict(config)
+    if config.get("veteran_minimum_profile") is not None:
+        from franchise.salary_rules import VeteranMinimumProfile
+        config["veteran_minimum_profile"] = VeteranMinimumProfile.from_dict(config["veteran_minimum_profile"])
     if config.get("opening_books") is None:
         raise ValueError("Source opening books are missing; explicit migration required")
     config["existing_charges"] = tuple(parse_amount(value) for value in config["existing_charges"])

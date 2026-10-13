@@ -209,3 +209,10 @@ replaced tender and rookie pools. `StoredLedger` also checks other teams' owners
 It does not reserve room or promise future acceptance. Commit must still recheck
 current state. `contract_cash` is total nominal compensation, not guarantees or a
 cash-payment calendar. No AI access is required for read-only financial previews.
+
+For published veteran floors, construct `VeteranMinimumProfile(start_year, players)`
+with immutable `(player_id, annual_credited_seasons, annual_roster_categories)`
+records. Pass both `veteran_minimums=profile.floors()` and
+`veteran_minimum_profile=profile` to the ledger. Durable reload reconciles them.
+Supported years are 2020-2030; no historical-year conversion or automatic credited
+season accrual is applied. This profile establishes veteran salary floors only.

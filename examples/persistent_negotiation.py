@@ -6,6 +6,7 @@ from franchise.cap import Ledger, Offer, json_amount
 from franchise.books import OpeningBooks, ActiveContract
 from franchise.negotiation import Negotiation
 from franchise.store import FranchiseStore, StoredLedger
+from franchise.salary_rules import VeteranMinimumProfile
 
 
 def main():
@@ -13,9 +14,12 @@ def main():
         path = Path(directory) / "franchise.sqlite"
         store = FranchiseStore(path)
         books = OpeningBooks(contracts=(ActiveContract(Offer("existing-roster-fixture", (90_000_000,), 0), "synthetic existing contract"),))
+        profile = VeteranMinimumProfile(2026, (
+            ("receiver", (3, 3, 4), ("active_inactive",) * 3),
+            ("existing-roster-fixture", (7,), ("active_inactive",))))
         store.create_team("example-team", Ledger.from_opening(books,
             cap=100_000_000, roster_reserve=2_000_000, max_bonus_years=5,
-            veteran_minimums={"receiver": (1_000_000,) * 3, "existing-roster-fixture": (1_000_000,)}))
+            veteran_minimums=profile.floors(), veteran_minimum_profile=profile))
         offer = Offer("receiver", (6_000_000,) * 3, 6_000_000)
 
         def session(database):

@@ -192,4 +192,22 @@ reserve money; final signing still rechecks revision and global ownership.
 
 Local validation: 88 tests pass, including competing-team ownership after preview,
 nonmutation, stale previews, matching preview/commit charges and tender replacement.
-Game UI integration remains unverified and externally gated. Remote CI pending.
+Game UI integration remains unverified and externally gated.
+Verified offer-preview commit `aad45ca` on Windows/Linux in
+[run 38463144916](https://github.com/cosmokay1/2K5Remade/actions/runs/38463144916).
+
+## October 13, 2026 — Durable source-bound veteran minimum profiles
+
+Added immutable `VeteranMinimumProfile` records with a modern start year, explicit
+annual credited-season/category inputs and exact published source/version. Ledger
+creation and every durable reload reconcile supplied veteran floors against the
+profile; mismatch rejects reconstruction. Negotiation context records the rule
+source/year without exposing other players' inputs. The durable example now uses
+a 2026 profile and survives restart. Existing synthetic/legacy explicit-floor
+fixtures remain supported; they do not become verified annual rules automatically.
+
+91 local tests pass. Coverage includes annual floors after reload, no automatic
+credited-season advancement, floor/profile disagreement and rejection of unknown
+years, versions, duplicate IDs and unsupported categories. Draft allotments, cap
+profiles, historical economics and season rollover remain incomplete; this is
+explicitly a salary-floor component, not a complete league ruleset. CI pending.
