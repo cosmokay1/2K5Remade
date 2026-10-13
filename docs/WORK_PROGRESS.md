@@ -548,3 +548,21 @@ evolution, agents/GM strategies and automatically defined consequence policies
 remain pending. Native guarantee fixture `3d4eaf9` passed Windows/Linux in
 [run 38467085483](https://github.com/cosmokay1/2K5Remade/actions/runs/38467085483).
 New relationship implementation CI pending; no actual game integration claim.
+
+## October 13, 2026 — Covered base-guarantee present-value liability component
+
+Verified executed CBA Article 13 section 6(d)(iv), PDF page 138 (printed 122),
+and Article 1 discount-rate definition, page 17. Future covered guaranteed base
+liability is distinct from signing-bonus acceleration and nominal cash. Added
+exact rational annual-compounding valuation with explicit league-year rate/source,
+unpaid amounts bounded by original guarantees and explicit payment-year offsets.
+No nominal cash amount is reduced by discounting; only the separate cap component
+is valued. No rate or payment schedule is guessed.
+
+127 local tests pass with independent synthetic five-percent examples, explicit
+timing differences, original protected ceilings and unsupported-input rejection.
+Rates in tests are declared synthetic; no published 2026 Treasury rate was fetched
+or represented as verified. Whole annual periods only; partial-year conventions,
+covered-release facts, paid allocation, offsets/voids and full settlement still
+required. This component does not release a player or authorize game writes.
+New Windows/Linux CI pending.

@@ -294,3 +294,11 @@ One event/relationship may affect the score once. Live/restarted sessions observ
 updated relationships through an atomic actor/accounting read. No automatic trust
 changes are inferred from free-form model narration. Personality and agent/GM
 evolution remain pending.
+
+`guaranteed_base_liability` calculates a separate present-value cap component from
+explicit unpaid protected bases and payment-year offsets. Its nominal unpaid cash
+remains unchanged. `DiscountProfile` requires an exact annual rate, league year
+and provenance; no real rate is bundled or inferred. Only whole annual periods
+are supported. Source: executed CBA Article 13 section 6(d)(iv) and Article 1.
+Covered termination, payment/offset/void facts and complete settlement must still
+be verified before a release transaction can be enabled.
