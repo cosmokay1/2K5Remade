@@ -146,6 +146,8 @@ def observe_promises(goals, performance, *, player_id, team_id, context, team_re
         raise ValueError('Immutable typed agreed goals required')
     if team_results is not None and (not isinstance(team_results,TeamResults) or team_results.team_id != team_id):
         raise ValueError('Matching typed team results required')
+    if team_results is not None and (team_results.window != performance.window or team_results.mode != performance.mode):
+        raise ValueError('Team and player evidence windows/modes disagree')
     if performance.team_id is not None and performance.team_id != team_id:
         raise ValueError('Player evidence belongs to another team')
     counters={o.counter:o for o in performance.observations}
@@ -154,8 +156,6 @@ def observe_promises(goals, performance, *, player_id, team_id, context, team_re
         if goal.window != performance.window:
             raise ValueError('Player evidence does not cover the agreed goal window')
         if goal.metric == 'team_wins':
-            if team_results is not None and (team_results.window != goal.window or team_results.mode != performance.mode):
-                raise ValueError('Team and player evidence windows/modes disagree')
             complete=team_results.complete_window if team_results else False
             value=team_results.wins if team_results else None
             source=team_results.source if team_results else 'team results unavailable'

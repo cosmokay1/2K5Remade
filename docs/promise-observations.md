@@ -22,9 +22,9 @@ The automatic adapter requires explicit PerformanceEvidence.team_id and
 complete_window=True before player-goal data can finalize. TeamResults separately
 requires complete_window=True for win goals. Known partial counters remain progress;
 closing the calendar window cannot turn partial coverage into a final result or
-irreversible final lock. Foreign club evidence rejects. The current batch adapter
-supports one agreed observation window/mode at a time; multi-window automatic
-contract evaluation remains unfinished.
+irreversible final lock. Foreign club evidence rejects. Each supplied player snapshot
+covers one declared window/mode; the multi-window adapter below keeps those scopes
+separate.
 
 Historically supplied GoalObservation records lack the completeness field and
 retain their existing explicitly sourced evaluation semantics. Direct manual score

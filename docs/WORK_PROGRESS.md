@@ -1107,3 +1107,14 @@ replays identical history, an identical request retries without revision changes
 and changed evidence under the same request rejects. Financial charges remain
 unchanged throughout; exact revision progression is checked. 217 local tests pass.
 This verifies durable engine behavior with synthetic evidence, not real game stats.
+
+## October 13, 2026 — Reviewed multi-window evidence scope
+
+Read-only parallel reviewer found no blocking defect in multi-window/durable scoring
+and identified a scope-test gap. Added foreign-team and mismatched team window/mode
+coverage through the batch API. Moved team window/mode validation ahead of goal
+mapping so mismatched supplied standings reject even when no win goal consumes them.
+Corrected obsolete single-window-only documentation. 218 local tests pass; no
+inference, financial mutation or real game observation was performed. Multi-window
+CI runs 38479318702/38479318522 and durable fixture 38479378828/38479379061 were
+in progress at inspection.

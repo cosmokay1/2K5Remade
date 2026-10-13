@@ -65,3 +65,18 @@ class PromiseObservationTests(unittest.TestCase):
         for snapshots in ((early,), (early,season,season)):
             with self.assertRaises(ValueError):
                 observe_promise_windows(goals,snapshots,player_id='p',team_id='a',context='fixture')
+
+    def test_unneeded_team_results_still_require_matching_scope(self):
+        from franchise.promises import observe_promise_windows
+        evidence=self.evidence((Observation('games_started',10,'fixture'),))
+        goals=(self.goal('starts'),)
+        for team in (TeamResults('a','other period','cpu_played',1,1,'fixture','fixture'),
+                     TeamResults('a','fixture season','played',1,1,'fixture','fixture')):
+            with self.assertRaises(ValueError): self.observe(goals,evidence,team)
+            with self.assertRaises(ValueError):
+                observe_promise_windows(goals,(evidence,),player_id='p',team_id='a',context='fixture',team_results=(team,))
+
+        foreign=PerformanceEvidence('p','fixture season','cpu_played',(Observation('games_started',10,'fixture'),),
+                                    'fixture',team_id='b',complete_window=True)
+        with self.assertRaises(ValueError):
+            observe_promise_windows(goals,(foreign,),player_id='p',team_id='a',context='fixture')
