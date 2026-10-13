@@ -326,3 +326,10 @@ classification and provenance. All bonus proration stays counted. Material Top-5
 boundary ties require supplied selection. This standalone component is not yet
 the signing ledger's phase model; complete Team Salary/calendar/tender/Offer Sheet
 coverage remains pending. Source: executed CBA Article 13 section 6(a)(i).
+
+`store.roster_components` reads stored active contracts/tenders and explicit annual
+credited-season/UDFA classifications to project supported phase charges. Published
+active/inactive minima are derived for the declared year. Retained liabilities and
+adjustments stay counted; incomplete classifications reject. Projection reports
+`signing_authority_changed=False`: it does not grant new cap room or substitute
+for a complete phase/calendar transition.

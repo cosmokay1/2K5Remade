@@ -646,3 +646,20 @@ not complete Team Salary. Tenders/Offer Sheets, deferred/other bonuses, roster
 statuses, retained liabilities and verified calendar still require integration.
 Existing signing ledger continues conservative all-contract accounting until the
 complete phase transition path is implemented. New Windows/Linux CI pending.
+
+## October 13, 2026 — Durable roster-phase projection and reconciliation
+
+Connected roster valuation to original active contract/elapsed terms and declared
+unsigned rookie tenders from durable state. Explicit current-year credited-season
+and UDFA inputs cover every row; applicable minima derive from published table.
+Retained liabilities/adjustments reconcile as the exact difference between current
+authoritative charges and the gross active/tender rows, then remain counted in
+each projected phase. Profile/year mismatch, missing classifications, unknown
+phase and net-negative modeled liability reject. No signing authority or budget
+is changed by projection.
+
+143 local tests pass. A synthetic 52-contract fixture proves bonus/dead-charge
+retention, offseason/regular-season difference and unchanged authoritative state.
+Complete phase calendar, status/Offer Sheet/other compensation treatment and
+atomic phase transitions remain required before projected room can authorize a
+signing. New Windows/Linux CI pending; actual game inputs remain unavailable.

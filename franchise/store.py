@@ -196,6 +196,56 @@ class FranchiseStore:
         with self._connection() as db:
             return self._load(db, team_id)
 
+    def roster_components(self, team, *, phase, league_year, classifications,
+                          classification_source, selected_top51=None):
+        """Read-only phase projection; does not alter signing authority or calendar."""
+        from fractions import Fraction
+        from franchise.minimums import minimum_salary
+        from franchise.roster_accounting import RosterSalary, roster_charge
+        if type(classification_source) is not str or not classification_source.strip():
+            raise ValueError("Roster classification provenance required")
+        ledger = self.load_team(team)
+        if ledger._opening_books is None:
+            raise Rejected("Original obligation records required")
+        if (ledger._veteran_minimum_profile is not None
+                and ledger._veteran_minimum_profile.start_year != league_year):
+            raise Rejected("Projection year disagrees with salary profile")
+        players = set(ledger._active_contracts) | set(ledger._tenders)
+        if type(classifications) is not dict or set(classifications) != players:
+            raise ValueError("Explicit credited-season/UDFA inputs for every salary entry required")
+        entries = []
+        gross = Fraction(0)
+        for player in sorted(players):
+            inputs = classifications[player]
+            if type(inputs) is not tuple or len(inputs) != 2:
+                raise ValueError("Credited seasons and UDFA status required")
+            credits, undrafted = inputs
+            minimum = minimum_salary(league_year, credits, "active_inactive")
+            if player in ledger._active_contracts:
+                contract = ledger._active_contracts[player]
+                base = contract.offer.salaries[contract.elapsed_years]
+                value = contract.charges()[0]
+                source = contract.source
+            else:
+                if undrafted is not False:
+                    raise ValueError("Drafted rookie tender cannot be classified as UDFA")
+                base = ledger._tenders[player]
+                value = Fraction(base)
+                source = "declared unsigned drafted rookie tender"
+            gross += value
+            entries.append(RosterSalary(player, base, value - base, minimum, undrafted, source))
+        result = roster_charge(tuple(entries), phase=phase, selected_top51=selected_top51)
+        retained = ledger.charges[0] - gross
+        total = Fraction(result["supported_roster_charge"]) + retained
+        if total < 0:
+            raise Rejected("Phase projection credits exceed modeled liabilities")
+        return {**result, "revision": ledger.revision, "league_year": league_year,
+                "classification_source": classification_source,
+                "retained_and_adjustment_charge": json_amount(retained),
+                "projected_modeled_team_charge": json_amount(total),
+                "current_authoritative_charge": json_amount(ledger.charges[0]),
+                "signing_authority_changed": False}
+
     def termination_components(self, team, player, *, removed_on, discount, payment_year_offsets):
         """Read-only covered-bonus/base components; no release or cap-room grant."""
         from franchise.guarantees import DiscountProfile, guaranteed_base_liability
