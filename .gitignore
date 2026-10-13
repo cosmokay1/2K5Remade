@@ -5,6 +5,10 @@
 /.venv/
 /.env
 *.pyc
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
 !/original/README.md
 /analysis/
 /build/

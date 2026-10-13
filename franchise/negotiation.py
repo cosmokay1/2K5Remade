@@ -80,6 +80,12 @@ class Negotiation:
             if prior[0] != offer:
                 raise ValueError("Negotiation request ID reused with different terms")
             return json.loads(json.dumps(prior[1]))
+        recorded = self.ledger.recalled_negotiation(request_id, offer)
+        if recorded is not None:
+            self._replies[request_id] = (offer, recorded)
+            self._events.append(recorded)
+            self._signed = True
+            return json.loads(json.dumps(recorded))
         if self._signed:
             raise ValueError("Negotiation is already signed")
         snapshot = self.ledger.negotiation_context(self.player_id)
@@ -94,8 +100,9 @@ class Negotiation:
                  "outcome": "pending"}
         if decision.action == "accept":
             try:
-                receipt = self.ledger.sign(request_id, offer, snapshot["revision"],
-                                           access_check=self._access_check)
+                receipt = self.ledger.commit_negotiation(
+                    request_id, offer, snapshot["revision"],
+                    access_check=self._access_check, story={**event, "outcome": "signed"})
             except Rejected as exc:
                 event["outcome"] = "accounting_rejected"
                 event["accounting_reason"] = str(exc)

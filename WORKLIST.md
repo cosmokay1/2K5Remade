@@ -55,9 +55,12 @@ Done when a fresh checkout can run the engine tests and CI reports their results
 - [ ] Resolve F04 with a single documented internal precision/posting policy.
 - [ ] Replace caller-maintained aggregate balances with derived contract,
       tender, retained-obligation, and adjustment records.
-- [ ] Add durable league/player/team identities and exclusive player ownership.
-- [ ] Add atomic commits, durable request receipts, and restart/crash recovery.
-- [ ] Store financial transaction and associated story event together.
+- [x] Add durable team IDs and exclusive player ownership for supported signings
+      through `FranchiseStore`; complete imported league/rules data remains pending.
+- [x] Add atomic commits, durable signing receipts, restart/rollback recovery and
+      recovery from an abrupt process exit before database commit.
+- [x] Store committed signing and associated story together; recalled agreements
+      do not regenerate the model decision after restart.
 - [ ] Replace a rookie tender when its contract commits (F08).
 - [ ] Add import/reconciliation failures that stop writes on inconsistent data.
 

@@ -108,6 +108,21 @@ class Ledger:
     def cap(self) -> int:
         return self._cap
 
+    def bootstrap_config(self) -> dict:
+        """Export only a pristine ledger; committed history belongs in the store."""
+        with self._lock:
+            if self.revision != 0:
+                raise ValueError("Create durable state before committing transactions")
+            return {"cap": self.cap, "existing_charges": list(self._charges),
+                    "roster_reserve": self.roster_reserve,
+                    "max_bonus_years": self.max_bonus_years,
+                    "veteran_minimums": {key: list(value) for key, value
+                                         in self._veteran_minimums.items()},
+                    "signed_player_ids": sorted(self._players),
+                    "rookies": {key: asdict(value) for key, value in self._rookies.items()},
+                    "rookie_year_one_allocation": int(self._rookie_year_one),
+                    "rookie_total_allocation": self._rookie_total}
+
     @property
     def roster_reserve(self) -> int:
         return self._roster_reserve
@@ -166,6 +181,14 @@ class Ledger:
             if access_check is not None:
                 access_check()
             return self._sign(request_id, offer, expected_revision)
+
+    def commit_negotiation(self, request_id: str, offer: Offer, expected_revision: int,
+                           *, access_check, story: dict):
+        """In-memory commit; the durable adapter persists story with finances."""
+        return self.sign(request_id, offer, expected_revision, access_check=access_check)
+
+    def recalled_negotiation(self, request_id: str, offer: Offer):
+        return None  # In-memory sessions retain their own replies.
 
     def _sign(self, request_id: str, offer: Offer, expected_revision: int) -> Signing:
         if not isinstance(request_id, str) or not request_id.strip():

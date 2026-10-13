@@ -30,3 +30,4 @@ jobs:
         run: |
           python -m examples.negotiation
           python -m examples.story_negotiation --provider scripted
+          python -m examples.persistent_negotiation

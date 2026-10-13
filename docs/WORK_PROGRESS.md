@@ -74,3 +74,23 @@ the 48-test suite, money regression/conservation checks, and offline examples.
 Marked the portable CI worklist item complete. This verifies portable engine
 behavior, not native game build or gameplay. Continue M1 accounting work;
 asset-free native bridge checks can be added when a bridge implementation exists.
+
+## October 13, 2026 — Durable supported transactions
+
+Added `FranchiseStore` (SQLite) and `StoredLedger`. Persistent initial rules and
+supported signing/budget events reconstruct cap, rookie allocations, membership,
+revisions and request receipts. Player ownership is unique across teams using
+one database. Financial signing and optional story commit atomically. The
+negotiation path uses the adapter and recalls a committed agreement after restart
+without calling the model again. Basic in-memory Ledger behavior remains available.
+
+Validation includes independent competing connections, separate Python-process
+reload, injected event-write failure, abrupt subprocess exit before commit,
+conflicting retries/stories, disabled new commits with readable old state, and
+unsupported database versions. Added offline persistent demo to Linux/Windows CI.
+Local suite: 60 tests. Remote result is pending until the new commit executes.
+
+This addresses F05 and F06 for supported operations through the shared store,
+not every game/standalone path. Aggregate bootstrap balances, F04 precision and
+F08 tender replacement remain open. Active negotiations/relationship changes,
+full contract lifecycle and actual game-save synchronization remain incomplete.

@@ -1,0 +1,161 @@
+"""SQLite-backed transaction history for the supported prototype operations.
+
+Each write rebuilds from immutable bootstrap data under a database write lock.
+Contracts, ownership and optional story data commit in one transaction. No
+retail game state is imported or modified by this store.
+"""
+from contextlib import contextmanager
+from dataclasses import asdict
+import json
+from pathlib import Path
+import sqlite3
+from franchise.cap import Ledger, Offer, Rejected
+from franchise.rookie import RookieScale
+
+
+def from_config(config: dict) -> Ledger:
+    config = dict(config)
+    config["existing_charges"] = tuple(config["existing_charges"])
+    config["signed_player_ids"] = frozenset(config["signed_player_ids"])
+    config["veteran_minimums"] = {key: tuple(value) for key, value
+                                   in config["veteran_minimums"].items()}
+    config["rookies"] = {key: RookieScale(**{**value,
+                              "minimum_salaries": tuple(value["minimum_salaries"])})
+                         for key, value in config["rookies"].items()}
+    return Ledger(**config)
+
+
+class FranchiseStore:
+    def __init__(self, path: str | Path):
+        self.path = str(path)
+        if self.path == ":memory:":
+            raise ValueError("Durable franchise state requires a database file")
+        with self._connection(write=True) as db:
+            version = db.execute("PRAGMA user_version").fetchone()[0]
+            if version not in (0, 1):
+                raise ValueError("Unsupported franchise database version")
+            db.execute("CREATE TABLE IF NOT EXISTS teams (id TEXT PRIMARY KEY, config TEXT NOT NULL)")
+            db.execute("CREATE TABLE IF NOT EXISTS ownership (player_id TEXT PRIMARY KEY, team_id TEXT NOT NULL REFERENCES teams(id))")
+            db.execute("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, team_id TEXT NOT NULL REFERENCES teams(id), request_key TEXT NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL, UNIQUE(team_id, request_key))")
+            db.execute("PRAGMA user_version=1")
+
+    @contextmanager
+    def _connection(self, *, write=False):
+        db = sqlite3.connect(self.path, timeout=10)
+        try:
+            db.execute("PRAGMA foreign_keys=ON")
+            db.execute("PRAGMA synchronous=FULL")
+            db.execute("BEGIN IMMEDIATE" if write else "BEGIN")
+            yield db
+            db.commit()
+        except BaseException:
+            db.rollback()
+            raise
+        finally:
+            db.close()
+
+    def create_team(self, team_id: str, ledger: Ledger):
+        if type(team_id) is not str or not team_id.strip():
+            raise ValueError("Stable team ID required")
+        config = ledger.bootstrap_config()
+        with self._connection(write=True) as db:
+            if db.execute("SELECT 1 FROM teams WHERE id=?", (team_id,)).fetchone():
+                raise Rejected("Team already exists; refusing to overwrite financial state")
+            db.execute("INSERT INTO teams VALUES (?, ?)", (team_id, json.dumps(config)))
+            for player in config["signed_player_ids"]:
+                if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (player,)).fetchone():
+                    raise Rejected("Player already belongs to another team")
+                db.execute("INSERT INTO ownership VALUES (?, ?)", (player, team_id))
+
+    def _load(self, db, team_id) -> Ledger:
+        row = db.execute("SELECT config FROM teams WHERE id=?", (team_id,)).fetchone()
+        if row is None:
+            raise Rejected("Unknown team")
+        ledger = from_config(json.loads(row[0]))
+        for kind, serialized in db.execute("SELECT kind, payload FROM events WHERE team_id=? ORDER BY id", (team_id,)):
+            payload = json.loads(serialized)
+            if kind == "sign":
+                data = payload["offer"]
+                ledger.sign(payload["request_id"], Offer(data["player_id"], tuple(data["salaries"]), data["signing_bonus"]), payload["expected_revision"])
+            elif kind == "budget":
+                ledger.update_budget(**payload)
+            else:
+                raise ValueError("Unknown financial event; refusing to reconstruct state")
+        return ledger
+
+    def load_team(self, team_id: str) -> Ledger:
+        with self._connection() as db:
+            return self._load(db, team_id)
+
+    def sign(self, team_id: str, request_id: str, offer: Offer, expected_revision: int,
+             *, access_check=None, story: dict | None = None):
+        if type(request_id) is not str or not request_id.strip():
+            raise Rejected("A request ID is required")
+        if story is not None and type(story) is not dict:
+            raise ValueError("Story must be a JSON object")
+        payload = {"request_id": request_id, "offer": asdict(offer),
+                   "expected_revision": expected_revision, "story": story}
+        serialized = json.dumps(payload, allow_nan=False)
+        with self._connection(write=True) as db:
+            ledger = self._load(db, team_id)
+            prior = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, "sign:" + request_id)).fetchone()
+            if prior:
+                previous = json.loads(prior[0])
+                if previous["offer"] != json.loads(serialized)["offer"] or previous["story"] != story:
+                    raise Rejected("Request already committed with different terms or story")
+                return ledger.sign(request_id, offer, expected_revision, access_check=access_check)
+            if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (offer.player_id,)).fetchone():
+                raise Rejected("Player already belongs to a team")
+            receipt = ledger.sign(request_id, offer, expected_revision, access_check=access_check)
+            db.execute("INSERT INTO ownership VALUES (?, ?)", (offer.player_id, team_id))
+            db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'sign', ?)", (team_id, "sign:" + request_id, serialized))
+            return receipt
+
+    def update_budget(self, team_id: str, *, cap: int, roster_reserve: int, expected_revision: int):
+        payload = dict(cap=cap, roster_reserve=roster_reserve, expected_revision=expected_revision)
+        with self._connection(write=True) as db:
+            ledger = self._load(db, team_id)
+            ledger.update_budget(**payload)
+            if ledger.revision != expected_revision:
+                db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'budget', ?)", (team_id, f"budget:{expected_revision}", json.dumps(payload)))
+
+    def stories(self, team_id: str) -> list[dict]:
+        with self._connection() as db:
+            self._load(db, team_id)  # Validate financial reconstruction first.
+            return [payload["story"] for (text,) in db.execute("SELECT payload FROM events WHERE team_id=? AND kind='sign' ORDER BY id", (team_id,))
+                    if (payload := json.loads(text))["story"] is not None]
+
+    def recalled_negotiation(self, team_id: str, request_id: str, offer: Offer):
+        with self._connection() as db:
+            ledger = self._load(db, team_id)
+            row = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, "sign:" + request_id)).fetchone()
+            if row is None:
+                return None
+            payload = json.loads(row[0])
+            if payload["offer"] != json.loads(json.dumps(asdict(offer))):
+                raise Rejected("Negotiation request already committed with different terms")
+            if payload["story"] is None:
+                raise Rejected("Request belongs to a signing without negotiation history")
+            receipt = ledger.sign(request_id, offer, ledger.revision)
+            return {**payload["story"], "charges": list(receipt.charges)}
+
+
+class StoredLedger:
+    """Negotiation-facing view; every operation reads current durable state."""
+    def __init__(self, store: FranchiseStore, team_id: str):
+        self.store, self.team_id = store, team_id
+        store.load_team(team_id)
+
+    def negotiation_context(self, player_id):
+        return self.store.load_team(self.team_id).negotiation_context(player_id)
+
+    def commit_negotiation(self, request_id, offer, expected_revision, *, access_check, story):
+        return self.store.sign(self.team_id, request_id, offer, expected_revision,
+                               access_check=access_check, story=story)
+
+    def recalled_negotiation(self, request_id, offer):
+        return self.store.recalled_negotiation(self.team_id, request_id, offer)
+
+    @property
+    def room(self):
+        return self.store.load_team(self.team_id).room

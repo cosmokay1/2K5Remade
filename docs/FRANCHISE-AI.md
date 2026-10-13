@@ -60,9 +60,24 @@ thinking rejects a stale acceptance. Repeating a completed request returns its
 recorded reply without another model request or charge.
 
 The default story example is explicitly scripted for local verification; it is
-not a personality simulation. Histories, ledgers, and request receipts currently
-exist in memory only. Restarting loses them; persistent franchise saves are a
-required next step before meaningful multiweek play.
+not a personality simulation. The basic `Ledger` remains in memory.
+`FranchiseStore` adds a local SQLite event store; `StoredLedger` connects it to
+negotiation commits. It preserves bootstrap data, supported signing/budget events,
+ownership, receipts, and committed negotiation stories. Exact retries recall the
+recorded agreement without another model call, including after reopening the file.
+Run `python3 -m examples.persistent_negotiation` for the offline restart demo.
+
+Store writes use database transactions; a signing, its ownership and associated
+story commit together. Independent connections cannot allocate the same player
+to two teams. Replay is deterministic accounting and does not invoke the model
+or remote handshake; new AI decisions still require access. Invalid schema
+versions and invalid history stop reconstruction. Initial aggregate charges are
+still supplied externally. All teams must use the same store for shared ownership
+enforcement; standalone `Ledger` objects do not coordinate across teams.
+
+Active/counter/rejected negotiation histories, personality changes, real franchise
+imports, releases/trades, migrations and cloud replication are not yet durable
+through this store. It is an engine database, not a compatible Remade save file.
 
 ## Google Cloud / Gemini
 
