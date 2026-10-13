@@ -1473,3 +1473,14 @@ cash conservation, stale/affordability/access rejection, partial-SQL rollback,
 competing buyers, three-club chain, missing/forged links and seller cap overage.
 No trade consideration, guest assets/hooks, UI controls or official posting policy
 are implemented. League replay performance requires actual runtime measurement.
+
+## October 13, 2026 — Reviewed trade/payment/release lifecycle composition
+
+Independent read-only review found no blocking defect and executed compound lifecycle
+checks. Added permanent buyer-only cash payment, seller-payment rejection and buyer
+release scenarios; original seller bonus9 remains once, buyer protected release30
+and later unpaid25 reconcile. Original trade receipt retry after payment/release or
+three-club chain changes no current cash/cap/ownership state.267 local tests pass.
+Atomic trade efc262f runs38483265439/38483265491 remained in progress at inspection;
+pure trade2ac6a53 passed38482850540/38482850516. Real guest transaction/gameplay and
+official posting precision remain unverified.

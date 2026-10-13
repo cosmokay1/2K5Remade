@@ -82,7 +82,7 @@ class TradeStoreTests(unittest.TestCase):
     def test_competing_buyer_conflicting_retry_and_three_club_chain(self):
         with tempfile.TemporaryDirectory() as directory:
             store=self.setup_store(directory)
-            self.trade(store)
+            original=self.trade(store)
             with self.assertRaises(Rejected):self.trade(store,buyer='c')
             with self.assertRaises(Rejected):self.trade(store,request='competing',buyer='c',seller_revision=2)
             self.trade(store,request='second',seller='b',buyer='c',seller_revision=2)
@@ -91,6 +91,9 @@ class TradeStoreTests(unittest.TestCase):
             self.assertEqual(reopened.load_team('a').charges,(9,0,0))
             self.assertEqual(reopened.load_team('b').charges,(0,0,0))
             self.assertEqual(sum(reopened.load_team(team).cash_snapshot()['nominal_total'] for team in ('a','b','c')),69)
+            before=self.states(reopened)
+            self.assertEqual(self.trade(reopened),original)
+            self.assertEqual(self.states(reopened),before)
             with self.assertRaises(Rejected):self.trade(reopened,request='return',seller='c',buyer='a',seller_revision=2,buyer_revision=2)
 
     def test_missing_or_identically_forged_paired_source_rejects_recipient_read(self):
@@ -117,3 +120,47 @@ class TradeStoreTests(unittest.TestCase):
             self.assertEqual(seller.charges,(90,0,0))
             self.assertEqual(seller.room,-45)
             with self.assertRaises(Rejected):store.sign('a','new',Offer('free',(1,),0),2)
+
+    def test_assigned_cash_payments_belong_to_buyer_without_changing_cap(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store=self.setup_store(directory)
+            receipt=self.trade(store)
+            before_a=store.load_team('a').financial_snapshot()
+            before_b=store.load_team('b').financial_snapshot()
+            with self.assertRaises(Rejected):
+                store.record_payment('a','wrong-club','contract:v',1,expected_cash_revision=1,
+                    source='fixture bank',payment_reference='wrong-club',component='base:0')
+            store.record_payment('b','assigned-payment','contract:v',5,expected_cash_revision=1,
+                source='fixture bank',payment_reference='assigned-payment',component='base:0')
+            reopened=FranchiseStore(store.path)
+            self.assertEqual(reopened.load_team('a').financial_snapshot(),before_a)
+            self.assertEqual(reopened.load_team('b').charges,tuple(before_b['charges']))
+            self.assertEqual(reopened.load_team('b').cash_snapshot()['unpaid_total'],55)
+            self.assertEqual(self.trade(reopened),receipt)
+            self.assertEqual(reopened.load_team('b').revision,3)
+
+    def test_buyer_release_retains_guarantees_without_original_seller_bonus(self):
+        from fractions import Fraction
+        from franchise.guarantees import DiscountProfile
+        from franchise.releases import PreseasonReleaseScope,EXCLUDED_LIABILITIES
+        with tempfile.TemporaryDirectory() as directory:
+            store=self.setup_store(directory)
+            original=self.trade(store)
+            scope=PreseasonReleaseScope(2026,date(2026,6,2),date(2026,9,11),EXCLUDED_LIABILITIES,
+                True,True,0,'fixture later buyer release')
+            store.release_preseason_veteran('b','buyer-release','v',scope=scope,
+                discount=DiscountProfile(2026,Fraction(0),'synthetic zero rate'),payment_year_offsets=(0,1,2),
+                expected_revision=2,access_check=lambda:None)
+            reopened=FranchiseStore(store.path)
+            self.assertEqual(reopened.load_team('a').charges,(9,0,0))
+            self.assertEqual(reopened.load_team('b').charges,(30,0,0))
+            self.assertEqual(reopened.load_team('b').cash_snapshot()['unpaid_total'],30)
+            self.assertEqual(sum(reopened.load_team(team).cash_snapshot()['nominal_total'] for team in ('a','b','c')),39)
+            self.assertEqual(reopened.load_team('b').financial_snapshot()['signed_players'],[])
+            revision=reopened.load_team('b').cash_snapshot()['revision']
+            reopened.record_payment('b','protected-after-release','contract:v',5,expected_cash_revision=revision,
+                source='fixture bank',payment_reference='protected-after-release',component='base:1')
+            before=self.states(reopened)
+            self.assertEqual(self.trade(reopened),original)
+            self.assertEqual(self.states(FranchiseStore(store.path)),before)
+            self.assertEqual(reopened.load_team('b').cash_snapshot()['unpaid_total'],25)
