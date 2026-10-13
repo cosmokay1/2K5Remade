@@ -181,3 +181,16 @@ class TradeStoreTests(unittest.TestCase):
                         discount=DiscountProfile(year,Fraction(0),'synthetic zero'),payment_year_offsets=(0,1,2),
                         expected_revision=2,access_check=lambda:None)
             self.assertEqual(self.states(FranchiseStore(store.path)),before)
+
+    def test_paired_retry_still_revalidates_unrequested_team_history(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store=self.setup_store(directory)
+            self.trade(store)
+            with closing(sqlite3.connect(store.path)) as db:
+                row=db.execute("SELECT id,payload FROM events WHERE team_id='c' AND kind='cash_open'").fetchone()
+                payload=json.loads(row[1])
+                payload['cash_posting']['unpaid_total']=1
+                db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(payload),row[0]))
+                db.commit()
+            with self.assertRaisesRegex(ValueError,'cash posting'):
+                self.trade(FranchiseStore(store.path))

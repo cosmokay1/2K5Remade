@@ -1549,3 +1549,13 @@ Both runs verified exact history retention and paired assignment charges. Docume
 short-dialogue workload underestimation and cumulative read cost; no speculative cache
 or Windows/game responsiveness claim added. Chronology60b54e6 passed Franchise AI
 38484083446 and Build check38484083550; prior benchmark CI remained in progress.
+
+## October 13, 2026 — Single validated league pass for paired assignment
+
+Measured workload motivated removing a concrete duplicate replay: _load_teams now
+rebuilds requested participants and validates every other team once in the same
+transaction. No persistent cache, skipped participant history or freshness relaxation.
+Added corrupt unrequested-team retry regression;271 fulltests pass. Benchmark now
+verifies/times paired retries;32-team640 recorded evidence measured readmedian22.21ms
+and paired-retry22.48ms on this Mac. Syntax/diff and executable benchmark pass.
+Windows/game/Deck performance and actual guest integration remain unverified.

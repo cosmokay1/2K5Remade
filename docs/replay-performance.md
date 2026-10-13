@@ -38,3 +38,9 @@ The short-dialogue baseline materially understates this workload. Multiple indep
 reads during a request can accumulate this cost; actual Windows/Deck profiles and
 normal game histories must be measured before promising a deadline. The benchmark
 keeps full history validation and adds no stale-state cache.
+
+Paired assignment now loads both participants from one independently validated
+league pass in the same transaction, without persistent caching. Benchmark output
+also measures five identical paired retries and verifies their original receipt.
+With32 teams/640 recorded-evidence events, a local follow-up measured readmedian
+22.21ms and paired-retrymedian22.48ms. These figures are not a Windows/game deadline.

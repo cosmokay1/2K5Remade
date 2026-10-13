@@ -52,7 +52,7 @@ def main():
                         'action':'reject','reason':'Synthetic benchmark dialogue','counter':None,'outcome':'player_rejected'},access_check=lambda:None)
         scope=PreseasonTradeScope(2026,date(2026,6,1),date(2026,9,10),date(2026,9,11),EXCLUDED_TRADE_LIABILITIES,
                                  True,0,True,True,'synthetic benchmark assignment')
-        store.trade_preseason_veteran('assignment',names[0],names[1],'v',scope=scope,
+        original_receipt=store.trade_preseason_veteran('assignment',names[0],names[1],'v',scope=scope,
                                      seller_revision=1,buyer_revision=1,access_check=lambda:None)
         elapsed=[]
         for _ in range(5):
@@ -60,11 +60,19 @@ def main():
             ledger=store.load_team(names[1])
             elapsed.append((perf_counter()-started)*1000)
             assert ledger.charges==(10,20,30) and ledger.revision==2
+        retry_elapsed=[]
+        for _ in range(5):
+            started=perf_counter()
+            receipt=store.trade_preseason_veteran('assignment',names[0],names[1],'v',scope=scope,
+                seller_revision=1,buyer_revision=1,access_check=lambda:None)
+            retry_elapsed.append((perf_counter()-started)*1000)
+            assert receipt==original_receipt
         count=sum(len(store.negotiation_history(team,'v')) for team in names)
         assert count==args.teams*args.stories_per_team
         print(json.dumps({'scope':'Synthetic local SQLite replay; not game, Windows or Deck acceptance',
             'teams':args.teams,'dialogue_events':count,'read_samples_ms':elapsed,'median_ms':median(elapsed),
             'max_ms':max(elapsed),'all_team_replay_enabled':True,'records_verified':True,
+            'paired_retry_samples_ms':retry_elapsed,'paired_retry_median_ms':median(retry_elapsed),
             'history_payload':'recorded negotiation evidence' if args.recorded_context else 'short legacy dialogue',
             'provider':'scripted local fixture; no model inference'},indent=2))
 

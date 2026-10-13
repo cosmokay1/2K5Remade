@@ -173,12 +173,16 @@ class FranchiseStore:
         return origin
 
     def _load(self,db,team_id):
-        ledger=self._load_one(db,team_id)
-        # Assignments affect league state; verify participant histories independently.
+        return self._load_teams(db,(team_id,))[team_id]
+
+    def _load_teams(self,db,team_ids):
+        ledgers={team:self._load_one(db,team) for team in team_ids}
+        # One fresh read transaction validates the league, without persistent cache.
         if db.execute("SELECT 1 FROM events WHERE kind IN ('trade_out','trade_in') LIMIT 1").fetchone():
-            for (other,) in db.execute('SELECT id FROM teams WHERE id != ?',(team_id,)).fetchall():
-                self._load_one(db,other)
-        return ledger
+            for (other,) in db.execute('SELECT id FROM teams').fetchall():
+                if other not in ledgers:
+                    self._load_one(db,other)
+        return ledgers
 
     def _load_one(self, db, team_id) -> Ledger:
         row = db.execute("SELECT config FROM teams WHERE id=?", (team_id,)).fetchone()
@@ -603,7 +607,8 @@ class FranchiseStore:
         requested={'trade_id':request_id,'seller':seller,'buyer':buyer,'player_id':player_id,'scope':scope_data,
                    'record_id':'trade:'+request_id,'expected_revisions':{seller:seller_revision,buyer:buyer_revision}}
         with self._connection(write=True) as db:
-            source,target=self._load(db,seller),self._load(db,buyer)
+            participants=self._load_teams(db,(seller,buyer))
+            source,target=participants[seller],participants[buyer]
             key='trade:'+request_id
             rows=db.execute('SELECT payload FROM events WHERE request_key=?',(key,)).fetchall()
             if rows:
