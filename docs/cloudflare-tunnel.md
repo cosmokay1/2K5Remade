@@ -105,3 +105,9 @@ disabled. The equivalent native protocol operation is `player_context`, with
 `team_id`, `player_id`, `request_id`, `protocol: 1` and `timeout_ms`. Native response
 validation rejects mismatched identities and malformed context containers. This
 is an API boundary, not a implemented browser dashboard or game menu.
+
+Authenticated `GET /api/players` lists the configured team's registered contract
+identities, contract classifications and personality initialization flags with a
+single financial revision. It exposes no hidden ratings, inferred names or positions.
+These identities include declared free agents/prospects and are explicitly not proof
+of current guest roster membership. Reads create no actors and require no AI grant.

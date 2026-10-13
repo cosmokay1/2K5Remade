@@ -152,6 +152,11 @@ class WebOriginTests(unittest.TestCase):
                     connection.close()
                     return result
                 self.assertEqual(get('/api/player?player_id=p',False)[0],401)
+                self.assertEqual(get('/api/players',False)[0],401)
+                status,players=get('/api/players')
+                self.assertEqual(status,200)
+                self.assertEqual(players,store.registered_players('a'))
+                self.assertEqual(players['players'],[{'player_id':'p','contract_classification':'veteran','initialized':True}])
                 status,profile=get('/api/player?player_id=p')
                 self.assertEqual(status,200)
                 self.assertTrue(profile['initialized'])

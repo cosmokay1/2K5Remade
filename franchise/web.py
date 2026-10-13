@@ -84,6 +84,16 @@ def make_server(store, team_id, token, *, port=8786, tls_cert=None, tls_key=None
                     self.reply(503, {'error': 'franchise_unavailable'})
                 else:
                     self.reply(200,result)
+            elif self.path == '/api/players':
+                if not self.authorized():
+                    return
+                if store is None:
+                    self.reply(503, {'error': 'franchise_not_configured'})
+                    return
+                try:
+                    self.reply(200,store.registered_players(team_id))
+                except Exception:
+                    self.reply(503, {'error': 'franchise_unavailable'})
             elif self.path == '/api/franchise':
                 if not self.authorized():
                     return

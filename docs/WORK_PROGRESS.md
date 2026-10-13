@@ -1220,3 +1220,13 @@ with no pick/right/funding posting. An over-cap explicit manual pick still rejec
 a legal explicit manual pick then commits at the original order and revision with
 one reservation. 226 local tests pass. The fixture uses a synthetic shutdown guard,
 not live cloud credentials or actual game UI. Latest source CI remained in progress.
+
+## October 13, 2026 — Companion registered-player discovery
+
+Added authenticated GET /api/players backed by one validated database snapshot.
+Lists stable registered IDs, veteran/drafted/undrafted classification and saved-actor
+initialization, with revision and explicit unverified guest-membership scope. No
+ratings/names/roles are inferred, no actors generated and no AI requests made.
+HTTP regression verifies authentication, exact store correspondence and unchanged
+revision. 226 local tests pass. This supplies a browser discovery read; no dashboard
+or game roster import is claimed.

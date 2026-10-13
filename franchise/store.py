@@ -297,6 +297,18 @@ class FranchiseStore:
             raise ValueError("Draft rights disagree with recorded pick history")
         return ledger
 
+    def registered_players(self,team_id):
+        """Declared identities, not a claim of current guest roster membership."""
+        with self._connection() as db:
+            ledger=self._load(db,team_id)
+            players=[]
+            for player in sorted(ledger._veteran_minimums.keys() | ledger._rookies.keys()):
+                context=ledger.negotiation_context(player)
+                players.append({'player_id':player,'contract_classification':context['rookie_type'] or 'veteran',
+                                'initialized':player in ledger._actors})
+            return {'team_id':team_id,'financial_revision':ledger.revision,'players':players,
+                    'scope':'registered contract identities; guest roster membership unverified'}
+
     def player_context(self,team_id,player_id):
         """One validated read snapshot; never generates/rebinds an actor."""
         if type(player_id) is not str or not player_id.strip():
