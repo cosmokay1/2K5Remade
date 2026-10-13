@@ -24,6 +24,20 @@ class NegotiationTests(unittest.TestCase):
         self.assertEqual(result["outcome"], "accounting_rejected")
         self.assertEqual(session.ledger.charges, (90,))
 
+    def test_counter_accounting_distinguishes_demand_from_eligible_terms(self):
+        session = self.session()
+        event = session.respond("expensive", Offer("p", (5,), 0),
+                                lambda _: decision("counter", [11], 0))
+        self.assertEqual(event["outcome"], "counteroffer")
+        self.assertEqual(event["counter_validation"]["status"], "ineligible")
+        self.assertIn("cap room", event["counter_validation"]["reason"])
+        self.assertEqual(session.ledger.revision, 0)
+        eligible = session.respond("affordable", Offer("p", (5,), 0),
+                                   lambda _: decision("counter", [8], 2))
+        self.assertEqual(eligible["counter_validation"]["status"], "eligible")
+        self.assertEqual(eligible["counter_validation"]["preview"]["room_after"], 0)
+        self.assertEqual(session.ledger.charges, (90,))
+
     def test_counter_is_not_automatically_signed_and_history_is_supplied(self):
         session = self.session()
         session.respond("a", Offer("p", (5,), 0),

@@ -694,3 +694,19 @@ noncanonical rational values and mislabeled manual decisions. All 143 Python tes
 remain passing. This validates wire types/identity, not independent cap calculation
 or a guest-state commit. Actual game mapping, readback reconciliation and save
 transactions remain required before writes. New Windows/Linux CI pending.
+
+## October 13, 2026 — Counteroffer eligibility using shared financial validation
+
+Player counteroffers now retain a current accounting preview or explicit
+ineligibility reason. Demands remain attributed player decisions, never automatic
+commitments. Preview uses the same revision, floors, cap/bonus, rookie and global
+ownership gates as signing; it reserves no money. This gives future UI/team
+strategy a concrete distinction between requested terms and currently eligible
+terms. Final acceptance still rechecks current state.
+
+144 local tests pass, including an unaffordable counter preserved as a demand
+and an exact-cap eligible counter preview with unchanged charges/revision.
+Native envelope/parser `2da51f2` passed Windows/Linux in
+[run 38469551016](https://github.com/cosmokay1/2K5Remade/actions/runs/38469551016).
+Operation-specific native and new counter-preview CI remain pending. Actual
+franchise UI/game writes and complete financial lifecycle are still unfinished.

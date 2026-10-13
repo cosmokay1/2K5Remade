@@ -139,6 +139,13 @@ class Negotiation:
                 self._signed = True
         elif decision.action == "counter":
             event["outcome"] = "counteroffer"
+            try:
+                preview = self.ledger.preview_offer(decision.counter, snapshot["revision"])
+            except Rejected as exc:
+                event["counter_validation"] = {"status": "ineligible", "reason": str(exc),
+                                               "revision": snapshot["revision"]}
+            else:
+                event["counter_validation"] = {"status": "eligible", "preview": preview}
         else:
             event["outcome"] = "player_rejected"
         if event["outcome"] != "signed":

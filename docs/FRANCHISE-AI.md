@@ -333,3 +333,8 @@ active/inactive minima are derived for the declared year. Retained liabilities a
 adjustments stay counted; incomplete classifications reject. Projection reports
 `signing_authority_changed=False`: it does not grant new cap room or substitute
 for a complete phase/calendar transition.
+
+Counteroffer events include `counter_validation`: an eligible shared-validator
+preview or an ineligible reason at the observed revision. A demand is not a legal
+commitment or reservation. Later acceptance must still validate current funds,
+ownership, rookie rules and floors. Historic eligibility is not current cap room.
