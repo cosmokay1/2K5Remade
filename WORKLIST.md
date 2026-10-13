@@ -52,7 +52,8 @@ Done when a fresh checkout can run the engine tests and CI reports their results
 
 - [x] Reject unknown/unclassified players and under-floor veteran offers.
 - [x] Bound signing-bonus allocation and invalidate offers after budget changes.
-- [ ] Resolve F04 with a single documented internal precision/posting policy.
+- [x] Resolve F04 with exact rational internal bonus allocations and consistent
+      cap/rookie-pool checks; display/game posting conventions still need verification.
 - [ ] Replace caller-maintained aggregate balances with derived contract,
       tender, retained-obligation, and adjustment records.
 - [x] Add durable team IDs and exclusive player ownership for supported signings
@@ -61,8 +62,10 @@ Done when a fresh checkout can run the engine tests and CI reports their results
       recovery from an abrupt process exit before database commit.
 - [x] Store committed signing and associated story together; recalled agreements
       do not regenerate the model decision after restart.
-- [ ] Replace a rookie tender when its contract commits (F08).
-- [ ] Add import/reconciliation failures that stop writes on inconsistent data.
+- [x] Replace a declared rookie tender when its contract commits (F08); actual
+      tender extraction remains dependent on verified game mapping.
+- [x] Refuse replay/writes when recorded postings, contract charges or ownership
+      disagree. Real-game import reconciliation remains pending under M5.
 
 Done when restart, retries, competing teams, and interrupted commits preserve
 exact obligations, ownership, cap balances, rookie pools, and story history.

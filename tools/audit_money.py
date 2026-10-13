@@ -6,7 +6,7 @@ Resolved findings are rechecked; open findings remain synthetic reproductions.
 from dataclasses import asdict
 from fractions import Fraction
 import json
-from franchise.cap import Ledger, Offer, Rejected
+from franchise.cap import Ledger, Offer, Rejected, json_amount
 from franchise.rookie import RookieScale
 
 
@@ -40,7 +40,7 @@ def main():
                         rookie_total_allocation=40)
     fractional.sign("fraction", Offer("r", (1,) * 4, 1), 0)
     observations["F04_cap_pool_rounding_disagreement"] = {
-        "current_cap_charge": fractional.charges[0],
+        "current_cap_charge": str(fractional.charges[0]),
         "year_one_rookie_pool_charge": str(Fraction(10) - fractional.rookie_remaining[0]),
     }
 
@@ -71,7 +71,7 @@ def main():
         raise AssertionError("Regression: stale budget offer accepted")
 
     tender = ledger(existing_charges=(1,), rookies={"r": scale},
-                    rookie_year_one_allocation=10, rookie_total_allocation=40)
+                    rookie_year_one_allocation=10, rookie_total_allocation=40, rookie_tenders={"r": 1})
     tender.sign("draft", Offer("r", (1,) * 4, 0), 0)
     observations["F08_rookie_tender_not_replaced"] = {
         "supplied_existing_draft_tender": 1,
@@ -88,10 +88,10 @@ def main():
                 charges = offer.charges(limit)
                 assert sum(charges) == 3 * years + bonus
                 assert len(charges) == years
-                assert all(type(charge) is int and charge >= 3 for charge in charges)
+                assert all(isinstance(charge, Fraction) and charge >= 3 for charge in charges)
                 verified += 1
     print(json.dumps({"observations": observations,
-                      "bonus_conservation_cases_verified": verified}, indent=2))
+                      "bonus_conservation_cases_verified": verified}, indent=2, default=json_amount))
 
 
 if __name__ == "__main__":

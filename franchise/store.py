@@ -9,7 +9,7 @@ from dataclasses import asdict
 import json
 from pathlib import Path
 import sqlite3
-from franchise.cap import Ledger, Offer, Rejected
+from franchise.cap import Ledger, Offer, Rejected, json_amount
 from franchise.rookie import RookieScale
 
 
@@ -32,12 +32,12 @@ class FranchiseStore:
             raise ValueError("Durable franchise state requires a database file")
         with self._connection(write=True) as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version not in (0, 1):
+            if version not in (0, 2):
                 raise ValueError("Unsupported franchise database version")
             db.execute("CREATE TABLE IF NOT EXISTS teams (id TEXT PRIMARY KEY, config TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS ownership (player_id TEXT PRIMARY KEY, team_id TEXT NOT NULL REFERENCES teams(id))")
             db.execute("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, team_id TEXT NOT NULL REFERENCES teams(id), request_key TEXT NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL, UNIQUE(team_id, request_key))")
-            db.execute("PRAGMA user_version=1")
+            db.execute("PRAGMA user_version=2")
 
     @contextmanager
     def _connection(self, *, write=False):
@@ -76,11 +76,18 @@ class FranchiseStore:
             payload = json.loads(serialized)
             if kind == "sign":
                 data = payload["offer"]
-                ledger.sign(payload["request_id"], Offer(data["player_id"], tuple(data["salaries"]), data["signing_bonus"]), payload["expected_revision"])
+                receipt = ledger.sign(payload["request_id"], Offer(data["player_id"], tuple(data["salaries"]), data["signing_bonus"]), payload["expected_revision"])
+                if payload.get("contract_charges") != [json_amount(value) for value in receipt.charges]:
+                    raise ValueError("Recorded contract charges disagree with replay")
             elif kind == "budget":
-                ledger.update_budget(**payload)
+                ledger.update_budget(**{key: payload[key] for key in ("cap", "roster_reserve", "expected_revision")})
             else:
                 raise ValueError("Unknown financial event; refusing to reconstruct state")
+            if payload.get("posting") != ledger.financial_snapshot():
+                raise ValueError("Recorded financial posting disagrees with replay")
+        owned = {player for (player,) in db.execute("SELECT player_id FROM ownership WHERE team_id=?", (team_id,))}
+        if owned != set(ledger.financial_snapshot()["signed_players"]):
+            raise ValueError("Ownership records disagree with contract history")
         return ledger
 
     def load_team(self, team_id: str) -> Ledger:
@@ -101,12 +108,16 @@ class FranchiseStore:
             prior = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, "sign:" + request_id)).fetchone()
             if prior:
                 previous = json.loads(prior[0])
-                if previous["offer"] != json.loads(serialized)["offer"] or previous["story"] != story:
+                normalized = json.loads(serialized)
+                if previous["offer"] != normalized["offer"] or previous["story"] != normalized["story"]:
                     raise Rejected("Request already committed with different terms or story")
                 return ledger.sign(request_id, offer, expected_revision, access_check=access_check)
             if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (offer.player_id,)).fetchone():
                 raise Rejected("Player already belongs to a team")
             receipt = ledger.sign(request_id, offer, expected_revision, access_check=access_check)
+            payload["posting"] = ledger.financial_snapshot()
+            payload["contract_charges"] = [json_amount(value) for value in receipt.charges]
+            serialized = json.dumps(payload, allow_nan=False)
             db.execute("INSERT INTO ownership VALUES (?, ?)", (offer.player_id, team_id))
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'sign', ?)", (team_id, "sign:" + request_id, serialized))
             return receipt
@@ -117,6 +128,7 @@ class FranchiseStore:
             ledger = self._load(db, team_id)
             ledger.update_budget(**payload)
             if ledger.revision != expected_revision:
+                payload["posting"] = ledger.financial_snapshot()
                 db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'budget', ?)", (team_id, f"budget:{expected_revision}", json.dumps(payload)))
 
     def stories(self, team_id: str) -> list[dict]:
@@ -137,7 +149,7 @@ class FranchiseStore:
             if payload["story"] is None:
                 raise Rejected("Request belongs to a signing without negotiation history")
             receipt = ledger.sign(request_id, offer, ledger.revision)
-            return {**payload["story"], "charges": list(receipt.charges)}
+            return {**payload["story"], "charges": [json_amount(value) for value in receipt.charges]}
 
 
 class StoredLedger:

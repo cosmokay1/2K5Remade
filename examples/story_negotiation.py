@@ -3,7 +3,7 @@ import argparse
 import json
 import os
 from pathlib import Path
-from franchise.cap import Ledger, Offer
+from franchise.cap import Ledger, Offer, money_text
 from franchise.negotiation import Negotiation
 from franchise.openai_provider import OpenAIProvider
 from franchise.vertex_provider import VertexProvider
@@ -62,7 +62,7 @@ def main():
             offer = Offer(counter["player_id"], tuple(counter["salaries"]),
                           counter["signing_bonus"])
             print(json.dumps(session.respond("round-2", offer, provider), indent=2))
-        print(f"Current cap room: ${ledger.room:,}")
+        print(f"Current cap room: ${money_text(ledger.room)}")
     except (ValueError, RuntimeError) as exc:
         parser.exit(2, f"negotiation: {exc}\n")
 

@@ -11,6 +11,9 @@ size when supplied. Missing opportunities or small samples mean uncertainty,
 not proof of low ability. Do not invent context or replace ratings with an
 omniscient composite score. Explain demands in terms the player/team could know.
 Use integer dollars. Accept or reject must have null salaries and signing_bonus.
+Accounting values expressed as numerator/denominator strings are exact dollar
+fractions; never round them to create spending room. A player's draft tender is
+already counted in team charges and is replaced only when that player signs.
 A counter must specify every annual base salary and its signing bonus, and cannot
 change player identity. Rookie offers must obey the supplied draft-slot bounds,
 four-year term, annual floors, and 25%-of-year-one increase rule. Future salaries

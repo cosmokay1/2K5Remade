@@ -132,9 +132,10 @@ class StoreTests(unittest.TestCase):
         result = subprocess.run([sys.executable, "-c",
             "import json,sys; from franchise.store import FranchiseStore; "
             "ledger=FranchiseStore(sys.argv[1]).load_team('a'); "
-            "print(json.dumps({'charges':ledger.charges,'revision':ledger.revision}))",
+            "print(json.dumps(ledger.financial_snapshot()))",
             str(self.path)], capture_output=True, text=True, check=True, timeout=10)
-        self.assertEqual(json.loads(result.stdout), {"charges": [20], "revision": 1})
+        self.assertEqual(json.loads(result.stdout)["charges"], [20])
+        self.assertEqual(json.loads(result.stdout)["revision"], 1)
 
     def test_invalid_story_and_unknown_schema_cannot_modify_money(self):
         self.store.create_team("a", self.ledger())
@@ -143,7 +144,7 @@ class StoreTests(unittest.TestCase):
                 self.store.sign("a", "one", Offer("v", (10,), 0), 0, story=story)
         self.assertEqual(self.store.load_team("a").revision, 0)
         with closing(sqlite3.connect(self.path)) as db, db:
-            db.execute("PRAGMA user_version=2")
+            db.execute("PRAGMA user_version=99")
         with self.assertRaisesRegex(ValueError, "version"):
             FranchiseStore(self.path)
 

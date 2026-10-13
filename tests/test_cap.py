@@ -1,4 +1,5 @@
 import unittest
+from fractions import Fraction
 from franchise.cap import Ledger, Offer, Rejected
 
 
@@ -20,7 +21,7 @@ class CapTests(unittest.TestCase):
 
     def test_bonus_allocation_preserves_every_dollar(self):
         offer = Offer("p", (0, 0, 0, 0), 11)
-        self.assertEqual(offer.charges(3), (4, 4, 3, 0))
+        self.assertEqual(offer.charges(3), (Fraction(11, 3),) * 3 + (0,))
         self.assertEqual(sum(offer.charges(3)), 11)
 
     def test_competing_acceptances_recheck_latest_state(self):

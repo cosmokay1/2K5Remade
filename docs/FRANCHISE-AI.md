@@ -44,9 +44,18 @@ they cannot bypass the rules through the veteran signing method.
 Annual draft-slot values are inputs, not invented formulas or hardcoded 2026
 numbers. All test amounts are synthetic. `Ledger` maintains remaining club
 allocations, deducts them only for committed rookie signings, and makes retries
-idempotent. League-wide pool accounting is still unimplemented. Whole-dollar
-team cap allocation and exact fractional rookie-pool accounting have a documented
-rounding difference for bonuses not divisible by the contract term.
+idempotent. League-wide pool accounting is still unimplemented. Offers use integer
+dollars; internal cap and rookie bonus allocations use the same exact fractions.
+JSON represents fractional dollars as strings such as `"5/4"`, never floats.
+Display rounding must not change ledger values or create cap room. This policy
+does not establish the original game's fractional-dollar posting convention.
+
+Explicit `rookie_tenders` identify amounts already included in bootstrap team
+charges. Each must match that rookie's supplied first-year minimum, and declared
+tenders cannot exceed existing charges. Signing replaces its tender rather than
+adding both obligations. Rejected offers and repeated receipts leave it intact
+or already replaced, respectively. Unknown aggregate balances still cannot reveal
+undeclared tenders; an authoritative importer remains required.
 
 ## Negotiation
 
@@ -74,6 +83,13 @@ or remote handshake; new AI decisions still require access. Invalid schema
 versions and invalid history stop reconstruction. Initial aggregate charges are
 still supplied externally. All teams must use the same store for shared ownership
 enforcement; standalone `Ledger` objects do not coordinate across teams.
+
+Database format 2 records each contract's actual charges and the complete financial
+result of each event. Replay compares those results and reconciles ownership; a
+disagreement blocks further financial writes. Format-1 prototype databases are
+preserved but require an explicit migration; they are never silently reinterpreted
+or overwritten. Migration tooling is still pending. Formatting and precision
+changes therefore cannot silently alter recorded obligations in format 2.
 
 Active/counter/rejected negotiation histories, personality changes, real franchise
 imports, releases/trades, migrations and cloud replication are not yet durable
@@ -162,7 +178,7 @@ Remaining work includes undrafted contracts, guarantee conditions, options,
 performance escalators, league rookie pools, veteran minimums, dead money,
 Top-51 offseason accounting, season transitions, persistence, live personality
 behavior evaluation, and Remade transaction hooks. The cap prototype currently uses
-supplied aggregate existing charges. Its integer-dollar bonus allocation assigns
-remainders to earlier years; game/league rounding conventions remain unverified.
+supplied aggregate existing charges. Exact internal allocations are implemented;
+game/display posting conventions and a compatible save writer remain unverified.
 
 See [the source audit and game integration experiment](franchise-integration.md).

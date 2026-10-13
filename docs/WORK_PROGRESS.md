@@ -105,3 +105,21 @@ Verified corrected commit `98c4555` in
 Linux and Windows both passed all 60 tests, money checks and offline examples,
 including durable negotiation replay and abrupt-process recovery. Next: recorded
 financial posting/reconciliation, precision consistency and tender replacement.
+
+## October 13, 2026 — Exact allocations, tender replacement, posting reconciliation
+
+Unified cap and rookie bonus allocation on exact rational dollars (F04).
+Offers remain integer-dollar terms; JSON uses canonical integer or rational-string
+amounts, never binary floating-point money. Added declared rookie-tender replacement
+(F08), including over-cap rejection and restart/idempotent replay tests. Tender
+extraction from the game remains unverified; bootstrap association must be explicit.
+
+Format-2 store events record committed contract charges and resulting financial
+state. Replay checks the recorded result and ownership; mismatches stop load/writes.
+Format-1 databases are retained but rejected until explicitly migrated, because
+they did not record posting evidence. No user database is deleted or overwritten.
+
+Local validation: 70 tests, money audit checks and all three offline demos pass.
+New tests include fractional cap boundaries, equal cap/pool charges, altered
+postings/charges, lost ownership, old-format preservation, and tender replacement.
+Remote results must be recorded after the new code executes.

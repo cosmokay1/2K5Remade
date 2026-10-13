@@ -46,8 +46,7 @@ class RookieScale:
                in zip(offer.salaries, self.minimum_salaries)):
             raise Rejected("Rookie offer is below an annual minimum salary")
         # Fractions keep the 25% boundary exact, including fractional bonus shares.
-        charges = tuple(Fraction(salary) + Fraction(offer.signing_bonus, 4)
-                        for salary in offer.salaries)
+        charges = offer.charges(4)
         if not self.year_one_minimum <= charges[0] <= self.year_one_maximum:
             raise Rejected("Rookie offer is outside its year-one allotment bounds")
         total = sum(offer.salaries) + offer.signing_bonus

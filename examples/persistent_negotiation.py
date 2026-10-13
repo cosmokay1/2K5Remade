@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 import tempfile
-from franchise.cap import Ledger, Offer
+from franchise.cap import Ledger, Offer, json_amount
 from franchise.negotiation import Negotiation
 from franchise.store import FranchiseStore, StoredLedger
 
@@ -35,7 +35,7 @@ def main():
                           "charges_after_restart": restarted.load_team("example-team").charges,
                           "remaining_room": restarted.load_team("example-team").room,
                           "recorded_story": recalled["reason"],
-                          "model_regenerated": False}, indent=2))
+                          "model_regenerated": False}, indent=2, default=json_amount))
 
 
 if __name__ == "__main__":

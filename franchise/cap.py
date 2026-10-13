@@ -2,7 +2,7 @@
 
 This is a configurable accounting model, not an NFL rules implementation.
 Release, trade, restructure, guarantees, and game-save writes are unsupported.
-All money is integer dollars. Only the current cap is binding; future charges
+Offers use integer dollars; internal allocations use exact rational dollars. Only the current cap is binding; future charges
 are reported without assuming future league caps.
 """
 from dataclasses import asdict, dataclass
@@ -20,6 +20,19 @@ def money(value: int) -> int:
     return value
 
 
+def json_amount(value: int | Fraction) -> int | str:
+    """Exact JSON dollars: an integer or a numerator/denominator string."""
+    value = Fraction(value)
+    return value.numerator if value.denominator == 1 else str(value)
+
+
+def money_text(value: int | Fraction) -> str:
+    value = Fraction(value)
+    if value.denominator == 1:
+        return f"{value.numerator:,}"
+    return f"{value.numerator:,}/{value.denominator:,}"
+
+
 @dataclass(frozen=True)
 class Offer:
     player_id: str
@@ -35,13 +48,12 @@ class Offer:
             money(salary)
         money(self.signing_bonus)
 
-    def charges(self, max_bonus_years: int) -> tuple[int, ...]:
+    def charges(self, max_bonus_years: int) -> tuple[Fraction, ...]:
         if type(max_bonus_years) is not int or not 1 <= max_bonus_years <= 5:
             raise ValueError("Bonus allocation limit must be between one and five years")
         years = min(len(self.salaries), max_bonus_years)
-        amount, remainder = divmod(self.signing_bonus, years)
-        # Allocate leftover dollars to earliest years; never lose bonus money.
-        return tuple(salary + (amount + (i < remainder) if i < years else 0)
+        amount = Fraction(self.signing_bonus, years)
+        return tuple(Fraction(salary) + (amount if i < years else 0)
                      for i, salary in enumerate(self.salaries))
 
 
@@ -49,7 +61,7 @@ class Offer:
 class Signing:
     request_id: str
     offer: Offer
-    charges: tuple[int, ...]
+    charges: tuple[Fraction, ...]
     revision: int
 
 
@@ -64,7 +76,8 @@ class Ledger:
                  signed_player_ids: frozenset[str] = frozenset(),
                  rookies: dict[str, "RookieScale"] | None = None,
                  rookie_year_one_allocation: int | None = None,
-                 rookie_total_allocation: int | None = None):
+                 rookie_total_allocation: int | None = None,
+                 rookie_tenders: dict[str, int] | None = None):
         self._cap = money(cap)
         self._roster_reserve = money(roster_reserve)
         if type(existing_charges) is not tuple or not existing_charges:
@@ -103,6 +116,16 @@ class Ledger:
         from franchise.rookie import RookieScale
         if any(not isinstance(scale, RookieScale) for scale in self._rookies.values()):
             raise ValueError("Rookie registry must contain verified RookieScale records")
+        self._tenders = dict(rookie_tenders or {})
+        if not self._tenders.keys() <= self._rookies.keys():
+            raise ValueError("Rookie tenders require registered unsigned draft picks")
+        for amount in self._tenders.values():
+            money(amount)
+        if any(amount != self._rookies[player].minimum_salaries[0]
+               for player, amount in self._tenders.items()):
+            raise ValueError("Rookie tender must match the supplied first-year minimum salary")
+        if sum(self._tenders.values()) > self._charges[0]:
+            raise ValueError("Declared tenders exceed existing current-year charges")
 
     @property
     def cap(self) -> int:
@@ -121,7 +144,8 @@ class Ledger:
                     "signed_player_ids": sorted(self._players),
                     "rookies": {key: asdict(value) for key, value in self._rookies.items()},
                     "rookie_year_one_allocation": int(self._rookie_year_one),
-                    "rookie_total_allocation": self._rookie_total}
+                    "rookie_total_allocation": self._rookie_total,
+                    "rookie_tenders": dict(self._tenders)}
 
     @property
     def roster_reserve(self) -> int:
@@ -153,21 +177,23 @@ class Ledger:
             if player_id not in self._rookies and player_id not in self._veteran_minimums:
                 raise Rejected("Player is unknown or contract classification is missing")
             scale = self._rookies.get(player_id)
-            return {"revision": self.revision, "cap": self.cap, "room": self.room,
-                    "annual_team_charges": list(self._charges),
+            return {"revision": self.revision, "cap": self.cap, "room": json_amount(self.room),
+                    "annual_team_charges": [json_amount(value) for value in self._charges],
                     "roster_reserve": self.roster_reserve,
                     "veteran_minimum_salaries": self._veteran_minimums.get(player_id),
+                    "existing_player_tender": self._tenders.get(player_id, 0),
+                    "room_for_replacing_player_tender": json_amount(self.room + self._tenders.get(player_id, 0)),
                     "rookie_scale": asdict(scale) if scale else None,
                     "rookie_year_one_remaining": str(self._rookie_year_one),
                     "rookie_total_remaining": self._rookie_total,
                     "max_bonus_years": 4 if scale else self.max_bonus_years}
 
     @property
-    def charges(self) -> tuple[int, ...]:
+    def charges(self) -> tuple[int | Fraction, ...]:
         return self._charges
 
     @property
-    def room(self) -> int:
+    def room(self) -> int | Fraction:
         return self.cap - self._charges[0] - self.roster_reserve
 
     def sign(self, request_id: str, offer: Offer, expected_revision: int,
@@ -189,6 +215,15 @@ class Ledger:
 
     def recalled_negotiation(self, request_id: str, offer: Offer):
         return None  # In-memory sessions retain their own replies.
+
+    def financial_snapshot(self) -> dict:
+        with self._lock:
+            return {"revision": self.revision, "cap": self.cap,
+                    "roster_reserve": self.roster_reserve,
+                    "charges": [json_amount(value) for value in self._charges], "signed_players": sorted(self._players),
+                    "rookie_year_one_remaining": str(self._rookie_year_one),
+                    "rookie_total_remaining": self._rookie_total,
+                    "rookie_tenders": dict(self._tenders)}
 
     def _sign(self, request_id: str, offer: Offer, expected_revision: int) -> Signing:
         if not isinstance(request_id, str) or not request_id.strip():
@@ -215,18 +250,21 @@ class Ledger:
             if any(salary < minimum for salary, minimum in zip(offer.salaries, minimums)):
                 raise Rejected("Veteran offer is below an annual minimum salary")
         charges = offer.charges(4 if scale is not None else self.max_bonus_years)
-        if charges[0] > self.room:
-            raise Rejected(f"Offer exceeds available cap room by {charges[0] - self.room}")
+        tender = self._tenders.get(offer.player_id, 0)
+        if charges[0] - tender > self.room:
+            raise Rejected(f"Offer exceeds available cap room by {charges[0] - tender - self.room}")
         years = max(len(charges), len(self._charges))
         updated = tuple(
             (self._charges[i] if i < len(self._charges) else 0)
             + (charges[i] if i < len(charges) else 0)
+            - (tender if i == 0 else 0)
             for i in range(years)
         )
         receipt = Signing(request_id, offer, charges, self.revision + 1)
         self._charges = updated
         self._players.add(offer.player_id)
         self._requests[request_id] = receipt
+        self._tenders.pop(offer.player_id, None)
         if scale is not None:
             self._rookie_year_one -= offer.salaries[0] + Fraction(offer.signing_bonus, 4)
             self._rookie_total -= sum(offer.salaries) + offer.signing_bonus

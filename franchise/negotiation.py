@@ -2,7 +2,7 @@
 import json
 from dataclasses import asdict, dataclass
 from threading import RLock
-from franchise.cap import Ledger, Offer, Rejected
+from franchise.cap import Ledger, Offer, Rejected, json_amount
 
 
 DECISION_SCHEMA = {
@@ -108,7 +108,7 @@ class Negotiation:
                 event["accounting_reason"] = str(exc)
             else:
                 event["outcome"] = "signed"
-                event["charges"] = list(receipt.charges)
+                event["charges"] = [json_amount(value) for value in receipt.charges]
                 self._signed = True
         elif decision.action == "counter":
             event["outcome"] = "counteroffer"
