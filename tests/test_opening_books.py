@@ -5,6 +5,7 @@ import json
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 from franchise.books import ActiveContract, ChargeRecord, OpeningBooks, RookieTender
 from franchise.cap import Ledger, Offer
 from franchise.rookie import RookieScale
@@ -125,3 +126,30 @@ class OpeningBookTests(unittest.TestCase):
                    rookies={"r": RookieScale(1, (1,) * 4, 1, 5, 20)},
                    rookie_year_one_allocation=5, rookie_total_allocation=20,
                    rookie_tenders={"r": 1})
+
+    def test_failed_backup_open_closes_source_and_preserves_database(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.sqlite"
+            store = FranchiseStore(path)
+            store.create_team("a", self.ledger())
+            with closing(sqlite3.connect(path)) as db, db:
+                db.execute("PRAGMA user_version=2")
+            connect = sqlite3.connect
+            readers = []
+
+            def failing_connect(filename, **options):
+                if ".v2-backup-" in str(filename):
+                    raise sqlite3.OperationalError("injected backup destination failure")
+                connection = connect(filename, **options)
+                if not options:
+                    readers.append(connection)
+                return connection
+
+            with patch("franchise.store.sqlite3.connect", side_effect=failing_connect):
+                with self.assertRaises(sqlite3.OperationalError):
+                    FranchiseStore.migrate_v2(path, {"a": self.books()})
+            self.assertEqual(len(readers), 1)
+            with self.assertRaises(sqlite3.ProgrammingError):
+                readers[0].execute("SELECT 1")
+            with closing(connect(path)) as db:
+                self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 2)

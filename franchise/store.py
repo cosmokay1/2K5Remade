@@ -4,7 +4,7 @@ Each write rebuilds from immutable bootstrap data under a database write lock.
 Contracts, ownership and optional story data commit in one transaction. No
 retail game state is imported or modified by this store.
 """
-from contextlib import contextmanager
+from contextlib import contextmanager, closing
 from dataclasses import asdict
 import json
 from pathlib import Path
@@ -68,13 +68,8 @@ class FranchiseStore:
                 raise ValueError("Typed source books required")
             # This connection holds the write reservation. A separate read
             # connection can back up the unchanged, committed source consistently.
-            source = sqlite3.connect(path)
-            target = sqlite3.connect(backup)
-            try:
+            with closing(sqlite3.connect(path)) as source, closing(sqlite3.connect(backup)) as target:
                 source.backup(target)
-            finally:
-                target.close()
-                source.close()
             for team, books in books_by_team.items():
                 config = json.loads(db.execute("SELECT config FROM teams WHERE id=?", (team,)).fetchone()[0])
                 config["opening_books"] = books.to_dict()
