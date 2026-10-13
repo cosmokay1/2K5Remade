@@ -32,3 +32,12 @@ EOF/broken output marks the client disconnected and denies subsequent commits.
 Provider network work may finish before process exit. Clients must keep input open
 until receiving their response. Stdout contains only protocol responses.
 A native pipe client and actual game-thread integration are still pending.
+
+## Native candidate
+
+`native/franchise_bridge` builds a standalone Windows C++17 transport check.
+`PipeClient.submit/ready/take` runs pipe I/O asynchronously; one request at a time.
+It currently launches only the offline fixture. Build and execute through the
+Windows CI steps or `tools.check_native_bridge`. This is transport evidence only.
+Guest hooks, JSON result validation, production launch/authentication, lifecycle
+placement and reconciliation with actual saves remain required.

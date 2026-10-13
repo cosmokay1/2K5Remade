@@ -319,3 +319,22 @@ No paid inference or game assets used. CI pending for this implementation.
 
 Verified preceding request-handler commit `3d1a095` on Windows/Linux in
 [run 38464213438](https://github.com/cosmokay1/2K5Remade/actions/runs/38464213438).
+
+## October 13, 2026 — Native Windows pipe client candidate
+
+Added standalone asset-free C++17 Windows pipe client: explicit Python launch,
+Windows argument quoting, isolated stdin/stdout pipes, one asynchronous request
+with nonblocking ready/take polling, bounded frame/response sizes and timeout.
+Transport failures close the process to prevent reuse with an old response.
+This candidate launches only the offline rejection fixture. It does not parse
+financial responses into game fields, carry production authentication or hook
+guest memory. Startup/destruction are not yet intended for the game thread.
+
+CI now compiles this client and executes it twice against a synthetic database,
+verifying handshake, exact preview, durable dialogue and restart with spaced paths.
+Windows compile/execution results are pending; local macOS cannot execute Win32.
+All 106 portable tests still pass. Do not mark M0/native checks complete until
+actual Windows execution succeeds.
+
+Preceding sidecar `e0c7ba9` passed Windows/Linux (including real subprocess tests) in
+[run 38464385703](https://github.com/cosmokay1/2K5Remade/actions/runs/38464385703).

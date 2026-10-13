@@ -1,0 +1,109 @@
+#pragma once
+#include <windows.h>
+#include <chrono>
+#include <future>
+#include <stdexcept>
+#include <string>
+#include <thread>
+
+namespace franchise {
+// Quote one Windows command-line argument, including embedded quotes/backslashes.
+inline std::wstring quote(const std::wstring& value) {
+    std::wstring result = L"\"";
+    size_t slashes = 0;
+    for (wchar_t c : value) {
+        if (c == L'\\') { ++slashes; continue; }
+        result.append(c == L'"' ? slashes * 2 + 1 : slashes, L'\\');
+        slashes = 0;
+        result += c;
+    }
+    result.append(slashes * 2, L'\\');
+    return result + L"\"";
+}
+
+class PipeClient {
+    HANDLE input_ = nullptr, output_ = nullptr, process_ = nullptr;
+    std::future<std::string> pending_;
+    void close() noexcept {
+        if (input_) { CloseHandle(input_); input_ = nullptr; }
+        if (process_) {
+            if (WaitForSingleObject(process_, 1000) == WAIT_TIMEOUT) {
+                TerminateProcess(process_, 1);
+                WaitForSingleObject(process_, 1000);
+            }
+            CloseHandle(process_); process_ = nullptr;
+        }
+        if (output_) { CloseHandle(output_); output_ = nullptr; }
+    }
+public:
+    PipeClient(const std::wstring& python, const std::wstring& database) {
+        SECURITY_ATTRIBUTES attributes{sizeof(SECURITY_ATTRIBUTES), nullptr, TRUE};
+        HANDLE child_input = nullptr, child_output = nullptr;
+        if (!CreatePipe(&child_input, &input_, &attributes, 0) ||
+            !CreatePipe(&output_, &child_output, &attributes, 0)) {
+            if (child_input) CloseHandle(child_input);
+            if (child_output) CloseHandle(child_output);
+            close(); throw std::runtime_error("Pipe creation failed");
+        }
+        if (!SetHandleInformation(input_, HANDLE_FLAG_INHERIT, 0) ||
+            !SetHandleInformation(output_, HANDLE_FLAG_INHERIT, 0)) {
+            CloseHandle(child_input); CloseHandle(child_output); close();
+            throw std::runtime_error("Pipe inheritance configuration failed");
+        }
+        STARTUPINFOW startup{}; startup.cb = sizeof(startup);
+        startup.dwFlags = STARTF_USESTDHANDLES;
+        startup.hStdInput = child_input; startup.hStdOutput = child_output;
+        startup.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+        PROCESS_INFORMATION info{};
+        // Explicit fixture only. Production credentials and mode are not wired here.
+        std::wstring command = quote(python) + L" -m franchise.sidecar --database " +
+                               quote(database) + L" --provider offline-fixture";
+        BOOL started = CreateProcessW(python.c_str(), command.data(), nullptr, nullptr,
+                                      TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &startup, &info);
+        CloseHandle(child_input); CloseHandle(child_output);
+        if (!started) { close(); throw std::runtime_error("Sidecar launch failed"); }
+        process_ = info.hProcess; CloseHandle(info.hThread);
+    }
+    PipeClient(const PipeClient&) = delete;
+    PipeClient& operator=(const PipeClient&) = delete;
+    ~PipeClient() {
+        // Worker polling has a bounded deadline; never close its handles concurrently.
+        if (pending_.valid()) pending_.wait();
+        close();
+    }
+    void submit(std::string json) {
+        if (!process_) throw std::runtime_error("Client is disconnected");
+        if (pending_.valid()) throw std::runtime_error("Client request already pending");
+        if (json.size() > 4095 || json.find_first_of("\r\n") != std::string::npos)
+            throw std::runtime_error("Invalid client frame");
+        pending_ = std::async(std::launch::async, [this, json = std::move(json)] {
+            std::string frame = json + "\n", response;
+            DWORD written = 0;
+            if (!WriteFile(input_, frame.data(), static_cast<DWORD>(frame.size()), &written, nullptr) || written != frame.size())
+                throw std::runtime_error("Sidecar write failed");
+            auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+            while (std::chrono::steady_clock::now() < deadline) {
+                DWORD available = 0;
+                if (!PeekNamedPipe(output_, nullptr, 0, nullptr, &available, nullptr))
+                    throw std::runtime_error("Sidecar disconnected");
+                if (!available) { std::this_thread::sleep_for(std::chrono::milliseconds(2)); continue; }
+                char c; DWORD count = 0;
+                if (!ReadFile(output_, &c, 1, &count, nullptr) || count != 1)
+                    throw std::runtime_error("Sidecar read failed");
+                if (c == '\n') return response;
+                if (response.size() >= 65536) throw std::runtime_error("Sidecar response too large");
+                response += c;
+            }
+            throw std::runtime_error("Sidecar response timeout");
+        });
+    }
+    bool ready() {
+        return pending_.valid() && pending_.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+    }
+    std::string take() {
+        if (!ready()) throw std::runtime_error("Response not ready");
+        try { return pending_.get(); }
+        catch (...) { close(); throw; }
+    }
+};
+}

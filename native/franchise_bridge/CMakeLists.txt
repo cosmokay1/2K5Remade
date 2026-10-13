@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.20)
+project(FranchiseBridgeCheck LANGUAGES CXX)
+if(NOT WIN32)
+  message(FATAL_ERROR "This pipe client targets Windows")
+endif()
+add_executable(franchise_bridge_check smoke.cpp)
+target_compile_features(franchise_bridge_check PRIVATE cxx_std_17)
+target_compile_definitions(franchise_bridge_check PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)

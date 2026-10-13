@@ -31,3 +31,11 @@ jobs:
           python -m examples.negotiation
           python -m examples.story_negotiation --provider scripted
           python -m examples.persistent_negotiation
+      - name: Compile asset-free native Windows pipe client
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/franchise_bridge -B build-franchise-bridge
+          cmake --build build-franchise-bridge --config Release
+      - name: Execute native pipe handshake and durable restart fixture
+        if: runner.os == 'Windows'
+        run: python -m tools.check_native_bridge build-franchise-bridge/Release/franchise_bridge_check.exe
