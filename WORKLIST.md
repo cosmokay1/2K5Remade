@@ -87,6 +87,9 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       original archives, retained bonus/guarantee debt, nominal cash and ownership
       removal. Other releases, retirement, offsets, waivers and calendar remedies remain.
 - [ ] Implement atomic trades with both teams' obligations and ownership.
+      Supported sourced preseason veteran contract assignments now commit paired
+      cash/cap/ownership events with independent league replay. Consideration, rookies,
+      unpaid bonus, return-contract generations and other trade protections remain.
 - [ ] Implement extensions/restructures without erasing existing bonus layers.
 - [ ] Implement offseason/regular-season accounting and roster-status costs.
 - [ ] Implement dated June-1 treatment, supported tenders/tags and salary benefits.

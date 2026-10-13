@@ -1457,3 +1457,19 @@ Independent replay design review requires independently validating participant a
 pre-trade histories, not merely equal paired payloads, and nonrecursive final ownership
 validation. Added source/scope/prerequisite docs. No durable trade/guest authority exists
 until paired transaction and replay implementation are validated.
+
+## October 13, 2026 — Atomic paired preseason veteran assignments
+
+Parallel cap and primary store integration recompute seller/recipient plans and enforce
+both revisions, original allocated payments, recipient floors/room and unique records.
+One transaction reassigns exclusive ownership and inserts linked role events with
+both actual before/after cash/financial snapshots. Replay checks pair count/roles,
+source terms and independently replays all teams nonrecursively when trades exist,
+preventing consistently forged paired JSON from masquerading as source history.
+Seller keeps original paid history/bonus debt; buyer gets remaining bases/guarantees
+without bonus or releasePV duplication. Unsupported prior-contract returns reject;
+old-club promises/personality/history remain separate.265 local tests pass, covering
+cash conservation, stale/affordability/access rejection, partial-SQL rollback,
+competing buyers, three-club chain, missing/forged links and seller cap overage.
+No trade consideration, guest assets/hooks, UI controls or official posting policy
+are implemented. League replay performance requires actual runtime measurement.

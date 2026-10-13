@@ -30,4 +30,11 @@ Matching two event payloads alone can conceal identical fictional-source corrupt
 Use nonrecursive participant replay in one read transaction and final ownership checks.
 No overwritten contract/cash/retained IDs; reject unsupported return-to-prior-club
 contract generations. Preserve old-club personality/promises/history and do not score
-old promises against new-club observations automatically. No trade authority exists yet.
+old promises against new-club observations automatically. The store now exposes `trade_preseason_veteran` for explicit sourced contract assignment.
+One write transaction checks both revisions, applies both financial/cash postings,
+reassigns ownership and inserts paired records. Exact retries return the original
+receipt; conflicting identities, missing links and inconsistent source state reject.
+When assignments exist, nonrecursive replay validates every team independently in
+one read transaction, including actual seller terms and both prior/result snapshots.
+This prototype favors correctness; larger-history runtime cost remains to be measured.
+Trade consideration, guest draft assets and native/browser trade controls are unsupported.

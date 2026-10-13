@@ -172,7 +172,15 @@ class FranchiseStore:
                 self._insert_team(db,team,ledger)
         return origin
 
-    def _load(self, db, team_id) -> Ledger:
+    def _load(self,db,team_id):
+        ledger=self._load_one(db,team_id)
+        # Assignments affect league state; verify participant histories independently.
+        if db.execute("SELECT 1 FROM events WHERE kind IN ('trade_out','trade_in') LIMIT 1").fetchone():
+            for (other,) in db.execute('SELECT id FROM teams WHERE id != ?',(team_id,)).fetchall():
+                self._load_one(db,other)
+        return ledger
+
+    def _load_one(self, db, team_id) -> Ledger:
         row = db.execute("SELECT config FROM teams WHERE id=?", (team_id,)).fetchone()
         if row is None:
             raise Rejected("Unknown team")
@@ -230,6 +238,8 @@ class FranchiseStore:
                 self._check_cash_components(ledger)
                 if payload['cash_posting'] != ledger.cash_snapshot():
                     raise ValueError('Release cash posting disagrees with replay')
+            elif kind in ('trade_out','trade_in'):
+                self._replay_trade(db,ledger,team_id,kind,payload)
             elif kind == "actor":
                 ledger.negotiation_context(payload["player_id"])
                 self._validate_actor(payload["actor"])
@@ -460,6 +470,10 @@ class FranchiseStore:
                 guarantees=offer.guaranteed_salaries or (0,)*len(offer.salaries)
                 for i in range(plan.original_contract.elapsed_years,len(offer.salaries)):
                     ceilings['base:'+str(i)]=guarantees[i]
+            trade=getattr(ledger,'_traded_out',{}).get(player)
+            if trade is not None:
+                for i in range(trade.original_contract.elapsed_years,len(offer.salaries)):
+                    ceilings['base:'+str(i)]=0
             if any(key not in ceilings or amount > ceilings[key] for key, amount in record.paid_components):
                 raise ValueError("Paid component exceeds or disagrees with original contract")
 
@@ -519,6 +533,107 @@ class FranchiseStore:
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'cash_payment', ?)",
                        (team_id, key, json.dumps(payload, allow_nan=False)))
             return payload["cash_posting"]
+
+    @staticmethod
+    def _trade_plan(common):
+        from datetime import date
+        from franchise.books import ActiveContract
+        from franchise.trades import PreseasonTradeScope,calculate_preseason_trade
+        scope=dict(common['scope'])
+        for field in ('traded_on','seller_first_regular_season_game','buyer_first_regular_season_game'):
+            scope[field]=date.fromisoformat(scope[field])
+        scope['exclusions']=frozenset(scope['exclusions'])
+        original=dict(common['original_contract'])
+        offer=Offer.from_dict(original.pop('offer'))
+        return calculate_preseason_trade(ActiveContract(offer,**original),CashObligation.from_dict(common['original_cash']),
+            scope=PreseasonTradeScope(**scope),record_id=common['record_id'])
+
+    def _replay_trade(self,db,ledger,team,kind,payload):
+        if set(payload) != {'trade','posting','cash_posting'}:
+            raise ValueError('Unexpected trade event fields')
+        common=payload['trade']
+        fields={'trade_id','seller','buyer','player_id','scope','record_id','expected_revisions',
+                'original_contract','original_cash','before','after'}
+        if type(common) is not dict or set(common) != fields:
+            raise ValueError('Complete paired trade source required')
+        seller,buyer=common['seller'],common['buyer']
+        if any(type(value) is not str or not value.strip() for value in (seller,buyer,common['trade_id'],common['player_id'])) or seller == buyer:
+            raise ValueError('Distinct identified trade participants required')
+        roles={seller:'trade_out',buyer:'trade_in'}
+        if roles.get(team) != kind or common['record_id'] != 'trade:'+common['trade_id']:
+            raise ValueError('Trade role or obligation identity disagrees')
+        rows=db.execute('SELECT team_id,kind,payload FROM events WHERE request_key=?',('trade:'+common['trade_id'],)).fetchall()
+        if len(rows)!=2 or {participant:role for participant,role,_ in rows} != roles:
+            raise ValueError('Exactly one paired trade event per participant required')
+        for participant,role,serialized in rows:
+            opposite=json.loads(serialized)
+            if (opposite.get('trade') != common or opposite.get('posting') != common['after'][participant]['financial']
+                    or opposite.get('cash_posting') != common['after'][participant]['cash']):
+                raise ValueError('Paired trade postings disagree')
+        before={'financial':ledger.financial_snapshot(),'cash':ledger.cash_snapshot()}
+        if before != common['before'][team]:
+            raise ValueError('Trade source state disagrees with actual replay')
+        plan=self._trade_plan(common)
+        if plan.original_contract.offer.player_id != common['player_id']:
+            raise ValueError('Trade and original player identity disagree')
+        revision=common['expected_revisions'][team]
+        if kind == 'trade_out':
+            if (ledger.active_contract(common['player_id']) != plan.original_contract or ledger._cash is None
+                    or ledger._cash.records.get(plan.original_cash.obligation_id) != plan.original_cash):
+                raise ValueError('Trade original obligations disagree with seller history')
+            ledger.apply_preseason_trade_out(common['player_id'],scope=plan.scope,record_id=common['record_id'],expected_revision=revision)
+        else:
+            ledger.apply_preseason_trade_in(plan,expected_revision=revision)
+        self._check_cash_components(ledger)
+        if {'financial':ledger.financial_snapshot(),'cash':ledger.cash_snapshot()} != common['after'][team]:
+            raise ValueError('Trade resulting state disagrees with replay')
+
+    def trade_preseason_veteran(self,request_id,seller,buyer,player_id,*,scope,seller_revision,buyer_revision,access_check):
+        from franchise.trades import PreseasonTradeScope
+        if any(type(value) is not str or not value.strip() for value in (request_id,seller,buyer,player_id)) or seller == buyer:
+            raise ValueError('Distinct identified trade participants required')
+        if not isinstance(scope,PreseasonTradeScope) or not callable(access_check):
+            raise ValueError('Sourced trade scope and final access check required')
+        scope_data=asdict(scope)
+        for field in ('traded_on','seller_first_regular_season_game','buyer_first_regular_season_game'):
+            scope_data[field]=getattr(scope,field).isoformat()
+        scope_data['exclusions']=sorted(scope.exclusions)
+        requested={'trade_id':request_id,'seller':seller,'buyer':buyer,'player_id':player_id,'scope':scope_data,
+                   'record_id':'trade:'+request_id,'expected_revisions':{seller:seller_revision,buyer:buyer_revision}}
+        with self._connection(write=True) as db:
+            source,target=self._load(db,seller),self._load(db,buyer)
+            key='trade:'+request_id
+            rows=db.execute('SELECT payload FROM events WHERE request_key=?',(key,)).fetchall()
+            if rows:
+                if len(rows)!=2:
+                    raise ValueError('Incomplete trade receipt')
+                common=json.loads(rows[0][0])['trade']
+                if any(common[field] != requested[field] for field in requested):
+                    raise Rejected('Trade request already recorded differently')
+                access_check()
+                return common['after']
+            owner=db.execute('SELECT team_id FROM ownership WHERE player_id=?',(player_id,)).fetchone()
+            if owner != (seller,):
+                raise Rejected('Seller lacks exclusive player ownership')
+            common={**requested,'before':{seller:{'financial':source.financial_snapshot(),'cash':source.cash_snapshot()},
+                                         buyer:{'financial':target.financial_snapshot(),'cash':target.cash_snapshot()}}}
+            plan=source.apply_preseason_trade_out(player_id,scope=scope,record_id=key,expected_revision=seller_revision)
+            target.apply_preseason_trade_in(plan,expected_revision=buyer_revision)
+            self._check_cash_components(source)
+            self._check_cash_components(target)
+            original=plan.original_contract
+            common.update(original_contract={'offer':original.offer.to_dict(),'source':original.source,
+                'elapsed_years':original.elapsed_years,'bonus_years':original.bonus_years},original_cash=plan.original_cash.to_dict(),
+                after={seller:{'financial':source.financial_snapshot(),'cash':source.cash_snapshot()},
+                       buyer:{'financial':target.financial_snapshot(),'cash':target.cash_snapshot()}})
+            access_check()
+            if db.execute('UPDATE ownership SET team_id=? WHERE player_id=? AND team_id=?',(buyer,player_id,seller)).rowcount != 1:
+                raise Rejected('Trade ownership changed')
+            for team,kind in ((seller,'trade_out'),(buyer,'trade_in')):
+                posting=common['after'][team]
+                db.execute('INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,?,?)',
+                    (team,key,kind,json.dumps({'trade':common,'posting':posting['financial'],'cash_posting':posting['cash']},allow_nan=False)))
+            return common['after']
 
     @staticmethod
     def _apply_release_payload(ledger,payload):

@@ -2,7 +2,8 @@
 
 This is a configurable accounting model, not an NFL rules implementation.
 Sourced healthy preseason veteran releases and explicit base guarantees are supported.
-Other release protections, trades, restructures and game-save writes remain unsupported.
+Supported preseason veteran assignments preserve bonus debt and inherited base terms.
+Other release protections, trade consideration, restructures and game-save writes remain unsupported.
 Offers use integer dollars; internal allocations use exact rational dollars. Only the current cap is binding; future charges
 are reported without assuming future league caps.
 """
@@ -123,6 +124,8 @@ class Ledger:
         self._contracts = {item.offer.player_id: item.offer for item in opening_books.contracts} if opening_books else {}
         self._active_contracts = {item.offer.player_id: item for item in opening_books.contracts} if opening_books else {}
         self._released = {}
+        self._traded_out = {}
+        self._traded_in = {}
         self._cash = None
         if type(max_bonus_years) is not int or not 1 <= max_bonus_years <= 5:
             raise ValueError("Bonus allocation limit must be between one and five years")
@@ -258,9 +261,7 @@ class Ledger:
             cash = self._cash.records['contract:' + player_id]
             plan = calculate_preseason_release(contract, cash, scope=scope, discount=discount,
                 payment_year_offsets=payment_year_offsets, record_id=record_id)
-            existing_ids={record.record_id for prior in self._released.values() for record in prior.retained}
-            if self._opening_books is not None:
-                existing_ids.update(record.record_id for record in (*self._opening_books.retained,*self._opening_books.adjustments))
+            existing_ids = self._retained_record_ids()
             if any(record.record_id in existing_ids for record in plan.retained):
                 raise Rejected('Release retained-record identity already exists')
             if (self._veteran_minimum_profile is not None
@@ -283,6 +284,107 @@ class Ledger:
             self._cash.revision += 1
             self.revision += 1
             return plan
+
+    def _retained_record_ids(self):
+        ids = {record.record_id for plan in self._released.values() for record in plan.retained}
+        ids.update(plan.retained_bonus.record_id for plan in self._traded_out.values())
+        if self._opening_books is not None:
+            ids.update(record.record_id for record in (*self._opening_books.retained, *self._opening_books.adjustments))
+        return ids
+
+    def apply_preseason_trade_out(self, player_id, *, scope, record_id, expected_revision):
+        from franchise.trades import calculate_preseason_trade
+        with self._lock:
+            if type(expected_revision) is not int or expected_revision != self.revision:
+                raise Rejected('Trade used stale franchise state')
+            if player_id in self._rookies or player_id not in self._veteran_minimums:
+                raise Rejected('Supported veteran classification required for trade')
+            if player_id not in self._players or player_id in self._traded_out:
+                raise Rejected('Player has no active owned contract to trade')
+            contract = self.active_contract(player_id)
+            cash = self._cash.records.get('contract:' + player_id) if self._cash is not None else None
+            if cash is None:
+                raise Rejected('Allocated original cash required for trade')
+            plan = calculate_preseason_trade(contract, cash, scope=scope, record_id=record_id)
+            if plan.retained_bonus.record_id in self._retained_record_ids():
+                raise Rejected('Trade retained-record identity already exists')
+            if (self._veteran_minimum_profile is not None
+                    and self._veteran_minimum_profile.start_year != scope.league_year):
+                raise Rejected('Trade year disagrees with salary profile')
+            old, retained = contract.charges(), plan.retained_bonus.annual_charges
+            years = max(len(self._charges), len(old), len(retained))
+            charges = tuple((self._charges[i] if i < len(self._charges) else Fraction(0))
+                            - (old[i] if i < len(old) else Fraction(0))
+                            + (retained[i] if i < len(retained) else Fraction(0)) for i in range(years))
+            if any(value < 0 for value in charges):
+                raise Rejected('Trade credits exceed recorded obligations')
+            self._charges = charges
+            self._traded_out[player_id] = plan
+            del self._active_contracts[player_id]
+            self._players.remove(player_id)
+            self._cash.records[cash.obligation_id] = plan.seller_cash
+            self._cash.revision += 1
+            self.revision += 1
+            return plan
+
+    def apply_preseason_trade_in(self, plan, *, expected_revision):
+        from franchise.trades import TradePlan, calculate_preseason_trade
+        from franchise.books import ChargeRecord
+        with self._lock:
+            if type(expected_revision) is not int or expected_revision != self.revision:
+                raise Rejected('Trade used stale franchise state')
+            if not isinstance(plan, TradePlan) or not isinstance(plan.retained_bonus, ChargeRecord):
+                raise ValueError('Typed sourced trade plan required')
+            suffix = ':seller-bonus'
+            if not plan.retained_bonus.record_id.endswith(suffix):
+                raise ValueError('Trade record identity is invalid')
+            recalculated = calculate_preseason_trade(plan.original_contract, plan.original_cash,
+                scope=plan.scope, record_id=plan.retained_bonus.record_id[:-len(suffix)])
+            if recalculated != plan:
+                raise ValueError('Trade plan disagrees with original obligations')
+            player = plan.buyer_contract.offer.player_id
+            if player in self._rookies or player not in self._veteran_minimums:
+                raise Rejected('Supported veteran classification required for trade')
+            if player in self._contracts or player in self._traded_out:
+                raise Rejected('Trade return requires separate contract generation IDs')
+            if self._cash is None or plan.buyer_cash.obligation_id in self._cash.records:
+                raise Rejected('Known cash book without prior player obligation required')
+            if (self._veteran_minimum_profile is not None
+                    and self._veteran_minimum_profile.start_year != plan.scope.league_year):
+                raise Rejected('Trade year disagrees with salary profile')
+            _, _, charges, scale = self._validate_offer(plan.buyer_contract.offer, expected_revision)
+            if scale is not None:
+                raise Rejected('Rookie assignment is unsupported')
+            self._charges = charges
+            self._contracts[player] = plan.buyer_contract.offer
+            self._active_contracts[player] = plan.buyer_contract
+            self._players.add(player)
+            self._traded_in[player] = plan
+            self._cash.records[plan.buyer_cash.obligation_id] = plan.buyer_cash
+            self._cash.revision += 1
+            self.revision += 1
+            return plan
+
+    @staticmethod
+    def _trade_snapshot(plan):
+        def contract_data(contract):
+            return {'offer': contract.offer.to_dict(), 'source': contract.source,
+                    'elapsed_years': contract.elapsed_years, 'bonus_years': contract.bonus_years}
+        scope = plan.scope
+        return {'original_contract': contract_data(plan.original_contract),
+                'original_cash': plan.original_cash.to_dict(),
+                'scope': {'league_year': scope.league_year, 'traded_on': scope.traded_on.isoformat(),
+                    'seller_first_regular_season_game': scope.seller_first_regular_season_game.isoformat(),
+                    'buyer_first_regular_season_game': scope.buyer_first_regular_season_game.isoformat(),
+                    'exclusions': sorted(scope.exclusions), 'healthy': scope.healthy,
+                    'current_year_earned_base': scope.current_year_earned_base,
+                    'assignment_consent': scope.assignment_consent,
+                    'transaction_eligible': scope.transaction_eligible, 'source': scope.source},
+                'retained_bonus': {'record_id': plan.retained_bonus.record_id,
+                    'annual_charges': [json_amount(value) for value in plan.retained_bonus.annual_charges],
+                    'source': plan.retained_bonus.source},
+                'seller_cash': plan.seller_cash.to_dict(), 'buyer_contract': contract_data(plan.buyer_contract),
+                'buyer_cash': plan.buyer_cash.to_dict(), 'assigned_base': plan.assigned_base}
 
     @staticmethod
     def _release_snapshot(plan):
@@ -315,6 +417,9 @@ class Ledger:
             offer = self._contracts.get(player_id)
             if offer is None:
                 raise Rejected("Original contract terms are unavailable")
+            if player_id in self._traded_out:
+                return {'unpaid_guaranteed_base_by_original_year': [0] * len(offer.salaries),
+                        'unpaid_signing_bonus': 0}
             record = self._cash.records.get("contract:" + player_id) if self._cash is not None else None
             if record is None or record.paid_components is None:
                 return None
@@ -492,6 +597,10 @@ class Ledger:
                     "rookie_tenders": dict(self._tenders),
                     **({'released_contracts': {player: self._release_snapshot(plan)
                         for player, plan in self._released.items()}} if self._released else {}),
+                    **({'outgoing_trades': {player: self._trade_snapshot(plan)
+                        for player, plan in self._traded_out.items()}} if self._traded_out else {}),
+                    **({'incoming_trades': {player: self._trade_snapshot(plan)
+                        for player, plan in self._traded_in.items()}} if self._traded_in else {}),
                     **({"draft_rights": dict(self._draft_rights)} if self._draft_rights else {}),
                     **({"draft_management_reservations": {player: {"offer": offer.to_dict(), "source": source}
                         for player, (offer, source) in self._draft_reservations.items()}} if self._draft_reservations else {}),
@@ -542,6 +651,8 @@ class Ledger:
             raise Rejected("Player is already signed; extensions are unsupported")
         if offer.player_id in self._released:
             raise Rejected('Released player re-signing requires separate contract generation IDs')
+        if offer.player_id in self._traded_out:
+            raise Rejected('Traded player re-signing requires separate contract generation IDs')
         if offer.player_id in self._prior_rookie_players:
             raise Rejected("Prior cohort contract requires unsupported rookie release/re-sign reconciliation")
         reserved_cap, reserved_one, reserved_total = self._draft_reserved(except_player=offer.player_id)
