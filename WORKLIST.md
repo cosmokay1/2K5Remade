@@ -134,8 +134,9 @@ coherent negotiations and persistent consequences without violating financial ru
 - [x] Verify private remote switch denies disabled/expired/unavailable handshakes.
 - [x] Verify shutdown during inference and before commit leaves finances unchanged.
 - [ ] Separate admin switch-write access from client read/inference permissions.
-- [ ] Design a versioned local bridge with request IDs, state revision, protocol
-      compatibility, timeouts and explicit error handling.
+- [x] Design a versioned local bridge with request IDs, state revision, protocol
+      compatibility, timeouts and explicit error handling. Native offline transaction
+      verified at `d2d9e0b`, run `38465198052`; game integration remains under M5.
 - [ ] Keep game thread responsive while inference runs; reject obsolete responses.
 - [ ] Ship a cooperative client handshake without distributing owner credentials.
 - [ ] Ensure AI shutdown preserves financial enforcement and provides a clearly

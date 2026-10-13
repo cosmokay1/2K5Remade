@@ -120,6 +120,7 @@ class FranchiseStore:
         for kind, serialized in db.execute("SELECT kind, payload FROM events WHERE team_id=? ORDER BY id", (team_id,)):
             payload = json.loads(serialized)
             if kind == "sign":
+                self._validate_story_evidence(payload["story"])
                 data = payload["offer"]
                 receipt = ledger.sign(payload["request_id"], Offer(data["player_id"], tuple(data["salaries"]), data["signing_bonus"]), payload["expected_revision"])
                 if payload.get("contract_charges") != [json_amount(value) for value in receipt.charges]:
@@ -157,6 +158,7 @@ class FranchiseStore:
             raise Rejected("A request ID is required")
         if story is not None and type(story) is not dict:
             raise ValueError("Story must be a JSON object")
+        self._validate_story_evidence(story)
         payload = {"request_id": request_id, "offer": asdict(offer),
                    "expected_revision": expected_revision, "story": story}
         serialized = json.dumps(payload, allow_nan=False)
@@ -231,7 +233,23 @@ class FranchiseStore:
             return actor
 
     @staticmethod
+    def _validate_story_evidence(story):
+        if story is None or "evidence" not in story:
+            return  # Existing/manual records carry no model evidence claim.
+        from franchise.negotiation import validate_performance
+        evidence = story["evidence"]
+        if type(evidence) is not dict or set(evidence) != {"personality", "performance", "relationships", "financial_revision"}:
+            raise ValueError("Complete model evidence snapshot required")
+        if type(evidence["financial_revision"]) is not int or evidence["financial_revision"] < 0:
+            raise ValueError("Evidence requires its observed financial revision")
+        if any(type(evidence[field]) is not dict for field in ("personality", "performance", "relationships")):
+            raise ValueError("Evidence context fields must be JSON objects")
+        validate_performance(evidence)
+        json.dumps(evidence, allow_nan=False)
+
+    @staticmethod
     def _validate_dialogue(event):
+        FranchiseStore._validate_story_evidence(event)
         if type(event) is not dict or event.get("outcome") not in {
                 "counteroffer", "player_rejected", "accounting_rejected"}:
             raise ValueError("Noncommitted negotiation event required")

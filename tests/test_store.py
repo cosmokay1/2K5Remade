@@ -160,6 +160,29 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(len(self.store.negotiation_history("a", "v")), 1)
         self.assertEqual(self.store.load_team("a").revision, 0)
 
+    def test_committed_story_retains_frozen_observed_evidence(self):
+        self.store.create_team("a", self.ledger())
+        performance = {"receiving_yards": 900, "targets": None}
+        session = Negotiation(StoredLedger(self.store, "a"), player_id="v", personality={"money": 0.8},
+                              performance=performance, relationships={}, access_check=lambda: None)
+        performance["receiving_yards"] = 0
+        event = session.respond("agreement", Offer("v", (10,), 0), lambda _: json.dumps(
+            dict(action="accept", reason="Production matters", salaries=None, signing_bonus=None)))
+        evidence = event["evidence"]
+        self.assertEqual(evidence["performance"]["receiving_yards"], 900)
+        self.assertIsNone(evidence["performance"]["targets"])
+        self.assertEqual(evidence["financial_revision"], 0)
+        reopened = FranchiseStore(self.path)
+        self.assertEqual(reopened.stories("a")[0]["evidence"], evidence)
+        self.assertEqual(reopened.negotiation_history("a", "v")[0]["evidence"], evidence)
+        with closing(sqlite3.connect(self.path)) as db, db:
+            row = db.execute("SELECT id,payload FROM events WHERE kind='sign'").fetchone()
+            payload = json.loads(row[1])
+            payload["story"]["evidence"]["performance"]["overall"] = 99
+            db.execute("UPDATE events SET payload=? WHERE id=?", (json.dumps(payload), row[0]))
+        with self.assertRaisesRegex(ValueError, "ratings"):
+            reopened.load_team("a")
+
     def test_restart_restores_contract_pool_revision_and_receipt(self):
         self.store.create_team("a", self.ledger())
         offer = Offer("r", (4,) * 4, 4)

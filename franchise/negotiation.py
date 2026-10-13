@@ -54,6 +54,8 @@ class Negotiation:
             if performance.player_id != player_id:
                 raise ValueError("Performance evidence belongs to another player")
             performance = performance.to_context()
+        if any(type(value) is not dict for value in (personality, performance, relationships)):
+            raise ValueError("Actor context fields must be JSON objects")
         # Other actor fields must not provide a back door for hidden ratings.
         validate_performance({"personality": personality, "performance": performance,
                               "relationships": relationships})
@@ -113,6 +115,7 @@ class Negotiation:
                  "action": decision.action, "reason": decision.reason,
                  "counter": asdict(decision.counter) if decision.counter else None,
                  "outcome": "pending",
+                 "evidence": {**json.loads(self._actor), "financial_revision": snapshot["revision"]},
                  "history_request_ids": [entry["request_id"] for entry in context["history"]]}
         if decision.action == "accept":
             try:

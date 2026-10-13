@@ -248,3 +248,8 @@ a termination using original contract terms, elapsed years and actual removal
 date. Its source is executed CBA Article 13 section 6(b)(ii). It does not release
 a player or compute total dead charges: guarantees, earned salaries, termination
 pay, injury protections and roster effects remain separate pending work.
+
+Model-backed events retain their frozen personality, relationship and performance
+evidence plus the observed financial revision. This provides the facts behind
+remembered dialogue; it does not make generated narration a verified fact.
+Historic/manual events do not acquire invented evidence during migration/reload.

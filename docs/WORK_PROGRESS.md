@@ -409,3 +409,23 @@ The verifier opens the sidecar process handle before signaling parent exit, then
 requires termination within five seconds, avoiding PID-reuse ambiguity. Actual
 Windows compilation/execution of this addition is pending. 112 local portable
 tests still pass; no cloud calls/game assets used.
+
+## October 13, 2026 — Verified native transaction and recorded negotiation evidence
+
+Native transaction fixture `d2d9e0b` passed on Windows in
+[run 38465198052](https://github.com/cosmokay1/2K5Remade/actions/runs/38465198052):
+over-cap rejection, legal manual signing and identical restart agreement recall.
+The preceding manual path and bonus accounting also passed Windows/Linux at
+`36c293b` (38464922375) and `eb38b90` (38465069203). M4 protocol design is complete;
+production roles, actual game-thread behavior and game reconciliation are not.
+
+Model-backed dialogue/contracts now record frozen actor/performance evidence and
+the financial revision observed for that response. Persisted histories preserve
+unavailable counters and provenance instead of only the model's reason. Reload
+validates evidence shape and hidden-rating exclusion. Old/manual records have no
+retroactively fabricated evidence. Actor context must be an object before inference.
+
+113 local tests pass; new coverage checks caller mutation cannot change saved
+evidence, restart retention and rejection of hidden rating fields in stored story
+evidence. Native job lifetime and new evidence CI remain pending. No game
+instrumentation, authenticity guarantee or playable build is claimed.
