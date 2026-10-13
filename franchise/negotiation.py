@@ -49,12 +49,19 @@ class Negotiation:
             raise ValueError("An access handshake is required")
         self._access_check = access_check
         self._access_check()
-        validate_performance(performance)
+        from franchise.performance import PerformanceEvidence
+        if isinstance(performance, PerformanceEvidence):
+            if performance.player_id != player_id:
+                raise ValueError("Performance evidence belongs to another player")
+            performance = performance.to_context()
+        # Other actor fields must not provide a back door for hidden ratings.
+        validate_performance({"personality": personality, "performance": performance,
+                              "relationships": relationships})
         self.ledger = ledger
         self.player_id = player_id
         # Freeze the provided context as JSON so outside edits cannot alter history.
         self._actor = json.dumps({"personality": personality, "performance": performance,
-                                  "relationships": relationships})
+                                  "relationships": relationships}, allow_nan=False)
         self._events: list[dict] = []
         self._replies: dict[str, tuple[Offer, dict]] = {}
         self._signed = False

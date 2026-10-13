@@ -7,6 +7,7 @@ from franchise.books import OpeningBooks, ActiveContract
 from franchise.negotiation import Negotiation
 from franchise.store import FranchiseStore, StoredLedger
 from franchise.salary_rules import VeteranMinimumProfile
+from franchise.performance import PerformanceEvidence, Observation
 
 
 def main():
@@ -24,7 +25,11 @@ def main():
 
         def session(database):
             return Negotiation(StoredLedger(database, "example-team"), player_id="receiver",
-                               personality={"money": 0.8}, performance={"receiving_yards": 1100},
+                               personality={"money": 0.8}, performance=PerformanceEvidence(
+                                   "receiver", "synthetic 2025 season", "fast_sim",
+                                   (Observation("receiving_yards", 1100, "synthetic fixture"),
+                                    Observation("targets", None, "synthetic fixture", "Engine counter unverified")),
+                                   "Synthetic full-season fixture; no verified opportunity counts"),
                                relationships={}, access_check=lambda: None)
 
         event = session(store).respond("contract-1", offer, lambda _: json.dumps(

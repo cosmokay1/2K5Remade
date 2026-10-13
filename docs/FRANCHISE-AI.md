@@ -216,3 +216,11 @@ records. Pass both `veteran_minimums=profile.floors()` and
 `veteran_minimum_profile=profile` to the ledger. Durable reload reconciles them.
 Supported years are 2020-2030; no historical-year conversion or automatic credited
 season accrual is applied. This profile establishes veteran salary floors only.
+
+Negotiation accepts `PerformanceEvidence` with explicit window/mode/coverage and
+`Observation` records. Use `value=None` plus an unavailable reason when targets,
+pressures or another counter are not exposed; use zero only when it was observed.
+Records require provenance and reject incompatible opportunity/outcome counts.
+They do not authenticate a source or implement game instrumentation. The shared
+model prompt preserves that uncertainty. Hidden rating keys are rejected in all
+actor context fields, including personality and relationships.

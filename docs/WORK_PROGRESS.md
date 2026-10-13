@@ -210,4 +210,25 @@ fixtures remain supported; they do not become verified annual rules automaticall
 credited-season advancement, floor/profile disagreement and rejection of unknown
 years, versions, duplicate IDs and unsupported categories. Draft allotments, cap
 profiles, historical economics and season rollover remain incomplete; this is
-explicitly a salary-floor component, not a complete league ruleset. CI pending.
+explicitly a salary-floor component, not a complete league ruleset.
+Verified `91f140a` on Windows/Linux in
+[run 38463370559](https://github.com/cosmokay1/2K5Remade/actions/runs/38463370559).
+
+## October 13, 2026 — Provenance and missing-counter negotiation context
+
+Added immutable `Observation`/`PerformanceEvidence` inputs: stable player, window,
+played/CPU-played/fast-sim mode, coverage, source and explicit unavailable reason.
+Null/missing counters stay unavailable, while an observed zero stays zero. Reject
+duplicate counters, mismatched identity and receptions/completions exceeding known
+opportunities. Negotiation accepts these records and the durable offline example
+uses them. Shared model instructions now preserve coverage/mode uncertainty.
+
+Closed a rating-context loophole: recognizable hidden rating fields in personality
+or relationships are rejected as well as performance. This does not establish
+trusted game instrumentation; sources/coverage must still be verified by import.
+Legacy raw-dict fixtures remain supported. No real targets or pressures have been
+claimed, inferred from outcomes, or fabricated from ratings.
+
+Local validation: 94 tests pass, including provider-visible null provenance,
+observed zero, inconsistent opportunities, actor-field ratings and player identity.
+Actual game statistics and event attribution remain M5/M3 work. CI pending.

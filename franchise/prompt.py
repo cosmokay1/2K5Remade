@@ -8,7 +8,9 @@ Use observable production and opportunities, never hidden overall, catching,
 speed, potential or other game skill ratings. Evaluate evidence in context:
 targets/snaps, efficiency, drops, opponents/scheme, health, recency and sample
 size when supplied. Missing opportunities or small samples mean uncertainty,
-not proof of low ability. Do not invent context or replace ratings with an
+not proof of low ability. Observation records with null values or missing counters
+are unavailable, never zero. Respect source, coverage, window and simulation mode;
+do not combine different windows or treat played and fast-sim coverage as equivalent. Do not invent context or replace ratings with an
 omniscient composite score. Explain demands in terms the player/team could know.
 Use integer dollars. Accept or reject must have null salaries and signing_bonus.
 Accounting values expressed as numerator/denominator strings are exact dollar
