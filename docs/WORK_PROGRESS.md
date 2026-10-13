@@ -1584,3 +1584,17 @@ layers while legacy empty-layer shape stays unchanged.281 full tests, extended
 synthetic money audit, syntax and diff checks pass. Durable layered imports stay
 closed pending amendment/cash/replay support; no actual game execution established.
 Foundationab2d986 Franchise AI38485612032 passed; Build38485612146 remained running.
+
+## October 13, 2026 — Durable preseason restructure and cash/lifecycle replay
+
+Ledger amendments use stored annual floors, chronology, exclusive active veteran
+state and distinct layer IDs. Atomic store events preserve original contract/cash
+and exact before/after postings; both revisions advance, nominal/paid cash and
+ownership do not. Conversion payments have individual ceilings; total unpaid
+bonus reporting includes layers. Tests cover restart, exact/conflicting retry,
+stale/final-access rollback, partial payment/overpayment, release then original
+retry, fully paid assignment, and tampered source/postings. Parallel review found
+serialized exclusions could normalize a liability dictionary away; all three
+lifecycle replay adapters now require canonical unique string lists. SQL event-insert
+failure also rolls back every amendment field.295 full
+tests pass. Actual game/native/UI restructuring and source import remain unverified.

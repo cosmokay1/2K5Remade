@@ -127,6 +127,7 @@ class Ledger:
         self._last_transaction_date = None
         self._traded_out = {}
         self._traded_in = {}
+        self._restructures = {}
         self._cash = None
         if type(max_bonus_years) is not int or not 1 <= max_bonus_years <= 5:
             raise ValueError("Bonus allocation limit must be between one and five years")
@@ -310,6 +311,64 @@ class Ledger:
             ids.update(record.record_id for record in (*self._opening_books.retained, *self._opening_books.adjustments))
         return ids
 
+    def apply_preseason_restructure(self, player_id, *, scope, converted_base, record_id, expected_revision):
+        from franchise.restructures import calculate_preseason_restructure
+        with self._lock:
+            if type(expected_revision) is not int or expected_revision != self.revision:
+                raise Rejected('Restructure used stale franchise state')
+            if player_id in self._rookies or player_id not in self._veteran_minimums:
+                raise Rejected('Supported veteran classification required for restructure')
+            if player_id not in self._players:
+                raise Rejected('Player has no active owned contract to restructure')
+            contract = self.active_contract(player_id)
+            cash = self._cash.records.get('contract:' + player_id) if self._cash is not None else None
+            if cash is None:
+                raise Rejected('Allocated original cash required for restructure')
+            years = len(contract.offer.salaries) - contract.elapsed_years
+            minimums = self._veteran_minimums[player_id][:years]
+            plan = calculate_preseason_restructure(contract, cash, scope=scope, converted_base=converted_base,
+                annual_minimums=minimums, record_id=record_id)
+            self._check_transaction_date(scope.league_year, scope.amended_on)
+            if (self._veteran_minimum_profile is not None
+                    and scope.minimum_source != self._veteran_minimum_profile.source):
+                raise Rejected('Restructure minimum source disagrees with salary profile')
+            layer_ids = {prior.bonus_layer.record_id for prior in self._restructures.values()}
+            for active in self._active_contracts.values():
+                layer_ids.update(layer.record_id for layer in active.bonus_layers)
+            for prior in (*self._released.values(), *self._traded_out.values(), *self._traded_in.values()):
+                layer_ids.update(layer.record_id for layer in prior.original_contract.bonus_layers)
+            if record_id in layer_ids or record_id in self._retained_record_ids():
+                raise Rejected('Restructure bonus layer identity already exists')
+            old, amended = contract.charges(), plan.contract.charges()
+            horizon = max(len(self._charges), len(old), len(amended))
+            charges = tuple((self._charges[i] if i < len(self._charges) else Fraction(0))
+                - (old[i] if i < len(old) else Fraction(0))
+                + (amended[i] if i < len(amended) else Fraction(0)) for i in range(horizon))
+            if any(value < 0 for value in charges):
+                raise Rejected('Restructure credits exceed recorded obligations')
+            self._charges = charges
+            self._contracts[player_id] = plan.contract.offer
+            self._active_contracts[player_id] = plan.contract
+            self._restructures[player_id] = plan
+            self._cash.records[cash.obligation_id] = plan.cash_obligation
+            self._cash.revision += 1
+            self._last_transaction_date = scope.amended_on
+            self.revision += 1
+            return plan
+
+    @staticmethod
+    def _restructure_snapshot(plan):
+        scope = plan.scope
+        return {'original_contract': plan.original_contract.to_dict(), 'original_cash': plan.original_cash.to_dict(),
+            'scope': {'league_year': scope.league_year, 'amended_on': scope.amended_on.isoformat(),
+                'first_regular_season_game': scope.first_regular_season_game.isoformat(),
+                'current_year_earned_base': scope.current_year_earned_base, 'healthy': scope.healthy,
+                'consent': scope.consent, 'renegotiation_eligible': scope.renegotiation_eligible,
+                'exclusions': sorted(scope.exclusions), 'minimum_source': scope.minimum_source, 'source': scope.source},
+            'annual_minimums': list(plan.annual_minimums), 'converted_base': plan.converted_base,
+            'bonus_layer': asdict(plan.bonus_layer), 'contract': plan.contract.to_dict(),
+            'cash_obligation': plan.cash_obligation.to_dict()}
+
     def apply_preseason_trade_out(self, player_id, *, scope, record_id, expected_revision):
         from franchise.trades import calculate_preseason_trade
         with self._lock:
@@ -430,7 +489,15 @@ class Ledger:
         with self._lock:
             if player_id not in self._contracts:
                 raise Rejected("Original contract terms are unavailable")
-            return self._contracts[player_id].to_dict()
+            result = self._contracts[player_id].to_dict()
+            contract = self._active_contracts.get(player_id)
+            if contract is None and player_id in self._released:
+                contract = self._released[player_id].original_contract
+            if contract is None and player_id in self._traded_out:
+                contract = self._traded_out[player_id].original_contract
+            if contract is not None and contract.bonus_layers:
+                result['bonus_layers'] = [asdict(layer) for layer in contract.bonus_layers]
+            return result
 
     def guarantee_cash(self, player_id):
         with self._lock:
@@ -438,16 +505,26 @@ class Ledger:
             if offer is None:
                 raise Rejected("Original contract terms are unavailable")
             if player_id in self._traded_out:
+                layers = self._traded_out[player_id].original_contract.bonus_layers
                 return {'unpaid_guaranteed_base_by_original_year': [0] * len(offer.salaries),
-                        'unpaid_signing_bonus': 0}
+                        'unpaid_signing_bonus': 0,
+                        **({'unpaid_original_signing_bonus': 0,
+                            'unpaid_bonus_layers': {layer.cash_component: 0 for layer in layers}} if layers else {})}
             record = self._cash.records.get("contract:" + player_id) if self._cash is not None else None
             if record is None or record.paid_components is None:
                 return None
             paid = dict(record.paid_components)
             guarantees = offer.guaranteed_salaries or (0,) * len(offer.salaries)
+            contract = self._active_contracts.get(player_id)
+            if contract is None and player_id in self._released:
+                contract = self._released[player_id].original_contract
+            layers = {layer.cash_component: max(0, layer.amount - paid.get(layer.cash_component, 0))
+                      for layer in contract.bonus_layers} if contract is not None else {}
             return {"unpaid_guaranteed_base_by_original_year": [max(0, guarantee - paid.get("base:" + str(i), 0))
                         for i, guarantee in enumerate(guarantees)],
-                    "unpaid_signing_bonus": max(0, offer.signing_bonus - paid.get("signing_bonus", 0)),
+                    "unpaid_signing_bonus": max(0, offer.signing_bonus - paid.get("signing_bonus", 0)) + sum(layers.values()),
+                    **({'unpaid_bonus_layers': layers,
+                        'unpaid_original_signing_bonus': max(0, offer.signing_bonus - paid.get('signing_bonus', 0))} if layers else {}),
                     "obligation_source": record.source}
 
     def cash_snapshot(self):
@@ -621,6 +698,8 @@ class Ledger:
                         for player, plan in self._traded_out.items()}} if self._traded_out else {}),
                     **({'incoming_trades': {player: self._trade_snapshot(plan)
                         for player, plan in self._traded_in.items()}} if self._traded_in else {}),
+                    **({'restructures': {player: self._restructure_snapshot(plan)
+                        for player, plan in self._restructures.items()}} if self._restructures else {}),
                     **({"draft_rights": dict(self._draft_rights)} if self._draft_rights else {}),
                     **({"draft_management_reservations": {player: {"offer": offer.to_dict(), "source": source}
                         for player, (offer, source) in self._draft_reservations.items()}} if self._draft_reservations else {}),

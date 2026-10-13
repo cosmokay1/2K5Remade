@@ -235,6 +235,19 @@ class FranchiseStore:
                 ledger.revision += 1
                 if payload["cash_posting"] != ledger.cash_snapshot():
                     raise ValueError("Cash payment posting disagrees with replay")
+            elif kind == 'restructure':
+                if set(payload) != {'player_id','scope','converted_base','record_id','expected_revision',
+                    'before_posting','before_cash','original_contract','original_cash','posting','cash_posting'}:
+                    raise ValueError('Unexpected restructure event fields')
+                if (payload['original_contract'] != ledger.active_contract(payload['player_id']).to_dict()
+                        or ledger._cash is None or payload['original_cash'] != ledger._cash.records['contract:'+payload['player_id']].to_dict()):
+                    raise ValueError('Restructure original obligations disagree with replay')
+                if payload['before_posting'] != ledger.financial_snapshot() or payload['before_cash'] != ledger.cash_snapshot():
+                    raise ValueError('Restructure opening state disagrees with replay')
+                self._apply_restructure_payload(ledger,payload)
+                self._check_cash_components(ledger)
+                if payload['cash_posting'] != ledger.cash_snapshot():
+                    raise ValueError('Restructure cash posting disagrees with replay')
             elif kind == 'release':
                 if payload['before_posting'] != ledger.financial_snapshot() or payload['before_cash'] != ledger.cash_snapshot():
                     raise ValueError('Release opening state disagrees with replay')
@@ -467,8 +480,16 @@ class FranchiseStore:
             record = ledger._cash.records["contract:" + player]
             if record.paid_components is None:
                 continue
-            ceilings = {"signing_bonus": offer.signing_bonus,
-                        **{"base:" + str(i): salary for i, salary in enumerate(offer.salaries)}}
+            contract = ledger._active_contracts.get(player)
+            released = ledger._released.get(player)
+            assigned = ledger._traded_out.get(player)
+            if released is not None:
+                contract = released.original_contract
+            elif assigned is not None:
+                contract = assigned.original_contract
+            ceilings = contract.compensation_components() if contract is not None else {
+                "signing_bonus": offer.signing_bonus,
+                **{"base:" + str(i): salary for i, salary in enumerate(offer.salaries)}}
             plan=getattr(ledger,'_released',{}).get(player)
             if plan is not None:
                 guarantees=offer.guaranteed_salaries or (0,)*len(offer.salaries)
@@ -539,6 +560,13 @@ class FranchiseStore:
             return payload["cash_posting"]
 
     @staticmethod
+    def _scope_exclusions(value):
+        if (type(value) is not list or any(type(item) is not str for item in value)
+                or value != sorted(set(value))):
+            raise ValueError('Canonical unique serialized exclusion list required')
+        return frozenset(value)
+
+    @staticmethod
     def _trade_plan(common):
         from datetime import date
         from franchise.books import ActiveContract
@@ -546,7 +574,7 @@ class FranchiseStore:
         scope=dict(common['scope'])
         for field in ('traded_on','seller_first_regular_season_game','buyer_first_regular_season_game'):
             scope[field]=date.fromisoformat(scope[field])
-        scope['exclusions']=frozenset(scope['exclusions'])
+        scope['exclusions']=FranchiseStore._scope_exclusions(scope['exclusions'])
         original=ActiveContract.from_dict(common['original_contract'])
         return calculate_preseason_trade(original,CashObligation.from_dict(common['original_cash']),
             scope=PreseasonTradeScope(**scope),record_id=common['record_id'])
@@ -648,12 +676,64 @@ class FranchiseStore:
         scope=dict(payload['scope'])
         scope['removed_on']=date.fromisoformat(scope['removed_on'])
         scope['first_regular_season_game']=date.fromisoformat(scope['first_regular_season_game'])
-        scope['exclusions']=frozenset(scope['exclusions'])
+        scope['exclusions']=FranchiseStore._scope_exclusions(scope['exclusions'])
         discount=dict(payload['discount'])
         discount['annual_rate']=parse_amount(discount['annual_rate'])
         return ledger.apply_preseason_release(payload['player_id'],scope=PreseasonReleaseScope(**scope),
             discount=DiscountProfile(**discount),payment_year_offsets=tuple(payload['payment_year_offsets']),
             record_id=payload['record_id'],expected_revision=payload['expected_revision'])
+
+    @staticmethod
+    def _apply_restructure_payload(ledger,payload):
+        from datetime import date
+        from franchise.restructures import PreseasonRestructureScope
+        scope=dict(payload['scope'])
+        for field in ('amended_on','first_regular_season_game'):
+            scope[field]=date.fromisoformat(scope[field])
+        scope['exclusions']=FranchiseStore._scope_exclusions(scope['exclusions'])
+        return ledger.apply_preseason_restructure(payload['player_id'],scope=PreseasonRestructureScope(**scope),
+            converted_base=payload['converted_base'],record_id=payload['record_id'],
+            expected_revision=payload['expected_revision'])
+
+    def restructure_preseason_veteran(self,team_id,request_id,player_id,*,scope,converted_base,
+                                      expected_revision,access_check):
+        from franchise.restructures import PreseasonRestructureScope
+        if any(type(value) is not str or not value.strip() for value in (request_id,player_id)) or not callable(access_check):
+            raise ValueError('Stable amendment identities and final access check required')
+        if not isinstance(scope,PreseasonRestructureScope):
+            raise ValueError('Typed sourced amendment scope required')
+        if type(expected_revision) is not int or expected_revision < 0:
+            raise ValueError('Integer amendment revision required')
+        money(converted_base)
+        scope_data=asdict(scope)
+        scope_data.update(amended_on=scope.amended_on.isoformat(),
+            first_regular_season_game=scope.first_regular_season_game.isoformat(),exclusions=sorted(scope.exclusions))
+        key='restructure:'+request_id
+        payload={'player_id':player_id,'scope':scope_data,'converted_base':converted_base,
+                 'record_id':key,'expected_revision':expected_revision}
+        with self._connection(write=True) as db:
+            ledger=self._load(db,team_id)
+            row=db.execute('SELECT payload FROM events WHERE team_id=? AND request_key=?',(team_id,key)).fetchone()
+            if row:
+                previous=json.loads(row[0])
+                if any(previous[field] != payload[field] for field in payload):
+                    raise Rejected('Amendment request already recorded differently')
+                access_check()
+                return {'financial':previous['posting'],'cash':previous['cash_posting']}
+            if db.execute('SELECT team_id FROM ownership WHERE player_id=?',(player_id,)).fetchone() != (team_id,):
+                raise Rejected('Amendment requires exclusive player ownership')
+            if ledger._cash is None or 'contract:'+player_id not in ledger._cash.records:
+                raise Rejected('Allocated contract cash required for amendment')
+            payload.update(before_posting=ledger.financial_snapshot(),before_cash=ledger.cash_snapshot(),
+                original_contract=ledger.active_contract(player_id).to_dict(),
+                original_cash=ledger._cash.records['contract:'+player_id].to_dict())
+            self._apply_restructure_payload(ledger,payload)
+            self._check_cash_components(ledger)
+            payload.update(posting=ledger.financial_snapshot(),cash_posting=ledger.cash_snapshot())
+            access_check()
+            db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,'restructure',?)",
+                       (team_id,key,json.dumps(payload,allow_nan=False)))
+            return {'financial':payload['posting'],'cash':payload['cash_posting']}
 
     def release_preseason_veteran(self,team_id,request_id,player_id,*,scope,discount,payment_year_offsets,
                                  expected_revision,access_check):
