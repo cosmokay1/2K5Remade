@@ -172,3 +172,10 @@ Local suite: 84 tests. This component does not yet establish a complete annual
 rules profile, real player credited-season data, practice-squad treatment, future
 CBA policy, or draft allotments. No real franchise calendar/economic conversion
 has been chosen silently. Remote CI is pending for this addition.
+
+Verified the annual lookup plus migration resource fix at `31c3562` in
+[CI run 38462390974](https://github.com/cosmokay1/2K5Remade/actions/runs/38462390974):
+Linux and Windows passed 85 tests, money checks and all offline examples.
+The backup-open failure test confirms the source handle closes and the original
+database version is preserved. Next: bind explicit annual rule/credited-season
+profiles to durable state, then implement cash, guarantees and lifecycle operations.
