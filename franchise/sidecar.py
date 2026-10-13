@@ -78,7 +78,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database", required=True)
     parser.add_argument("--provider", required=True, choices=("vertex", "offline-fixture"))
+    parser.add_argument("--impersonate-runtime", action="store_true",
+                        help="Use the configured keyless runtime service account; requires authorized source ADC")
     args = parser.parse_args()
+    if args.impersonate_runtime and args.provider != "vertex":
+        parser.error("Runtime impersonation applies only to Vertex mode")
     if not Path(args.database).is_file():
         parser.error("An existing verified franchise database is required")
     if args.provider == "offline-fixture":
@@ -89,8 +93,14 @@ def main():
     else:
         from franchise.vertex_provider import VertexProvider
         config = json.loads((Path(__file__).resolve().parents[1] / "config/google.json").read_text())
-        provider = VertexProvider(project=config["project"], location=config["location"], model=config["model"])
-        access_check = GoogleControl(project=config["project"], bucket=config["control_bucket"], object_name=config["control_object"])
+        credentials = None
+        control_credentials = None
+        if args.impersonate_runtime:
+            from franchise.google_credentials import runtime_credentials
+            credentials = runtime_credentials(config["project"], config["runtime_service_account"])
+            control_credentials = runtime_credentials(config["project"], config["runtime_service_account"])
+        provider = VertexProvider(project=config["project"], location=config["location"], model=config["model"], credentials=credentials)
+        access_check = GoogleControl(project=config["project"], bucket=config["control_bucket"], object_name=config["control_object"], credentials=control_credentials)
     serve(Bridge(FranchiseStore(args.database), provider=provider, access_check=access_check), sys.stdin, sys.stdout)
 
 

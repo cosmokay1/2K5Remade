@@ -18,8 +18,12 @@ for a read-only direct-policy/key audit. It prints no tokens and calls no model.
 The audit verified these exact grants and zero user-managed keys. It does not
 inspect inherited organization/folder policies or prove effective model access.
 
-Authentication under this identity still needs implementation and verification.
-The current sidecar uses ADC and does not automatically impersonate this account.
+Live authentication under this identity still needs verification. The sidecar
+supports explicit `--impersonate-runtime` in Vertex mode, using authorized source
+ADC to acquire 15-minute credentials for the configured runtime account. Separate
+credential objects are used for switch reads and inference. Ordinary ADC mode does
+not automatically impersonate this account. No owner-CLI fallback is permitted
+when runtime credentials are selected.
 Do not distribute owner credentials or service-account keys. Local administrative
 `gcloud` demo access remains distinct from the future runtime authentication path.
 The service identity's existence does not authorize arbitrary end users to

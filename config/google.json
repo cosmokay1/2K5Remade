@@ -4,5 +4,6 @@
   "location": "global",
   "model": "gemini-3.5-flash",
   "control_bucket": "llm-2k5-control-326898036708",
-  "control_object": "ai-control.json"
+  "control_object": "ai-control.json",
+  "runtime_service_account": "franchise-runtime@llm-2k5.iam.gserviceaccount.com"
 }

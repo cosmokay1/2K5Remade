@@ -32,7 +32,10 @@ class GoogleControl:
     only. An unavailable object denies access. No signed URLs or API keys are used.
     """
     def __init__(self, *, project: str, bucket: str, object_name: str,
-                 use_gcloud_login: bool = False):
+                 use_gcloud_login: bool = False, credentials=None):
+        if credentials is not None and use_gcloud_login:
+            raise ValueError("Runtime credentials cannot fall back to owner gcloud login")
+        self.credentials = credentials
         self.project = project
         self.bucket = bucket
         self.object_name = object_name
@@ -47,9 +50,12 @@ class GoogleControl:
             else:
                 import google.auth
                 from google.auth.transport.requests import Request as AuthRequest
-                credentials, _ = google.auth.default(
-                    scopes=["https://www.googleapis.com/auth/devstorage.read_only"])
-                credentials.refresh(AuthRequest())
+                credentials = self.credentials
+                if credentials is None:
+                    credentials, _ = google.auth.default(
+                        scopes=["https://www.googleapis.com/auth/devstorage.read_only"])
+                if not credentials.valid:
+                    credentials.refresh(AuthRequest())
                 token = credentials.token
             if not token:
                 raise AccessDisabled("AI handshake credentials unavailable")

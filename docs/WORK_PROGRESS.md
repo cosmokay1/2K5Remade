@@ -583,3 +583,18 @@ opening allocations, protected-base/bonus payments, restart, unchanged cap charg
 component overpayment and unknown history. This is owed/paid visibility, not
 covered-release authorization, offsets/void settlement or dated vesting.
 New Windows/Linux CI pending; actual game fields remain unmapped.
+
+## October 13, 2026 — Explicit keyless runtime credential wiring
+
+Added sidecar `--impersonate-runtime` for Vertex mode: authorized source ADC,
+configured project-local runtime target, 900-second impersonated credentials.
+Vertex and control readers receive separate credential objects; neither can mix
+runtime credentials with owner gcloud-login fallback. No token/key is serialized
+or printed. Control still fetches the switch on every check while reusing valid
+authentication tokens (never reusing an enabled control grant).
+
+133 local tests pass, including exact target/lifetime/source selection, failed ADC
+redaction/no fallback, conflicting auth-mode rejection and SDK credential injection.
+No live impersonation/model request, new impersonation grant or switch renewal
+performed. Source ADC/IAM Credentials API/target permission and effective runtime
+read/inference access remain unverified; M4 deployment separation stays incomplete.

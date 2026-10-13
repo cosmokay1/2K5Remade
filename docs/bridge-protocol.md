@@ -67,3 +67,9 @@ Offers may optionally include `guaranteed_salaries`: annual integer base amounts
 fully protected for skill/injury/cap termination at signing, bounded by annual
 salaries. Preview reports their base total. Manual and negotiated transactions
 preserve them. Conditional guarantee clauses and release settlement remain pending.
+
+Vertex sidecar mode accepts `--impersonate-runtime` for the configured keyless
+runtime account using authorized source ADC and short-lived credentials. No
+service-account key or owner-CLI fallback is used. Local credential/schema tests
+do not establish live impersonation permission; IAM Credentials API, authorized
+source identity and target-account impersonation grants still need verification.

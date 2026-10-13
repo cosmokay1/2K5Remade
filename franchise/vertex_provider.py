@@ -19,9 +19,11 @@ VERTEX_SCHEMA = {
 
 class VertexProvider:
     def __init__(self, *, project: str, location: str, model: str, client=None,
-                 use_gcloud_login: bool = False):
+                 use_gcloud_login: bool = False, credentials=None):
         if not all(type(value) is str and value.strip() for value in (project, location, model)):
             raise ValueError("GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION, and GEMINI_MODEL are required")
+        if credentials is not None and use_gcloud_login:
+            raise ValueError("Runtime credentials cannot fall back to owner gcloud login")
         self.model = model
         if client is None:
             try:
@@ -29,7 +31,6 @@ class VertexProvider:
             except ImportError:
                 raise RuntimeError("Install requirements-google.txt for Vertex AI support") from None
             try:
-                credentials = None
                 if use_gcloud_login:
                     # Local CLI demo only: keep its short-lived token in memory.
                     from google.oauth2.credentials import Credentials
