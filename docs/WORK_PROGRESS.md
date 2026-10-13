@@ -1244,3 +1244,15 @@ CI remained in progress. No browser dashboard or guest roster verification exist
 
 The sourced discovery fixture repair passed all 227 local tests before publication.
 No accounting code was changed by the fixture repair.
+
+## October 13, 2026 — Companion origin source refresh
+
+Confirmed the prior project origin live on localhost:8786 and deliberately restarted
+it to load current validated API source (new session 41021), retaining trusted TLS,
+private file-loaded bearer and --ai disabled. No database was invented/configured.
+Public HTTPS health returns ready, unauthenticated /api/players returns 401, and
+trusted authenticated localhost /api/players returns 503 franchise_not_configured.
+Auto-review rejected sending the bearer through the public tunnel; no bypass/retry
+occurred. Public authenticated response was not verified. Corrected fixture CI
+38480372499/38480372500 remained in progress at inspection. UI product question is
+pending; no browser dashboard or playable game exists.
