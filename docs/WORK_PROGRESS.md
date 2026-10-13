@@ -1118,3 +1118,12 @@ Corrected obsolete single-window-only documentation. 218 local tests pass; no
 inference, financial mutation or real game observation was performed. Multi-window
 CI runs 38479318702/38479318522 and durable fixture 38479378828/38479379061 were
 in progress at inspection.
+
+## October 13, 2026 — Draft evidence duplication boundary
+
+Prospect comparison now rejects repeated observation window/mode snapshots before
+model inference, preventing duplicate supplied production from reinforcing a draft
+recommendation. Separate simulation modes remain explicit records rather than being
+summed. Regression verifies no provider call and unchanged financial state on rejection.
+219 local tests pass. Actual scouting observations and guest draft integration remain
+unfinished; the new boundary does not infer opportunity counters or hidden grades.

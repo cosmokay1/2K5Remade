@@ -28,6 +28,8 @@ class Prospect:
             raise ValueError('Typed prospect-owned observation windows required')
         if not self.evidence:
             raise ValueError('Declare observed or explicitly unavailable prospect evidence')
+        if len({(item.window,item.mode) for item in self.evidence}) != len(self.evidence):
+            raise ValueError('Duplicate prospect observation window/mode; supply one sourced snapshot')
         if type(self.personality) is not dict:
             raise ValueError('Sourced personality object required')
         if not isinstance(self.contract_estimate, Offer) or self.contract_estimate.player_id != self.player_id:

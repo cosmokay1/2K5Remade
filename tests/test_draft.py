@@ -51,6 +51,24 @@ class DraftComparisonTests(unittest.TestCase):
         self.assertEqual(context['prospects'][0]['contract_validation']['status'], 'ineligible')
         self.assertEqual(ledger.revision, 1)
 
+    def test_duplicate_prospect_windows_reject_before_inference(self):
+        from dataclasses import replace
+        from franchise.draft import DraftScouting
+        ledger=self.ledger()
+        prospect=self.prospect('a',10)
+        repeated=replace(prospect,evidence=prospect.evidence+prospect.evidence)
+        calls=[]
+        before=ledger.financial_snapshot()
+        with self.assertRaisesRegex(ValueError,'Duplicate prospect observation'):
+            DraftScouting(ledger,access_check=lambda:None).recommend('duplicate',lambda context:calls.append(context),
+                expected_revision=0,draft_round=2,overall_pick=40,prospects=(repeated,),team_needs=[])
+        self.assertEqual(calls,[])
+        self.assertEqual(ledger.financial_snapshot(),before)
+        # Separate simulation modes remain explicit observations, not a summed total.
+        other=replace(prospect.evidence[0],mode='played')
+        context=replace(prospect,evidence=prospect.evidence+(other,)).to_context()
+        self.assertEqual([e['mode'] for e in context['performance']],['cpu_played','played'])
+
     def test_concurrent_budget_change_invalidates_comparison(self):
         ledger = self.ledger()
         class ChangedAfterPreview:
