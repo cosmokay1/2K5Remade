@@ -54,6 +54,8 @@ class FranchiseStore:
             db.execute("CREATE TABLE IF NOT EXISTS teams (id TEXT PRIMARY KEY, config TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS ownership (player_id TEXT PRIMARY KEY, team_id TEXT NOT NULL REFERENCES teams(id))")
             db.execute("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, team_id TEXT NOT NULL REFERENCES teams(id), request_key TEXT NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL, UNIQUE(team_id, request_key))")
+            db.execute("CREATE TABLE IF NOT EXISTS draft_orders (id TEXT PRIMARY KEY, league_year INTEGER UNIQUE NOT NULL, config TEXT NOT NULL)")
+            db.execute("CREATE TABLE IF NOT EXISTS draft_picks (draft_id TEXT NOT NULL REFERENCES draft_orders(id), overall_pick INTEGER NOT NULL, player_id TEXT UNIQUE NOT NULL, team_id TEXT NOT NULL REFERENCES teams(id), PRIMARY KEY(draft_id,overall_pick))")
             db.execute("PRAGMA user_version=3")
 
     @classmethod
@@ -81,6 +83,8 @@ class FranchiseStore:
             # connection can back up the unchanged, committed source consistently.
             with closing(sqlite3.connect(path)) as source, closing(sqlite3.connect(backup)) as target:
                 source.backup(target)
+            db.execute("CREATE TABLE IF NOT EXISTS draft_orders (id TEXT PRIMARY KEY, league_year INTEGER UNIQUE NOT NULL, config TEXT NOT NULL)")
+            db.execute("CREATE TABLE IF NOT EXISTS draft_picks (draft_id TEXT NOT NULL REFERENCES draft_orders(id), overall_pick INTEGER NOT NULL, player_id TEXT UNIQUE NOT NULL, team_id TEXT NOT NULL REFERENCES teams(id), PRIMARY KEY(draft_id,overall_pick))")
             for team, books in books_by_team.items():
                 config = json.loads(db.execute("SELECT config FROM teams WHERE id=?", (team,)).fetchone()[0])
                 config["opening_books"] = books.to_dict()
@@ -188,6 +192,19 @@ class FranchiseStore:
                 if actor != payload["actor_after"]:
                     raise ValueError("Relationship posting disagrees with replay")
                 ledger.revision += 1
+            elif kind == "draft_pick":
+                order = self._draft_order(db, payload["draft_id"])
+                slot = order.slots[payload["overall_pick"] - 1]
+                if (slot.team_id != team_id or slot.draft_round != payload["draft_round"]
+                        or payload["order_source"] != order.source or payload["player_id"] not in order.player_ids):
+                    raise ValueError("Recorded pick disagrees with source order")
+                offer = Offer.from_dict(payload["offer"])
+                if offer.player_id != payload["player_id"]:
+                    raise ValueError("Pick and funding estimate identities disagree")
+                self._validate_pick_decision(ledger,payload)
+                self._draft_fund_pick(ledger, offer, payload["expected_revision"], payload["funding_source"])
+                ledger._draft_rights[offer.player_id] = {"draft_id": order.draft_id, "league_year": order.league_year,
+                    "overall_pick": slot.overall_pick, "draft_round": slot.draft_round}
             elif kind == "draft_reserve":
                 ledger.reserve_draft_funding(Offer.from_dict(payload["offer"]), payload["expected_revision"], source=payload["source"])
             elif kind == "draft_withdraw":
@@ -207,6 +224,11 @@ class FranchiseStore:
         owned = {player for (player,) in db.execute("SELECT player_id FROM ownership WHERE team_id=?", (team_id,))}
         if owned != set(ledger.financial_snapshot()["signed_players"]):
             raise ValueError("Ownership records disagree with contract history")
+        rights = {player: {"draft_id": draft, "league_year": self._draft_order(db, draft).league_year,
+                            "overall_pick": pick, "draft_round": self._draft_order(db, draft).slots[pick-1].draft_round}
+                  for draft, pick, player in db.execute("SELECT draft_id,overall_pick,player_id FROM draft_picks WHERE team_id=?", (team_id,))}
+        if rights != ledger._draft_rights:
+            raise ValueError("Draft rights disagree with recorded pick history")
         return ledger
 
     def load_team(self, team_id: str) -> Ledger:
@@ -372,6 +394,14 @@ class FranchiseStore:
             ledger = self._load(db, team_id)
             if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (offer.player_id,)).fetchone():
                 raise Rejected("Player already belongs to a team")
+            self._check_draft_right(db, team_id, offer.player_id)
+            return ledger.preview_offer(offer, expected_revision)
+
+    def preview_draft_offer(self, team_id, offer, expected_revision):
+        with self._connection() as db:
+            ledger = self._load(db, team_id)
+            if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (offer.player_id,)).fetchone() or db.execute("SELECT 1 FROM draft_picks WHERE player_id=?", (offer.player_id,)).fetchone():
+                raise Rejected('Prospect already selected or contracted')
             return ledger.preview_offer(offer, expected_revision)
 
     def sign(self, team_id: str, request_id: str, offer: Offer, expected_revision: int,
@@ -397,6 +427,7 @@ class FranchiseStore:
                 return ledger.sign(request_id, offer, expected_revision, access_check=access_check)
             if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (offer.player_id,)).fetchone():
                 raise Rejected("Player already belongs to a team")
+            self._check_draft_right(db, team_id, offer.player_id)
             if story is not None:
                 self._check_history(db, team_id, offer.player_id, story)
             receipt = ledger.sign(request_id, offer, expected_revision, access_check=access_check)
@@ -593,6 +624,128 @@ class FranchiseStore:
                        (team_id, key, json.dumps(payload, allow_nan=False)))
             return event
 
+    @staticmethod
+    def _draft_order(db, draft_id):
+        from franchise.draft_order import DraftOrder
+        row = db.execute("SELECT config FROM draft_orders WHERE id=?", (draft_id,)).fetchone()
+        if row is None:
+            raise Rejected('Unknown draft')
+        return DraftOrder.from_dict(json.loads(row[0]))
+
+    def initialize_draft(self, order):
+        from franchise.draft_order import DraftOrder
+        if not isinstance(order, DraftOrder):
+            raise ValueError('Typed source draft order required')
+        config = json.dumps(order.to_dict(), sort_keys=True)
+        with self._connection(write=True) as db:
+            previous = db.execute("SELECT config FROM draft_orders WHERE id=?", (order.draft_id,)).fetchone()
+            if previous:
+                if previous[0] != config:
+                    raise Rejected('Draft order cannot be overwritten')
+                return
+            for (existing,) in db.execute("SELECT config FROM draft_orders"):
+                if order.player_ids & DraftOrder.from_dict(json.loads(existing)).player_ids:
+                    raise Rejected('Prospect class overlaps another declared draft')
+            registered = set()
+            for team in {slot.team_id for slot in order.slots}:
+                ledger = self._load(db, team)
+                registered.update(ledger._rookies)
+                if ledger._rookie_pool_opening and ledger._rookie_pool_opening.league_year != order.league_year:
+                    raise ValueError('Draft and rookie allocation years disagree')
+            if not order.player_ids <= registered:
+                raise ValueError('Draft class contains unregistered prospects')
+            if any(db.execute("SELECT 1 FROM ownership WHERE player_id=?", (player,)).fetchone() for player in order.player_ids):
+                raise Rejected('Draft class includes contracted players')
+            db.execute("INSERT INTO draft_orders VALUES (?,?,?)", (order.draft_id, order.league_year, config))
+
+    @staticmethod
+    def _check_draft_right(db, team, player, *, allow_unpicked=False):
+        row = db.execute("SELECT team_id FROM draft_picks WHERE player_id=?", (player,)).fetchone()
+        if row and row[0] != team:
+            raise Rejected('Another team holds draft signing rights')
+        if row is None and not allow_unpicked:
+            from franchise.draft_order import DraftOrder
+            for (config,) in db.execute("SELECT config FROM draft_orders"):
+                if player in DraftOrder.from_dict(json.loads(config)).player_ids:
+                    raise Rejected('Draft prospect has not been selected')
+
+    @staticmethod
+    def _draft_fund_pick(ledger, offer, revision, source):
+        existing = ledger._draft_reservations.get(offer.player_id)
+        if existing:
+            if existing != (offer, source) or type(revision) is not int or ledger.revision != revision:
+                raise Rejected('Pick funding differs from reserved estimate')
+            ledger._validate_offer(offer, revision)
+            ledger.revision += 1
+        else:
+            ledger.reserve_draft_funding(offer, revision, source=source)
+
+    @staticmethod
+    def _validate_pick_decision(ledger,payload):
+        mode = payload['decision_mode']
+        if mode == 'manual':
+            if payload['scouting_request_id'] is not None:
+                raise ValueError('Manual pick cannot claim an AI scouting decision')
+            return
+        if mode != 'ai' or not ledger._scouting:
+            raise ValueError('Explicit decision mode and recorded AI advice required')
+        advice = ledger._scouting[-1]
+        if (advice['request_id'] != payload['scouting_request_id'] or advice['decision']['action'] != 'recommend'
+                or advice['decision']['player_id'] != payload['player_id']
+                or advice['evidence']['overall_pick'] != payload['overall_pick']
+                or advice['evidence']['draft_round'] != payload['draft_round']
+                or advice['evidence']['financial_revision'] != payload['expected_revision']):
+            raise Rejected('Pick is not based on the latest matching scouting decision')
+        estimate = next(item['contract_estimate'] for item in advice['evidence']['prospects'] if item['player_id'] == payload['player_id'])
+        if estimate != payload['offer']:
+            raise Rejected('Pick funding differs from scouted contract estimate')
+
+    def commit_draft_pick(self, team_id, request_id, draft_id, overall_pick, offer, expected_revision,
+                          *, funding_source, access_check, decision_mode, scouting_request_id=None):
+        if type(request_id) is not str or not request_id.strip() or type(overall_pick) is not int or overall_pick < 1:
+            raise ValueError('Stable pick request and overall pick required')
+        payload = {"draft_id": draft_id, "overall_pick": overall_pick, "player_id": offer.player_id,
+                   "offer": offer.to_dict(), "expected_revision": expected_revision, "funding_source": funding_source,
+                   "decision_mode": decision_mode, "scouting_request_id": scouting_request_id}
+        with self._connection(write=True) as db:
+            ledger = self._load(db, team_id)
+            key = 'draft-pick:' + request_id
+            row = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id,key)).fetchone()
+            if row:
+                previous = json.loads(row[0])
+                if any(previous[field] != payload[field] for field in payload):
+                    raise Rejected('Draft request already recorded differently')
+                access_check()
+                return previous['posting']
+            order = self._draft_order(db, draft_id)
+            picks = list(db.execute("SELECT overall_pick,team_id FROM draft_picks WHERE draft_id=? ORDER BY overall_pick", (draft_id,)))
+            if [pick for pick,_ in picks] != list(range(1,len(picks)+1)) or any(order.slots[pick-1].team_id != team for pick,team in picks):
+                raise ValueError('Draft pick index disagrees with declared order')
+            for previous_team in {team for _,team in picks}:
+                self._load(db,previous_team)
+            count = len(picks)
+            if overall_pick != count + 1 or overall_pick > len(order.slots):
+                raise Rejected('Pick is out of declared draft order')
+            slot = order.slots[overall_pick-1]
+            if slot.team_id != team_id or offer.player_id not in order.player_ids:
+                raise Rejected('Wrong team or prospect for declared pick')
+            scale = ledger._rookies.get(offer.player_id)
+            if getattr(scale,'draft_round',None) != slot.draft_round:
+                raise Rejected('Prospect lacks matching draft-slot contract classification')
+            if db.execute("SELECT 1 FROM draft_picks WHERE player_id=?", (offer.player_id,)).fetchone() or db.execute("SELECT 1 FROM ownership WHERE player_id=?", (offer.player_id,)).fetchone():
+                raise Rejected('Prospect already selected or contracted')
+            payload["draft_round"] = slot.draft_round
+            self._validate_pick_decision(ledger,payload)
+            self._draft_fund_pick(ledger,offer,expected_revision,funding_source)
+            ledger._draft_rights[offer.player_id] = {'draft_id':order.draft_id,'league_year':order.league_year,
+                'overall_pick':overall_pick,'draft_round':slot.draft_round}
+            payload.update(draft_round=slot.draft_round,order_source=order.source,posting=ledger.financial_snapshot())
+            access_check()
+            db.execute("INSERT INTO draft_picks VALUES (?,?,?,?)", (draft_id,overall_pick,offer.player_id,team_id))
+            db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,'draft_pick',?)",
+                       (team_id,key,json.dumps(payload,allow_nan=False)))
+            return payload['posting']
+
     def reserve_draft_funding(self, team_id, request_id, offer, expected_revision, *, source, access_check):
         if type(request_id) is not str or not request_id.strip():
             raise ValueError('Stable funding request ID required')
@@ -609,6 +762,7 @@ class FranchiseStore:
                 return previous["posting"]
             if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (offer.player_id,)).fetchone():
                 raise Rejected('Player already belongs to a team')
+            self._check_draft_right(db, team_id, offer.player_id, allow_unpicked=True)
             ledger.reserve_draft_funding(offer, expected_revision, source=source)
             access_check()
             payload["posting"] = ledger.financial_snapshot()
@@ -629,6 +783,8 @@ class FranchiseStore:
                 if any(previous[field] != payload[field] for field in payload):
                     raise Rejected('Withdrawal request already recorded differently')
                 return previous["posting"]
+            if db.execute("SELECT 1 FROM draft_picks WHERE player_id=? AND team_id=?", (player_id,team_id)).fetchone():
+                raise Rejected('Selected prospect funding must remain reserved until signing')
             ledger.withdraw_draft_funding(player_id, expected_revision, source=source)
             payload["posting"] = ledger.financial_snapshot()
             db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,'draft_withdraw',?)",
@@ -720,6 +876,9 @@ class StoredLedger:
 
     def negotiation_context(self, player_id):
         return self.store.load_team(self.team_id).negotiation_context(player_id)
+
+    def preview_draft_offer(self, offer, expected_revision):
+        return self.store.preview_draft_offer(self.team_id, offer, expected_revision)
 
     def preview_offer(self, offer, expected_revision):
         return self.store.preview_offer(self.team_id, offer, expected_revision)

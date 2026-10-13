@@ -146,6 +146,7 @@ class Ledger:
         self._lock = RLock()
         self._rookies = dict(rookies or {})
         self._draft_reservations = {}
+        self._draft_rights = {}
         if self._rookies.keys() & self._veteran_minimums.keys():
             raise ValueError("A player cannot be classified as both rookie and veteran")
         known = self._rookies.keys() | self._veteran_minimums.keys()
@@ -411,6 +412,7 @@ class Ledger:
                     "rookie_year_one_remaining": str(self._rookie_year_one),
                     "rookie_total_remaining": self._rookie_total,
                     "rookie_tenders": dict(self._tenders),
+                    **({"draft_rights": dict(self._draft_rights)} if self._draft_rights else {}),
                     **({"draft_management_reservations": {player: {"offer": offer.to_dict(), "source": source}
                         for player, (offer, source) in self._draft_reservations.items()}} if self._draft_reservations else {}),
                     **({"undrafted_bonus_remaining": self._undrafted_bonus_remaining}
@@ -495,6 +497,9 @@ class Ledger:
             for i in range(years)
         )
         return charges, tender, updated, scale
+
+    def preview_draft_offer(self, offer, expected_revision):
+        return self.preview_offer(offer, expected_revision)
 
     def preview_offer(self, offer: Offer, expected_revision: int) -> dict:
         """Validate current terms without reserving room or committing ownership.

@@ -60,7 +60,7 @@ class DraftComparisonTests(unittest.TestCase):
                 return ledger.management_context()
             def negotiation_context(self, player):
                 return ledger.negotiation_context(player)
-            def preview_offer(self, offer, revision):
+            def preview_draft_offer(self, offer, revision):
                 result = ledger.preview_offer(offer, revision)
                 ledger.update_budget(cap=100, roster_reserve=0, expected_revision=revision)
                 return result

@@ -76,7 +76,7 @@ def comparison_context(ledger, *, expected_revision, draft_round, overall_pick,
         if accounting['rookie_type'] != 'drafted' or scale['draft_round'] != draft_round:
             raise ValueError('Candidate lacks matching sourced draft-slot rookie classification')
         try:
-            preview = ledger.preview_offer(prospect.contract_estimate, expected_revision)
+            preview = ledger.preview_draft_offer(prospect.contract_estimate, expected_revision)
         except Rejected as exc:
             context['contract_validation'] = {'status': 'ineligible', 'reason': str(exc)}
         else:

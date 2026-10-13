@@ -926,3 +926,19 @@ the corruption test kept a sqlite3 connection open after its transaction context
 Changed the test to close explicitly in isolated commit bdc1ce9; CI verification
 is pending. The inherited build check run 38475440546 passed. This failure was not
 reported as a green workflow.
+
+## October 13, 2026 — Ordered draft rights and atomic funded picks
+
+Added immutable source-declared draft orders/classes and globally exclusive pick
+records. Pick commits validate order, team, prospect availability, assigned round,
+financial revision and funding estimate, then record rights/funding together under
+one transaction and final access check. Signing previews reject unselected class
+members and another team's rights; draft comparison previews can evaluate unselected
+prospects. Selected-prospect funding cannot be withdrawn as a casual management
+reservation. Signing consumes real compensation without double-counting earmarks.
+AI picks must cite the latest matching persisted recommendation and unchanged
+contract estimate; manual mode is explicit. Restart/retry, out-of-order picks,
+competing signing rights, over-cap/disabled rejection and AI recommendation binding
+pass in offline tests. Source slot/economic import, draft trades, rights expiry,
+year rollover and real guest hooks remain unsupported. This is engine transaction
+integration, not evidence of game execution.
