@@ -32,6 +32,19 @@ int main() {
             if (!rejected) throw std::runtime_error("Invalid contract result accepted");
         }
         franchise::exact_money("1/2");
+        auto release_request=franchise::parse_frame(R"({"operation":"manual_release","player_id":"v","expected_revision":1})");
+        auto release_reply=franchise::parse_frame(R"({"error":null,"result":{"decision_mode":"manual","player_id":"v","release":{"financial":{"revision":2,"signed_players":[],"charges":[39],"released_contracts":{"v":{"original_contract":{"offer":{"player_id":"v","salaries":[10,20,30],"signing_bonus":9}}}}},"cash":{"nominal_total":39,"paid_total":9,"unpaid_total":30}}}})");
+        franchise::validate_result(release_reply,release_request);
+        for (int scenario=0;scenario<4;++scenario) {
+            auto bad=release_reply;
+            if (scenario==0) bad["result"]["release"]["financial"]["signed_players"]={"v"};
+            if (scenario==1) bad["result"]["release"]["financial"]["charges"]={39.5};
+            if (scenario==2) bad["result"]["release"]["cash"]["unpaid_total"]=0;
+            if (scenario==3) bad["result"]["release"]["financial"]["revision"]=3;
+            bool rejected=false;
+            try { franchise::validate_result(bad,release_request); } catch (const std::exception&) { rejected=true; }
+            if (!rejected) throw std::runtime_error("Invalid release response accepted");
+        }
         auto promised_request = request;
         promised_request["operation"] = "negotiate";
         auto goals = franchise::parse_frame(R"([{"goal_id":"starts","metric":"starts","target":12,"importance":80,"window":"2026","source":"offer"}])");

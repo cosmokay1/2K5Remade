@@ -29,7 +29,42 @@ class Bridge:
                 if set(request) != {"protocol", "request_id", "operation"}:
                     raise ValueError("Unexpected handshake fields")
                 self.access_check()
-                return self._reply(request_id, result={"ai_enabled": True, "operations": ["preview", "negotiate", "manual_sign", "player_context"]})
+                return self._reply(request_id, result={"ai_enabled": True, "operations": ["preview", "negotiate", "manual_sign", "manual_release", "player_context"]})
+            if operation == 'manual_release':
+                from datetime import date
+                from franchise.releases import PreseasonReleaseScope
+                from franchise.guarantees import DiscountProfile
+                from franchise.books import parse_amount
+                if set(request) != {'protocol','request_id','operation','team_id','player_id','expected_revision','timeout_ms',
+                                    'decision_mode','scope','discount','payment_year_offsets'} or request['decision_mode'] != 'manual':
+                    raise ValueError('Explicit complete manual release request required')
+                if type(request['team_id']) is not str or not request['team_id'].strip():
+                    raise ValueError('Stable team required')
+                timeout=request['timeout_ms']
+                if type(timeout) is not int or not 1 <= timeout <= 60000:
+                    raise ValueError('Timeout must be 1-60000 milliseconds')
+                deadline=time.monotonic()+timeout/1000
+                def release_access():
+                    self.connection_check()
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError('Release request expired')
+                release_access()
+                if type(request['scope']) is not dict or type(request['discount']) is not dict or type(request['payment_year_offsets']) is not list:
+                    raise ValueError('Typed release source records required')
+                scope=dict(request['scope'])
+                exclusions=scope['exclusions']
+                if type(exclusions) is not list or any(type(item) is not str for item in exclusions) or len(set(exclusions)) != len(exclusions):
+                    raise ValueError('Unique explicit release exclusions required')
+                scope['exclusions']=frozenset(exclusions)
+                scope['removed_on']=date.fromisoformat(scope['removed_on'])
+                scope['first_regular_season_game']=date.fromisoformat(scope['first_regular_season_game'])
+                discount=dict(request['discount'])
+                discount['annual_rate']=parse_amount(discount['annual_rate'])
+                receipt=self.store.release_preseason_veteran(request['team_id'],request_id,request['player_id'],
+                    scope=PreseasonReleaseScope(**scope),discount=DiscountProfile(**discount),
+                    payment_year_offsets=tuple(request['payment_year_offsets']),expected_revision=request['expected_revision'],
+                    access_check=release_access)
+                return self._reply(request_id,result={'decision_mode':'manual','player_id':request['player_id'],'release':receipt})
             if operation == 'player_context':
                 if set(request) != {'protocol','request_id','operation','team_id','player_id','timeout_ms'}:
                     raise ValueError('Unexpected player context fields')

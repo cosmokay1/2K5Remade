@@ -148,3 +148,16 @@ records are retained, no inference/financial mutation occurs and later requests
 remain usable. History pages can retrieve stories separately through authenticated
 HTTP, but large actor/promise payloads still require explicit UI handling. This read
 check does not claim byte-size guarantees for every operation or request identity.
+
+### Explicit supported manual release
+
+Protocol-1 `manual_release` requires request_id, team_id, player_id, expected_revision,
+timeout_ms, decision_mode=`manual`, complete scope and discount objects plus a
+payment_year_offsets array. Scope is the sourced PreseasonReleaseScope schema with
+ISO dates and unique explicit exclusions; discount includes declared league_year,
+exact annual_rate and rate_source. Unsupported/missing facts reject. It requires local
+connection/deadline validity inside the transaction and calls no model/remote AI grant.
+Result contains decision_mode, player_id and release {financial,cash} original receipt.
+Native validation checks revision progression, player removal/archive identity, exact
+charges and nominal/paid/unpaid totals. This does not independently calculate CBA
+posting rules or grant guest-memory write authority. No game/browser release UI exists.

@@ -1382,3 +1382,16 @@ material order ambiguity. Exact engine accounting remains experimental internal
 limiting, not a claim of official rounded NFL postings. Authoritative reconciliation
 and sourced policy remain necessary; no guessed rounding or money mutation added.
 Reviewed-release9b94fee and audit42781f3 CI were confirmed in progress earlier.
+
+## October 13, 2026 — Explicit manual release through local bridge
+
+Added strict protocol1 manual_release with explicit manual mode, sourced typed scope,
+discount/payment offsets, revision, timeout and final local connection guard. Provider
+and remote AI grant are not called; shutdown leaves manual financial authority intact.
+Native result validation checks revision, absence of released player ownership,
+original archive player identity, exact charges and retained cash arithmetic. Tests
+verify AI-off release/retry, disconnect rollback, invalid scope/mode/stale request and
+malformed native responses. 250 distinct Python tests and portable CTest pass; initial
+test-module import duplicated six cases and was corrected before publication.
+No guest release hook or browser control is connected; complete CBA posting policy
+and real runtime validation remain unverified.

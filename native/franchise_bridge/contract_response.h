@@ -65,6 +65,29 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
     if (!response["error"].is_null()) return;
     const auto& result = response["result"];
     auto operation = request.at("operation").get<std::string>();
+    if (operation == "manual_release") {
+        if (result.at("decision_mode") != "manual" || result.at("player_id") != request.at("player_id"))
+            throw std::runtime_error("Invalid manual release identity");
+        const auto& financial=result.at("release").at("financial");
+        const auto& cash=result.at("release").at("cash");
+        integer_money(financial.at("revision"));
+        integer_money(request.at("expected_revision"));
+        const auto expected=request.at("expected_revision").get<int64_t>();
+        if (expected == std::numeric_limits<int64_t>::max() || financial.at("revision") != expected+1 ||
+            !financial.at("signed_players").is_array() || !financial.at("charges").is_array())
+            throw std::runtime_error("Invalid release posting");
+        for (const auto& player : financial.at("signed_players"))
+            if (!player.is_string() || player == request.at("player_id")) throw std::runtime_error("Released player remains owned");
+        for (const auto& charge : financial.at("charges")) exact_money(charge);
+        const auto& archive=financial.at("released_contracts").at(request.at("player_id").get<std::string>());
+        if (canonical_offer(archive.at("original_contract").at("offer")).at("player_id") != request.at("player_id"))
+            throw std::runtime_error("Release archive identity mismatch");
+        integer_money(cash.at("nominal_total")); integer_money(cash.at("paid_total")); integer_money(cash.at("unpaid_total"));
+        if (cash.at("paid_total") > cash.at("nominal_total") || cash.at("unpaid_total").get<int64_t>() !=
+            cash.at("nominal_total").get<int64_t>()-cash.at("paid_total").get<int64_t>())
+            throw std::runtime_error("Invalid retained cash posting");
+        return;
+    }
     if (operation == "player_context") {
         if (result.at("player_id") != request.at("player_id") || !result.at("player_id").is_string())
             throw std::runtime_error("Player context identity mismatch");
