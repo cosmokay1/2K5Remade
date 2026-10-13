@@ -19,6 +19,28 @@ class CapTests(unittest.TestCase):
         self.assertEqual(rejected.charges, (80, 70))
         self.assertEqual(rejected.revision, 0)
 
+    def test_preview_is_nonmutating_and_commit_uses_same_checks(self):
+        ledger = self.ledger()
+        before = ledger.financial_snapshot()
+        offer = Offer("p", (10, 20), 10)
+        preview = ledger.preview_offer(offer, 0)
+        self.assertEqual(ledger.financial_snapshot(), before)
+        receipt = ledger.sign("a", offer, preview["revision"])
+        self.assertEqual(preview["annual_team_charges_after"], list(ledger.charges))
+        self.assertEqual(preview["contract_charges"], list(receipt.charges))
+        self.assertEqual(preview["room_after"], ledger.room)
+        self.assertEqual(preview["contract_cash"], 40)
+
+    def test_preview_does_not_reserve_room_and_becomes_stale(self):
+        ledger = self.ledger()
+        offer = Offer("p", (15,), 0)
+        ledger.preview_offer(offer, 0)
+        ledger.sign("other", Offer("p1", (10,), 0), 0)
+        with self.assertRaisesRegex(Rejected, "stale"):
+            ledger.sign("a", offer, 0)
+        with self.assertRaisesRegex(Rejected, "cap room"):
+            ledger.preview_offer(offer, 1)
+
     def test_bonus_allocation_preserves_every_dollar(self):
         offer = Offer("p", (0, 0, 0, 0), 11)
         self.assertEqual(offer.charges(3), (Fraction(11, 3),) * 3 + (0,))

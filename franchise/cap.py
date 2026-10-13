@@ -247,14 +247,7 @@ class Ledger:
                     "rookie_total_remaining": self._rookie_total,
                     "rookie_tenders": dict(self._tenders)}
 
-    def _sign(self, request_id: str, offer: Offer, expected_revision: int) -> Signing:
-        if not isinstance(request_id, str) or not request_id.strip():
-            raise Rejected("A request ID is required")
-        prior = self._requests.get(request_id)
-        if prior is not None:
-            if prior.offer != offer:
-                raise Rejected("Request ID was already used for a different offer")
-            return prior
+    def _validate_offer(self, offer: Offer, expected_revision: int):
         if type(expected_revision) is not int or expected_revision != self.revision:
             raise Rejected("Offer was based on stale franchise state")
         if offer.player_id in self._players:
@@ -282,6 +275,33 @@ class Ledger:
             - (tender if i == 0 else 0)
             for i in range(years)
         )
+        return charges, tender, updated, scale
+
+    def preview_offer(self, offer: Offer, expected_revision: int) -> dict:
+        """Validate current terms without reserving room or committing ownership.
+
+        A preview is advisory: final signing must revalidate its revision.
+        """
+        with self._lock:
+            charges, tender, updated, scale = self._validate_offer(offer, expected_revision)
+            return {"revision": self.revision,
+                    "contract_charges": [json_amount(value) for value in charges],
+                    "replaced_tender": tender,
+                    "annual_team_charges_after": [json_amount(value) for value in updated],
+                    "room_after": json_amount(self.cap - updated[0] - self.roster_reserve),
+                    "contract_cash": sum(offer.salaries) + offer.signing_bonus,
+                    "rookie_year_one_after": json_amount(self._rookie_year_one - charges[0]) if scale else None,
+                    "rookie_total_after": self._rookie_total - sum(offer.salaries) - offer.signing_bonus if scale else None}
+
+    def _sign(self, request_id: str, offer: Offer, expected_revision: int) -> Signing:
+        if not isinstance(request_id, str) or not request_id.strip():
+            raise Rejected("A request ID is required")
+        prior = self._requests.get(request_id)
+        if prior is not None:
+            if prior.offer != offer:
+                raise Rejected("Request ID was already used for a different offer")
+            return prior
+        charges, tender, updated, scale = self._validate_offer(offer, expected_revision)
         receipt = Signing(request_id, offer, charges, self.revision + 1)
         self._charges = updated
         self._players.add(offer.player_id)

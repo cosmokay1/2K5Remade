@@ -179,3 +179,17 @@ Linux and Windows passed 85 tests, money checks and all offline examples.
 The backup-open failure test confirms the source handle closes and the original
 database version is preserved. Next: bind explicit annual rule/credited-season
 profiles to durable state, then implement cash, guarantees and lifecycle operations.
+
+## October 13, 2026 — Shared offer preview and signing validation
+
+Added read-only offer previews for the in-memory and durable negotiation adapters.
+Preview and signing share one validator for annual floors, cap room, bonus charges,
+rookie limits, classification and revisions. Durable previews additionally check
+league ownership inside the same read transaction as reconstructed finances.
+Previews report exact resulting annual charges, room, tender replacement and rookie
+pools, plus total contract cash (not a payment schedule or guarantee). They do not
+reserve money; final signing still rechecks revision and global ownership.
+
+Local validation: 88 tests pass, including competing-team ownership after preview,
+nonmutation, stale previews, matching preview/commit charges and tender replacement.
+Game UI integration remains unverified and externally gated. Remote CI pending.

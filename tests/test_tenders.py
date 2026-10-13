@@ -16,6 +16,11 @@ class TenderTests(unittest.TestCase):
 
     def test_contract_replaces_tender_without_double_count(self):
         ledger = self.ledger(cap=1)
+        preview = ledger.preview_offer(Offer("r", (1,) * 4, 0), 0)
+        self.assertEqual(preview["replaced_tender"], 1)
+        self.assertEqual(preview["room_after"], 0)
+        self.assertEqual(preview["rookie_year_one_after"], 19)
+        self.assertEqual(ledger.charges, (1,))
         receipt = ledger.sign("one", Offer("r", (1,) * 4, 0), 0)
         self.assertEqual(receipt.charges, (1,) * 4)
         self.assertEqual(ledger.charges, (1,) * 4)

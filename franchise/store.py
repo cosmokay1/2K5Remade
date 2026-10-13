@@ -136,6 +136,13 @@ class FranchiseStore:
         with self._connection() as db:
             return self._load(db, team_id)
 
+    def preview_offer(self, team_id: str, offer: Offer, expected_revision: int) -> dict:
+        with self._connection() as db:
+            ledger = self._load(db, team_id)
+            if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (offer.player_id,)).fetchone():
+                raise Rejected("Player already belongs to a team")
+            return ledger.preview_offer(offer, expected_revision)
+
     def sign(self, team_id: str, request_id: str, offer: Offer, expected_revision: int,
              *, access_check=None, story: dict | None = None):
         if type(request_id) is not str or not request_id.strip():
@@ -202,6 +209,9 @@ class StoredLedger:
 
     def negotiation_context(self, player_id):
         return self.store.load_team(self.team_id).negotiation_context(player_id)
+
+    def preview_offer(self, offer, expected_revision):
+        return self.store.preview_offer(self.team_id, offer, expected_revision)
 
     def commit_negotiation(self, request_id, offer, expected_revision, *, access_check, story):
         return self.store.sign(self.team_id, request_id, offer, expected_revision,

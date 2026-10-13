@@ -28,6 +28,23 @@ class StoreTests(unittest.TestCase):
                       rookies={"r": RookieScale(1, (1,) * 4, 1, 20, 80)},
                       rookie_year_one_allocation=20, rookie_total_allocation=80)
 
+    def test_durable_preview_rechecks_global_ownership_and_rookie_pool(self):
+        for team in ("a", "b"):
+            self.store.create_team(team, self.ledger())
+        view = StoredLedger(self.store, "a")
+        offer = Offer("r", (4,) * 4, 4)
+        preview = view.preview_offer(offer, 0)
+        self.assertEqual(preview["rookie_year_one_after"], 15)
+        self.assertEqual(preview["rookie_total_after"], 60)
+        self.assertEqual(self.store.load_team("a").revision, 0)
+        self.assertEqual(self.store.stories("a"), [])
+        self.store.sign("b", "taken", offer, 0)
+        with self.assertRaisesRegex(Rejected, "belongs"):
+            view.preview_offer(offer, 0)
+        with self.assertRaisesRegex(Rejected, "belongs"):
+            self.store.sign("a", "attempt", offer, 0)
+        self.assertEqual(self.store.load_team("a").revision, 0)
+
     def test_restart_restores_contract_pool_revision_and_receipt(self):
         self.store.create_team("a", self.ledger())
         offer = Offer("r", (4,) * 4, 4)

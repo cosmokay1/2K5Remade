@@ -96,7 +96,8 @@ invent future published NFL values: separate verified inputs from simulation pol
 
 - [x] Add structured Gemini/Vertex AI decisions and a mandatory final cap gate.
 - [x] Verify a real model acceptance cannot force an over-cap contract.
-- [ ] Add offer previews using the same financial validation as final commits.
+- [x] Add offer previews using the same financial validation as final commits.
+      Durable previews also check league ownership; previews do not reserve room.
 - [ ] Add player/agent and team/GM priorities with persistence and bounded updates.
 - [ ] Feed actual statistics, roles and relationship history; label missing evidence.
 - [ ] Evaluate production with opportunities/context: targets/snaps, efficiency,

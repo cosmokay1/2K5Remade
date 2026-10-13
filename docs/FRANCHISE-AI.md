@@ -202,3 +202,10 @@ supplied aggregate existing charges. Exact internal allocations are implemented;
 game/display posting conventions and a compatible save writer remain unverified.
 
 See [the source audit and game integration experiment](franchise-integration.md).
+
+Offer preview: `ledger.preview_offer(offer, expected_revision)` validates the same
+financial rules as signing and returns exact annual charges, resulting cap room,
+replaced tender and rookie pools. `StoredLedger` also checks other teams' ownership.
+It does not reserve room or promise future acceptance. Commit must still recheck
+current state. `contract_cash` is total nominal compensation, not guarantees or a
+cash-payment calendar. No AI access is required for read-only financial previews.
