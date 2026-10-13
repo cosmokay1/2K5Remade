@@ -16,6 +16,7 @@ def main():
         store.create_team("a", Ledger.from_opening(OpeningBooks(), cap=100,
             roster_reserve=0, max_bonus_years=5, veteran_minimums={"v": (1,)}))
         agreement = None
+        player_context = None
         for attempt in range(2):
             command = [sys.argv[1], sys.executable, str(path)]
             if attempt:
@@ -23,10 +24,10 @@ def main():
             result = subprocess.run(command,
                                     text=True, capture_output=True, timeout=20, check=True)
             responses = [json.loads(line) for line in result.stdout.splitlines()]
-            assert len(responses) == (2 if attempt else 5)
+            assert len(responses) == (3 if attempt else 6)
             assert responses[0]["result"]["ai_enabled"] is True
             if not attempt:
-                assert all(responses[index]["error"] is None for index in (0, 1, 2, 4))
+                assert all(responses[index]["error"] is None for index in (0, 1, 2, 4, 5))
                 assert responses[1]["result"]["room_after"] == 90
                 assert responses[2]["result"]["outcome"] == "player_rejected"
                 assert responses[3]["error"] == "state_rejected"
@@ -35,8 +36,14 @@ def main():
                 assert agreement["result"]["decision_mode"] == "manual"
                 assert agreement["result"]["charges"] == [10]
                 assert agreement["result"]["offer"]["guaranteed_salaries"] == [10]
+                player_context = responses[5]["result"]
+                assert player_context == store.player_context("a", "v")
+                assert player_context["initialized"] is True
+                assert player_context["financial_revision"] == 1
             else:
                 assert responses[1] == agreement
+                assert responses[2]["error"] is None
+                assert responses[2]["result"] == player_context
         for python, database in ((sys.executable, str(Path(directory) / "missing.sqlite")),
                                  (str(Path(directory) / "missing-python.exe"), str(path))):
             failed = subprocess.run([sys.argv[1], python, database],
@@ -75,7 +82,7 @@ def main():
         assert store.load_team("a").charges == (10,)
         assert store.load_team("a").contract_terms("v")["guaranteed_salaries"] == [10]
         assert len(store.negotiation_history("a", "v")) == 2
-        print("Native Windows pipe handshake, cap rejection, manual signing and restart verified (synthetic).")
+        print("Native Windows pipe handshake, cap rejection, manual signing, player context and restart verified (synthetic).")
 
 
 if __name__ == "__main__":

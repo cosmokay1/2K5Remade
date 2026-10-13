@@ -1046,3 +1046,13 @@ The public running origin has no franchise database configured; no dashboard or
 actual game menu integration is claimed. Bootstrap e8e9e95 passed Franchise AI run
 38478464352 and Build check run 38478464544. Windows verification of this new source
 is pending CI; game/Deck execution and legal source assets remain external gates.
+
+## October 13, 2026 — Windows player-context transport fixture
+
+Extended the existing Windows native pipe fixture to fetch saved player context after
+signing, compare the complete result against the authoritative database read, then
+fetch it again after client/sidecar restart and require identical context. Existing
+cap rejection, idempotent signing and parent-death ownership checks remain. Python
+syntax validation and 215 local tests pass; Win32 execution is delegated to CI and
+remains synthetic rather than actual game integration. Player-context 4118b1d runs
+38478945850 and 38478945789 were confirmed in progress at inspection.
