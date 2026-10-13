@@ -92,6 +92,41 @@ def release_findings():
     return {'scenarios':findings,'scope':'Synthetic supported healthy preseason veteran release; zero rate is not a published rate; game/runtime and complete NFL lifecycle unverified'}
 
 
+def trade_findings():
+    from datetime import date
+    from franchise.books import ActiveContract
+    from franchise.cash import CashObligation
+    from franchise.trades import PreseasonTradeScope,EXCLUDED_TRADE_LIABILITIES
+    scenarios={}
+    for day,expected in ((date(2026,6,1),(9,0,0)),(date(2026,6,2),(3,6,0))):
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'assignment.sqlite'
+            store=FranchiseStore(path)
+            contract=ActiveContract(Offer('v',(10,20,30),9,(0,20,10)),'synthetic audit original')
+            for team in ('seller','buyer'):
+                store.create_team(team,Ledger.from_opening(OpeningBooks(contracts=(contract,)) if team=='seller' else OpeningBooks(),
+                    cap=100,roster_reserve=0,max_bonus_years=5,veteran_minimums={'v':(1,)*3}))
+                records=(CashObligation('contract:v','v',69,9,'synthetic bank',(('signing_bonus',9),)),) if team=='seller' else ()
+                store.initialize_cash(team,records,source='synthetic complete cash')
+            inputs=dict(scope=PreseasonTradeScope(2026,day,date(2026,9,10),date(2026,9,11),
+                EXCLUDED_TRADE_LIABILITIES,True,0,True,True,'synthetic assignment facts'),
+                seller_revision=1,buyer_revision=1,access_check=lambda:None)
+            receipt=store.trade_preseason_veteran('audit','seller','buyer','v',**inputs)
+            reopened=FranchiseStore(path)
+            assert reopened.trade_preseason_veteran('audit','seller','buyer','v',**inputs)==receipt
+            seller,buyer=reopened.load_team('seller'),reopened.load_team('buyer')
+            assert seller.charges==expected and buyer.charges==(10,20,30)
+            assert seller.financial_snapshot()['signed_players']==[] and buyer.financial_snapshot()['signed_players']==['v']
+            assert buyer.contract_terms('v')['guaranteed_salaries']==[0,20,10]
+            assert seller.cash_snapshot()['unpaid_total']==0 and buyer.cash_snapshot()['unpaid_total']==60
+            assert seller.cash_snapshot()['nominal_total']+buyer.cash_snapshot()['nominal_total']==69
+            assert seller.revision==buyer.revision==2
+            scenarios[day.isoformat()]={'seller_cap':list(expected),'buyer_cap':[10,20,30],
+                'seller_paid_cash':9,'buyer_unpaid_cash':60,'combined_nominal_cash':69,
+                'buyer_protected_base':[0,20,10],'exclusive_buyer_ownership':True,'restart_receipt_identical':True}
+    return {'scenarios':scenarios,'scope':'Synthetic supported preseason contract assignment; consideration and real game/runtime unverified'}
+
+
 def main():
     observations = {}
 
@@ -169,11 +204,13 @@ def main():
     print(json.dumps({"observations": observations,
                       "durable_path": durable_findings(),
                       "supported_release_path": release_findings(),
+                      "supported_assignment_path": trade_findings(),
                       "implemented_component_scope": {
                           "cash": "Nominal sourced obligations, component-allocated payments and guarantee present-value projections; full settlement/vesting is incomplete.",
                           "guarantees": "Explicit fully guaranteed base salary terms; no partial injury/skill/cap protection or automatic vesting.",
                           "roster": "Read-only sourced top-51 and regular-season supported salary/bonus projections; not complete Team Salary or a phase transition.",
                           "termination": "Supported sourced healthy preseason veteran release with retained bonus/guarantee debt and nominal cash; other release liabilities remain unsupported.",
+                          "assignment": "Atomic sourced preseason veteran contract assignment; seller bonus debt and buyer base/guarantees retained; consideration and other trade rules unsupported.",
                           "draft": "Durable ordered rights and management funding reservations; actual game pick/contract posting remains unverified.",
                       },
                       "unimplemented_accounting": ["complete cash settlement and guarantee protections/vesting", "complete releases and trades",

@@ -1506,3 +1506,13 @@ and checks revisions2, sellerbonus9, buyerbases10/20/30, one buyer owner, inheri
 protected bases0/20/10 and total nominalcash69. Python syntax, diff checks and portable
 CTest pass locally. Actual Win32 execution awaits CI; no game trade UI/hooks or retail
 assets were used. Existing release/signing/parent-death fixtures remain intact.
+
+## October 13, 2026 — Executable paired-assignment money audit
+
+Audit now asserts durable pre/postJune sellerbonus(9,0,0)/(3,6,0), unchanged buyer
+bases(10,20,30)/protected(0,20,10), sellerpaid9/buyerunpaid60 and combinednominal69.
+Exclusive buyer ownership, participantrevision2 and identical restart receipt are
+verified. Complete audit succeeds with5,050 bonus-conservation cases and existing
+release/signing scenarios. Consideration/game/runtime scope is explicitly unverified.
+Windows paired fixture38483786386/38483786465 remained in progress; prior manual
+bridge Build check38483689271 passed while engine38483689268 was still running.
