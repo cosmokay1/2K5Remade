@@ -566,3 +566,20 @@ or represented as verified. Whole annual periods only; partial-year conventions,
 covered-release facts, paid allocation, offsets/voids and full settlement still
 required. This component does not release a player or authorize game writes.
 New Windows/Linux CI pending.
+
+## October 13, 2026 — Component payment allocation and unpaid guarantee visibility
+
+Cash obligations can carry exact paid allocations to signing_bonus/base:N using
+original contract year indices. Imported allocations must sum to total paid and
+stay within original component amounts. New post-change signings track zero paid
+components explicitly; subsequent payments require their component. Unknown
+historical allocations stay unavailable and cannot be retroactively filled by a
+new payment. Legacy posting shapes remain replayable without invented allocations.
+
+`ledger.guarantee_cash` exposes unpaid protected bases by original year and unpaid
+signing bonus when allocation is known. Payments leave cap proration unchanged;
+component overpayment rejects/rolls back. 129 local tests pass, including explicit
+opening allocations, protected-base/bonus payments, restart, unchanged cap charges,
+component overpayment and unknown history. This is owed/paid visibility, not
+covered-release authorization, offsets/void settlement or dated vesting.
+New Windows/Linux CI pending; actual game fields remain unmapped.

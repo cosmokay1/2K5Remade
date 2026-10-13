@@ -22,6 +22,8 @@ class CashTests(unittest.TestCase):
 
     def pay(self, store, team, request_id, obligation_id, amount, **kwargs):
         kwargs.setdefault("payment_reference", request_id)
+        if obligation_id == "contract:new":
+            kwargs.setdefault("component", "signing_bonus")
         return store.record_payment(team, request_id, obligation_id, amount, **kwargs)
 
     def initialize(self):
@@ -102,3 +104,33 @@ class CashTests(unittest.TestCase):
             db.execute("UPDATE events SET payload=? WHERE id=?", (json.dumps(payload), row[0]))
         with self.assertRaisesRegex(ValueError, "Duplicate recorded"):
             self.store.load_team("a")
+
+    def test_component_payments_preserve_exact_unpaid_guarantees(self):
+        self.initialize()
+        self.store.sign("a", "protected", Offer("new", (10, 20), 6, (10, 15)), 1)
+        self.assertEqual(self.store.load_team("a").guarantee_cash("new")["unpaid_guaranteed_base_by_original_year"], [10, 15])
+        self.pay(self.store, "a", "base-payment", "contract:new", 4, expected_cash_revision=1,
+                 source="synthetic pay feed", component="base:0")
+        self.pay(self.store, "a", "bonus-payment", "contract:new", 6, expected_cash_revision=2,
+                 source="synthetic pay feed", component="signing_bonus")
+        reopened = FranchiseStore(self.path)
+        guarantee = reopened.load_team("a").guarantee_cash("new")
+        self.assertEqual(guarantee["unpaid_guaranteed_base_by_original_year"], [6, 15])
+        self.assertEqual(guarantee["unpaid_signing_bonus"], 0)
+        self.assertEqual(reopened.load_team("a").charges, (37, 23))
+        before = reopened.load_team("a").cash_snapshot()
+        with self.assertRaisesRegex(ValueError, "Paid component"):
+            self.pay(reopened, "a", "too-much-bonus", "contract:new", 1, expected_cash_revision=3,
+                     source="synthetic pay feed", component="signing_bonus")
+        self.assertEqual(reopened.load_team("a").cash_snapshot(), before)
+        self.assertIsNone(reopened.load_team("a").guarantee_cash("old"))
+
+    def test_opening_component_allocations_must_reconcile_total_and_original_years(self):
+        with self.assertRaisesRegex(ValueError, "total paid"):
+            CashObligation("contract:old", "old", 38, 18, "fixture", (("signing_bonus", 8),))
+        invalid = CashObligation("contract:old", "old", 38, 18, "fixture", (("signing_bonus", 18),))
+        with self.assertRaisesRegex(ValueError, "Paid component"):
+            self.store.initialize_cash("a", (invalid,), source="fixture")
+        valid = CashObligation("contract:old", "old", 38, 18, "fixture", (("signing_bonus", 8), ("base:0", 10)))
+        self.store.initialize_cash("a", (valid,), source="fixture")
+        self.assertEqual(self.store.load_team("a").guarantee_cash("old")["unpaid_signing_bonus"], 0)

@@ -186,6 +186,21 @@ class Ledger:
                 raise Rejected("Original contract terms are unavailable")
             return self._contracts[player_id].to_dict()
 
+    def guarantee_cash(self, player_id):
+        with self._lock:
+            offer = self._contracts.get(player_id)
+            if offer is None:
+                raise Rejected("Original contract terms are unavailable")
+            record = self._cash.records.get("contract:" + player_id) if self._cash is not None else None
+            if record is None or record.paid_components is None:
+                return None
+            paid = dict(record.paid_components)
+            guarantees = offer.guaranteed_salaries or (0,) * len(offer.salaries)
+            return {"unpaid_guaranteed_base_by_original_year": [max(0, guarantee - paid.get("base:" + str(i), 0))
+                        for i, guarantee in enumerate(guarantees)],
+                    "unpaid_signing_bonus": max(0, offer.signing_bonus - paid.get("signing_bonus", 0)),
+                    "obligation_source": record.source}
+
     def cash_snapshot(self):
         return self._cash.snapshot() if self._cash is not None else None
 

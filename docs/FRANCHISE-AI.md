@@ -302,3 +302,12 @@ and provenance; no real rate is bundled or inferred. Only whole annual periods
 are supported. Source: executed CBA Article 13 section 6(d)(iv) and Article 1.
 Covered termination, payment/offset/void facts and complete settlement must still
 be verified before a release transaction can be enabled.
+
+Cash records may include immutable `paid_components`: `(component, amount)` pairs
+where components are `signing_bonus` or `base:N` in original contract year indices.
+Allocations must reconcile total paid and original amounts. New tracked contracts
+require payment `component`; historical unknown allocations remain unavailable.
+`ledger.guarantee_cash(player_id)` reports unpaid protected bases and bonus when
+known, or `None` otherwise. It does not infer payment dates, covered termination
+rights, offsets or guarantee voiding. Existing legacy records are not silently
+converted to known zero allocations.
