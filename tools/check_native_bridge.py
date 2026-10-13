@@ -107,6 +107,33 @@ def main():
             assert responses[1]['result']==releases.player_context('a','v')
         print("Native Windows pipe handshake, cap rejection, manual signing, player context and restart verified (synthetic).")
         print("Native Windows supported release, retained debt/cash and restart retry verified (synthetic).")
+        trade_path=Path(directory)/'paired assignment.sqlite'
+        trades=FranchiseStore(trade_path)
+        for team in ('a','b'):
+            trades.create_team(team,Ledger.from_opening(OpeningBooks(contracts=(contract,)) if team=='a' else OpeningBooks(),
+                cap=100,roster_reserve=0,max_bonus_years=5,veteran_minimums={'v':(1,)*3}))
+            records=(CashObligation('contract:v','v',69,9,'synthetic paidbonus',(('signing_bonus',9),)),) if team=='a' else ()
+            trades.initialize_cash(team,records,source='synthetic assignment cash')
+        original=None
+        for attempt in range(2):
+            result=subprocess.run([sys.argv[1],sys.executable,str(trade_path),'--trade'],
+                                  text=True,capture_output=True,timeout=20,check=True)
+            responses=[json.loads(line) for line in result.stdout.splitlines()]
+            assert len(responses)==2 and all(reply['error'] is None for reply in responses)
+            if original is None: original=responses
+            else: assert responses==original
+            posting=responses[0]['result']['trade']
+            for team in ('a','b'):
+                current=FranchiseStore(trade_path).load_team(team)
+                assert posting[team]=={'financial':current.financial_snapshot(),'cash':current.cash_snapshot()}
+                assert current.revision==2
+            seller,buyer=trades.load_team('a'),trades.load_team('b')
+            assert seller.charges==(9,0,0) and buyer.charges==(10,20,30)
+            assert seller.financial_snapshot()['signed_players']==[] and buyer.financial_snapshot()['signed_players']==['v']
+            assert seller.cash_snapshot()['nominal_total']+buyer.cash_snapshot()['nominal_total']==69
+            assert buyer.contract_terms('v')['guaranteed_salaries']==[0,20,10]
+            assert responses[1]['result']==trades.player_context('b','v')
+        print("Native Windows paired assignment, inherited guarantees, conserved cash and restart retry verified (synthetic).")
 
 
 if __name__ == "__main__":

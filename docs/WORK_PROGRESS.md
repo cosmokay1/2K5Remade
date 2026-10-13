@@ -1496,3 +1496,13 @@ native replies. Found bool==int retry equality gap; store release/trade methods 
 reject noninteger revisions before prior-receipt comparison.269 local tests and
 portable CTest pass. Actual Win32 assignment transport and game controls remain
 unverified; trade consideration and official posting precision remain unsupported.
+
+## October 13, 2026 — Windows paired-assignment transport fixture
+
+Added native --trade mode for explicit manual assignment and recipient context read.
+Windows verifier creates two sourced books, executes the C++ pipe path twice across
+service restart, compares both complete cash/financial receipts to independent replay,
+and checks revisions2, sellerbonus9, buyerbases10/20/30, one buyer owner, inherited
+protected bases0/20/10 and total nominalcash69. Python syntax, diff checks and portable
+CTest pass locally. Actual Win32 execution awaits CI; no game trade UI/hooks or retail
+assets were used. Existing release/signing/parent-death fixtures remain intact.

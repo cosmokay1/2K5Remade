@@ -6,13 +6,26 @@ int wmain(int argc, wchar_t** argv) {
     const bool replay = argc == 4 && std::wstring(argv[3]) == L"--replay";
     const bool abrupt = argc == 4 && std::wstring(argv[3]) == L"--abrupt";
     const bool release = argc == 4 && std::wstring(argv[3]) == L"--release";
-    if (argc == 4 && !replay && !abrupt && !release) return 2;
+    const bool assignment = argc == 4 && std::wstring(argv[3]) == L"--trade";
+    if (argc == 4 && !replay && !abrupt && !release && !assignment) return 2;
     try {
         franchise::PipeClient client(argv[1], argv[2], franchise::ServiceMode::OfflineFixture);
         if (abrupt) {
             std::cout << client.process_id() << std::endl;
             std::cin.get();
             ExitProcess(0);  // Deliberately bypass all client destructors.
+        }
+        if (assignment) {
+            const char* requests[] = {
+                R"({"protocol":1,"request_id":"assignment","operation":"manual_trade","seller":"a","buyer":"b","player_id":"v","seller_revision":1,"buyer_revision":1,"timeout_ms":1000,"decision_mode":"manual","scope":{"league_year":2026,"traded_on":"2026-06-01","seller_first_regular_season_game":"2026-09-10","buyer_first_regular_season_game":"2026-09-11","exclusions":["conditional_consideration","early_june1_designation","grievance","guarantee_offsets","guarantee_voids","injury_liability","other_compensation","seller_retained_guarantees","unpaid_or_deferred_bonus","waiver_transfer"],"healthy":true,"current_year_earned_base":0,"assignment_consent":true,"transaction_eligible":true,"source":"synthetic Windows assignment"}})",
+                R"({"protocol":1,"request_id":"assigned-player","operation":"player_context","team_id":"b","player_id":"v","timeout_ms":1000})"
+            };
+            for (const auto* request : requests) {
+                client.submit(request);
+                while (!client.ready()) std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                std::cout << client.take() << std::endl;
+            }
+            return 0;
         }
         if (release) {
             const char* release_requests[] = {
