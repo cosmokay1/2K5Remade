@@ -153,3 +153,9 @@ Local suite: 80 tests, plus the durable offline demo. Tests cover elapsed bonus
 years, fractional original terms, duplicate obligations, signed-rookie ownership,
 source/aggregate mismatches, verified migration backup and rollback. Remote CI
 results remain pending until the implementation commit executes.
+
+Verified `05c0176` in
+[CI run 38461479152](https://github.com/cosmokay1/2K5Remade/actions/runs/38461479152):
+Linux and Windows passed all 80 tests, money checks and offline demos, including
+source-book migration backup and rollback. Next work moves to verified annual
+rules and the remaining contract lifecycle; the integrated-game goal stays active.
