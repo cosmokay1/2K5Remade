@@ -32,6 +32,24 @@ int main() {
             if (!rejected) throw std::runtime_error("Invalid contract result accepted");
         }
         franchise::exact_money("1/2");
+        auto promised_request = request;
+        promised_request["operation"] = "negotiate";
+        auto goals = franchise::parse_frame(R"([{"goal_id":"starts","metric":"starts","target":12,"importance":80,"window":"2026","source":"offer"}])");
+        promised_request["promise_goals"] = goals;
+        auto promised_reply = reply;
+        promised_reply["result"]["promise_goals"] = goals;
+        promised_reply["result"]["counter_promises"] = nullptr;
+        franchise::validate_result(promised_reply, promised_request);
+        for (int scenario = 0; scenario < 4; ++scenario) {
+            auto bad = promised_reply;
+            if (scenario == 0) bad["result"]["promise_goals"][0]["target"] = 13;
+            if (scenario == 1) bad["result"].erase("promise_goals");
+            if (scenario == 2) bad["result"]["counter_promises"] = goals;
+            if (scenario == 3) bad["result"]["promise_goals"][0]["importance"] = true;
+            bool rejected = false;
+            try { franchise::validate_result(bad, promised_request); } catch (const std::exception&) { rejected = true; }
+            if (!rejected) throw std::runtime_error("Changed promise result accepted");
+        }
         auto player_request = franchise::parse_frame(R"({"operation":"player_context","player_id":"v"})");
         auto player_reply = franchise::parse_frame(R"({"error":null,"result":{"player_id":"v","financial_revision":0,"initialized":true,"personality":{},"relationships":{},"agreed_promises":[],"promise_history":[]}})");
         franchise::validate_result(player_reply, player_request);

@@ -3,8 +3,25 @@
 #include <charconv>
 #include <limits>
 #include <numeric>
+#include <set>
 
 namespace franchise {
+inline void promise_goals(const nlohmann::json& goals) {
+    if (!goals.is_array()) throw std::runtime_error("Invalid promise terms");
+    std::set<std::string> ids;
+    const std::set<std::string> metrics = {"touches", "starts", "receiving_yards", "rushing_yards", "passing_yards", "team_wins"};
+    for (const auto& goal : goals) {
+        if (!goal.is_object() || goal.size() != 6) throw std::runtime_error("Invalid promise goal");
+        for (const auto* field : {"goal_id", "metric", "window", "source"}) {
+            if (!goal.at(field).is_string() || goal.at(field).get<std::string>().find_first_not_of(" \t\r\n") == std::string::npos)
+                throw std::runtime_error("Missing promise identity or source");
+        }
+        if (!ids.insert(goal.at("goal_id").get<std::string>()).second || !metrics.count(goal.at("metric").get<std::string>()) ||
+            !goal.at("target").is_number_integer() || goal.at("target") <= 0 ||
+            !goal.at("importance").is_number_integer() || goal.at("importance") < 1 || goal.at("importance") > 100)
+            throw std::runtime_error("Invalid promise metric or weight");
+    }
+}
 inline void integer_money(const nlohmann::json& value) {
     if (!value.is_number_integer() || value < 0 ||
         (value.is_number_unsigned() && value.get<uint64_t>() > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())))
@@ -88,6 +105,16 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         throw std::runtime_error("Response changed submitted contract");
     auto outcome = result.at("outcome").get<std::string>();
     auto action = result.at("action").get<std::string>();
+    if (operation == "negotiate") {
+        const auto proposed = request.value("promise_goals", nlohmann::json::array());
+        const auto echoed = result.value("promise_goals", nlohmann::json::array());
+        promise_goals(proposed); promise_goals(echoed);
+        if (proposed != echoed) throw std::runtime_error("Response changed submitted promises");
+        if (result.contains("promise_goals")) {
+            if (action == "counter") promise_goals(result.at("counter_promises"));
+            else if (!result.at("counter_promises").is_null()) throw std::runtime_error("Unexpected counter promises");
+        } else if (result.contains("counter_promises")) throw std::runtime_error("Missing submitted promise context");
+    }
     if (outcome == "signed") {
         if (action != "accept" || !result.at("counter").is_null()) throw std::runtime_error("Invalid signed decision");
         if (operation == "manual_sign" && result.at("decision_mode") != "manual") throw std::runtime_error("Manual decision mode missing");

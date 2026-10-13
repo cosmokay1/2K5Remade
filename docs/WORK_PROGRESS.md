@@ -1056,3 +1056,14 @@ cap rejection, idempotent signing and parent-death ownership checks remain. Pyth
 syntax validation and 215 local tests pass; Win32 execution is delegated to CI and
 remains synthetic rather than actual game integration. Player-context 4118b1d runs
 38478945850 and 38478945789 were confirmed in progress at inspection.
+
+## October 13, 2026 — Native negotiated-promise integrity
+
+Native negotiation response validation now requires submitted promise goals to echo
+unchanged alongside the original monetary offer, validates complete counter-goal
+lists and rejects non-null counter promises for accept/reject. Goal metric, identity,
+source, positive integer target, bounded importance and unique IDs are validated.
+Portable C++ checks cover accepted terms, changed targets, missing promise echoes,
+unexpected counter terms and boolean weights. CTest passes locally. No actual game
+menu or guest write integration is claimed. Windows fixture fb62cfd CI runs
+38479010675 and 38479010676 were in progress at inspection.
