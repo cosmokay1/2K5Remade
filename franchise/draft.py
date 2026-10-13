@@ -92,6 +92,7 @@ def comparison_context(ledger, *, expected_revision, draft_round, overall_pick,
     candidates = []
     for prospect in prospects:
         context = prospect.to_context()
+        ledger.validate_scouting_personality(prospect.player_id, context['personality'])
         accounting = ledger.negotiation_context(prospect.player_id)
         if accounting['revision'] != expected_revision or type(expected_revision) is not int:
             raise Rejected('Draft comparison used stale franchise state')
@@ -236,6 +237,7 @@ def validate_scouting(event, ledger):
             or context['overall_pick'] < 1):
         raise ValueError('Identified draft comparison required')
     for item in prospects:
+        ledger.validate_scouting_personality(item['player_id'],item.get('personality'))
         validate_observation_contexts(item['player_id'],item.get('performance'))
         validation = item.get('contract_validation')
         if type(validation) is not dict or validation.get('status') not in ('eligible', 'ineligible'):

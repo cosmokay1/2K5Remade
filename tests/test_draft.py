@@ -72,6 +72,8 @@ class DraftComparisonTests(unittest.TestCase):
     def test_concurrent_budget_change_invalidates_comparison(self):
         ledger = self.ledger()
         class ChangedAfterPreview:
+            def validate_scouting_personality(self, player, personality):
+                return ledger.validate_scouting_personality(player, personality)
             def scouting_history(self):
                 return []
             def management_context(self):
@@ -232,3 +234,33 @@ class DraftComparisonTests(unittest.TestCase):
                     db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(payload),row[0]))
                     db.commit()
                 with self.assertRaises(ValueError): store.load_team('a')
+
+    def test_initialized_draft_personality_stays_consistent_with_franchise(self):
+        import tempfile,json
+        from pathlib import Path
+        from dataclasses import replace
+        from franchise.books import OpeningBooks
+        from franchise.store import FranchiseStore,StoredLedger
+        from franchise.draft import DraftScouting
+        with tempfile.TemporaryDirectory() as directory:
+            store=FranchiseStore(Path(directory)/'state.sqlite')
+            store.create_franchise({'a':Ledger.from_opening(OpeningBooks(),cap=20,roster_reserve=0,
+                max_bonus_years=5,veteran_minimums={},rookies=self.ledger()._rookies,
+                rookie_year_one_allocation=25,rookie_total_allocation=100)},seed='draft personality fixture')
+            ledger=StoredLedger(store,'a')
+            original=store.player_context('a','a')['personality']
+            prospect=replace(self.prospect('a',10),personality=original,personality_source=original['source'])
+            inputs=dict(expected_revision=0,draft_round=2,overall_pick=40,prospects=(prospect,),team_needs=[])
+            choice=lambda _:json.dumps({'action':'recommend','player_id':'a','reason':'Production and saved priorities',
+                                       'uncertainty':'Targets unknown'})
+            reply=DraftScouting(ledger,access_check=lambda:None).recommend('saved',choice,**inputs)
+            self.assertEqual(reply['evidence']['prospects'][0]['personality'],original)
+            changed=replace(prospect,personality={**original,'money':0.01})
+            calls=[]
+            with self.assertRaisesRegex(Rejected,'saved player personality'):
+                DraftScouting(ledger,access_check=lambda:None).recommend('changed',lambda c:calls.append(c),
+                    **{**inputs,'prospects':(changed,)})
+            self.assertEqual(calls,[])
+            reopened=FranchiseStore(store.path)
+            self.assertEqual(reopened.player_context('a','a')['personality'],original)
+            self.assertEqual(reopened.load_team('a').revision,0)

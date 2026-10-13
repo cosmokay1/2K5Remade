@@ -1139,3 +1139,14 @@ Database-tampering regressions exercise all four cases; 220 local tests pass.
 Durable multi-window c9133c2 passed Franchise AI run 38479378828 and Build check
 38479379061. Recent draft/evidence commits still awaited their own CI at inspection.
 No real-game observations or playable runtime were available.
+
+## October 13, 2026 — Shared saved personality in draft scouting
+
+Draft comparison and durable scouting replay now validate prospect personality
+against an already saved player actor. Initialized franchises reject caller-supplied
+replacement traits before inference; legacy players without saved actors retain
+explicit sourced prospect inputs. No read generates or binds an actor. Added a seeded
+franchise scouting fixture confirming canonical traits, rejected replacement before
+provider call, reopened identity and unchanged financial revision. 221 local tests
+pass. This connects creation-time personas to engine draft advice, not a verified
+guest draft UI or real game hook.

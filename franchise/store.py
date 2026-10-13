@@ -1035,6 +1035,9 @@ class StoredLedger:
     def scouting_history(self):
         return self.store.load_team(self.team_id).scouting_history()
 
+    def validate_scouting_personality(self, player_id, personality):
+        self.store.load_team(self.team_id).validate_scouting_personality(player_id, personality)
+
     def recalled_scouting(self, request_id):
         return self.store.recalled_scouting(self.team_id, request_id)
 

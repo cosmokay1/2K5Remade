@@ -397,6 +397,12 @@ class Ledger:
         self.negotiation_context(player_id)  # Require a registered player.
         return {"personality": personality, "relationships": relationships}
 
+    def validate_scouting_personality(self, player_id, personality):
+        self.negotiation_context(player_id)
+        actor = getattr(self, '_actors', {}).get(player_id)
+        if actor is not None and personality != actor['personality']:
+            raise Rejected('Scouting personality differs from saved player personality')
+
     def negotiation_inputs(self, player_id, actor):
         with self._lock:
             return actor, self.negotiation_context(player_id)
