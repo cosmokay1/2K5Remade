@@ -124,7 +124,7 @@ class FranchiseStore:
             if kind == "sign":
                 self._validate_story_evidence(payload["story"])
                 data = payload["offer"]
-                receipt = ledger.sign(payload["request_id"], Offer(data["player_id"], tuple(data["salaries"]), data["signing_bonus"]), payload["expected_revision"])
+                receipt = ledger.sign(payload["request_id"], Offer.from_dict(data), payload["expected_revision"])
                 if ledger._cash is not None:
                     ledger._cash.add_contract(receipt.offer, "sign:" + payload["request_id"])
                     if payload.get("cash_posting") != ledger.cash_snapshot():
@@ -245,7 +245,7 @@ class FranchiseStore:
         if story is not None and type(story) is not dict:
             raise ValueError("Story must be a JSON object")
         self._validate_story_evidence(story)
-        payload = {"request_id": request_id, "offer": asdict(offer),
+        payload = {"request_id": request_id, "offer": offer.to_dict(),
                    "expected_revision": expected_revision, "story": story}
         serialized = json.dumps(payload, allow_nan=False)
         with self._connection(write=True) as db:
@@ -346,11 +346,12 @@ class FranchiseStore:
             raise ValueError("Negotiation request ID required")
         from franchise.negotiation import Decision
         data = event["offer"]
-        Offer(data["player_id"], tuple(data["salaries"]), data["signing_bonus"])
+        Offer.from_dict(data)
         counter = event.get("counter")
         decision = Decision.parse(json.dumps({"action": event["action"], "reason": event["reason"],
             "salaries": counter["salaries"] if counter else None,
-            "signing_bonus": counter["signing_bonus"] if counter else None}), data["player_id"])
+            "signing_bonus": counter["signing_bonus"] if counter else None,
+            "guaranteed_salaries": counter.get("guaranteed_salaries") if counter else None}), data["player_id"])
         expected = {"counter": "counteroffer", "reject": "player_rejected", "accept": "accounting_rejected"}
         if event["outcome"] != expected[decision.action] or (counter and counter["player_id"] != data["player_id"]):
             raise ValueError("Dialogue decision and outcome disagree")
@@ -419,11 +420,11 @@ class FranchiseStore:
                 if dialogue is None:
                     return None
                 event = json.loads(dialogue[0])["event"]
-                if event["offer"] != json.loads(json.dumps(asdict(offer))):
+                if event["offer"] != json.loads(json.dumps(offer.to_dict())):
                     raise Rejected("Negotiation request already recorded with different terms")
                 return event
             payload = json.loads(row[0])
-            if payload["offer"] != json.loads(json.dumps(asdict(offer))):
+            if payload["offer"] != json.loads(json.dumps(offer.to_dict())):
                 raise Rejected("Negotiation request already committed with different terms")
             if payload["story"] is None:
                 raise Rejected("Request belongs to a signing without negotiation history")

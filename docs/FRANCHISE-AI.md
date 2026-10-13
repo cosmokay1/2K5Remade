@@ -275,3 +275,14 @@ Payment references are unique within the team and evidence source, independently
 of request IDs. A second request cannot credit the same source receipt again.
 Historic cash events without references remain readable but require an audited
 migration before retrying them with external references; no reference is invented.
+
+Offers support optional `guaranteed_salaries`, one integer protected base amount
+per contract year. These are full skill/injury/cap guarantees at signing, limited
+to that year's salary. They neither increase nominal total nor reduce cap charges.
+Counter responses may negotiate them; accept/reject leaves them unchanged.
+`Offer.from_dict/to_dict` preserves legacy three-field fixture terms and new
+guarantees. `ledger.contract_terms(player_id)` exposes original saved terms.
+
+[Definition source](https://operations.nfl.com/calendar-events/nfl-free-agency/contract-language).
+Conditional guarantees, vesting, offsets, forfeiture and release settlement are
+not implemented. No guarantee is inferred from missing original-game data.

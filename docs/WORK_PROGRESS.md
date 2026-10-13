@@ -492,3 +492,22 @@ migration rather than fabricated receipt identity.
 retry reference, restart state preservation and tampered duplicate-history failure.
 This verifies receipt uniqueness, not authenticity of external payment evidence.
 Guarantee/payment scheduling and full contract lifecycle remain pending.
+
+## October 13, 2026 — Negotiated full base-salary guarantee terms
+
+Offers optionally contain annual guaranteed base amounts, protected at signing
+for skill/injury/cap termination. Amounts cannot exceed annual base salary; they
+do not add compensation or change cap allocation. Structured provider schemas and
+prompt now support counter guarantees; accept/reject cannot alter them. Central
+contract parsing/serialization preserves terms through opening records, durable
+signings, stories, bridge requests and reload. Old synthetic three-field terms
+remain readable without retroactively inventing guarantees.
+
+120 local tests pass, including security-driven scripted counter/acceptance,
+provider-visible terms, restarted contracts/stories, invariant cap charges and
+invalid/over-salary guarantees. This is contract-term persistence, not complete
+guarantee settlement. Conditional/vesting/offset protections, paid-guarantee
+allocation, release settlement and rookie option guarantee lifecycle remain
+required. Original retail guarantee data is still unknown; not treated as verified
+zero. Primary definition: NFL Football Operations contract-language glossary.
+No paid inference/game assets used; new Windows/Linux CI pending.

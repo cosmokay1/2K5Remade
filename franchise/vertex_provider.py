@@ -11,8 +11,9 @@ VERTEX_SCHEMA = {
         "reason": {"type": "STRING"},
         "salaries": {"type": "ARRAY", "nullable": True, "items": {"type": "INTEGER"}},
         "signing_bonus": {"type": "INTEGER", "nullable": True},
+        "guaranteed_salaries": {"type": "ARRAY", "nullable": True, "items": {"type": "INTEGER"}},
     },
-    "required": ["action", "reason", "salaries", "signing_bonus"],
+    "required": ["action", "reason", "salaries", "signing_bonus", "guaranteed_salaries"],
 }
 
 

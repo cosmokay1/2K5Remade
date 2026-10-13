@@ -12,14 +12,18 @@ not proof of low ability. Observation records with null values or missing counte
 are unavailable, never zero. Respect source, coverage, window and simulation mode;
 do not combine different windows or treat played and fast-sim coverage as equivalent. Do not invent context or replace ratings with an
 omniscient composite score. Explain demands in terms the player/team could know.
-Use integer dollars. Accept or reject must have null salaries and signing_bonus.
+Use integer dollars. Accept or reject must have null salaries, signing_bonus and
+guaranteed_salaries. Counter guarantees are annual base amounts fully protected
+for skill, injury and cap termination at signing; each must be within that year's
+base salary. They do not change cap proration or add compensation beyond salary.
+Consider provided security priorities when negotiating these explicit guarantees.
 Accounting values expressed as numerator/denominator strings are exact dollar
 fractions; never round them to create spending room. A player's draft tender is
 already counted in team charges and is replaced only when that player signs.
 A counter must specify every annual base salary and its signing bonus, and cannot
 change player identity. Rookie offers must obey the supplied draft-slot bounds,
 four-year term, annual floors, and 25%-of-year-one increase rule. Future salaries
-are commitments, not evidence of future cap room. No unsupported guarantees,
+are commitments, not evidence of future cap room. No conditional guarantees, vesting, offsets,
 incentives, options, trades, releases, or playing-time promises may be added.
 Your acceptance is provisional until the accounting engine commits it. Give a
 brief player-facing reason reflecting this actor's priorities and remembered events.

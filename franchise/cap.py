@@ -38,6 +38,7 @@ class Offer:
     player_id: str
     salaries: tuple[int, ...]
     signing_bonus: int
+    guaranteed_salaries: tuple[int, ...] = ()
 
     def __post_init__(self):
         if not isinstance(self.player_id, str) or not self.player_id.strip():
@@ -47,6 +48,28 @@ class Offer:
         for salary in self.salaries:
             money(salary)
         money(self.signing_bonus)
+        if type(self.guaranteed_salaries) is not tuple:
+            raise ValueError("Annual guaranteed bases must be an immutable tuple")
+        if self.guaranteed_salaries:
+            if len(self.guaranteed_salaries) != len(self.salaries):
+                raise ValueError("Guarantees must cover the same annual term")
+            if any(money(guarantee) > salary for guarantee, salary in zip(self.guaranteed_salaries, self.salaries)):
+                raise ValueError("Guaranteed base exceeds its annual salary")
+
+    def to_dict(self):
+        result = {"player_id": self.player_id, "salaries": list(self.salaries), "signing_bonus": self.signing_bonus}
+        if self.guaranteed_salaries:
+            result["guaranteed_salaries"] = list(self.guaranteed_salaries)
+        return result
+
+    @classmethod
+    def from_dict(cls, data):
+        base = {"player_id", "salaries", "signing_bonus"}
+        if type(data) is not dict or set(data) not in (base, base | {"guaranteed_salaries"}):
+            raise ValueError("Unexpected contract terms")
+        if type(data["salaries"]) not in (list, tuple) or type(data.get("guaranteed_salaries", ())) not in (list, tuple):
+            raise ValueError("Annual contract terms required")
+        return cls(data["player_id"], tuple(data["salaries"]), data["signing_bonus"], tuple(data.get("guaranteed_salaries", ())))
 
     def charges(self, max_bonus_years: int) -> tuple[Fraction, ...]:
         if type(max_bonus_years) is not int or not 1 <= max_bonus_years <= 5:
@@ -156,6 +179,12 @@ class Ledger:
                    signed_player_ids=frozenset(item.offer.player_id for item in books.contracts),
                    rookie_tenders={item.player_id: item.amount for item in books.tenders},
                    opening_books=books, **rules)
+
+    def contract_terms(self, player_id):
+        with self._lock:
+            if player_id not in self._contracts:
+                raise Rejected("Original contract terms are unavailable")
+            return self._contracts[player_id].to_dict()
 
     def cash_snapshot(self):
         return self._cash.snapshot() if self._cash is not None else None
@@ -320,6 +349,7 @@ class Ledger:
                     "annual_team_charges_after": [json_amount(value) for value in updated],
                     "room_after": json_amount(self.cap - updated[0] - self.roster_reserve),
                     "contract_cash": sum(offer.salaries) + offer.signing_bonus,
+                    "fully_guaranteed_base": sum(offer.guaranteed_salaries),
                     "rookie_year_one_after": json_amount(self._rookie_year_one - charges[0]) if scale else None,
                     "rookie_total_after": self._rookie_total - sum(offer.salaries) - offer.signing_bonus if scale else None}
 

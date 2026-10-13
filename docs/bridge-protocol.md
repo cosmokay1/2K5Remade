@@ -62,3 +62,8 @@ termination on final job-handle close. Windows 10/Server 2016+ required. See
 and [UpdateProcThreadAttribute](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute).
 The abrupt-parent-exit fixture requires Windows runtime evidence before this
 implementation can be treated as verified.
+
+Offers may optionally include `guaranteed_salaries`: annual integer base amounts
+fully protected for skill/injury/cap termination at signing, bounded by annual
+salaries. Preview reports their base total. Manual and negotiated transactions
+preserve them. Conditional guarantee clauses and release settlement remain pending.

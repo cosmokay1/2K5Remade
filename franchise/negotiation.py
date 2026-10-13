@@ -12,8 +12,9 @@ DECISION_SCHEMA = {
         "reason": {"type": "string"},
         "salaries": {"type": ["array", "null"], "items": {"type": "integer"}},
         "signing_bonus": {"type": ["integer", "null"]},
+        "guaranteed_salaries": {"type": ["array", "null"], "items": {"type": "integer"}},
     },
-    "required": ["action", "reason", "salaries", "signing_bonus"],
+    "required": ["action", "reason", "salaries", "signing_bonus", "guaranteed_salaries"],
 }
 
 
@@ -26,7 +27,8 @@ class Decision:
     @classmethod
     def parse(cls, text: str, player_id: str):
         data = json.loads(text)
-        if type(data) is not dict or set(data) != set(DECISION_SCHEMA["required"]):
+        required = set(DECISION_SCHEMA["required"])
+        if type(data) is not dict or set(data) not in (required, required - {"guaranteed_salaries"}):
             raise ValueError("Unexpected model decision fields")
         if data["action"] not in ("accept", "reject", "counter"):
             raise ValueError("Unknown negotiation action")
@@ -36,8 +38,11 @@ class Decision:
         if data["action"] == "counter":
             if type(data["salaries"]) is not list:
                 raise ValueError("Counteroffer requires annual salaries")
-            counter = Offer(player_id, tuple(data["salaries"]), data["signing_bonus"])
-        elif data["salaries"] is not None or data["signing_bonus"] is not None:
+            guarantees = data.get("guaranteed_salaries")
+            if guarantees is not None and type(guarantees) is not list:
+                raise ValueError("Annual counter guarantees required")
+            counter = Offer(player_id, tuple(data["salaries"]), data["signing_bonus"], tuple(guarantees or ()))
+        elif data["salaries"] is not None or data["signing_bonus"] is not None or data.get("guaranteed_salaries") is not None:
             raise ValueError("Accept/reject cannot silently change offered terms")
         return cls(data["action"], data["reason"], counter)
 
@@ -107,13 +112,13 @@ class Negotiation:
         if expected_revision is not None and (type(expected_revision) is not int or expected_revision != snapshot["revision"]):
             raise Rejected("Offer was based on stale client franchise state")
         context = {"player_id": self.player_id, **json.loads(self._actor),
-                   "offer": asdict(offer), "accounting": snapshot,
+                   "offer": offer.to_dict(), "accounting": snapshot,
                    "history": self.events}
         decision = Decision.parse(provider(context), self.player_id)
         self._access_check()
-        event = {"request_id": request_id, "offer": asdict(offer),
+        event = {"request_id": request_id, "offer": offer.to_dict(),
                  "action": decision.action, "reason": decision.reason,
-                 "counter": asdict(decision.counter) if decision.counter else None,
+                 "counter": decision.counter.to_dict() if decision.counter else None,
                  "outcome": "pending",
                  "evidence": {**json.loads(self._actor), "financial_revision": snapshot["revision"]},
                  "history_request_ids": [entry["request_id"] for entry in context["history"]]}

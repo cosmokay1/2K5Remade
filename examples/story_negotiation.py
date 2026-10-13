@@ -59,8 +59,7 @@ def main():
         if event["outcome"] == "counteroffer":
             counter = event["counter"]
             # Demo team explicitly chooses to submit the counter back to the player.
-            offer = Offer(counter["player_id"], tuple(counter["salaries"]),
-                          counter["signing_bonus"])
+            offer = Offer.from_dict(counter)
             print(json.dumps(session.respond("round-2", offer, provider), indent=2))
         print(f"Current cap room: ${money_text(ledger.room)}")
     except (ValueError, RuntimeError) as exc:

@@ -54,9 +54,9 @@ class Bridge:
                 if time.monotonic() >= deadline:
                     raise TimeoutError("Request expired")
             data = request["offer"]
-            if type(data) is not dict or set(data) != {"player_id", "salaries", "signing_bonus"} or type(data["salaries"]) is not list:
+            if type(data) is not dict or set(data) not in ({"player_id", "salaries", "signing_bonus"}, {"player_id", "salaries", "signing_bonus", "guaranteed_salaries"}) or type(data["salaries"]) is not list:
                 raise ValueError("Complete offer required")
-            offer = Offer(data["player_id"], tuple(data["salaries"]), data["signing_bonus"])
+            offer = Offer.from_dict(data)
             ledger = StoredLedger(self.store, request["team_id"])
             if operation == "preview":
                 # AI-off clients retain cap enforcement and manual previews.
@@ -65,7 +65,7 @@ class Bridge:
                 if request["decision_mode"] != "manual":
                     raise ValueError("Explicit manual decision required")
                 local_access()
-                story = {"request_id": request_id, "offer": asdict(offer),
+                story = {"request_id": request_id, "offer": offer.to_dict(),
                          "action": "accept", "reason": "Explicit manual agreement",
                          "counter": None, "outcome": "signed", "decision_mode": "manual"}
                 receipt = self.store.sign(request["team_id"], request_id, offer,

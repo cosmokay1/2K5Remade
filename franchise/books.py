@@ -101,7 +101,7 @@ class OpeningBooks:
                      for i in range(years))
 
     def to_dict(self):
-        return {"contracts": [asdict(item) for item in self.contracts],
+        return {"contracts": [{**asdict(item), "offer": item.offer.to_dict()} for item in self.contracts],
                 "retained": [{**asdict(item), "annual_charges": [json_amount(value) for value in item.annual_charges]} for item in self.retained],
                 "adjustments": [{**asdict(item), "annual_charges": [json_amount(value) for value in item.annual_charges]} for item in self.adjustments],
                 "tenders": [asdict(item) for item in self.tenders]}
@@ -113,7 +113,7 @@ class OpeningBooks:
         contracts = []
         for item in data["contracts"]:
             offer = item["offer"]
-            contracts.append(ActiveContract(Offer(offer["player_id"], tuple(offer["salaries"]), offer["signing_bonus"]),
+            contracts.append(ActiveContract(Offer.from_dict(offer),
                                             item["source"], item["elapsed_years"], item["bonus_years"]))
         def records(key):
             return tuple(ChargeRecord(item["record_id"], tuple(parse_amount(value) for value in item["annual_charges"]), item["source"])
