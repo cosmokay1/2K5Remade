@@ -446,3 +446,17 @@ until runtime access is exercised. See docs/runtime-iam.md for exact scope.
 
 Native job lifetime `fa21c87` passed Windows/Linux in run 38465395201, including
 the abrupt-parent-exit process-handle assertion. Model-evidence CI is still pending.
+
+## October 13, 2026 — Reassessed actual durable money path
+
+Updated executable money audit to distinguish original in-memory F05/F06
+reproductions from the supported durable bridge path. Durable audit now proves
+restart receipt/story identity, unchanged retry revision and rejected competing
+team ownership with no financial mutation. Captured current evidence and published
+a scope table covering remaining cash/guarantee/lifecycle obligations. No complete
+NFL/game accounting claim is made. Local 113 tests and money audit pass.
+
+Model-evidence commit `bc69785` passed Windows/Linux plus native fixture in
+[run 38465570806](https://github.com/cosmokay1/2K5Remade/actions/runs/38465570806).
+Next financial dependency remains explicit cash/guarantee records before full
+release/trade/season operations. Actual-game gates remain unchanged.

@@ -6,6 +6,10 @@ Resolved findings are rechecked; open findings remain synthetic reproductions.
 from dataclasses import asdict
 from fractions import Fraction
 import json
+from pathlib import Path
+import tempfile
+from franchise.books import OpeningBooks, ChargeRecord
+from franchise.store import FranchiseStore
 from franchise.cap import Ledger, Offer, Rejected, json_amount
 from franchise.rookie import RookieScale
 
@@ -14,6 +18,38 @@ def ledger(**overrides):
     args = dict(cap=100, existing_charges=(0,), roster_reserve=0, max_bonus_years=5, veteran_minimums={p: (1,) * 10 for p in ("veteran", "v", "same-player")})
     args.update(overrides)
     return Ledger(**args)
+
+
+def durable_findings():
+    """Audit the deployed engine path, separately from in-memory limitations."""
+    with tempfile.TemporaryDirectory() as directory:
+        path = Path(directory) / "audit.sqlite"
+        store = FranchiseStore(path)
+        for team in ("a", "b"):
+            opening = OpeningBooks(retained=(ChargeRecord("retained:" + team, (80, 70), "synthetic audit source"),))
+            store.create_team(team, Ledger.from_opening(opening, cap=100,
+                roster_reserve=5, max_bonus_years=2, veteran_minimums={"v": (1, 1)}))
+        offer = Offer("v", (10, 20), 10)
+        story = {"reason": "Synthetic durable audit agreement"}
+        receipt = store.sign("a", "agreement", offer, 0, story=story)
+        reopened = FranchiseStore(path)
+        assert reopened.sign("a", "agreement", offer, 0, story=story) == receipt
+        assert reopened.load_team("a").charges == (95, 95)
+        assert reopened.load_team("a").revision == 1
+        assert reopened.stories("a") == [story]
+        before = reopened.load_team("b").financial_snapshot()
+        try:
+            reopened.sign("b", "competing", offer, 0)
+        except Rejected:
+            pass
+        else:
+            raise AssertionError("Durable duplicate league ownership accepted")
+        assert reopened.load_team("b").financial_snapshot() == before
+        return {"F05_restart_receipts": "restart retry returned identical receipt; revision stayed 1",
+                "F06_exclusive_ownership": "competing team rejected; finances unchanged",
+                "exact_annual_charges": [95, 95], "current_room": 0,
+                "story_retained": True,
+                "scope": "Synthetic durable signings; not original game or complete NFL lifecycle"}
 
 
 def main():
@@ -91,6 +127,10 @@ def main():
                 assert all(isinstance(charge, Fraction) and charge >= 3 for charge in charges)
                 verified += 1
     print(json.dumps({"observations": observations,
+                      "durable_path": durable_findings(),
+                      "unimplemented_accounting": ["cash payments and guarantees", "complete releases and trades",
+                          "extensions and restructures", "top-51/roster phases", "season rollover and carryover",
+                          "complete rookie options/escalators", "verified game import/posting"],
                       "bonus_conservation_cases_verified": verified}, indent=2, default=json_amount))
 
 

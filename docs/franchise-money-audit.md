@@ -201,3 +201,29 @@ control saves to distinguish ordinary bookkeeping from financial changes.
 Until those inputs are available, this report is a complete audit of the
 available prototype and integration evidence, not a completed reverse-engineering
 audit of NFL 2K5's original franchise finances.
+
+## Current durable-path reassessment — October 13, 2026
+
+The original findings above remain historical evidence. The supported bridge path
+now uses `FranchiseStore`, not a freshly reconstructed in-memory Ledger.
+`python -m tools.audit_money` separately reproduces the in-memory limitations and
+verifies durable receipt/story recovery and exclusive league ownership. Current
+captured results are in [money-audit-current.json](money-audit-current.json).
+
+| Area | Current evidence | Remaining financial scope |
+|---|---|---|
+| Contract acquisition | Exact current cap, registered floors, bonus horizon and rookie limits | Full annual cap/draft profiles and imported real terms |
+| Persistence | Identical restart receipts, atomic story/signing, source/posting reconciliation | Real game save/load and external ledger reconciliation |
+| Ownership | Competing team cannot sign an owned player | Trades, waivers, release/retirement transitions |
+| Rookie tenders | Own declared unsigned tender replaced once | Real tender mapping and full option/escalator lifecycle |
+| Salary floors | Source-bound modern veteran profiles with explicit annual credited-season inputs | Complete roster-status rules and future-year policy |
+| Termination bonuses | Exact June-1/final-CBA-year acceleration component | Full liabilities and executable release operation |
+| Cash/guarantees | Nominal contract total only; no payment ledger | Owed/paid cash, protections, vesting and offsets |
+| Season accounting | Future contract cap charges retained | Top-51, carryover, incentives, adjustments and year rollover |
+| Shutdown | Disabled AI rejects inference; explicit manual sign still uses same cap gate | Real UI/manual path and native transaction hook |
+
+No current result establishes an audit of the original game's finance code.
+Missing retail binary/controlled saves still prevent that investigation. Passing
+acquisition tests do not prove a complete modern franchise accounting system.
+The next finance work must introduce explicit cash/guarantee obligations and
+complete their lifecycle rather than assuming missing liabilities are zero.
