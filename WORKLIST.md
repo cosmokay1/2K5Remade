@@ -242,3 +242,14 @@ See docs/cloudflare-tunnel.md. Dedicated tunnel/DNS/TLS route is live; full brow
 - [ ] Derive actual touch/start/yard/win evidence from verified game counters; never infer unavailable targets or starts from other stats.
 - [ ] Apply goal consequences to trust, satisfaction and future negotiation with context for injury, availability and coaching choices. Scores now persist and feed player context; only known final scores can source once-only bounded relationship changes. Context-aware consequence policy and in-game story triggers remain.
 - [ ] Display promised vs observed goals and fulfillment score in the game/browser interface.
+
+## Franchise creation and personality population
+
+- [x] Atomically create engine teams/ownership and initialize every registered player with saved fictional personality traits and neutral relationships.
+- [x] Save a versioned franchise seed; preserve stable identity across teams/restart and refuse rerolls or missing initial actors.
+- [ ] Connect the native franchise-creation event to verified roster import and this initialization process.
+- [ ] Verify a real new franchise save/load retains all player and team identities.
+
+See docs/franchise-creation.md and docs/promise-observations.md. Automatic promise
+mapping now protects team scope and complete-window coverage; actual game counter
+capture and multi-window aggregation remain unverified/unimplemented.

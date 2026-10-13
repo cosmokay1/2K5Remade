@@ -71,3 +71,37 @@ class PromiseScoreTests(unittest.TestCase):
             with self.assertRaises(Rejected):
                 reopened.update_relationship('a','duplicate','p','trust',-0.05,source_request_id='final',expected_revision=4)
             self.assertEqual(reopened.load_team('a').charges[0],20)
+
+    def test_typed_performance_adapter_replay_and_partial_to_complete_window(self):
+        from franchise.performance import PerformanceEvidence,Observation
+        with tempfile.TemporaryDirectory() as directory:
+            store=self.setup_store(directory)
+            def evidence(complete):
+                return PerformanceEvidence('p','fixture season','cpu_played',(Observation('games_started',4,'synthetic starts'),),
+                    'fixture season sample',team_id='a',complete_window=complete)
+            def record(request,complete,revision):
+                return store.record_promise_performance('a',request,'deal',evidence(complete),window_closed=True,
+                    expected_revision=revision,source='synthetic closure',context='Synthetic health context')
+            partial=record('partial',False,1)
+            self.assertIsNone(partial['score']['final_achievement_score'])
+            final=record('final',True,2)
+            self.assertEqual(final['score']['final_achievement_score'],'1/2')
+            store=FranchiseStore(store.path)
+            self.assertEqual(record('final',True,2),final)
+            with self.assertRaises(Rejected):record('stale',True,1)
+            self.assertEqual(store.load_team('a').revision,3)
+
+    def test_historical_six_field_observation_receipt_retries(self):
+        import sqlite3
+        from contextlib import closing
+        with tempfile.TemporaryDirectory() as directory:
+            store=self.setup_store(directory)
+            expected=self.score(store)
+            with closing(sqlite3.connect(store.path)) as db:
+                id,text=db.execute("SELECT id,payload FROM events WHERE kind='promise_score'").fetchone()
+                payload=json.loads(text)
+                for observation in payload['observations']:
+                    observation.pop('complete_window',None)
+                db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(payload),id))
+                db.commit()
+            self.assertEqual(self.score(FranchiseStore(store.path)),expected)

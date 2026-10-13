@@ -56,6 +56,7 @@ class FranchiseStore:
             db.execute("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, team_id TEXT NOT NULL REFERENCES teams(id), request_key TEXT NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL, UNIQUE(team_id, request_key))")
             db.execute("CREATE TABLE IF NOT EXISTS draft_orders (id TEXT PRIMARY KEY, league_year INTEGER UNIQUE NOT NULL, config TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS draft_picks (draft_id TEXT NOT NULL REFERENCES draft_orders(id), overall_pick INTEGER NOT NULL, player_id TEXT UNIQUE NOT NULL, team_id TEXT NOT NULL REFERENCES teams(id), PRIMARY KEY(draft_id,overall_pick))")
+            db.execute("CREATE TABLE IF NOT EXISTS franchise_metadata (key TEXT PRIMARY KEY,value TEXT NOT NULL)")
             db.execute("PRAGMA user_version=3")
 
     @classmethod
@@ -85,6 +86,7 @@ class FranchiseStore:
                 source.backup(target)
             db.execute("CREATE TABLE IF NOT EXISTS draft_orders (id TEXT PRIMARY KEY, league_year INTEGER UNIQUE NOT NULL, config TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS draft_picks (draft_id TEXT NOT NULL REFERENCES draft_orders(id), overall_pick INTEGER NOT NULL, player_id TEXT UNIQUE NOT NULL, team_id TEXT NOT NULL REFERENCES teams(id), PRIMARY KEY(draft_id,overall_pick))")
+            db.execute("CREATE TABLE IF NOT EXISTS franchise_metadata (key TEXT PRIMARY KEY,value TEXT NOT NULL)")
             for team, books in books_by_team.items():
                 config = json.loads(db.execute("SELECT config FROM teams WHERE id=?", (team,)).fetchone()[0])
                 config["opening_books"] = books.to_dict()
@@ -110,6 +112,10 @@ class FranchiseStore:
             db.close()
 
     def create_team(self, team_id: str, ledger: Ledger):
+        with self._connection(write=True) as db:
+            self._insert_team(db,team_id,ledger)
+
+    def _insert_team(self,db,team_id,ledger):
         if type(team_id) is not str or not team_id.strip():
             raise ValueError("Stable team ID required")
         config = ledger.bootstrap_config()
@@ -117,14 +123,54 @@ class FranchiseStore:
             raise ValueError("Durable starting rookie roster requires explicit cohort/pool source")
         if config["opening_books"] is None:
             raise ValueError("Durable teams require source opening books, not aggregate-only balances")
+        if db.execute("SELECT 1 FROM teams WHERE id=?", (team_id,)).fetchone():
+            raise Rejected("Team already exists; refusing to overwrite financial state")
+        db.execute("INSERT INTO teams VALUES (?, ?)", (team_id, json.dumps(config)))
+        for player in config["signed_player_ids"]:
+            if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (player,)).fetchone():
+                raise Rejected("Player already belongs to another team")
+            db.execute("INSERT INTO ownership VALUES (?, ?)", (player, team_id))
+        origin = self._franchise_origin(db)
+        if origin is not None:
+            from franchise.initialization import initial_actor
+            registered = ledger._veteran_minimums.keys() | ledger._rookies.keys()
+            if not ledger._players <= registered:
+                raise ValueError('Every roster player requires registered classification')
+            for player in sorted(registered):
+                actor = initial_actor(origin['seed'],player)
+                self._validate_actor(actor)
+                payload = {'player_id':player,'actor':actor,'posting':ledger.financial_snapshot()}
+                db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,'actor',?)",
+                           (team_id,'actor:'+player,json.dumps(payload,allow_nan=False)))
+
+    @staticmethod
+    def _franchise_origin(db):
+        from franchise.initialization import VERSION,validate_seed
+        row = db.execute("SELECT value FROM franchise_metadata WHERE key='personality-origin'").fetchone()
+        if row is None:
+            return None
+        origin = json.loads(row[0])
+        if type(origin) is not dict or set(origin) != {'version','seed','source'} or origin['version'] != VERSION or origin['source'] != 'authored fictional franchise initialization':
+            raise ValueError('Unsupported franchise personality origin')
+        validate_seed(origin['seed'])
+        return origin
+
+    def create_franchise(self,teams,*,seed=None):
+        """Atomic league bootstrap with personalities for every registered player."""
+        from franchise.initialization import VERSION,initial_actor,validate_seed
+        import secrets
+        if type(teams) is not dict or not teams or any(type(team) is not str or not team.strip() for team in teams) or any(not isinstance(ledger,Ledger) for ledger in teams.values()):
+            raise ValueError('Source-backed team ledgers required')
+        seed = secrets.token_hex(32) if seed is None else seed
+        validate_seed(seed)
+        origin = {'version':VERSION,'seed':seed,'source':'authored fictional franchise initialization'}
         with self._connection(write=True) as db:
-            if db.execute("SELECT 1 FROM teams WHERE id=?", (team_id,)).fetchone():
-                raise Rejected("Team already exists; refusing to overwrite financial state")
-            db.execute("INSERT INTO teams VALUES (?, ?)", (team_id, json.dumps(config)))
-            for player in config["signed_player_ids"]:
-                if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (player,)).fetchone():
-                    raise Rejected("Player already belongs to another team")
-                db.execute("INSERT INTO ownership VALUES (?, ?)", (player, team_id))
+            if db.execute('SELECT 1 FROM teams LIMIT 1').fetchone() or self._franchise_origin(db) is not None:
+                raise Rejected('Franchise already initialized; refusing to reroll players')
+            db.execute("INSERT INTO franchise_metadata VALUES ('personality-origin',?)", (json.dumps(origin),))
+            for team,ledger in sorted(teams.items()):
+                self._insert_team(db,team,ledger)
+        return origin
 
     def _load(self, db, team_id) -> Ledger:
         row = db.execute("SELECT config FROM teams WHERE id=?", (team_id,)).fetchone()
@@ -133,6 +179,7 @@ class FranchiseStore:
         ledger = from_config(json.loads(row[0]))
         ledger._actors = {}
         ledger._scouting = []
+        origin = self._franchise_origin(db)
         relationship_sources = set()
         payment_references = set()
         for event_id, kind, serialized in db.execute("SELECT id, kind, payload FROM events WHERE team_id=? ORDER BY id", (team_id,)):
@@ -179,6 +226,13 @@ class FranchiseStore:
             elif kind == "actor":
                 ledger.negotiation_context(payload["player_id"])
                 self._validate_actor(payload["actor"])
+                from franchise.initialization import VERSION,initial_actor
+                personality = payload["actor"]["personality"]
+                if origin is not None:
+                    if payload['actor'] != initial_actor(origin['seed'],payload['player_id']):
+                        raise ValueError('Player personality/initial relationships disagree with franchise origin')
+                elif personality.get('generation_version') == VERSION:
+                    raise ValueError('Generated player personality has no franchise origin')
                 if payload["player_id"] in ledger._actors:
                     raise ValueError("Duplicate actor registration")
                 ledger._actors[payload["player_id"]] = payload["actor"]
@@ -228,6 +282,8 @@ class FranchiseStore:
                 raise ValueError("Unknown financial event; refusing to reconstruct state")
             if payload.get("posting") != ledger.financial_snapshot():
                 raise ValueError("Recorded financial posting disagrees with replay")
+        if origin is not None and set(ledger._actors) != ledger._veteran_minimums.keys() | ledger._rookies.keys():
+            raise ValueError('Initialized player personality coverage is incomplete')
         owned = {player for (player,) in db.execute("SELECT player_id FROM ownership WHERE team_id=?", (team_id,))}
         if owned != set(ledger.financial_snapshot()["signed_players"]):
             raise ValueError("Ownership records disagree with contract history")
@@ -487,6 +543,10 @@ class FranchiseStore:
             row = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, key)).fetchone()
             if row:
                 return ledger._actors[player_id]
+            origin = self._franchise_origin(db)
+            if origin is not None:
+                from franchise.initialization import initial_actor
+                actor = initial_actor(origin['seed'],player_id)
             # Player priorities follow the player across clubs; relationships
             # remain team-specific. The write lock serializes first registration.
             existing = db.execute("SELECT payload FROM events WHERE kind='actor' AND request_key=? ORDER BY id LIMIT 1", (key,)).fetchone()
@@ -589,12 +649,24 @@ class FranchiseStore:
             raise ValueError('Evaluation/period-closure provenance required')
         observations = payload['observations']
         fields = {'goal_id','window','value','source','coverage','context'}
-        if type(observations) is not list or any(type(o) is not dict or set(o) != fields for o in observations):
+        if type(observations) is not list or any(type(o) is not dict or set(o) not in (fields,fields | {'complete_window'}) for o in observations):
             raise ValueError('Complete observed goal records required')
         score = score_promises(goals_from_list(agreement['goals']),tuple(GoalObservation(**o) for o in observations),
                                window_closed=payload['window_closed'])
         return {'request_id':payload['request_id'],'agreement_request_id':payload['agreement_request_id'],
                 'player_id':agreement['player_id'],'source':payload['source'],'score':score}
+
+    def record_promise_performance(self,team_id,request_id,agreement_request_id,performance,*,window_closed,
+                                   expected_revision,source,context,team_results=None):
+        from franchise.promises import goals_from_list,observe_promises
+        ledger = self.load_team(team_id)
+        agreement = ledger._promise_agreements.get(agreement_request_id)
+        if agreement is None:
+            raise Rejected('Committed promise agreement required')
+        observations = observe_promises(goals_from_list(agreement['goals']),performance,
+            player_id=agreement['player_id'],team_id=team_id,context=context,team_results=team_results)
+        return self.record_promise_score(team_id,request_id,agreement_request_id,observations,
+            window_closed=window_closed,expected_revision=expected_revision,source=source)
 
     def record_promise_score(self,team_id,request_id,agreement_request_id,observations,*,window_closed,expected_revision,source):
         from dataclasses import asdict
@@ -604,7 +676,7 @@ class FranchiseStore:
         if type(observations) is not tuple or any(not isinstance(o,GoalObservation) for o in observations):
             raise ValueError('Immutable typed observations required')
         payload = {'request_id':request_id,'agreement_request_id':agreement_request_id,
-                   'observations':[asdict(o) for o in observations],'window_closed':window_closed,
+                   'observations':[{key:value for key,value in asdict(o).items() if key != 'complete_window' or value is not None} for o in observations],'window_closed':window_closed,
                    'expected_revision':expected_revision,'source':source}
         with self._connection(write=True) as db:
             ledger = self._load(db,team_id)

@@ -993,3 +993,26 @@ trust updates, duplicate prevention, source/revision errors, unknown-to-final re
 negative yardage and model-input isolation. No actual gameplay counters or UI exercised.
 Prior promise-agreement a19d6cd passed Franchise AI run 38476915894 and Build check
 38476915987. Current scoring CI is pending after push.
+
+## October 13, 2026 — Franchise personality initialization and reviewed evidence mapping
+
+User requested creation-time personality population and parallel agents. Added
+atomic create_franchise with saved random/explicit seed and versioned per-player
+streams, seven authored priorities, varied negotiation styles and neutral team
+relationships. All registered veterans/rookies/free agents initialize; roster players
+without classification reject. Late teams initialize too. Legacy authored actors
+remain unchanged, and seeded replay verifies full initial actors/coverage.
+
+Added typed promise performance mapping: carries+catches for touches, actual starts,
+position-specific yards and separately sourced team wins. Automatic final scores
+require certified complete-window/team scope; partial values remain progress.
+The adapter currently covers one matching window/mode and observes no real game data.
+
+Two read-only agents reviewed initialization and evidence independently. Fixed their
+findings: late-team/missing actor coverage, seed NUL encoding ambiguity, initial trust
+tampering, incomplete evidence finalization, absent player-team scope and historical
+receipt retry compatibility. Added fixed traits, default-world variation, tampering,
+late-team and durable partial-to-complete mapper tests. 208 local tests pass. New
+creation/game hook, multi-window evidence and actual Deck/Windows gameplay remain
+unfinished. Prior promise-score ac1a61c passed Franchise AI run 38477252097 and
+Build check run 38477252142. No live inference or asset acquisition occurred.
