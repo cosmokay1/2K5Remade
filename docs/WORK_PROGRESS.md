@@ -31,3 +31,22 @@ This is not yet the completed observation/scouting model.
 
 Record each continuation's completed items, commit, validation, and remaining
 gates here. Keep historical observations labeled with their actual revision.
+
+## October 13, 2026 — Portable CI prepared; publication blocked
+
+Prepared Linux/Windows engine CI in commit `bd1f801`, preserved on local branch
+`codex/ci-workflow-setup`. It runs the portable suite, money-audit regression
+checks and both offline examples without game assets, credentials or paid calls.
+48 local tests pass; no remote CI run exists.
+
+GitHub rejected the workflow push because the active OAuth credential lacks
+`workflow` scope. Existing SSH authentication was checked using host keys from
+GitHub's official metadata and failed with publickey denial. No global SSH
+settings or authentication permissions were changed. The development branch was
+returned to its previously pushed head; the unpublished CI commit remains on
+its named local branch, so subsequent source pushes are unblocked.
+
+User authentication step: `gh auth refresh -h github.com -s workflow`.
+After authorization, cherry-pick `bd1f801`, resolve the progress-log addition if
+needed, push, and verify real workflow results before checking the M0 item.
+While B05 remains, continue M1 work rather than retrying the same failed push.
