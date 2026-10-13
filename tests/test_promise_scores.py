@@ -139,3 +139,22 @@ class PromiseScoreTests(unittest.TestCase):
             self.assertEqual(ledger.charges,before)
             self.assertEqual(ledger.revision,3)
             self.assertEqual(ledger.promise_history('p'),[progress,expected])
+
+    def test_player_context_recent_history_does_not_remove_saved_stories(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store=self.setup_store(directory)
+            # Signed player's independent negotiation attempts are recorded stories,
+            # not new contracts; reject decisions leave the original cap untouched.
+            for index in range(12):
+                ledger=store.load_team('a')
+                event={'request_id':'dialogue-'+str(index),'offer':Offer('p',(20,),0).to_dict(),
+                       'action':'reject','reason':'Recorded fixture decision '+str(index),
+                       'counter':None,'outcome':'player_rejected'}
+                store.record_negotiation('a',event,access_check=lambda:None)
+            context=FranchiseStore(store.path).player_context('a','p')
+            full=store.negotiation_history('a','p')
+            self.assertEqual(context['negotiation_history'],full[-10:])
+            self.assertEqual(context['negotiation_history_total'],13)
+            self.assertTrue(context['negotiation_history_has_more'])
+            self.assertEqual(len(full),13)
+            self.assertEqual(store.load_team('a').charges[0],20)

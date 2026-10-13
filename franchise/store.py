@@ -317,13 +317,16 @@ class FranchiseStore:
             ledger = self._load(db,team_id)
             ledger.negotiation_context(player_id)  # Require classified identity.
             actor = ledger._actors.get(player_id)
+            history=self._negotiation_history(db,team_id,player_id)
             return {'player_id':player_id,'financial_revision':ledger.revision,'initialized':actor is not None,
                     'personality':actor['personality'] if actor else None,
                     'relationships':actor['relationships'] if actor else None,
                     'agreed_promises':[{'agreement_request_id':request,'goals':agreement['goals']}
                         for request,agreement in ledger._promise_agreements.items() if agreement['player_id'] == player_id],
                     'promise_history':ledger.promise_history(player_id),
-                    'negotiation_history':self._negotiation_history(db,team_id,player_id)}
+                    'negotiation_history':history[-10:],
+                    'negotiation_history_total':len(history),
+                    'negotiation_history_has_more':len(history)>10}
 
     def load_team(self, team_id: str) -> Ledger:
         with self._connection() as db:

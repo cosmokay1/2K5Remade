@@ -1268,3 +1268,12 @@ Reopened signed-story correspondence and native foreign-player rejection are ver
 AI run 38480372499 and Build check 38480372500; earlier 3202eed Franchise AI run
 38480331814 failed as documented. This new source has not been deployed to origin.
 Long-history pagination and actual browser/game story presentation remain unfinished.
+
+## October 13, 2026 — Explicit recent negotiation history coverage
+
+Player context now returns the latest ten stories with total count and has-more flag,
+retaining complete durable history. Native clients validate optional coverage metadata.
+A 13-story reopen fixture confirms chronology, recent selection, full retention and
+unchanged charges. 228 local tests and portable CTest pass. Event-count limiting does
+not guarantee byte-sized frames; oversized evidence/promises and full browser history
+pagination remain unfinished. Source is not yet reloaded into the public origin.

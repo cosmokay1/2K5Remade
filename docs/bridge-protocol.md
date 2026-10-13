@@ -134,3 +134,10 @@ The asset-free Windows pipe fixture at fb62cfd fetched this context after signin
 compared it to the authoritative database and required the same result after
 client/sidecar restart. Workflow 38479010675 logs confirm execution. This synthetic
 fixture does not establish a game menu, game hook or playable Windows build.
+
+Player context includes the latest ten chronological `negotiation_history` events,
+`negotiation_history_total` and `negotiation_history_has_more`. Older stories remain
+stored and available to the full history store read; the companion must label the
+recent view rather than imply it is the entire history. Native validation checks
+coverage metadata when present. This bounds event count, not complete response byte
+size: individual evidence/promise payload bounds and browser pagination remain work.

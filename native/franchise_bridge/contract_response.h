@@ -86,6 +86,13 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
             if (!history.is_object()) throw std::runtime_error("Invalid promise history context");
         if (result.contains("negotiation_history")) {
             if (!result.at("negotiation_history").is_array()) throw std::runtime_error("Invalid negotiation history context");
+            if (result.contains("negotiation_history_total")) {
+                integer_money(result.at("negotiation_history_total"));
+                if (result.at("negotiation_history_total") < result.at("negotiation_history").size() ||
+                    !result.at("negotiation_history_has_more").is_boolean() ||
+                    result.at("negotiation_history_has_more") != (result.at("negotiation_history_total") > result.at("negotiation_history").size()))
+                    throw std::runtime_error("Inconsistent negotiation history coverage");
+            }
             for (const auto& event : result.at("negotiation_history"))
                 if (!event.is_object() || canonical_offer(event.at("offer")).at("player_id") != request.at("player_id"))
                     throw std::runtime_error("Foreign player negotiation context");
