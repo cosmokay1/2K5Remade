@@ -1645,3 +1645,16 @@ bonus layers, finances and cash unchanged.305 full tests and executable syntheti
 money audit pass. Player-inspection26ead88 CI38486762451 had Linux success and
 Windows still running at inspection; Build38486762354 also pending. No new game
 execution/save evidence or external gate resolution is claimed.
+
+## October 13, 2026 — Controlled raw-save transaction comparison
+
+Extended read-only save_diff with optional --control-after from the same restored
+baseline. Full transaction/control spans and hashes are preserved; transaction
+changes partition into offsets unchanged in control versus control-overlap, with
+all three raw byte values retained. No overlap is erased or called a contract
+field.309 full tests pass; independent review checked729 exhaustive two-byte
+combinations for disjoint/complete partition and exact bytes, plus CLI read-only
+behavior. Raw mismatch/ZIP/empty control reject. No actual save is present; B01/B02
+field decoding and real round trips remain gated. Prior3cd6a5f passed Franchise AI
+38486893108 and Build38486893119; player-accounting26ead88 also passed38486762451/
+38486762354. No gameplay or save/load integration claim is made.

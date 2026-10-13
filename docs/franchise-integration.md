@@ -42,8 +42,14 @@ saves. Preserve SAVEGAME.DAT and its signing/metadata companions together.
    term at a time where the UI permits it.
 5. Compare raw payloads with:
    `python3 tools/save_diff.py before/SAVEGAME.DAT after/SAVEGAME.DAT`.
-   The JSON output records input hashes and exact changed byte spans. It makes
-   no claims about the meaning of a changed field.
+   Add `--control-after control/SAVEGAME.DAT` when the no-transaction control
+   was saved from the same restored baseline. The JSON retains every transaction
+   span and separately reports changes at offsets unchanged in that control and
+   changes overlapping control bookkeeping. Both groups include exact bytes and
+   hashes; overlap is never discarded. A single control does not establish that
+   an offset is always stable or identify a contract field. Restore the exact
+   baseline for each experiment; unrelated franchise dates/rosters are invalid
+   comparisons even if raw lengths happen to match.
 6. Trace candidate fields into generated guest functions, then verify against
    displayed accounting and a save/load round trip. Include CPU-controlled
    transactions and offseason advancement in the hook audit.
