@@ -80,6 +80,7 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
             if (!agreement.is_object() || !agreement.at("agreement_request_id").is_string() ||
                 agreement.at("agreement_request_id").get<std::string>().empty() || !agreement.at("goals").is_array())
                 throw std::runtime_error("Invalid promise agreement context");
+            promise_goals(agreement.at("goals"));
         }
         for (const auto& history : result.at("promise_history"))
             if (!history.is_object()) throw std::runtime_error("Invalid promise history context");

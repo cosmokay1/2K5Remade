@@ -1067,3 +1067,13 @@ Portable C++ checks cover accepted terms, changed targets, missing promise echoe
 unexpected counter terms and boolean weights. CTest passes locally. No actual game
 menu or guest write integration is claimed. Windows fixture fb62cfd CI runs
 38479010675 and 38479010676 were in progress at inspection.
+
+## October 13, 2026 — Counter-promise and saved-goal validation coverage
+
+Applied shared typed-goal validation to saved player agreement reads. Added native
+checks for a valid changed counter target, explicit empty-list withdrawal, null
+counter lists, duplicate IDs, hidden-rating metrics, absent source, fractional targets
+and malformed saved goals. Portable CTest passes. Player-context 4118b1d Franchise
+AI run 38478945850 completed successfully; inspected Windows job confirms native
+protocol and existing durable pipe fixture steps passed. The newer context-restart
+fixture and promise-integrity commits still require their own CI results.

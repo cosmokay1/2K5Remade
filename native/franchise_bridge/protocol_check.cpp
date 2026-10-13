@@ -40,6 +40,27 @@ int main() {
         promised_reply["result"]["promise_goals"] = goals;
         promised_reply["result"]["counter_promises"] = nullptr;
         franchise::validate_result(promised_reply, promised_request);
+        auto counter_reply = promised_reply;
+        counter_reply["result"]["action"] = "counter";
+        counter_reply["result"]["outcome"] = "counteroffer";
+        counter_reply["result"]["counter"] = request["offer"];
+        counter_reply["result"]["counter_promises"] = goals;
+        counter_reply["result"]["counter_promises"][0]["target"] = 8;
+        franchise::validate_result(counter_reply, promised_request);
+        counter_reply["result"]["counter_promises"] = nlohmann::json::array();
+        franchise::validate_result(counter_reply, promised_request); // Explicit withdrawal.
+        for (int scenario = 0; scenario < 5; ++scenario) {
+            auto bad = counter_reply;
+            bad["result"]["counter_promises"] = goals;
+            if (scenario == 0) bad["result"]["counter_promises"] = nullptr;
+            if (scenario == 1) bad["result"]["counter_promises"].push_back(goals[0]);
+            if (scenario == 2) bad["result"]["counter_promises"][0]["metric"] = "overall_rating";
+            if (scenario == 3) bad["result"]["counter_promises"][0]["source"] = " ";
+            if (scenario == 4) bad["result"]["counter_promises"][0]["target"] = 8.5;
+            bool rejected = false;
+            try { franchise::validate_result(bad, promised_request); } catch (const std::exception&) { rejected = true; }
+            if (!rejected) throw std::runtime_error("Invalid counter promises accepted");
+        }
         for (int scenario = 0; scenario < 4; ++scenario) {
             auto bad = promised_reply;
             if (scenario == 0) bad["result"]["promise_goals"][0]["target"] = 13;
@@ -53,13 +74,16 @@ int main() {
         auto player_request = franchise::parse_frame(R"({"operation":"player_context","player_id":"v"})");
         auto player_reply = franchise::parse_frame(R"({"error":null,"result":{"player_id":"v","financial_revision":0,"initialized":true,"personality":{},"relationships":{},"agreed_promises":[],"promise_history":[]}})");
         franchise::validate_result(player_reply, player_request);
-        for (int scenario = 0; scenario < 5; ++scenario) {
+        player_reply["result"]["agreed_promises"] = {{{"agreement_request_id", "one"}, {"goals", goals}}};
+        franchise::validate_result(player_reply, player_request);
+        for (int scenario = 0; scenario < 6; ++scenario) {
             auto bad = player_reply;
             if (scenario == 0) bad["result"]["player_id"] = "other";
             if (scenario == 1) bad["result"]["financial_revision"] = true;
             if (scenario == 2) bad["result"]["personality"] = nullptr;
             if (scenario == 3) bad["result"]["promise_history"] = {1};
             if (scenario == 4) bad["result"]["agreed_promises"] = {{{"agreement_request_id", ""}, {"goals", nlohmann::json::array()}}};
+            if (scenario == 5) bad["result"]["agreed_promises"][0]["goals"][0]["metric"] = "catching_rating";
             bool rejected = false;
             try { franchise::validate_result(bad, player_request); } catch (const std::exception&) { rejected = true; }
             if (!rejected) throw std::runtime_error("Invalid player context accepted");
