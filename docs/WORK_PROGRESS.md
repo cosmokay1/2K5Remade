@@ -99,3 +99,9 @@ First CI run `38458788876`: Linux passed; Windows failed during cleanup of two
 test-owned SQLite connections. The store's connection lifecycle was not the
 failure. Fixed explicit test connection closure; a new remote run must verify
 the correction before claiming Windows persistence checks pass.
+
+Verified corrected commit `98c4555` in
+[CI run 38458986651](https://github.com/cosmokay1/2K5Remade/actions/runs/38458986651):
+Linux and Windows both passed all 60 tests, money checks and offline examples,
+including durable negotiation replay and abrupt-process recovery. Next: recorded
+financial posting/reconciliation, precision consistency and tender replacement.
