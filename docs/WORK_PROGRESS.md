@@ -811,3 +811,16 @@ Steam Deck/cohort source commit `a5c062c` passed Franchise AI checks on Windows
 and Linux, including native protocol/pipe checks, in run 38473300500. Upstream
 build check also passed in run 38473300526. These checks exercised no game assets
 and establish no Proton or gameplay compatibility.
+
+## October 13, 2026 — Cloudflare tunnel and HTTP origin
+
+Used Cloudflare plugin to verify account/active zone and absent 2k5 hostname.
+Dedicated llm-2k5 tunnel creation failed with Cloudflare authentication error
+10000; no resources were created, and write-scope reconnection was requested.
+Prepared loopback HTTP origin with bearer-authenticated existing-state inspection
+and shared contract preview, bounded bodies/read timeouts and no financial writes
+or inference routes. 164 tests pass, including actual loopback requests verifying
+unauthorized rejection, exact preview, over-cap/stale rejection and no mutation.
+Test required sandbox escalation solely to bind an ephemeral localhost port.
+Browser UI, Access login, package downloads and external tunnel traffic remain
+unimplemented/unverified; no claim of a live site or playable web game.

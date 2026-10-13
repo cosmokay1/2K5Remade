@@ -221,3 +221,14 @@ verified or the user cancels it.
 - [ ] Validate actual in-game draft hooks and save round trips.
 
 See packaging/steamdeck/README.md. Candidate packaging is not playable delivery.
+
+## Cloudflare web delivery
+
+- [x] Inspect cosmokay.com and existing tunnel/DNS resources using Cloudflare plugin.
+- [x] Prepare authenticated loopback HTTP franchise inspection/preview origin.
+- [ ] Restore Cloudflare connector Tunnel Write/DNS Write scope (creation returned authentication error).
+- [ ] Create dedicated tunnel and route 2k5.cosmokay.com; verify actual HTTPS traffic.
+- [ ] Add authenticated browser franchise UI and project/package section.
+- [ ] Extend live negotiation/draft API with persistent transactions and existing remote killswitch.
+
+See docs/cloudflare-tunnel.md. No tunnel/DNS changes succeeded yet.
