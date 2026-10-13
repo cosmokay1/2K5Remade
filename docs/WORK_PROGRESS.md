@@ -338,3 +338,16 @@ actual Windows execution succeeds.
 
 Preceding sidecar `e0c7ba9` passed Windows/Linux (including real subprocess tests) in
 [run 38464385703](https://github.com/cosmokay1/2K5Remade/actions/runs/38464385703).
+
+## October 13, 2026 — Native execution failure and CRLF repair
+
+Run 38464574968 compiled the C++ client on Windows and passed 106 portable tests,
+but native execution failed while parsing output. Windows text-mode sidecar output
+is CRLF; the raw client retained CR and then C++ text output added another CRLF,
+producing empty splitlines in the verifier. Corrected the wire reader to consume
+CRLF framing. Kept strict JSON verification rather than filtering empty output.
+Extended the native fixture to require failure on missing database and nonexistent
+Python executable, without changing the successful financial state.
+
+The native milestone remains unverified until the repaired code executes on
+Windows. This is a concrete failed runtime check, not a playable-game result.

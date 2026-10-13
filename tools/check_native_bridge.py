@@ -24,6 +24,11 @@ def main():
             assert responses[0]["result"]["ai_enabled"] is True
             assert responses[1]["result"]["room_after"] == 90
             assert responses[2]["result"]["outcome"] == "player_rejected"
+        for python, database in ((sys.executable, str(Path(directory) / "missing.sqlite")),
+                                 (str(Path(directory) / "missing-python.exe"), str(path))):
+            failed = subprocess.run([sys.argv[1], python, database],
+                                    text=True, capture_output=True, timeout=20)
+            assert failed.returncode != 0, "Native client must fail closed on launch/service failure"
         assert store.load_team("a").revision == 0
         assert len(store.negotiation_history("a", "v")) == 1
         print("Native Windows pipe handshake, preview, dialogue and restart verified (synthetic).")

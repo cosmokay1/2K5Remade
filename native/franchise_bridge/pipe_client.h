@@ -91,6 +91,7 @@ public:
                 if (!ReadFile(output_, &c, 1, &count, nullptr) || count != 1)
                     throw std::runtime_error("Sidecar read failed");
                 if (c == '\n') return response;
+                if (c == '\r') continue;  // Windows text-mode CRLF framing.
                 if (response.size() >= 65536) throw std::runtime_error("Sidecar response too large");
                 response += c;
             }
