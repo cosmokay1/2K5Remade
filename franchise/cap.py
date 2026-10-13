@@ -287,6 +287,10 @@ class Ledger:
         self.negotiation_context(player_id)  # Require a registered player.
         return {"personality": personality, "relationships": relationships}
 
+    def negotiation_inputs(self, player_id, actor):
+        with self._lock:
+            return actor, self.negotiation_context(player_id)
+
     def negotiation_history(self, player_id: str):
         return []
 

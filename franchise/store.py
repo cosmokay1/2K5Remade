@@ -7,6 +7,7 @@ retail game state is imported or modified by this store.
 from contextlib import contextmanager, closing
 from dataclasses import asdict
 import json
+import math
 from pathlib import Path
 import sqlite3
 import uuid
@@ -118,8 +119,10 @@ class FranchiseStore:
         if row is None:
             raise Rejected("Unknown team")
         ledger = from_config(json.loads(row[0]))
+        ledger._actors = {}
+        relationship_sources = set()
         payment_references = set()
-        for kind, serialized in db.execute("SELECT kind, payload FROM events WHERE team_id=? ORDER BY id", (team_id,)):
+        for event_id, kind, serialized in db.execute("SELECT id, kind, payload FROM events WHERE team_id=? ORDER BY id", (team_id,)):
             payload = json.loads(serialized)
             if kind == "sign":
                 self._validate_story_evidence(payload["story"])
@@ -160,6 +163,20 @@ class FranchiseStore:
             elif kind == "actor":
                 ledger.negotiation_context(payload["player_id"])
                 self._validate_actor(payload["actor"])
+                if payload["player_id"] in ledger._actors:
+                    raise ValueError("Duplicate actor registration")
+                ledger._actors[payload["player_id"]] = payload["actor"]
+            elif kind == "relationship":
+                identity = (payload["player_id"], payload["relationship"], payload["source_request_id"])
+                if identity in relationship_sources:
+                    raise ValueError("Relationship consequence already applied")
+                relationship_sources.add(identity)
+                self._relationship_source(db, team_id, payload["player_id"], payload["source_request_id"], before_revision=ledger.revision, before_event_id=event_id)
+                actor = ledger._actors.get(payload["player_id"])
+                self._apply_relationship(actor, payload["relationship"], payload["delta"])
+                if actor != payload["actor_after"]:
+                    raise ValueError("Relationship posting disagrees with replay")
+                ledger.revision += 1
             elif kind == "dialogue":
                 self._validate_dialogue(payload["event"])
             elif kind == "budget":
@@ -310,7 +327,7 @@ class FranchiseStore:
             key = "actor:" + player_id
             row = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, key)).fetchone()
             if row:
-                return json.loads(row[0])["actor"]
+                return ledger._actors[player_id]
             # Player priorities follow the player across clubs; relationships
             # remain team-specific. The write lock serializes first registration.
             existing = db.execute("SELECT payload FROM events WHERE kind='actor' AND request_key=? ORDER BY id LIMIT 1", (key,)).fetchone()
@@ -319,6 +336,65 @@ class FranchiseStore:
             payload = {"player_id": player_id, "actor": actor, "posting": ledger.financial_snapshot()}
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'actor', ?)",
                        (team_id, key, json.dumps(payload, allow_nan=False)))
+            return actor
+
+    @staticmethod
+    def _apply_relationship(actor, key, delta):
+        if actor is None or type(key) is not str or key not in actor["relationships"]:
+            raise Rejected("Known actor relationship required")
+        score = actor["relationships"][key]
+        if type(score) not in (int, float) or not math.isfinite(score) or not 0 <= score <= 1:
+            raise ValueError("Relationship score must be within zero and one")
+        if type(delta) not in (int, float) or not math.isfinite(delta) or delta == 0 or abs(delta) > 0.1:
+            raise ValueError("Relationship change must be nonzero and at most 0.1")
+        actor["relationships"][key] = round(max(0, min(1, score + delta)), 6)
+
+    @staticmethod
+    def _relationship_source(db, team, player, request, *, before_revision, before_event_id=None):
+        for event_id, kind, serialized in db.execute("SELECT id,kind,payload FROM events WHERE team_id=? AND request_key IN (?, ?)",
+                (team, "sign:" + request, "dialogue:" + request)):
+            if before_event_id is not None and event_id >= before_event_id:
+                continue
+            data = json.loads(serialized)
+            event = data["story"] if kind == "sign" else data["event"]
+            if event is not None and event["offer"]["player_id"] == player and data["posting"]["revision"] <= before_revision:
+                return
+        raise Rejected("Recorded negotiation consequence required")
+
+    def negotiation_inputs(self, team, player):
+        with self._connection() as db:
+            ledger = self._load(db, team)
+            if player not in ledger._actors:
+                raise Rejected("Registered actor required")
+            return ledger._actors[player], ledger.negotiation_context(player)
+
+    def update_relationship(self, team, request_id, player, relationship, delta, *, source_request_id, expected_revision):
+        for value in (request_id, player, relationship, source_request_id):
+            if type(value) is not str or not value.strip():
+                raise ValueError("Stable relationship identities required")
+        payload = dict(player_id=player, relationship=relationship, delta=delta, source_request_id=source_request_id)
+        with self._connection(write=True) as db:
+            ledger = self._load(db, team)
+            key = "relationship:" + request_id
+            prior = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team, key)).fetchone()
+            if prior:
+                previous = json.loads(prior[0])
+                if any(previous[field] != payload[field] for field in payload):
+                    raise Rejected("Relationship request already recorded differently")
+                return previous["actor_after"]
+            if type(expected_revision) is not int or expected_revision != ledger.revision:
+                raise Rejected("Relationship change is based on stale franchise state")
+            for (serialized,) in db.execute("SELECT payload FROM events WHERE team_id=? AND kind='relationship'", (team,)):
+                previous = json.loads(serialized)
+                if all(previous[field] == payload[field] for field in ("player_id", "relationship", "source_request_id")):
+                    raise Rejected("Relationship consequence already applied")
+            self._relationship_source(db, team, player, source_request_id, before_revision=ledger.revision)
+            actor = ledger._actors.get(player)
+            self._apply_relationship(actor, relationship, delta)
+            ledger.revision += 1
+            payload.update(actor_after=actor, posting=ledger.financial_snapshot())
+            db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'relationship', ?)",
+                       (team, key, json.dumps(payload, allow_nan=False)))
             return actor
 
     @staticmethod
@@ -388,6 +464,9 @@ class FranchiseStore:
                 if recorded != event:
                     raise Rejected("Negotiation request already recorded differently")
                 return recorded
+            if event.get("evidence") is not None and event["outcome"] != "accounting_rejected":
+                if event["evidence"]["financial_revision"] != ledger.revision:
+                    raise Rejected("Response was based on stale franchise context")
             self._check_history(db, team_id, event["offer"]["player_id"], event)
             payload = {"event": event, "posting": ledger.financial_snapshot()}
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'dialogue', ?)",
@@ -451,6 +530,9 @@ class StoredLedger:
     def bind_actor(self, player_id, personality, relationships, *, access_check):
         return self.store.bind_actor(self.team_id, player_id, personality, relationships,
                                      access_check=access_check)
+
+    def negotiation_inputs(self, player_id, actor):
+        return self.store.negotiation_inputs(self.team_id, player_id)
 
     def record_negotiation(self, event, *, access_check):
         return self.store.record_negotiation(self.team_id, event, access_check=access_check)

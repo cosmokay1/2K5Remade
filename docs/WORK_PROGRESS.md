@@ -526,3 +526,25 @@ Verified preceding guarantee terms `ec05229` in
 payment evidence `ed7a97a` in run 38466601230 and nominal cash ledger `72f9a15`
 in run 38466351288. All passed Windows/Linux and native transport fixtures.
 This evidence does not establish guarantee settlement, retail import or gameplay.
+
+## October 13, 2026 — Bounded event-grounded relationship evolution
+
+Added durable relationship updates for existing zero-to-one scores. Each change
+is at most 0.1 (explicit simulation policy), requires an earlier recorded player
+negotiation with the team, and applies once per source event/relationship. Request
+retries preserve results; unknown sources, stale revisions and excessive changes
+reject. Updates advance franchise revision without changing charges. Replay checks
+chronology, duplicate consequences and the resulting actor state.
+
+Live sessions refresh actor context; durable actor/accounting reads share a single
+read transaction. Counters/rejections from obsolete financial/relationship context
+reject at write. This prevents mixing old trust with a new accounting revision.
+No model-generated story alone can authorize a trust update; the caller must
+explicitly apply a bounded consequence backed by a recorded event.
+
+124 local tests pass, including restart/live-session refresh, duplicate source
+consequence rejection and concurrent update during inference. Player personality
+evolution, agents/GM strategies and automatically defined consequence policies
+remain pending. Native guarantee fixture `3d4eaf9` passed Windows/Linux in
+[run 38467085483](https://github.com/cosmokay1/2K5Remade/actions/runs/38467085483).
+New relationship implementation CI pending; no actual game integration claim.

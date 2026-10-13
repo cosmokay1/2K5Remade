@@ -108,7 +108,10 @@ class Negotiation:
             self._signed = any(event["outcome"] == "signed" for event in fresh)
         if self._signed:
             raise ValueError("Negotiation is already signed")
-        snapshot = self.ledger.negotiation_context(self.player_id)
+        actor = json.loads(self._actor)
+        refreshed = self.ledger.bind_actor(self.player_id, actor["personality"], actor["relationships"], access_check=self._access_check)
+        refreshed, snapshot = self.ledger.negotiation_inputs(self.player_id, refreshed)
+        self._actor = json.dumps({**refreshed, "performance": actor["performance"]}, allow_nan=False)
         if expected_revision is not None and (type(expected_revision) is not int or expected_revision != snapshot["revision"]):
             raise Rejected("Offer was based on stale client franchise state")
         context = {"player_id": self.player_id, **json.loads(self._actor),

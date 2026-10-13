@@ -286,3 +286,11 @@ guarantees. `ledger.contract_terms(player_id)` exposes original saved terms.
 [Definition source](https://operations.nfl.com/calendar-events/nfl-free-agency/contract-language).
 Conditional guarantees, vesting, offsets, forfeiture and release settlement are
 not implemented. No guarantee is inferred from missing original-game data.
+
+`store.update_relationship` applies one explicit bounded change to an existing
+relationship score, requiring a recorded negotiation source request and current
+franchise revision. Scores stay in 0–1; step limit 0.1 is simulation policy.
+One event/relationship may affect the score once. Live/restarted sessions observe
+updated relationships through an atomic actor/accounting read. No automatic trust
+changes are inferred from free-form model narration. Personality and agent/GM
+evolution remain pending.
