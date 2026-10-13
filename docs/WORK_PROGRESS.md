@@ -429,3 +429,20 @@ retroactively fabricated evidence. Actor context must be an object before infere
 evidence, restart retention and rejection of hidden rating fields in stored story
 evidence. Native job lifetime and new evidence CI remain pending. No game
 instrumentation, authenticity guarantee or playable build is claimed.
+
+## October 13, 2026 — Keyless runtime identity and direct IAM separation
+
+Created `franchise-runtime` in authorized project llm-2k5 with no user-managed
+keys. Custom project inference role contains only endpoints.predict/services.use.
+Custom bucket read role contains only objects.get, condition-restricted to the
+control object. Read-only `tools.audit_runtime_iam` verified exact direct grants
+and zero user keys without printing tokens or making model requests. Switch state
+was not renewed/re-enabled; no ongoing service infrastructure was provisioned.
+
+Authentication/federation/impersonation remains unimplemented; the sidecar's ADC
+is not automatically switched to this identity. Inherited folder/organization
+policy was not evaluated. M4 client/admin deployment separation remains incomplete
+until runtime access is exercised. See docs/runtime-iam.md for exact scope.
+
+Native job lifetime `fa21c87` passed Windows/Linux in run 38465395201, including
+the abrupt-parent-exit process-handle assertion. Model-evidence CI is still pending.
