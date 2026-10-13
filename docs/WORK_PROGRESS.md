@@ -1322,3 +1322,15 @@ and no release implementation/authority has been added. Must handle over-cap
 acceleration and subsequent signing restrictions without dropping liabilities.
 History cursor 36493ce Build check 38480930953 passed; Franchise AI run 38480931002
 was confirmed in progress. The financial review agent remains active.
+
+## October 13, 2026 — Supported pure preseason release calculation
+
+Parallel implementation added releases.py and six independent tests. Primary review
+caught earned-versus-paid ambiguity; scope now requires explicit healthy status and
+zero earned base, with omission/boolean misuse regressions. Calculation retains
+original bonus layers and covered-base PV separately, preserving nominal paid/unpaid
+cash and cancelling only sourced unearned unprotected bases. Independent pre/post
+June example yields 39 versus (33,6), with paid9/unpaid30 cash; exact fractional,
+elapsed-year, final2030 and unknown-payment guards pass. Full suite237 passes locally.
+No durable mutation/ownership/game authority exists yet. Added source/scope docs and
+next transaction prerequisites; nearest-$1000 posting/rates/real guest facts remain.
