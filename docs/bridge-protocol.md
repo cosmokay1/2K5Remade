@@ -1,7 +1,11 @@
 # Franchise sidecar protocol 1
 
-`franchise.bridge.Bridge` is an injectable request handler, not yet a listening
-service. Transport/native integration remain under development. Never send cloud
+`franchise.bridge.Bridge` is the injectable request handler.
+`python -m franchise.sidecar --database PATH --provider vertex` runs it over
+stdin/stdout JSON lines using Application Default Credentials and the required
+remote switch. `--provider offline-fixture` is an explicit synthetic rejection
+fixture with no cloud calls. The database must already exist. Native integration
+remains under development. Never send cloud
 owner credentials through this protocol or expose it as a public server.
 
 Every request has `protocol: 1`, nonempty `request_id`, and `operation`.
@@ -21,4 +25,10 @@ An unrecorded failed request requires fresh state/history before resubmission.
 Preview consumes no money and remains available with AI disabled. It grants no
 reservation or permission to bypass final cap enforcement. An expired inference
 cannot commit after returning; this does not cancel provider network work already
-in progress. Asynchronous transport and bounded queue/cancellation are pending.
+in progress. The process transport runs one inference worker and has no waiting queue: additional
+negotiations receive `busy`. Preview requests remain independent of that worker.
+Frames are limited to 65536 characters; oversized input closes the channel.
+EOF/broken output marks the client disconnected and denies subsequent commits.
+Provider network work may finish before process exit. Clients must keep input open
+until receiving their response. Stdout contains only protocol responses.
+A native pipe client and actual game-thread integration are still pending.

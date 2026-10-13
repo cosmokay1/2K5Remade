@@ -302,3 +302,20 @@ integration remain required. No native/game acceptance claim. CI pending.
 
 Verified prior conversation-consistency commit `db4fa98` on Windows/Linux in
 [run 38464014062](https://github.com/cosmokay1/2K5Remade/actions/runs/38464014062).
+
+## October 13, 2026 — Bounded process sidecar transport
+
+Added stdin/stdout JSON-lines sidecar over the durable bridge. One inference worker,
+no queued inference, explicit busy response, frame-size limits and disconnect
+guards. Preview dispatch stays independent of inference. Live Vertex mode requires
+ADC and remote control; offline fixture mode is explicit and makes no cloud calls.
+Only existing databases may start; the transport cannot invent opening finances.
+
+106 local tests pass. New tests launch a real sidecar subprocess twice to verify
+handshake/dialogue/restart recall, and interrupt an in-flight acceptance after
+busy rejection to prove disconnect preserves finances/history. Native pipe client,
+Windows process execution evidence and real game integration remain required.
+No paid inference or game assets used. CI pending for this implementation.
+
+Verified preceding request-handler commit `3d1a095` on Windows/Linux in
+[run 38464213438](https://github.com/cosmokay1/2K5Remade/actions/runs/38464213438).
