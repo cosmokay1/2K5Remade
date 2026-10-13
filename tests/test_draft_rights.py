@@ -88,3 +88,24 @@ class DraftRightsTests(unittest.TestCase):
                 access_check=lambda:None,decision_mode='ai',scouting_request_id='advice')
             self.assertEqual(FranchiseStore(store.path).load_team('a').revision,1)
             self.assertEqual(store.load_team('a').room,20)
+
+    def test_ai_pick_rejects_personality_established_after_advice(self):
+        import json
+        from franchise.draft import DraftScouting,Prospect
+        from franchise.performance import PerformanceEvidence
+        from franchise.store import StoredLedger
+        with tempfile.TemporaryDirectory() as directory:
+            store,_=self.setup_store(directory)
+            offer=Offer('p',(10,)*4,0)
+            evidence=PerformanceEvidence('p','fixture season','cpu_played',(),'unavailable fixture evidence')
+            prospect=Prospect('p','WR','slot','fixture college','fixture',(evidence,),{},'authored fixture',offer,'fixture estimate')
+            DraftScouting(StoredLedger(store,'a'),access_check=lambda:None).recommend('advice',lambda _:json.dumps(
+                {'action':'recommend','player_id':'p','reason':'Role fits','uncertainty':'Production unavailable'}),
+                expected_revision=0,draft_round=1,overall_pick=1,prospects=(prospect,),team_needs=[])
+            store.bind_actor('b','p',{'money':0.8},{},access_check=lambda:None)
+            before=store.load_team('a').financial_snapshot()
+            with self.assertRaisesRegex(Rejected,'cross-team'):
+                store.commit_draft_pick('a','stale','fixture-draft',1,offer,0,funding_source='fixture estimate',
+                    access_check=lambda:None,decision_mode='ai',scouting_request_id='advice')
+            self.assertEqual(store.load_team('a').financial_snapshot(),before)
+            self.assertEqual(store.load_team('b').revision,0)

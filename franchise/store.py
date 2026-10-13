@@ -263,6 +263,7 @@ class FranchiseStore:
                 if offer.player_id != payload["player_id"]:
                     raise ValueError("Pick and funding estimate identities disagree")
                 self._validate_pick_decision(ledger,payload)
+                self._validate_pick_personalities(db,ledger,payload,before_event=event_id)
                 self._draft_fund_pick(ledger, offer, payload["expected_revision"], payload["funding_source"])
                 ledger._draft_rights[offer.player_id] = {"draft_id": order.draft_id, "league_year": order.league_year,
                     "overall_pick": slot.overall_pick, "draft_round": slot.draft_round}
@@ -872,6 +873,13 @@ class FranchiseStore:
         if estimate != payload['offer']:
             raise Rejected('Pick funding differs from scouted contract estimate')
 
+    def _validate_pick_personalities(self, db, ledger, payload, *, before_event=None):
+        if payload['decision_mode'] != 'ai':
+            return
+        for prospect in ledger._scouting[-1]['evidence']['prospects']:
+            ledger.validate_scouting_personality(prospect['player_id'],prospect['personality'])
+            self._validate_prior_personality(db,prospect['player_id'],prospect['personality'],before_event=before_event)
+
     def commit_draft_pick(self, team_id, request_id, draft_id, overall_pick, offer, expected_revision,
                           *, funding_source, access_check, decision_mode, scouting_request_id=None):
         if type(request_id) is not str or not request_id.strip() or type(overall_pick) is not int or overall_pick < 1:
@@ -908,6 +916,7 @@ class FranchiseStore:
                 raise Rejected('Prospect already selected or contracted')
             payload["draft_round"] = slot.draft_round
             self._validate_pick_decision(ledger,payload)
+            self._validate_pick_personalities(db,ledger,payload)
             self._draft_fund_pick(ledger,offer,expected_revision,funding_source)
             ledger._draft_rights[offer.player_id] = {'draft_id':order.draft_id,'league_year':order.league_year,
                 'overall_pick':overall_pick,'draft_round':slot.draft_round}

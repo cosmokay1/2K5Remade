@@ -1181,3 +1181,13 @@ event IDs; conflicting in-flight advice rejects and creates no scouting receipt.
 Both paths preserve the full financial snapshot across database reopening. 224 local
 tests pass. Cross-team fix CI 38479859663/38479859594 and chronological fixture
 38479792769/38479792749 were confirmed in progress. No actual game execution occurred.
+
+## October 13, 2026 — AI pick requires current canonical personalities
+
+AI pick commit now revalidates every compared candidate's personality against local
+and globally established actors inside the final transaction. Replay applies the
+same check using actor events preceding the pick. Historical advice remains readable,
+but a later contradictory actor assignment requires refreshed advice before an AI
+pick. Manual picks retain explicit manual authority. Regression verifies stale advice
+cannot create rights/reservations and preserves both teams' financial state.
+225 local tests pass; guest draft execution remains unverified.
