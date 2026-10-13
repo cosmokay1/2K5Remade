@@ -264,3 +264,26 @@ class DraftComparisonTests(unittest.TestCase):
             reopened=FranchiseStore(store.path)
             self.assertEqual(reopened.player_context('a','a')['personality'],original)
             self.assertEqual(reopened.load_team('a').revision,0)
+            import sqlite3
+            from contextlib import closing
+            with closing(sqlite3.connect(store.path)) as db:
+                row=db.execute("SELECT id,payload FROM events WHERE kind='draft_scouting'").fetchone()
+                payload=json.loads(row[1])
+                payload['event']['evidence']['prospects'][0]['personality']['money']=0.01
+                db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(payload),row[0]))
+                db.commit()
+            with self.assertRaisesRegex(Rejected,'saved player personality'):
+                reopened.load_team('a')
+
+    def test_legacy_scouting_before_actor_binding_replays_chronologically(self):
+        import tempfile,json
+        from franchise.draft import DraftScouting
+        from franchise.store import FranchiseStore
+        with tempfile.TemporaryDirectory() as directory:
+            store,ledger,inputs=self.durable_scouting(directory)
+            reply=DraftScouting(ledger,access_check=lambda:None).recommend('legacy',lambda _:json.dumps(
+                {'action':'defer','player_id':None,'reason':'More evidence needed','uncertainty':'Targets unknown'}),**inputs)
+            store.bind_actor('a','a',{'money':0.8},{'trust':0.5},access_check=lambda:None)
+            reopened=FranchiseStore(store.path)
+            self.assertEqual(reopened.recalled_scouting('a','legacy'),reply)
+            self.assertEqual(reopened.player_context('a','a')['personality'],{'money':0.8})

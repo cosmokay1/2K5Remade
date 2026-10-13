@@ -1150,3 +1150,14 @@ franchise scouting fixture confirming canonical traits, rejected replacement bef
 provider call, reopened identity and unchanged financial revision. 221 local tests
 pass. This connects creation-time personas to engine draft advice, not a verified
 guest draft UI or real game hook.
+
+## October 13, 2026 — Draft personality replay acceptance and review finding
+
+Added database tampering regression for changed initialized prospect personality,
+and a legacy sequence where scouting precedes actor binding. Historical advice
+replays chronologically without applying future traits to old evidence. 222 local
+tests pass. Independent read-only reviewer confirmed initialized ordering but found
+an unresolved legacy cross-team gap: scouting on an unbound team does not yet check
+an actor already saved on another team. Next work must enforce canonical prior
+personality for new advice and chronological cross-team replay, preserving genuinely
+unbound historical authored evidence. No game integration is inferred from tests.
