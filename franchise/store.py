@@ -10,9 +10,10 @@ import json
 from pathlib import Path
 import sqlite3
 import uuid
-from franchise.cap import Ledger, Offer, Rejected, json_amount
+from franchise.cap import Ledger, Offer, Rejected, json_amount, money
 from franchise.rookie import RookieScale
 from franchise.books import OpeningBooks, parse_amount
+from franchise.cash import CashBook, CashObligation
 
 
 def from_config(config: dict) -> Ledger:
@@ -123,8 +124,28 @@ class FranchiseStore:
                 self._validate_story_evidence(payload["story"])
                 data = payload["offer"]
                 receipt = ledger.sign(payload["request_id"], Offer(data["player_id"], tuple(data["salaries"]), data["signing_bonus"]), payload["expected_revision"])
+                if ledger._cash is not None:
+                    ledger._cash.add_contract(receipt.offer, "sign:" + payload["request_id"])
+                    if payload.get("cash_posting") != ledger.cash_snapshot():
+                        raise ValueError("Recorded signing cash disagrees with replay")
                 if payload.get("contract_charges") != [json_amount(value) for value in receipt.charges]:
                     raise ValueError("Recorded contract charges disagree with replay")
+            elif kind == "cash_open":
+                if ledger._cash is not None:
+                    raise ValueError("Duplicate opening cash state")
+                records = tuple(CashObligation(**record) for record in payload["records"])
+                self._check_opening_cash(ledger, records)
+                ledger._cash = CashBook(records, payload["source"])
+                ledger.revision += 1
+                if payload["cash_posting"] != ledger.cash_snapshot():
+                    raise ValueError("Opening cash posting disagrees with records")
+            elif kind == "cash_payment":
+                if ledger._cash is None:
+                    raise ValueError("Payment has no opening cash state")
+                ledger._cash.pay(payload["obligation_id"], payload["amount"], payload["expected_cash_revision"])
+                ledger.revision += 1
+                if payload["cash_posting"] != ledger.cash_snapshot():
+                    raise ValueError("Cash payment posting disagrees with replay")
             elif kind == "actor":
                 ledger.negotiation_context(payload["player_id"])
                 self._validate_actor(payload["actor"])
@@ -144,6 +165,52 @@ class FranchiseStore:
     def load_team(self, team_id: str) -> Ledger:
         with self._connection() as db:
             return self._load(db, team_id)
+
+    @staticmethod
+    def _check_opening_cash(ledger, records):
+        by_id = {record.obligation_id: record for record in records}
+        for player, offer in ledger._contracts.items():
+            record = by_id.get("contract:" + player)
+            if record is None or record.player_id != player or record.amount != sum(offer.salaries) + offer.signing_bonus:
+                raise ValueError("Opening cash must reconcile every original active contract")
+
+    def initialize_cash(self, team_id, records: tuple[CashObligation, ...], *, source: str):
+        book = CashBook(records, source)
+        with self._connection(write=True) as db:
+            ledger = self._load(db, team_id)
+            if ledger._cash is not None:
+                raise Rejected("Cash already initialized; refusing to reset payments")
+            self._check_opening_cash(ledger, records)
+            ledger.revision += 1
+            payload = {"records": [asdict(record) for record in records], "source": source,
+                       "cash_posting": book.snapshot(), "posting": ledger.financial_snapshot()}
+            db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, 'cash:opening', 'cash_open', ?)",
+                       (team_id, json.dumps(payload, allow_nan=False)))
+
+    def record_payment(self, team_id, request_id, obligation_id, amount, *, expected_cash_revision, source):
+        if type(request_id) is not str or not request_id.strip() or type(source) is not str or not source.strip():
+            raise ValueError("Payment request ID and evidence source required")
+        money(amount)
+        payload = dict(obligation_id=obligation_id, amount=amount, source=source,
+                       expected_cash_revision=expected_cash_revision)
+        with self._connection(write=True) as db:
+            ledger = self._load(db, team_id)
+            if ledger._cash is None:
+                raise Rejected("Cash history is unavailable; explicit initialization required")
+            key = "cash:payment:" + request_id
+            prior = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, key)).fetchone()
+            if prior:
+                recorded = json.loads(prior[0])
+                if any(recorded[field] != payload[field] for field in ("obligation_id", "amount", "source")):
+                    raise Rejected("Payment request already recorded differently")
+                return recorded["cash_posting"]
+            ledger._cash.pay(obligation_id, amount, expected_cash_revision)
+            ledger.revision += 1
+            payload["cash_posting"] = ledger.cash_snapshot()
+            payload["posting"] = ledger.financial_snapshot()
+            db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'cash_payment', ?)",
+                       (team_id, key, json.dumps(payload, allow_nan=False)))
+            return payload["cash_posting"]
 
     def preview_offer(self, team_id: str, offer: Offer, expected_revision: int) -> dict:
         with self._connection() as db:
@@ -178,6 +245,9 @@ class FranchiseStore:
             if story is not None:
                 self._check_history(db, team_id, offer.player_id, story)
             receipt = ledger.sign(request_id, offer, expected_revision, access_check=access_check)
+            if ledger._cash is not None:
+                ledger._cash.add_contract(offer, "sign:" + request_id)
+                payload["cash_posting"] = ledger.cash_snapshot()
             payload["posting"] = ledger.financial_snapshot()
             payload["contract_charges"] = [json_amount(value) for value in receipt.charges]
             serialized = json.dumps(payload, allow_nan=False)

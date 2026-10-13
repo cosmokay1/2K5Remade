@@ -91,6 +91,8 @@ class Ledger:
                 money(value)
         self._charges = tuple(existing_charges)
         self._opening_books = opening_books
+        self._contracts = {item.offer.player_id: item.offer for item in opening_books.contracts} if opening_books else {}
+        self._cash = None
         if type(max_bonus_years) is not int or not 1 <= max_bonus_years <= 5:
             raise ValueError("Bonus allocation limit must be between one and five years")
         self._max_bonus_years = max_bonus_years
@@ -155,6 +157,9 @@ class Ledger:
                    rookie_tenders={item.player_id: item.amount for item in books.tenders},
                    opening_books=books, **rules)
 
+    def cash_snapshot(self):
+        return self._cash.snapshot() if self._cash is not None else None
+
     @property
     def cap(self) -> int:
         return self._cap
@@ -210,6 +215,8 @@ class Ledger:
             return {"revision": self.revision, "cap": self.cap, "room": json_amount(self.room),
                     "annual_team_charges": [json_amount(value) for value in self._charges],
                     "roster_reserve": self.roster_reserve,
+                    "cash_summary": ({key: value for key, value in self.cash_snapshot().items()
+                                      if key != "obligations"} if self._cash is not None else None),
                     "veteran_minimum_salaries": self._veteran_minimums.get(player_id),
                     "salary_floor_profile": ({"start_year": self._veteran_minimum_profile.start_year,
                                               "rule_version": self._veteran_minimum_profile.rule_version,
@@ -328,6 +335,7 @@ class Ledger:
         receipt = Signing(request_id, offer, charges, self.revision + 1)
         self._charges = updated
         self._players.add(offer.player_id)
+        self._contracts[offer.player_id] = offer
         self._requests[request_id] = receipt
         self._tenders.pop(offer.player_id, None)
         if scale is not None:

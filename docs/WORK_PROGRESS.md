@@ -460,3 +460,21 @@ Model-evidence commit `bc69785` passed Windows/Linux plus native fixture in
 [run 38465570806](https://github.com/cosmokay1/2K5Remade/actions/runs/38465570806).
 Next financial dependency remains explicit cash/guarantee records before full
 release/trade/season operations. Actual-game gates remain unchanged.
+
+## October 13, 2026 — Separate durable nominal cash and payment ledger
+
+Added source-required cash obligations, explicit paid amounts and unavailable
+state for franchises without verified opening payment history. Opening records
+reconcile every original active contract's nominal base-plus-bonus total; prior
+paid amounts are not inferred from elapsed cap years. Additional retained cash
+can be declared explicitly. Subsequent signings add nominal obligations in the
+same contract/story transaction. Payments have cash revisions, receipt identities
+and overpayment/conflicting retry checks.
+
+Cash initialization/payments advance franchise revision to invalidate old offers,
+but leave cap charges unchanged. Replay checks cash and financial postings, and
+SQL failure rolls both back. Negotiation sees source-bound cash totals only when
+available. 116 local tests pass: unknown history, missing opening contracts,
+restart receipts, nominal/cap separation, stale/overpayment rejection, rollback
+and corrupt-posting failure. Guarantees, payment calendars, owner budgets, offsets
+and complete release/trade/year lifecycle remain incomplete. CI pending.

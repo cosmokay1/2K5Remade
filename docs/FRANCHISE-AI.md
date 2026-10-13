@@ -253,3 +253,20 @@ Model-backed events retain their frozen personality, relationship and performanc
 evidence plus the observed financial revision. This provides the facts behind
 remembered dialogue; it does not make generated narration a verified fact.
 Historic/manual events do not acquire invented evidence during migration/reload.
+
+Cash accounting is explicit and independent of cap proration. Initialize a durable
+team with `store.initialize_cash(team_id, tuple_of_CashObligation, source=...)`.
+Every active original contract must have `contract:PLAYER_ID` with nominal total
+equal to original base salaries plus signing bonus; paid amounts require source
+evidence. Additional retained cash obligations can be declared separately. Missing
+initialization returns unavailable cash (`None`), never an assumed zero.
+
+Subsequent signings add nominal obligations atomically with contract/story records.
+`record_payment` requires a request ID, known obligation, positive integer amount,
+source and expected cash revision; overpayments/stale/conflicting retries reject.
+Cash changes advance franchise revision while leaving cap charges unchanged.
+Replay checks cash postings and financial postings. This is nominal owed/paid
+compensation only: no payment-date calendar, guarantee vesting, offsets, incentive
+settlement, owner cash budget or trust-funding rules yet. No paid cash is inferred
+from elapsed cap proration. Older code rejects the new event kinds rather than
+silently skipping them; use the current branch for databases with cash events.
