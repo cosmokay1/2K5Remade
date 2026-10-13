@@ -132,7 +132,7 @@ def main():
                           "cash": "Nominal sourced obligations, component-allocated payments and guarantee present-value projections; full settlement/vesting is incomplete.",
                           "guarantees": "Explicit fully guaranteed base salary terms; no partial injury/skill/cap protection or automatic vesting.",
                           "roster": "Read-only sourced top-51 and regular-season supported salary/bonus projections; not complete Team Salary or a phase transition.",
-                          "termination": "Read-only signing-bonus acceleration from original layers and actual June-1 timing; not an authorized release.",
+                          "termination": "Supported sourced healthy preseason veteran release with retained bonus/guarantee debt and nominal cash; other release liabilities remain unsupported.",
                           "draft": "Durable ordered rights and management funding reservations; actual game pick/contract posting remains unverified.",
                       },
                       "unimplemented_accounting": ["complete cash settlement and guarantee protections/vesting", "complete releases and trades",

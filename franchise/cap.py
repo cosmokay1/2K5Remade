@@ -1,7 +1,8 @@
 """Experimental free-agent signing ledger, independent of Remade.
 
 This is a configurable accounting model, not an NFL rules implementation.
-Release, trade, restructure, guarantees, and game-save writes are unsupported.
+Sourced healthy preseason veteran releases and explicit base guarantees are supported.
+Other release protections, trades, restructures and game-save writes remain unsupported.
 Offers use integer dollars; internal allocations use exact rational dollars. Only the current cap is binding; future charges
 are reported without assuming future league caps.
 """
@@ -121,6 +122,7 @@ class Ledger:
         self._opening_books = opening_books
         self._contracts = {item.offer.player_id: item.offer for item in opening_books.contracts} if opening_books else {}
         self._active_contracts = {item.offer.player_id: item for item in opening_books.contracts} if opening_books else {}
+        self._released = {}
         self._cash = None
         if type(max_bonus_years) is not int or not 1 <= max_bonus_years <= 5:
             raise ValueError("Bonus allocation limit must be between one and five years")
@@ -238,6 +240,64 @@ class Ledger:
             if player_id not in self._active_contracts:
                 raise Rejected("Original active contract and elapsed years unavailable")
             return self._active_contracts[player_id]
+
+    def apply_preseason_release(self, player_id, *, scope, discount, payment_year_offsets,
+                               record_id, expected_revision):
+        """Replace one supported veteran's active obligations, preserving debt."""
+        from franchise.releases import calculate_preseason_release
+        with self._lock:
+            if type(expected_revision) is not int or expected_revision != self.revision:
+                raise Rejected('Release used stale franchise state')
+            if player_id in self._rookies or player_id not in self._veteran_minimums:
+                raise Rejected('Supported veteran classification required for release')
+            if player_id in self._released or player_id not in self._players:
+                raise Rejected('Player has no active owned contract to release')
+            contract = self.active_contract(player_id)
+            if self._cash is None or 'contract:' + player_id not in self._cash.records:
+                raise Rejected('Allocated original cash required for release')
+            cash = self._cash.records['contract:' + player_id]
+            plan = calculate_preseason_release(contract, cash, scope=scope, discount=discount,
+                payment_year_offsets=payment_year_offsets, record_id=record_id)
+            if (self._veteran_minimum_profile is not None
+                    and self._veteran_minimum_profile.start_year != scope.league_year):
+                raise Rejected('Release year disagrees with salary profile')
+            active, retained = contract.charges(), plan.charges()
+            years = max(len(self._charges), len(active), len(retained))
+            charges = tuple((self._charges[i] if i < len(self._charges) else Fraction(0))
+                            - (active[i] if i < len(active) else Fraction(0))
+                            + (retained[i] if i < len(retained) else Fraction(0)) for i in range(years))
+            if any(value < 0 for value in charges):
+                raise Rejected('Release credits exceed recorded obligations')
+            # Acceleration may exceed the cap. Subsequent signing checks remain
+            # binding; an overage does not erase a valid retained obligation.
+            self._charges = charges
+            self._released[player_id] = plan
+            del self._active_contracts[player_id]
+            self._players.remove(player_id)
+            self._cash.records[cash.obligation_id] = plan.cash_obligation
+            self._cash.revision += 1
+            self.revision += 1
+            return plan
+
+    @staticmethod
+    def _release_snapshot(plan):
+        contract, scope, discount = plan.original_contract, plan.scope, plan.discount
+        return {'original_contract': {'offer': contract.offer.to_dict(), 'source': contract.source,
+                    'elapsed_years': contract.elapsed_years, 'bonus_years': contract.bonus_years},
+                'original_cash': plan.original_cash.to_dict(),
+                'scope': {'league_year': scope.league_year, 'removed_on': scope.removed_on.isoformat(),
+                    'first_regular_season_game': scope.first_regular_season_game.isoformat(),
+                    'exclusions': sorted(scope.exclusions), 'covered_guarantees': scope.covered_guarantees,
+                    'healthy': scope.healthy, 'current_year_earned_base': scope.current_year_earned_base,
+                    'source': scope.source},
+                'discount': {'league_year': discount.league_year, 'annual_rate': json_amount(discount.annual_rate),
+                             'rate_source': discount.rate_source},
+                'payment_year_offsets': list(plan.payment_year_offsets),
+                'retained': [{'record_id': record.record_id,
+                    'annual_charges': [json_amount(value) for value in record.annual_charges],
+                    'source': record.source} for record in plan.retained],
+                'cash_obligation': plan.cash_obligation.to_dict(),
+                'cancelled_unearned_base': plan.cancelled_unearned_base}
 
     def contract_terms(self, player_id):
         with self._lock:
@@ -425,6 +485,8 @@ class Ledger:
                     "rookie_year_one_remaining": str(self._rookie_year_one),
                     "rookie_total_remaining": self._rookie_total,
                     "rookie_tenders": dict(self._tenders),
+                    **({'released_contracts': {player: self._release_snapshot(plan)
+                        for player, plan in self._released.items()}} if self._released else {}),
                     **({"draft_rights": dict(self._draft_rights)} if self._draft_rights else {}),
                     **({"draft_management_reservations": {player: {"offer": offer.to_dict(), "source": source}
                         for player, (offer, source) in self._draft_reservations.items()}} if self._draft_reservations else {}),
@@ -473,6 +535,8 @@ class Ledger:
             raise Rejected("Offer was based on stale franchise state")
         if offer.player_id in self._players:
             raise Rejected("Player is already signed; extensions are unsupported")
+        if offer.player_id in self._released:
+            raise Rejected('Released player re-signing requires separate contract generation IDs')
         if offer.player_id in self._prior_rookie_players:
             raise Rejected("Prior cohort contract requires unsupported rookie release/re-sign reconciliation")
         reserved_cap, reserved_one, reserved_total = self._draft_reserved(except_player=offer.player_id)

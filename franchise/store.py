@@ -223,6 +223,13 @@ class FranchiseStore:
                 ledger.revision += 1
                 if payload["cash_posting"] != ledger.cash_snapshot():
                     raise ValueError("Cash payment posting disagrees with replay")
+            elif kind == 'release':
+                if payload['before_posting'] != ledger.financial_snapshot() or payload['before_cash'] != ledger.cash_snapshot():
+                    raise ValueError('Release opening state disagrees with replay')
+                self._apply_release_payload(ledger,payload)
+                self._check_cash_components(ledger)
+                if payload['cash_posting'] != ledger.cash_snapshot():
+                    raise ValueError('Release cash posting disagrees with replay')
             elif kind == "actor":
                 ledger.negotiation_context(payload["player_id"])
                 self._validate_actor(payload["actor"])
@@ -448,6 +455,11 @@ class FranchiseStore:
                 continue
             ceilings = {"signing_bonus": offer.signing_bonus,
                         **{"base:" + str(i): salary for i, salary in enumerate(offer.salaries)}}
+            plan=getattr(ledger,'_released',{}).get(player)
+            if plan is not None:
+                guarantees=offer.guaranteed_salaries or (0,)*len(offer.salaries)
+                for i in range(plan.original_contract.elapsed_years,len(offer.salaries)):
+                    ceilings['base:'+str(i)]=guarantees[i]
             if any(key not in ceilings or amount > ceilings[key] for key, amount in record.paid_components):
                 raise ValueError("Paid component exceeds or disagrees with original contract")
 
@@ -507,6 +519,56 @@ class FranchiseStore:
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'cash_payment', ?)",
                        (team_id, key, json.dumps(payload, allow_nan=False)))
             return payload["cash_posting"]
+
+    @staticmethod
+    def _apply_release_payload(ledger,payload):
+        from datetime import date
+        from franchise.releases import PreseasonReleaseScope
+        from franchise.guarantees import DiscountProfile
+        scope=dict(payload['scope'])
+        scope['removed_on']=date.fromisoformat(scope['removed_on'])
+        scope['first_regular_season_game']=date.fromisoformat(scope['first_regular_season_game'])
+        scope['exclusions']=frozenset(scope['exclusions'])
+        discount=dict(payload['discount'])
+        discount['annual_rate']=parse_amount(discount['annual_rate'])
+        return ledger.apply_preseason_release(payload['player_id'],scope=PreseasonReleaseScope(**scope),
+            discount=DiscountProfile(**discount),payment_year_offsets=tuple(payload['payment_year_offsets']),
+            record_id=payload['record_id'],expected_revision=payload['expected_revision'])
+
+    def release_preseason_veteran(self,team_id,request_id,player_id,*,scope,discount,payment_year_offsets,
+                                 expected_revision,access_check):
+        from franchise.releases import PreseasonReleaseScope
+        from franchise.guarantees import DiscountProfile
+        if any(type(value) is not str or not value.strip() for value in (request_id,player_id)) or not callable(access_check):
+            raise ValueError('Stable release identities and final access check required')
+        if not isinstance(scope,PreseasonReleaseScope) or not isinstance(discount,DiscountProfile) or type(payment_year_offsets) is not tuple:
+            raise ValueError('Typed sourced release inputs required')
+        scope_data=asdict(scope)
+        scope_data.update(removed_on=scope.removed_on.isoformat(),first_regular_season_game=scope.first_regular_season_game.isoformat(),
+                          exclusions=sorted(scope.exclusions))
+        payload={'player_id':player_id,'scope':scope_data,'discount':{'league_year':discount.league_year,
+            'annual_rate':json_amount(discount.annual_rate),'rate_source':discount.rate_source},
+            'payment_year_offsets':list(payment_year_offsets),'record_id':'release:'+request_id,'expected_revision':expected_revision}
+        with self._connection(write=True) as db:
+            ledger=self._load(db,team_id)
+            key='release:'+request_id
+            row=db.execute('SELECT payload FROM events WHERE team_id=? AND request_key=?',(team_id,key)).fetchone()
+            if row:
+                previous=json.loads(row[0])
+                if any(previous[field] != payload[field] for field in payload):
+                    raise Rejected('Release request already recorded differently')
+                access_check()
+                return {'financial':previous['posting'],'cash':previous['cash_posting']}
+            payload.update(before_posting=ledger.financial_snapshot(),before_cash=ledger.cash_snapshot())
+            self._apply_release_payload(ledger,payload)
+            self._check_cash_components(ledger)
+            payload.update(posting=ledger.financial_snapshot(),cash_posting=ledger.cash_snapshot())
+            access_check()
+            if db.execute('DELETE FROM ownership WHERE player_id=? AND team_id=?',(player_id,team_id)).rowcount != 1:
+                raise Rejected('Release ownership is unavailable')
+            db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,'release',?)",
+                       (team_id,key,json.dumps(payload,allow_nan=False)))
+            return {'financial':payload['posting'],'cash':payload['cash_posting']}
 
     def preview_offer(self, team_id: str, offer: Offer, expected_revision: int) -> dict:
         with self._connection() as db:

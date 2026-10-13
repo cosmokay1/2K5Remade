@@ -24,8 +24,12 @@ Article 13 sections 6(b)(ii) and 6(d)(iv), Article 30 and Article 45. Exact near
 posting interpretation, real payment timing/rate provenance and guest facts remain
 unresolved. This component grants no full release authorization.
 
-Next: atomic durable release event, stale/idempotent request guards, original archive,
-retained charge replacement, nominal cash cancellation record, exclusive ownership
-removal and chronological replay. Releases may accelerate a club over its limit;
+The store now exposes `release_preseason_veteran` as an explicit sourced transaction.
+It recomputes the plan under the write lock, archives originals, replaces cap charges,
+retains nominal cash, removes exclusive ownership and records replayable before/after
+postings. Stale/conflicting requests reject; exact retries return the original receipt.
+Final access failure or database failure rolls back all changes. Retained cash payments
+cannot allocate money to cancelled base salary. No guest, native menu or browser
+release control is connected. Releases may accelerate a club over its limit;
 retain the liability and prevent subsequent unaffordable signing. Same-team re-sign,
 rookie/cohort releases and unsupported protections require separate lifecycle work.

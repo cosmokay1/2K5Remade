@@ -83,6 +83,9 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       paid guarantee allocation, settlement and management cash budgets remain.
 - [ ] Model guarantee protections/vesting and supported bonus components.
 - [ ] Implement releases/retirement and retained obligations/dead charges.
+      Supported sourced healthy preseason veteran releases now commit/replay with
+      original archives, retained bonus/guarantee debt, nominal cash and ownership
+      removal. Other releases, retirement, offsets, waivers and calendar remedies remain.
 - [ ] Implement atomic trades with both teams' obligations and ownership.
 - [ ] Implement extensions/restructures without erasing existing bonus layers.
 - [ ] Implement offseason/regular-season accounting and roster-status costs.

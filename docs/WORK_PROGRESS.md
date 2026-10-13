@@ -1334,3 +1334,18 @@ June example yields 39 versus (33,6), with paid9/unpaid30 cash; exact fractional
 elapsed-year, final2030 and unknown-payment guards pass. Full suite237 passes locally.
 No durable mutation/ownership/game authority exists yet. Added source/scope docs and
 next transaction prerequisites; nearest-$1000 posting/rates/real guest facts remain.
+
+## October 13, 2026 — Durable supported veteran release transaction
+
+Parallel ledger and primary store integration now recompute supported release under
+write lock, archive originals, replace active cap with retained bonus/base debt,
+retain paid/unpaid cash, remove active/exclusive ownership and record before/after
+postings. Replay validates original and resulting cash/financial state; exact retries
+retain receipt while stale/conflicting requests reject. Cancelled salary payments
+reject; protected payments leave cap unchanged. Release-induced overage is preserved
+and subsequent unaffordable signings reject. Unsupported same-team re-sign rejects;
+new club ownership can sign while old retained liability survives. Tests cover
+pre/postJune charges, other retained obligations, scope failures, retry, restart,
+access rollback, tampered cash and SQL failure after ownership delete. 246 local tests
+pass. No real game controls/runtime or complete waiver/offset/injury/calendar remedies
+exist; exact NFL posting rounding and source rate verification remain unresolved.
