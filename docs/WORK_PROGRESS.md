@@ -64,3 +64,13 @@ be recorded after the workflow actually executes; a pushed workflow is not a
 green CI result.
 
 The user completed workflow authorization. Applied the preserved workflow; remote validation is pending.
+
+## October 13, 2026 — Portable CI verified
+
+B05 is resolved. Workflow published in `589a2bd`. GitHub run
+[38457090392](https://github.com/cosmokay1/2K5Remade/actions/runs/38457090392)
+completed successfully: Linux in 19 seconds, Windows in 32 seconds. Both ran
+the 48-test suite, money regression/conservation checks, and offline examples.
+Marked the portable CI worklist item complete. This verifies portable engine
+behavior, not native game build or gameplay. Continue M1 accounting work;
+asset-free native bridge checks can be added when a bridge implementation exists.

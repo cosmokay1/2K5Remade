@@ -30,7 +30,6 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 | B02 | Raw franchise saves and companion metadata; controlled transaction pairs | Contract decoding, reconciliation and save round trips | Synthetic import fixtures, read-only diff tooling, state schema |
 | B03 | Windows machine/runner capable of running the user's legal game | Runtime reproduction, UI/gameplay validation, delivery acceptance | Portable engine tests and asset-free Windows compilation checks |
 | B04 | Written upstream/third-party permission or suitable licenses | Redistribution of modified binaries and affected bundled components | Original source development, attribution, permission-request drafts |
-| B05 | GitHub OAuth `workflow` scope; no existing usable SSH identity | Publishing the prepared portable CI workflow | All source/accounting work and ordinary source pushes |
 
 The user currently has no game binary/save. Never download retail assets to
 resolve that blocker. Do not repeatedly ask for the same missing input. Report
@@ -41,9 +40,8 @@ the required inputs once when an otherwise ready milestone reaches that gate.
 - [x] Create GitHub-recognized fork; preserve upstream ancestry/notices.
 - [x] Identify our original additions and document unresolved permission scope.
 - [x] Commit/push development work without publishing installers.
-- [ ] Add automated portable financial/negotiation tests to fork CI.
-      Prepared locally at `bd1f801` on `codex/ci-workflow-setup`; publish after B05
-      resolves. Do not claim CI passes before remote jobs execute.
+- [x] Add automated portable financial/negotiation tests to fork CI.
+      Published at `589a2bd`; run `38457090392` passed on Linux and Windows.
 - [ ] Add asset-free Windows checks for our bridge/runtime additions; clearly
       distinguish these from a full game build/test.
 - [ ] Keep public configuration free of credentials and retail assets.
