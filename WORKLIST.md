@@ -247,7 +247,7 @@ See docs/cloudflare-tunnel.md. Dedicated tunnel/DNS/TLS route is live; full brow
 
 - [x] Atomically create engine teams/ownership and initialize every registered player with saved fictional personality traits and neutral relationships.
 - [x] Save a versioned franchise seed; preserve stable identity across teams/restart and refuse rerolls or missing initial actors.
-- [ ] Connect the native franchise-creation event to verified roster import and this initialization process.
+- [ ] Connect the native franchise-creation event to verified roster import and this initialization process. A strict JSON bootstrap command now creates/replays/publishes the initialized engine DB; actual export decoding and guest hook remain.
 - [ ] Verify a real new franchise save/load retains all player and team identities.
 
 See docs/franchise-creation.md and docs/promise-observations.md. Automatic promise

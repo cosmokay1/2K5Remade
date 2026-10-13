@@ -32,3 +32,23 @@ coverage; it does not repair missing records by rerolling or resetting trust.
 
 This process currently runs in the independent franchise engine. It does not yet
 read retail rosters, create a game save or demonstrate native-game playability.
+
+## Bootstrap command
+
+A verified game adapter can supply a bounded JSON bundle with exact top-level fields
+`format` (integer 1), `source` (declared export provenance), `seed` (string or null),
+and `teams` (team IDs mapped to `Ledger.bootstrap_config()` objects). Original source
+books and classification/rules inputs remain mandatory; this command does not decode
+raw retail saves or certify the export's game meaning.
+
+```sh
+python3 -m tools.create_franchise --input /path/to/bootstrap.json --database /path/to/new-franchise.sqlite
+```
+
+The command rejects duplicate JSON fields, unsupported fields/types and existing
+or symlink destinations. It creates a private temporary database beside the chosen
+output, initializes players, stores the input SHA-256/source, replays every team,
+then atomically publishes without replacement. Concurrent winners are preserved.
+Failure removes only its own temporary artifacts. The receipt reports engine
+creation counts and explicitly says game runtime verification is false. Existing
+franchises are never rerolled by retrying creation.

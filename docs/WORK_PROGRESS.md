@@ -1016,3 +1016,21 @@ late-team and durable partial-to-complete mapper tests. 208 local tests pass. Ne
 creation/game hook, multi-window evidence and actual Deck/Windows gameplay remain
 unfinished. Prior promise-score ac1a61c passed Franchise AI run 38477252097 and
 Build check run 38477252142. No live inference or asset acquisition occurred.
+
+## October 13, 2026 — Source-backed bootstrap command
+
+Added bounded duplicate-key-rejecting JSON bootstrap command for source team configs.
+Creation uses a private sibling database, saves provenance/input hash, initializes
+players, replays all teams and atomically publishes via no-replace hard link. Existing
+franchises, symlink destinations and competing creators are preserved; failure leaves
+no published partial state or owned temp artifacts. The receipt explicitly reports
+no game-runtime verification. A read-only parallel agent reviewed the path and found
+nonobject team configs were normalized by dict(); explicit JSON-object validation
+now rejects them. Added concurrency/symlink/seed publication verification.
+213 local tests pass. Symlink test explicitly skips if a runner cannot create links.
+This supplies the creation adapter boundary, not raw save parsing or a native guest
+hook. Legal source exports/game addresses and actual Windows/Deck runtime remain
+required. Previous initialization ab1b338 CI was still running when first inspected.
+
+Initialization commit ab1b338 subsequently passed Franchise AI run 38478074874
+and Build check run 38478074859.
