@@ -1,3 +1,4 @@
+from contextlib import closing
 from dataclasses import replace
 from pathlib import Path
 import json
@@ -65,17 +66,17 @@ class RestructureStoreTests(unittest.TestCase):
 
     def test_tampered_original_or_posting_fails_replay(self):
         self.amend()
-        with sqlite3.connect(self.store.path) as db:
+        with closing(sqlite3.connect(self.store.path)) as db, db:
             original=db.execute("SELECT payload FROM events WHERE kind='restructure'").fetchone()[0]
         for field in ('original_contract','cash_posting','before_posting'):
             payload=json.loads(original)
             if field=='original_contract':payload[field]['offer']['signing_bonus']=11
             elif field=='cash_posting':payload[field]['paid_total']=31
             else:payload[field]['revision']=0
-            with sqlite3.connect(self.store.path) as db:
+            with closing(sqlite3.connect(self.store.path)) as db, db:
                 db.execute("UPDATE events SET payload=? WHERE kind='restructure'",(json.dumps(payload),))
             with self.assertRaises(ValueError):self.store.load_team('a')
-            with sqlite3.connect(self.store.path) as db:
+            with closing(sqlite3.connect(self.store.path)) as db, db:
                 db.execute("UPDATE events SET payload=? WHERE kind='restructure'",(original,))
         self.assertEqual(self.store.load_team('a').revision,2)
 
@@ -114,22 +115,22 @@ class RestructureStoreTests(unittest.TestCase):
 
     def test_liability_dict_and_duplicate_exclusions_cannot_be_normalized_away(self):
         self.amend()
-        with sqlite3.connect(self.store.path) as db:
+        with closing(sqlite3.connect(self.store.path)) as db, db:
             original=db.execute("SELECT payload FROM events WHERE kind='restructure'").fetchone()[0]
         exclusions=json.loads(original)['scope']['exclusions']
         for altered in ({key:True for key in exclusions},exclusions+[exclusions[0]]):
             payload=json.loads(original)
             payload['scope']['exclusions']=altered
-            with sqlite3.connect(self.store.path) as db:
+            with closing(sqlite3.connect(self.store.path)) as db, db:
                 db.execute("UPDATE events SET payload=? WHERE kind='restructure'",(json.dumps(payload),))
             with self.assertRaisesRegex(ValueError,'exclusion list'):self.store.load_team('a')
-            with sqlite3.connect(self.store.path) as db:
+            with closing(sqlite3.connect(self.store.path)) as db, db:
                 db.execute("UPDATE events SET payload=? WHERE kind='restructure'",(original,))
 
     def test_event_insert_failure_rolls_back_amendment(self):
         before=self.store.load_team('a').financial_snapshot()
         cash=self.store.load_team('a').cash_snapshot()
-        with sqlite3.connect(self.store.path) as db:
+        with closing(sqlite3.connect(self.store.path)) as db, db:
             db.execute("CREATE TRIGGER reject_amendment BEFORE INSERT ON events WHEN NEW.kind='restructure' BEGIN SELECT RAISE(ABORT,'synthetic insert failure'); END")
         with self.assertRaises(sqlite3.IntegrityError):self.amend()
         self.assertEqual(self.store.load_team('a').financial_snapshot(),before)

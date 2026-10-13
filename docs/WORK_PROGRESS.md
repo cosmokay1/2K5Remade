@@ -1598,3 +1598,11 @@ serialized exclusions could normalize a liability dictionary away; all three
 lifecycle replay adapters now require canonical unique string lists. SQL event-insert
 failure also rolls back every amendment field.295 full
 tests pass. Actual game/native/UI restructuring and source import remain unverified.
+
+## October 13, 2026 — Close test SQLite handles on Windows
+
+Durable restructure3e8a3f2 Windows CI38486094688 failed three cleanup cases because
+new direct sqlite3 test context managers committed transactions but did not close
+connections. Tests now use contextlib.closing plus explicit transaction contexts;
+eight targeted cases pass locally. Financial behavior assertions had passed; Windows
+cleanup fix awaits fresh CI. Native restructure protocol work is separately underway.
