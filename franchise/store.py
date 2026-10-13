@@ -118,6 +118,7 @@ class FranchiseStore:
         if row is None:
             raise Rejected("Unknown team")
         ledger = from_config(json.loads(row[0]))
+        payment_references = set()
         for kind, serialized in db.execute("SELECT kind, payload FROM events WHERE team_id=? ORDER BY id", (team_id,)):
             payload = json.loads(serialized)
             if kind == "sign":
@@ -140,6 +141,16 @@ class FranchiseStore:
                 if payload["cash_posting"] != ledger.cash_snapshot():
                     raise ValueError("Opening cash posting disagrees with records")
             elif kind == "cash_payment":
+                if type(payload.get("source")) is not str or not payload["source"].strip():
+                    raise ValueError("Recorded payment source is missing")
+                if "payment_reference" in payload:
+                    reference = payload["payment_reference"]
+                    if type(reference) is not str or not reference.strip():
+                        raise ValueError("Recorded payment reference is invalid")
+                    identity = (payload["source"], reference)
+                    if identity in payment_references:
+                        raise ValueError("Duplicate recorded payment evidence")
+                    payment_references.add(identity)
                 if ledger._cash is None:
                     raise ValueError("Payment has no opening cash state")
                 ledger._cash.pay(payload["obligation_id"], payload["amount"], payload["expected_cash_revision"])
@@ -187,11 +198,13 @@ class FranchiseStore:
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, 'cash:opening', 'cash_open', ?)",
                        (team_id, json.dumps(payload, allow_nan=False)))
 
-    def record_payment(self, team_id, request_id, obligation_id, amount, *, expected_cash_revision, source):
+    def record_payment(self, team_id, request_id, obligation_id, amount, *, expected_cash_revision, source, payment_reference):
         if type(request_id) is not str or not request_id.strip() or type(source) is not str or not source.strip():
             raise ValueError("Payment request ID and evidence source required")
+        if type(payment_reference) is not str or not payment_reference.strip():
+            raise ValueError("Stable external payment reference required")
         money(amount)
-        payload = dict(obligation_id=obligation_id, amount=amount, source=source,
+        payload = dict(obligation_id=obligation_id, amount=amount, source=source, payment_reference=payment_reference,
                        expected_cash_revision=expected_cash_revision)
         with self._connection(write=True) as db:
             ledger = self._load(db, team_id)
@@ -201,9 +214,15 @@ class FranchiseStore:
             prior = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, key)).fetchone()
             if prior:
                 recorded = json.loads(prior[0])
-                if any(recorded[field] != payload[field] for field in ("obligation_id", "amount", "source")):
+                if "payment_reference" not in recorded:
+                    raise Rejected("Legacy payment lacks external reference; audited migration required")
+                if any(recorded[field] != payload[field] for field in ("obligation_id", "amount", "source", "payment_reference")):
                     raise Rejected("Payment request already recorded differently")
                 return recorded["cash_posting"]
+            for (serialized,) in db.execute("SELECT payload FROM events WHERE team_id=? AND kind='cash_payment'", (team_id,)):
+                previous = json.loads(serialized)
+                if previous.get("payment_reference") == payment_reference and previous["source"] == source:
+                    raise Rejected("External payment evidence already recorded under another request")
             ledger._cash.pay(obligation_id, amount, expected_cash_revision)
             ledger.revision += 1
             payload["cash_posting"] = ledger.cash_snapshot()

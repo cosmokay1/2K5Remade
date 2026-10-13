@@ -263,10 +263,15 @@ initialization returns unavailable cash (`None`), never an assumed zero.
 
 Subsequent signings add nominal obligations atomically with contract/story records.
 `record_payment` requires a request ID, known obligation, positive integer amount,
-source and expected cash revision; overpayments/stale/conflicting retries reject.
+source, external `payment_reference` and expected cash revision; overpayments/stale/conflicting retries reject.
 Cash changes advance franchise revision while leaving cap charges unchanged.
 Replay checks cash postings and financial postings. This is nominal owed/paid
 compensation only: no payment-date calendar, guarantee vesting, offsets, incentive
 settlement, owner cash budget or trust-funding rules yet. No paid cash is inferred
 from elapsed cap proration. Older code rejects the new event kinds rather than
 silently skipping them; use the current branch for databases with cash events.
+
+Payment references are unique within the team and evidence source, independently
+of request IDs. A second request cannot credit the same source receipt again.
+Historic cash events without references remain readable but require an audited
+migration before retrying them with external references; no reference is invented.

@@ -478,3 +478,17 @@ available. 116 local tests pass: unknown history, missing opening contracts,
 restart receipts, nominal/cap separation, stale/overpayment rejection, rollback
 and corrupt-posting failure. Guarantees, payment calendars, owner budgets, offsets
 and complete release/trade/year lifecycle remain incomplete. CI pending.
+
+## October 13, 2026 — External payment evidence deduplication
+
+Cash payments now require source-scoped external receipt/reference identity in
+addition to request ID. The same evidence cannot be credited under a different
+request, even with fresh cash revision; conflicting original-request references
+reject. Replay rejects duplicate or invalid recorded references and missing source.
+Historical events without references remain readable; retry requires audited
+migration rather than fabricated receipt identity.
+
+118 local tests pass, including duplicate receipt under a new request, conflicting
+retry reference, restart state preservation and tampered duplicate-history failure.
+This verifies receipt uniqueness, not authenticity of external payment evidence.
+Guarantee/payment scheduling and full contract lifecycle remain pending.
