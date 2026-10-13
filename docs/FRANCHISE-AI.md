@@ -33,6 +33,15 @@ Modern bonus allocation limits cannot exceed five years. `cap`, `roster_reserve`
 and `max_bonus_years` are read-only properties. Use `update_budget` with the latest
 revision to change cap/reserve; a material change invalidates outstanding offers.
 
+`franchise/minimums.py` supplies the published 2020 CBA Article 26 tables for
+2020-2030, with source URL and rule version. It distinguishes active/inactive
+compensation from the separate non-active/inactive table, converts source
+thousands to dollars, and requires explicit credited-season/category inputs.
+Practice squad and years beyond the published range reject. Annual schedules
+do not assume a player earns a credited season. This is a rule-data component;
+binding real game roster status, credited-season evidence and annual rule profiles
+to the authoritative import is still required. Draft-slot allotments remain inputs.
+
 `franchise/rookie.py` validates drafted-rookie base-salary/signing-bonus proposals:
 four-year terms, supplied annual salary floors and allotment bounds, total
 compensation limits, the year-one-based 25% annual increase restriction, and

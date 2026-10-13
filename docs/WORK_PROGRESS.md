@@ -159,3 +159,16 @@ Verified `05c0176` in
 Linux and Windows passed all 80 tests, money checks and offline demos, including
 source-book migration backup and rollback. Next work moves to verified annual
 rules and the remaining contract lifecycle; the integrated-game goal stays active.
+
+## October 13, 2026 — Published annual minimum table component
+
+Read the executed NFL/NFLPA CBA Article 26, PDF page 187 (printed page 171), and
+added its active/inactive and non-active/inactive salary-floor tables for 2020-2030.
+Source and rule version are recorded in `franchise/minimums.py`. Lookup rejects
+unknown years/categories, and projected schedules use explicit annual credited
+season inputs rather than assuming experience automatically creates credit.
+
+Local suite: 84 tests. This component does not yet establish a complete annual
+rules profile, real player credited-season data, practice-squad treatment, future
+CBA policy, or draft allotments. No real franchise calendar/economic conversion
+has been chosen silently. Remote CI is pending for this addition.
