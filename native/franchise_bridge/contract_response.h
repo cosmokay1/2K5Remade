@@ -62,10 +62,162 @@ inline nlohmann::json canonical_offer(const nlohmann::json& offer) {
     }
     auto result = offer; result["guaranteed_salaries"] = guarantees; return result;
 }
+inline int64_t checked_money_sum(int64_t total, const nlohmann::json& value) {
+    integer_money(value);
+    const auto amount=value.get<int64_t>();
+    if (amount>std::numeric_limits<int64_t>::max()-total) throw std::runtime_error("Money total overflow");
+    return total+amount;
+}
+inline void restructure_cash_record(const nlohmann::json& cash) {
+    if (!cash.is_object() || cash.size()!=6) throw std::runtime_error("Invalid allocated amendment cash");
+    for (const auto* field : {"obligation_id","player_id","source"})
+        if (!cash.at(field).is_string() || cash.at(field).get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
+            throw std::runtime_error("Missing amendment cash identity");
+    integer_money(cash.at("amount")); integer_money(cash.at("paid"));
+    if (cash.at("paid")>cash.at("amount") || !cash.at("paid_components").is_array())
+        throw std::runtime_error("Invalid amendment cash allocation");
+    std::set<std::string> names;
+    int64_t paid=0;
+    for (const auto& row : cash.at("paid_components")) {
+        if (!row.is_array() || row.size()!=2 || !row[0].is_string() || row[0].get<std::string>().empty() ||
+            !names.insert(row[0].get<std::string>()).second) throw std::runtime_error("Invalid amendment payment component");
+        paid=checked_money_sum(paid,row[1]);
+    }
+    if (paid!=cash.at("paid").get<int64_t>()) throw std::runtime_error("Amendment payments disagree");
+}
+inline void validate_restructure(const nlohmann::json& result, const nlohmann::json& request) {
+    const auto player=request.at("player_id").get<std::string>();
+    if (player.empty() || !request.at("team_id").is_string() || request.at("team_id").get<std::string>().empty() ||
+        !request.at("request_id").is_string() || request.at("request_id").get<std::string>().empty() ||
+        request.at("decision_mode")!="manual" || result.at("decision_mode")!="manual" ||
+        result.at("team_id")!=request.at("team_id") || result.at("player_id")!=player)
+        throw std::runtime_error("Invalid manual amendment identity");
+    const auto& financial=result.at("restructure").at("financial");
+    const auto& cash=result.at("restructure").at("cash");
+    integer_money(request.at("expected_revision")); integer_money(financial.at("revision"));
+    const auto revision=request.at("expected_revision").get<int64_t>();
+    if (revision==std::numeric_limits<int64_t>::max() || financial.at("revision")!=revision+1 ||
+        !financial.at("charges").is_array() || financial.at("charges").empty() || !financial.at("signed_players").is_array())
+        throw std::runtime_error("Invalid amendment posting");
+    std::set<std::string> owners;
+    for (const auto& owner : financial.at("signed_players"))
+        if (!owner.is_string() || !owners.insert(owner.get<std::string>()).second) throw std::runtime_error("Invalid amendment ownership");
+    if (!owners.count(player)) throw std::runtime_error("Amendment removed player ownership");
+    for (const auto& charge : financial.at("charges")) exact_money(charge);
+    const auto& archive=financial.at("restructures").at(player);
+    if (!archive.is_object() || archive.size()!=8) throw std::runtime_error("Incomplete amendment archive");
+    auto scope=request.at("scope");
+    auto& exclusions=scope.at("exclusions");
+    if (!exclusions.is_array() || !scope.at("source").is_string() ||
+        scope.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
+        throw std::runtime_error("Invalid amendment exclusions or source");
+    std::set<std::string> excluded;
+    for (const auto& item : exclusions)
+        if (!item.is_string() || item.get<std::string>().empty() || !excluded.insert(item.get<std::string>()).second)
+            throw std::runtime_error("Invalid amendment exclusion identity");
+    std::sort(exclusions.begin(),exclusions.end());
+    integer_money(request.at("converted_base")); integer_money(archive.at("converted_base"));
+    const auto converted=request.at("converted_base").get<int64_t>();
+    if (converted==0 || archive.at("converted_base")!=converted || archive.at("scope")!=scope)
+        throw std::runtime_error("Response changed amendment inputs");
+    const auto& original=archive.at("original_contract");
+    const auto& amended=archive.at("contract");
+    if (!original.is_object() || !(original.size()==4 || (original.size()==5 && original.contains("bonus_layers"))) ||
+        !amended.is_object() || amended.size()!=5 ||
+        (original.contains("bonus_layers") && (!original.at("bonus_layers").is_array() || !original.at("bonus_layers").empty())) ||
+        !amended.at("bonus_layers").is_array() || amended.at("bonus_layers").size()!=1)
+        throw std::runtime_error("Invalid original or amended bonus layers");
+    for (const auto* contract : {&original,&amended}) {
+        if (!contract->at("source").is_string() || contract->at("source").get<std::string>().empty())
+            throw std::runtime_error("Missing amendment contract source");
+        integer_money(contract->at("elapsed_years")); integer_money(contract->at("bonus_years"));
+        if (contract->at("bonus_years")<1 || contract->at("bonus_years")>5) throw std::runtime_error("Invalid original bonus term");
+    }
+    auto before=canonical_offer(original.at("offer")), after=canonical_offer(amended.at("offer"));
+    const auto elapsed=original.at("elapsed_years").get<int64_t>();
+    if (before.at("player_id")!=player || after.at("player_id")!=player ||
+        elapsed>=static_cast<int64_t>(before.at("salaries").size()) ||
+        original.at("elapsed_years")!=amended.at("elapsed_years") || original.at("bonus_years")!=amended.at("bonus_years") ||
+        before.at("salaries").size()!=after.at("salaries").size() || before.at("signing_bonus")!=after.at("signing_bonus"))
+        throw std::runtime_error("Response changed original contract term");
+    const auto index=static_cast<size_t>(elapsed), remaining=before.at("salaries").size()-index;
+    const auto base=before.at("salaries")[index].get<int64_t>();
+    if (before.at("guaranteed_salaries")[index]!=base || converted>base)
+        throw std::runtime_error("Conversion exceeds protected original base");
+    before["salaries"][index]=base-converted;
+    before["guaranteed_salaries"][index]=base-converted;
+    if (before!=after) throw std::runtime_error("Response changed unconverted salary or guarantee");
+    const auto& layer=archive.at("bonus_layer");
+    if (!layer.is_object() || layer.size()!=5 || amended.at("bonus_layers")[0]!=layer ||
+        layer.at("record_id")!="restructure:"+request.at("request_id").get<std::string>() ||
+        layer.at("source")!=scope.at("source")) throw std::runtime_error("Invalid converted bonus identity");
+    integer_money(layer.at("amount")); integer_money(layer.at("original_start_index")); integer_money(layer.at("allocation_years"));
+    if (layer.at("amount")!=converted || layer.at("original_start_index")!=elapsed ||
+        layer.at("allocation_years")!=std::min<size_t>(remaining,5)) throw std::runtime_error("Invalid converted bonus allocation");
+    const auto& minimums=archive.at("annual_minimums");
+    if (!minimums.is_array() || minimums.size()!=remaining) throw std::runtime_error("Missing annual amendment floors");
+    for (size_t i=0;i<remaining;++i) {
+        integer_money(minimums[i]);
+        if (minimums[i]==0 || after.at("salaries")[index+i]<minimums[i]) throw std::runtime_error("Amendment under annual floor");
+    }
+    const auto& original_cash=archive.at("original_cash");
+    const auto& amended_cash=archive.at("cash_obligation");
+    restructure_cash_record(original_cash); restructure_cash_record(amended_cash);
+    if (original_cash.at("player_id")!=player || original_cash.at("obligation_id")!="contract:"+player ||
+        amended_cash.at("player_id")!=player || amended_cash.at("obligation_id")!=original_cash.at("obligation_id") ||
+        amended_cash.at("amount")!=original_cash.at("amount") || amended_cash.at("paid")!=original_cash.at("paid") ||
+        amended_cash.at("paid_components")!=original_cash.at("paid_components"))
+        throw std::runtime_error("Amendment changed nominal cash or payments");
+    auto original_offer=canonical_offer(original.at("offer"));
+    int64_t nominal=original_offer.at("signing_bonus").get<int64_t>();
+    for (const auto& salary : original_offer.at("salaries")) nominal=checked_money_sum(nominal,salary);
+    if (original_cash.at("amount")!=nominal) throw std::runtime_error("Original nominal cash disagrees");
+    for (const auto& row : original_cash.at("paid_components")) {
+        const auto name=row[0].get<std::string>();
+        int64_t ceiling=0;
+        if (name=="signing_bonus") ceiling=original_offer.at("signing_bonus").get<int64_t>();
+        else {
+            if (name.rfind("base:",0)!=0) throw std::runtime_error("Unknown original payment component");
+            uint64_t year=0; const auto number=name.substr(5);
+            const auto parsed=std::from_chars(number.data(),number.data()+number.size(),year);
+            if (parsed.ec!=std::errc{} || parsed.ptr!=number.data()+number.size() || number!=std::to_string(year) || year>=original_offer.at("salaries").size())
+                throw std::runtime_error("Invalid original base payment index");
+            ceiling=original_offer.at("salaries")[year].get<int64_t>();
+            if (year>=index && row[1]!=0) throw std::runtime_error("Conversion includes paid remaining base");
+        }
+        if (row[1]>ceiling) throw std::runtime_error("Original payment exceeds compensation");
+    }
+    // Every past base and the old signing bonus must be settled before conversion.
+    for (size_t i=0;i<=index;++i) {
+        const auto name=i==index ? std::string("signing_bonus") : "base:"+std::to_string(i);
+        const auto amount=i==index ? original_offer.at("signing_bonus") : original_offer.at("salaries")[i];
+        nlohmann::json paid=0;
+        for (const auto& row : original_cash.at("paid_components")) if (row[0]==name) paid=row[1];
+        if (paid!=amount) throw std::runtime_error("Original bonus or past base remains unpaid");
+    }
+    integer_money(cash.at("revision")); integer_money(cash.at("nominal_total")); integer_money(cash.at("paid_total")); integer_money(cash.at("unpaid_total"));
+    if (!cash.at("obligations").is_array() || cash.at("paid_total")>cash.at("nominal_total") ||
+        cash.at("unpaid_total").get<int64_t>()!=cash.at("nominal_total").get<int64_t>()-cash.at("paid_total").get<int64_t>())
+        throw std::runtime_error("Invalid amendment cash totals");
+    int64_t total=0,total_paid=0; size_t matched=0; std::set<std::string> obligations;
+    for (const auto& record : cash.at("obligations")) {
+        if (!record.is_object() || !record.at("obligation_id").is_string() || !obligations.insert(record.at("obligation_id").get<std::string>()).second)
+            throw std::runtime_error("Duplicate amendment cash obligation");
+        total=checked_money_sum(total,record.at("amount")); total_paid=checked_money_sum(total_paid,record.at("paid"));
+        if (record.at("paid")>record.at("amount")) throw std::runtime_error("Cash payment exceeds obligation");
+        if (record.at("obligation_id")==amended_cash.at("obligation_id")) {
+            if (record!=amended_cash) throw std::runtime_error("Amended obligation differs from archive");
+            ++matched;
+        }
+    }
+    if (matched!=1 || total!=cash.at("nominal_total") || total_paid!=cash.at("paid_total"))
+        throw std::runtime_error("Amendment cash posting disagrees with obligations");
+}
 inline void validate_result(const nlohmann::json& response, const nlohmann::json& request) {
     if (!response["error"].is_null()) return;
     const auto& result = response["result"];
     auto operation = request.at("operation").get<std::string>();
+    if (operation == "manual_restructure") { validate_restructure(result,request); return; }
     if (operation == "manual_trade") {
         const auto seller=request.at("seller").get<std::string>(), buyer=request.at("buyer").get<std::string>();
         if (seller.empty() || buyer.empty() || seller == buyer || result.at("decision_mode") != "manual" ||

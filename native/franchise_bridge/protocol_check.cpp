@@ -21,6 +21,54 @@ int main() {
         auto request = franchise::parse_frame(R"({"operation":"manual_sign","request_id":"one","offer":{"player_id":"v","salaries":[10],"signing_bonus":0,"guaranteed_salaries":[8]}})");
         auto reply = franchise::parse_frame(R"({"error":null,"result":{"request_id":"one","offer":{"player_id":"v","salaries":[10],"signing_bonus":0,"guaranteed_salaries":[8]},"action":"accept","outcome":"signed","counter":null,"decision_mode":"manual","charges":[10]}})");
         franchise::validate_result(reply, request);
+        auto restructure_request=franchise::parse_frame(R"({"operation":"manual_restructure","request_id":"conversion","team_id":"a","player_id":"v","expected_revision":1,"converted_base":8,"decision_mode":"manual","scope":{"source":"synthetic amendment","exclusions":["void_years","extension"]}})");
+        auto restructure_reply=franchise::parse_frame(R"({"error":null,"result":{"decision_mode":"manual","team_id":"a","player_id":"v","restructure":{"financial":{"revision":2,"charges":[19,37],"signed_players":["v"],"restructures":{"v":{"original_contract":{"offer":{"player_id":"v","salaries":[10,20,30],"signing_bonus":9,"guaranteed_salaries":[10,20,10]},"source":"synthetic original","elapsed_years":1,"bonus_years":5},"original_cash":{"obligation_id":"contract:v","player_id":"v","amount":69,"paid":19,"source":"synthetic paid history","paid_components":[["signing_bonus",9],["base:0",10]]},"scope":{"source":"synthetic amendment","exclusions":["extension","void_years"]},"annual_minimums":[1,1],"converted_base":8,"bonus_layer":{"record_id":"restructure:conversion","amount":8,"original_start_index":1,"allocation_years":2,"source":"synthetic amendment"},"contract":{"offer":{"player_id":"v","salaries":[10,12,30],"signing_bonus":9,"guaranteed_salaries":[10,12,10]},"source":"synthetic original; base conversion: synthetic amendment","elapsed_years":1,"bonus_years":5,"bonus_layers":[{"record_id":"restructure:conversion","amount":8,"original_start_index":1,"allocation_years":2,"source":"synthetic amendment"}]},"cash_obligation":{"obligation_id":"contract:v","player_id":"v","amount":69,"paid":19,"source":"synthetic paid history; base conversion: synthetic amendment","paid_components":[["signing_bonus",9],["base:0",10]]}}}},"cash":{"revision":2,"nominal_total":69,"paid_total":19,"unpaid_total":50,"obligations":[]}}}})");
+        auto& restructure_archive=restructure_reply["result"]["restructure"]["financial"]["restructures"]["v"];
+        restructure_reply["result"]["restructure"]["cash"]["obligations"].push_back(restructure_archive["cash_obligation"]);
+        franchise::validate_result(restructure_reply,restructure_request);
+        for (int scenario=0;scenario<31;++scenario) {
+            auto bad=restructure_reply, bad_request=restructure_request;
+            auto& financial=bad["result"]["restructure"]["financial"];
+            auto& cash=bad["result"]["restructure"]["cash"];
+            auto& archive=financial["restructures"]["v"];
+            if (scenario==0) bad["result"]["team_id"]="other";
+            if (scenario==1) financial["revision"]=3;
+            if (scenario==2) financial["signed_players"]=nlohmann::json::array();
+            if (scenario==3) financial["signed_players"]={"v","v"};
+            if (scenario==4) financial["charges"]={19.5,37};
+            if (scenario==5) archive["scope"]["source"]="other";
+            if (scenario==6) archive["converted_base"]=7;
+            if (scenario==7) archive["bonus_layer"]["record_id"]="restructure:other";
+            if (scenario==8) archive["contract"]["offer"]["salaries"][0]=9;
+            if (scenario==9) archive["contract"]["offer"]["guaranteed_salaries"][1]=11;
+            if (scenario==10) archive["contract"]["offer"]["signing_bonus"]=0;
+            if (scenario==11) archive["contract"]["elapsed_years"]=0;
+            if (scenario==12) archive["original_contract"]["bonus_layers"]={archive["bonus_layer"]};
+            if (scenario==13) archive["contract"]["bonus_layers"].push_back(archive["bonus_layer"]);
+            if (scenario==14) archive["bonus_layer"]["amount"]=true;
+            if (scenario==15) archive["annual_minimums"]={13,1};
+            if (scenario==16) archive["cash_obligation"]["amount"]=61;
+            if (scenario==17) archive["cash_obligation"]["paid"]=20;
+            if (scenario==18) archive["original_cash"]["paid_components"]={{"base:1",19}};
+            if (scenario==19) cash["unpaid_total"]=49;
+            if (scenario==20) cash["obligations"].push_back(archive["cash_obligation"]);
+            if (scenario==21) cash["obligations"][0]["source"]="changed";
+            if (scenario==22) bad_request["expected_revision"]=std::numeric_limits<int64_t>::max();
+            if (scenario==23) bad_request["scope"]["exclusions"]={"void_years","void_years"};
+            if (scenario==24) {
+                archive["original_contract"]["offer"]["salaries"][2]=std::numeric_limits<int64_t>::max();
+                archive["contract"]["offer"]["salaries"][2]=std::numeric_limits<int64_t>::max();
+            }
+            if (scenario==25) archive["bonus_layer"]["allocation_years"]=1;
+            if (scenario==26) archive["cash_obligation"]["paid_components"].push_back({"bonus:restructure:conversion",0});
+            if (scenario==27) archive["original_contract"]["unknown"]=0;
+            if (scenario==28) bad_request["decision_mode"]="automatic";
+            if (scenario==29) bad["result"]["decision_mode"]="automatic";
+            if (scenario==30) cash["nominal_total"]=std::numeric_limits<uint64_t>::max();
+            bool rejected=false;
+            try { franchise::validate_result(bad,bad_request); } catch (const std::exception&) { rejected=true; }
+            if (!rejected) throw std::runtime_error("Invalid amendment response accepted: "+std::to_string(scenario));
+        }
         for (int scenario = 0; scenario < 4; ++scenario) {
             auto bad = reply;
             if (scenario == 0) bad["result"]["offer"]["guaranteed_salaries"] = {0};

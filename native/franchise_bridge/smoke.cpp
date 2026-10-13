@@ -7,13 +7,26 @@ int wmain(int argc, wchar_t** argv) {
     const bool abrupt = argc == 4 && std::wstring(argv[3]) == L"--abrupt";
     const bool release = argc == 4 && std::wstring(argv[3]) == L"--release";
     const bool assignment = argc == 4 && std::wstring(argv[3]) == L"--trade";
-    if (argc == 4 && !replay && !abrupt && !release && !assignment) return 2;
+    const bool restructure = argc == 4 && std::wstring(argv[3]) == L"--restructure";
+    if (argc == 4 && !replay && !abrupt && !release && !assignment && !restructure) return 2;
     try {
         franchise::PipeClient client(argv[1], argv[2], franchise::ServiceMode::OfflineFixture);
         if (abrupt) {
             std::cout << client.process_id() << std::endl;
             std::cin.get();
             ExitProcess(0);  // Deliberately bypass all client destructors.
+        }
+        if (restructure) {
+            const char* requests[] = {
+                R"({"protocol":1,"request_id":"conversion","operation":"manual_restructure","team_id":"a","player_id":"v","expected_revision":1,"timeout_ms":1000,"decision_mode":"manual","converted_base":8,"scope":{"league_year":2026,"amended_on":"2026-06-01","first_regular_season_game":"2026-09-10","current_year_earned_base":0,"healthy":true,"consent":true,"renegotiation_eligible":true,"exclusions":["conditional_guarantees","deferred_new_bonus","extension","grievance","guarantee_offsets","guarantee_voids","injury_liability","other_compensation","rookie_rules","salary_benefits","unpaid_old_bonus","void_years"],"minimum_source":"synthetic annual floors","source":"synthetic Windows amendment"}})",
+                R"({"protocol":1,"request_id":"amended-player","operation":"player_context","team_id":"a","player_id":"v","timeout_ms":1000})"
+            };
+            for (const auto* request : requests) {
+                client.submit(request);
+                while (!client.ready()) std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                std::cout << client.take() << std::endl;
+            }
+            return 0;
         }
         if (assignment) {
             const char* requests[] = {

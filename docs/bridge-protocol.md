@@ -173,3 +173,27 @@ team, each {financial,cash}. Native validation checks both revisions, one recipi
 owner/no seller owner, exact charges/cash totals, unchanged scope and identical shared
 assignment archives. These are response integrity checks, not independent NFL/game
 reconciliation. No native/game/browser assignment controls are implemented.
+
+## Explicit manual preseason restructure
+
+Protocol1 `manual_restructure` requires request_id, team_id, player_id,
+expected_revision, timeout_ms, decision_mode=`manual`, converted_base (positive
+integer money), and complete scope. Scope fields are league_year, amended_on,
+first_regular_season_game, current_year_earned_base, healthy, consent,
+renegotiation_eligible, exclusions, minimum_source and source. Dates must be
+canonical YYYY-MM-DD; exclusions must be unique strings naming the supported
+calculator's exact excluded terms. No input is inferred from ratings or dates.
+
+The operation uses stored annual floors and durable amendment validation. Local
+connection/deadline checks run initially and inside the final write transaction.
+AI shutdown does not prevent explicit manual financial operations; these make no
+model requests and never obtain an AI grant. Replies contain decision_mode,
+team_id, player_id and restructure `{financial,cash}`. A retry returns the saved
+receipt rather than restoring old state. Unsupported repeated conversions reject.
+
+The native response validator checks identity/revision, retained ownership,
+source scope, unchanged term/original bonus, converted base and guarantee delta,
+new layer allocation, annual floors, unchanged nominal/paid history and cash
+posting totals. The asset-free Windows `--restructure` fixture also compares
+receipts across restart with durable engine state. These checks are not actual
+guest synchronization or an independent complete NFL cap implementation.

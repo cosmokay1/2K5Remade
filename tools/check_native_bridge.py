@@ -135,6 +135,31 @@ def main():
             assert responses[1]['result']==trades.player_context('b','v')
         print("Native Windows paired assignment, inherited guarantees, conserved cash and restart retry verified (synthetic).")
 
+        amendment_path=Path(directory)/'amendment fixture.sqlite'
+        amendments=FranchiseStore(amendment_path)
+        contract=ActiveContract(Offer('v',(10,10,10,20,30,40,50),10,(10,10,10,20,0,0,0)),
+            'synthetic Windows original',elapsed_years=2)
+        amendments.create_team('a',Ledger.from_opening(OpeningBooks(contracts=(contract,)),cap=200,
+            roster_reserve=0,max_bonus_years=5,veteran_minimums={'v':(2,)*5}))
+        amendments.initialize_cash('a',(CashObligation('contract:v','v',180,30,'synthetic settled history',
+            (('signing_bonus',10),('base:0',10),('base:1',10))),),source='synthetic cash coverage')
+        original=None
+        for attempt in range(2):
+            result=subprocess.run([sys.argv[1],sys.executable,str(amendment_path),'--restructure'],
+                text=True,capture_output=True,timeout=20,check=True)
+            responses=[json.loads(line) for line in result.stdout.splitlines()]
+            assert len(responses)==2 and all(reply['error'] is None for reply in responses)
+            if original is None:original=responses
+            else:assert responses==original
+            current=FranchiseStore(amendment_path).load_team('a')
+            assert responses[0]['result']['restructure']=={'financial':current.financial_snapshot(),'cash':current.cash_snapshot()}
+            assert current.revision==2 and current.cash_snapshot()['revision']==1
+            assert [str(value) for value in current.charges]==['28/5','118/5','168/5','208/5','258/5']
+            assert current.cash_snapshot()['nominal_total']==180 and current.cash_snapshot()['paid_total']==30
+            assert current.guarantee_cash('v')['unpaid_signing_bonus']==8
+            assert responses[1]['result']==amendments.player_context('a','v')
+        print("Native Windows restructure, original/new bonus schedules, unpaid cash and restart retry verified (synthetic).")
+
 
 if __name__ == "__main__":
     main()

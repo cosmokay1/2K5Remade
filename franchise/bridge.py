@@ -29,7 +29,52 @@ class Bridge:
                 if set(request) != {"protocol", "request_id", "operation"}:
                     raise ValueError("Unexpected handshake fields")
                 self.access_check()
-                return self._reply(request_id, result={"ai_enabled": True, "operations": ["preview", "negotiate", "manual_sign", "manual_release", "manual_trade", "player_context"]})
+                return self._reply(request_id, result={"ai_enabled": True, "operations": ["preview", "negotiate", "manual_sign", "manual_release", "manual_trade", "manual_restructure", "player_context"]})
+            if operation == 'manual_restructure':
+                from datetime import date
+                from franchise.cap import money
+                from franchise.restructures import PreseasonRestructureScope
+                if set(request) != {'protocol','request_id','operation','team_id','player_id','expected_revision',
+                                    'timeout_ms','decision_mode','scope','converted_base'} or request['decision_mode'] != 'manual':
+                    raise ValueError('Explicit complete manual restructure required')
+                if any(type(request[key]) is not str or not request[key].strip() for key in ('team_id','player_id')):
+                    raise ValueError('Stable team and player identities required')
+                if type(request['expected_revision']) is not int or request['expected_revision'] < 0:
+                    raise ValueError('Nonnegative integer client revision required')
+                converted = money(request['converted_base'])
+                if converted == 0:
+                    raise ValueError('Positive base conversion required')
+                timeout = request['timeout_ms']
+                if type(timeout) is not int or not 1 <= timeout <= 60000:
+                    raise ValueError('Timeout must be 1-60000 milliseconds')
+                deadline = time.monotonic() + timeout / 1000
+                def restructure_access():
+                    self.connection_check()
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError('Restructure request expired')
+                restructure_access()
+                fields = {'league_year','amended_on','first_regular_season_game','current_year_earned_base',
+                          'healthy','consent','renegotiation_eligible','exclusions','minimum_source','source'}
+                if type(request['scope']) is not dict or set(request['scope']) != fields:
+                    raise ValueError('Complete sourced restructure scope required')
+                scope = dict(request['scope'])
+                exclusions = scope['exclusions']
+                if type(exclusions) is not list or any(type(item) is not str for item in exclusions) or len(set(exclusions)) != len(exclusions):
+                    raise ValueError('Unique explicit restructure exclusions required')
+                scope['exclusions'] = frozenset(exclusions)
+                for field in ('amended_on','first_regular_season_game'):
+                    value = scope[field]
+                    if type(value) is not str:
+                        raise ValueError('Canonical YYYY-MM-DD restructure dates required')
+                    parsed = date.fromisoformat(value)
+                    if parsed.isoformat() != value:
+                        raise ValueError('Canonical YYYY-MM-DD restructure dates required')
+                    scope[field] = parsed
+                receipt = self.store.restructure_preseason_veteran(request['team_id'],request_id,request['player_id'],
+                    scope=PreseasonRestructureScope(**scope),converted_base=converted,
+                    expected_revision=request['expected_revision'],access_check=restructure_access)
+                return self._reply(request_id,result={'decision_mode':'manual','team_id':request['team_id'],
+                    'player_id':request['player_id'],'restructure':receipt})
             if operation == 'manual_trade':
                 from datetime import date
                 from franchise.trades import PreseasonTradeScope

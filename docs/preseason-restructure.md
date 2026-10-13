@@ -1,7 +1,8 @@
 # Preseason base-to-bonus restructure calculation
 
 Supported engine amendments now commit and replay durably. Actual game amendments
-remain unverified; no HTTP or native restructure command is exposed yet.
+remain unverified. A strict local manual_restructure protocol command and native
+response validator are implemented; HTTP/game UI controls remain unfinished.
 The first supported calculation converts positive unpaid, unearned, fully guaranteed
 current veteran base to an unconditional signing bonus, keeping the term unchanged.
 Explicit health, consent, eligibility, actual preseason dates, annual minimums and provenance

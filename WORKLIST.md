@@ -93,8 +93,8 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
 - [ ] Implement extensions/restructures without erasing existing bonus layers.
       Pure sourced preseason guaranteed-base conversion and immutable bonus layers now
       preserve exact old/new schedules. Supported amendment cash, replay and subsequent release/trade commits now retain
-      all layers. Extensions, repeated conversions, native/UI controls and actual
-      guest transactions remain.
+      all layers. Strict local protocol/native validation is implemented. Extensions,
+      repeated conversions, game/UI controls and actual guest transactions remain.
 - [ ] Implement offseason/regular-season accounting and roster-status costs.
 - [ ] Implement dated June-1 treatment, supported tenders/tags and salary benefits.
 - [ ] Implement incentive settlement, cap adjustments, carryover and year rollover.

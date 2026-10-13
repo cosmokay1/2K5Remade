@@ -1606,3 +1606,17 @@ new direct sqlite3 test context managers committed transactions but did not clos
 connections. Tests now use contextlib.closing plus explicit transaction contexts;
 eight targeted cases pass locally. Financial behavior assertions had passed; Windows
 cleanup fix awaits fresh CI. Native restructure protocol work is separately underway.
+
+## October 13, 2026 — Manual restructure pipe and native response boundary
+
+Protocol1 manual_restructure validates complete sourced scope, strict money,
+revision and canonical dates; initial/final connection/deadline checks surround
+durable commit. Explicit manual operation works AI-disabled without model/grant
+calls. Native validator checks unchanged original term/bonus, conversion/guarantee
+delta, new layer identity/allocation, minimums, retained ownership and conserved
+cash/payment history.31 portable corruption scenarios and CTest pass;299 full
+Python tests pass. Added Windows --restructure pipe/restart fixture and validated
+its exact request against the durable engine locally; actual Win32 fixture run
+awaits CI. Earlier3e8a3f2 Windows cleanup failure fixed in4f551ca, fresh workflows
+38486232604/38486232593 were still running at inspection. Actual guest/UI write
+and playable game/save evidence remain absent.
