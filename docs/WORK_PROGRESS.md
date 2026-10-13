@@ -942,3 +942,17 @@ competing signing rights, over-cap/disabled rejection and AI recommendation bind
 pass in offline tests. Source slot/economic import, draft trades, rights expiry,
 year rollover and real guest hooks remain unsupported. This is engine transaction
 integration, not evidence of game execution.
+
+## October 13, 2026 — Promise vectors and achievement scoring
+
+Accepted user-requested touches/starts/yards/wins as nonfinancial negotiated goals
+and fulfillment as a scored consequence. Added typed PromiseGoal and GoalObservation,
+with explicit window/source, positive targets and authored player importance.
+Yard goals specify receiving/rushing/passing. Touches are observed carries plus
+receptions, not targets. Fulfillment is exact, weighted and capped per goal; missing
+coverage remains unknown and no final score is issued until the period closes with
+complete observations. Context is preserved without inventing excuses/counter values.
+These scores measure promises, not player ability, and produce no cash/cap effect.
+185 local tests pass. Provider/pipe/HTTP negotiation terms, atomic promise agreement,
+persistent scoring and story/relationship consequences remain to be wired; existing
+live negotiation still does not offer promises. No actual game counters were observed.

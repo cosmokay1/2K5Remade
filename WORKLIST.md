@@ -232,3 +232,13 @@ See packaging/steamdeck/README.md. Candidate packaging is not playable delivery.
 - [ ] Extend live negotiation/draft API with persistent transactions and existing remote killswitch. HTTP negotiation now shares durable Bridge transactions and fresh access checks; actual restricted-runtime inference and draft transactions remain unverified/unimplemented.
 
 See docs/cloudflare-tunnel.md. Dedicated tunnel/DNS/TLS route is live; full browser franchise delivery remains unfinished.
+
+## Negotiated promises and achieved-goal scoring
+
+- [x] Define sourced nonfinancial goals for touches, starts, position-specific yards and team wins, with an explicit time window and player importance.
+- [x] Score observed achievement with unknown coverage and period closure; keep this separate from hidden player ability and salary incentives.
+- [ ] Wire promise proposals/accept/reject/counters through provider schemas and the client protocol.
+- [ ] Commit agreed promises atomically with the contract and story; preserve them across restart.
+- [ ] Derive actual touch/start/yard/win evidence from verified game counters; never infer unavailable targets or starts from other stats.
+- [ ] Apply goal consequences to trust, satisfaction and future negotiation with context for injury, availability and coaching choices.
+- [ ] Display promised vs observed goals and fulfillment score in the game/browser interface.
