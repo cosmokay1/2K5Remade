@@ -1161,3 +1161,14 @@ an unresolved legacy cross-team gap: scouting on an unbound team does not yet ch
 an actor already saved on another team. Next work must enforce canonical prior
 personality for new advice and chronological cross-team replay, preserving genuinely
 unbound historical authored evidence. No game integration is inferred from tests.
+
+## October 13, 2026 — Canonical cross-team legacy draft personality
+
+Resolved the independent review finding. New scouting validates the first globally
+saved actor personality before inference and again inside the write transaction.
+Replay checks only actor events preceding the advice, preserving legacy chronology.
+A second team cannot substitute priorities merely because it lacks a local binding.
+No actor is generated or bound by scouting reads. Regression covers contradictory
+cross-team input before provider call, canonical advice and tampered replay; prior
+historical-before-binding fixture still passes. 223 local tests pass. Actual guest
+integration remains unfinished and source CI is pending.

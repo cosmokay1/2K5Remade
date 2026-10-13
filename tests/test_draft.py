@@ -287,3 +287,33 @@ class DraftComparisonTests(unittest.TestCase):
             reopened=FranchiseStore(store.path)
             self.assertEqual(reopened.recalled_scouting('a','legacy'),reply)
             self.assertEqual(reopened.player_context('a','a')['personality'],{'money':0.8})
+
+    def test_legacy_cross_team_personality_is_checked_before_inference_and_on_replay(self):
+        import tempfile,json,sqlite3
+        from contextlib import closing
+        from dataclasses import replace
+        from franchise.books import OpeningBooks
+        from franchise.draft import DraftScouting
+        with tempfile.TemporaryDirectory() as directory:
+            store,ledger,inputs=self.durable_scouting(directory)
+            store.create_team('b',Ledger.from_opening(OpeningBooks(),cap=20,roster_reserve=0,
+                max_bonus_years=5,veteran_minimums={},rookies=self.ledger()._rookies,
+                rookie_year_one_allocation=25,rookie_total_allocation=100))
+            personality={'money':0.8}
+            store.bind_actor('b','a',personality,{},access_check=lambda:None)
+            calls=[]
+            with self.assertRaisesRegex(Rejected,'cross-team'):
+                DraftScouting(ledger,access_check=lambda:None).recommend('wrong',lambda c:calls.append(c),**inputs)
+            self.assertEqual(calls,[])
+            prospect=replace(inputs['prospects'][0],personality=personality,personality_source='saved actor')
+            inputs={**inputs,'prospects':(prospect,)}
+            DraftScouting(ledger,access_check=lambda:None).recommend('right',lambda _:json.dumps(
+                {'action':'recommend','player_id':'a','reason':'Observed production','uncertainty':'Targets unknown'}),**inputs)
+            self.assertEqual(store.load_team('a').revision,0)
+            with closing(sqlite3.connect(store.path)) as db:
+                row=db.execute("SELECT id,payload FROM events WHERE kind='draft_scouting'").fetchone()
+                payload=json.loads(row[1])
+                payload['event']['evidence']['prospects'][0]['personality']={'money':0.1}
+                db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(payload),row[0]))
+                db.commit()
+            with self.assertRaisesRegex(Rejected,'cross-team'): store.load_team('a')

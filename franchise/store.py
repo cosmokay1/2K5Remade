@@ -273,6 +273,8 @@ class FranchiseStore:
             elif kind == "draft_scouting":
                 from franchise.draft import validate_scouting
                 validate_scouting(payload["event"], ledger)
+                for prospect in payload['event']['evidence']['prospects']:
+                    self._validate_prior_personality(db,prospect['player_id'],prospect['personality'],before_event=event_id)
                 ledger._scouting.append(payload["event"])
             elif kind == "dialogue":
                 self._validate_dialogue(payload["event"])
@@ -961,6 +963,21 @@ class FranchiseStore:
                        (team_id, key, json.dumps(payload, allow_nan=False)))
             return payload["posting"]
 
+    @staticmethod
+    def _validate_prior_personality(db, player_id, personality, *, before_event=None):
+        row=db.execute("SELECT payload FROM events WHERE kind='actor' AND request_key=? AND (? IS NULL OR id < ?) ORDER BY id LIMIT 1",
+                       ('actor:'+player_id,before_event,before_event)).fetchone()
+        if row:
+            actor=json.loads(row[0])['actor']
+            FranchiseStore._validate_actor(actor)
+            if personality != actor['personality']:
+                raise Rejected('Scouting personality differs from saved cross-team player personality')
+
+    def validate_scouting_personality(self, team_id, player_id, personality):
+        with self._connection() as db:
+            self._load(db,team_id).validate_scouting_personality(player_id,personality)
+            self._validate_prior_personality(db,player_id,personality)
+
     def record_scouting(self, team_id, event, *, access_check):
         from franchise.draft import validate_scouting
         event = json.loads(json.dumps(event, allow_nan=False))
@@ -975,6 +992,8 @@ class FranchiseStore:
                 access_check()
                 return previous
             validate_scouting(event, ledger)
+            for prospect in event['evidence']['prospects']:
+                self._validate_prior_personality(db,prospect['player_id'],prospect['personality'])
             access_check()  # Required inside the final durable transaction.
             payload = {"event": event, "posting": ledger.financial_snapshot()}
             db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,'draft_scouting',?)",
@@ -1036,7 +1055,7 @@ class StoredLedger:
         return self.store.load_team(self.team_id).scouting_history()
 
     def validate_scouting_personality(self, player_id, personality):
-        self.store.load_team(self.team_id).validate_scouting_personality(player_id, personality)
+        self.store.validate_scouting_personality(self.team_id, player_id, personality)
 
     def recalled_scouting(self, request_id):
         return self.store.recalled_scouting(self.team_id, request_id)
