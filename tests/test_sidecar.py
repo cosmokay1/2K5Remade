@@ -113,3 +113,31 @@ class SidecarTests(unittest.TestCase):
             self.assertEqual(responses[1]["result"]["decision_mode"], "manual")
             self.assertEqual(store.load_team("a").charges, (10,))
             self.assertNotIn("SECRET", stdout.getvalue() + stderr.getvalue())
+
+    def test_denied_runtime_impersonation_never_initializes_owner_sdk_fallback(self):
+        from franchise.sidecar import main
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.sqlite"
+            store = FranchiseStore(path)
+            store.create_team("a", Ledger.from_opening(OpeningBooks(), cap=100,
+                roster_reserve=0, max_bonus_years=5, veteran_minimums={"v": (1,)}))
+            manual = request()
+            manual.update(operation="manual_sign", decision_mode="manual")
+            for key in ("personality", "performance", "relationships"):
+                del manual[key]
+            expensive = {**manual, "request_id": "expensive", "offer": {**manual["offer"], "salaries": [101]}}
+            messages = [dict(protocol=1, request_id="hello", operation="hello"), expensive, manual]
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with patch.object(sys, "argv", ["sidecar", "--database", str(path), "--provider", "vertex", "--impersonate-runtime"]), \
+                 patch.object(sys, "stdin", io.StringIO("".join(json.dumps(item) + "\n" for item in messages))), \
+                 patch.object(sys, "stdout", stdout), patch.object(sys, "stderr", stderr), \
+                 patch("franchise.google_credentials.runtime_credentials", side_effect=RuntimeError("SECRET permission denied")), \
+                 patch("franchise.vertex_provider.VertexProvider") as sdk:
+                main()
+            responses = [json.loads(line) for line in stdout.getvalue().splitlines()]
+            self.assertEqual(responses[0]["error"], "ai_disabled")
+            self.assertEqual(responses[1]["error"], "state_rejected")
+            self.assertEqual(responses[2]["result"]["outcome"], "signed")
+            self.assertFalse(sdk.called)
+            self.assertEqual(store.load_team("a").charges, (10,))
+            self.assertNotIn("SECRET", stdout.getvalue() + stderr.getvalue())

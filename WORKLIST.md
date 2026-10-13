@@ -30,6 +30,7 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 | B02 | Raw franchise saves and companion metadata; controlled transaction pairs | Contract decoding, reconciliation and save round trips | Synthetic import fixtures, read-only diff tooling, state schema |
 | B03 | Windows machine/runner capable of running the user's legal game | Runtime reproduction, UI/gameplay validation, delivery acceptance | Portable engine tests and asset-free Windows compilation checks |
 | B04 | Written upstream/third-party permission or suitable licenses | Redistribution of modified binaries and affected bundled components | Original source development, attribution, permission-request drafts |
+| B05 | Explicit approval for scoped runtime impersonation delegation | Live runtime-identity read/inference verification | Offline/native recovery and financial implementation |
 
 The user currently has no game binary/save. Never download retail assets to
 resolve that blocker. Do not repeatedly ask for the same missing input. Report

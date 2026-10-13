@@ -729,3 +729,18 @@ Prior native result validation `f2674a4` passed Windows/Linux in
 [run 38469873021](https://github.com/cosmokay1/2K5Remade/actions/runs/38469873021).
 New native launch-mode build/execution CI pending. Real guest integration remains
 unfinished; no game playability claim.
+
+## October 13, 2026 — Verified impersonation source gate and safe denied-auth recovery
+
+Actual `gcloud storage cat` under runtime impersonation failed with getAccessToken
+permission denial before reading the switch. Automatic approval review rejected
+a scoped Token Creator grant for the existing administrator as a persistent IAM
+delegation; no grant applied. Requested explicit human approval, and will not
+bypass it with owner fallback/keys/alternate identity. Live runtime read/inference
+verification remains gated; independent finance/native work continues.
+
+146 local tests pass. Added explicit runtime-denial startup case proving no owner
+SDK initialization, AI-disabled response, over-cap manual rejection, legal manual
+signing and secret redaction. Startup recovery `43f5181` passed Windows/Linux in
+[run 38470323280](https://github.com/cosmokay1/2K5Remade/actions/runs/38470323280);
+counter previews `2c21065` also passed run 38470077869. New test CI pending.

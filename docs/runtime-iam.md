@@ -38,3 +38,16 @@ even after refresh. Reusing a valid token never reuses the remote enabled grant:
 each handshake fetches the switch again. Offline tests cover disable/unavailability
 with cached tokens and failed refresh without owner ADC fallback. Effective live
 identity access remains unverified.
+
+## Live source-permission gate
+
+October 13, 2026: a read-only GCS request using the runtime identity failed before
+object access because the current administrative source login lacks
+`iam.serviceAccounts.getAccessToken` on the target. No token was printed, model
+called or control object changed. Automatic approval review rejected a scoped
+Token Creator grant as a persistent IAM delegation requiring explicit human
+approval. The grant was not applied; approval is pending in the chat.
+
+Do not work around this gate with owner fallback, distributed keys or another
+identity. Offline tests confirm denied runtime impersonation leaves AI disabled
+while explicit manual transactions retain the same cap validator.
