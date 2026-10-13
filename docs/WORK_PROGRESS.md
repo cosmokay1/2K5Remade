@@ -250,3 +250,21 @@ remain incomplete. No game integration is claimed. Remote CI pending.
 
 Verified prior performance-context commit `ea400fb` on Windows/Linux in
 [run 38463545574](https://github.com/cosmokay1/2K5Remade/actions/runs/38463545574).
+
+## October 13, 2026 — Persistent player priorities and team relationships
+
+Durable sessions register initial actor context under the database write lock.
+The player's original personality follows them across clubs; initial relationships
+remain team-specific. Restart reuses recorded priorities instead of replacing them
+with new caller defaults. Current observed performance can still refresh. Actor
+registration records unchanged financial postings and checks remote access at its
+write boundary. Reload validates actor shape and rejects hidden rating fields.
+
+Local validation: 98 tests pass, including refreshed production with stable
+priorities, cross-team identity/relationship separation and disabled registration
+without state mutation. Bounded personality/relationship updates, agent/GM models
+and season campaigns remain unimplemented. Existing source fixtures remain the
+inputs; no actual-game extraction or playable-build evidence is claimed. CI pending.
+
+Verified preceding dialogue persistence `80847b8` on Windows/Linux in
+[run 38463714527](https://github.com/cosmokay1/2K5Remade/actions/runs/38463714527).

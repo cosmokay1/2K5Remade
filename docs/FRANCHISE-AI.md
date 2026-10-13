@@ -231,3 +231,9 @@ responses rather than generating new ones. Dialogue consumes no cap or ownership
 and records the unchanged financial posting for replay verification. Signed
 contract/story writes remain atomic. Histories currently span the player's entire
 conversation with a team; deadlines and distinct negotiation campaigns are pending.
+
+The durable store registers initial player personality and team relationships when
+a negotiation session is created. Later sessions reuse them; changing constructor
+defaults does not reset the player. Personality follows the player across clubs,
+while relationships are team-specific. Performance evidence can refresh each
+session. Explicit bounded relationship/personality evolution is pending.

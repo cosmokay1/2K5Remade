@@ -124,6 +124,9 @@ class FranchiseStore:
                 receipt = ledger.sign(payload["request_id"], Offer(data["player_id"], tuple(data["salaries"]), data["signing_bonus"]), payload["expected_revision"])
                 if payload.get("contract_charges") != [json_amount(value) for value in receipt.charges]:
                     raise ValueError("Recorded contract charges disagree with replay")
+            elif kind == "actor":
+                ledger.negotiation_context(payload["player_id"])
+                self._validate_actor(payload["actor"])
             elif kind == "dialogue":
                 self._validate_dialogue(payload["event"])
             elif kind == "budget":
@@ -192,6 +195,38 @@ class FranchiseStore:
             self._load(db, team_id)  # Validate financial reconstruction first.
             return [payload["story"] for (text,) in db.execute("SELECT payload FROM events WHERE team_id=? AND kind='sign' ORDER BY id", (team_id,))
                     if (payload := json.loads(text))["story"] is not None]
+
+    @staticmethod
+    def _validate_actor(actor):
+        from franchise.negotiation import validate_performance
+        if type(actor) is not dict or set(actor) != {"personality", "relationships"}:
+            raise ValueError("Personality and relationships required")
+        if any(type(value) is not dict for value in actor.values()):
+            raise ValueError("Actor fields must be JSON objects")
+        validate_performance(actor)
+        json.dumps(actor, allow_nan=False)
+
+    def bind_actor(self, team_id, player_id, personality, relationships, *, access_check):
+        actor = {"personality": personality, "relationships": relationships}
+        self._validate_actor(actor)
+        actor = json.loads(json.dumps(actor, allow_nan=False))
+        with self._connection(write=True) as db:
+            ledger = self._load(db, team_id)
+            ledger.negotiation_context(player_id)
+            access_check()
+            key = "actor:" + player_id
+            row = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, key)).fetchone()
+            if row:
+                return json.loads(row[0])["actor"]
+            # Player priorities follow the player across clubs; relationships
+            # remain team-specific. The write lock serializes first registration.
+            existing = db.execute("SELECT payload FROM events WHERE kind='actor' AND request_key=? ORDER BY id LIMIT 1", (key,)).fetchone()
+            if existing:
+                actor["personality"] = json.loads(existing[0])["actor"]["personality"]
+            payload = {"player_id": player_id, "actor": actor, "posting": ledger.financial_snapshot()}
+            db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'actor', ?)",
+                       (team_id, key, json.dumps(payload, allow_nan=False)))
+            return actor
 
     @staticmethod
     def _validate_dialogue(event):
@@ -285,6 +320,10 @@ class StoredLedger:
     def commit_negotiation(self, request_id, offer, expected_revision, *, access_check, story):
         return self.store.sign(self.team_id, request_id, offer, expected_revision,
                                access_check=access_check, story=story)
+
+    def bind_actor(self, player_id, personality, relationships, *, access_check):
+        return self.store.bind_actor(self.team_id, player_id, personality, relationships,
+                                     access_check=access_check)
 
     def record_negotiation(self, event, *, access_check):
         return self.store.record_negotiation(self.team_id, event, access_check=access_check)

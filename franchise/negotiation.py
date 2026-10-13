@@ -59,9 +59,10 @@ class Negotiation:
                               "relationships": relationships})
         self.ledger = ledger
         self.player_id = player_id
-        # Freeze the provided context as JSON so outside edits cannot alter history.
-        self._actor = json.dumps({"personality": personality, "performance": performance,
-                                  "relationships": relationships}, allow_nan=False)
+        actor = ledger.bind_actor(player_id, personality, relationships,
+                                  access_check=self._access_check)
+        # Durable priorities survive restart; current observed production may change.
+        self._actor = json.dumps({**actor, "performance": performance}, allow_nan=False)
         self._events: list[dict] = ledger.negotiation_history(player_id)
         self._replies: dict[str, tuple[Offer, dict]] = {}
         self._signed = any(event["outcome"] == "signed" for event in self._events)

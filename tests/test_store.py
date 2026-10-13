@@ -87,6 +87,40 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(self.store.negotiation_history("a", "v"), [])
         self.assertEqual(self.store.load_team("a").charges, (10,))
 
+    def test_actor_priorities_survive_restart_but_production_can_refresh(self):
+        self.store.create_team("a", self.ledger())
+        def session(store, personality, performance):
+            return Negotiation(StoredLedger(store, "a"), player_id="v", personality=personality,
+                               performance=performance, relationships={"team_trust": 0.6},
+                               access_check=lambda: None)
+        first = session(self.store, {"loyalty": 0.9}, {"receiving_yards": 100})
+        reopened = FranchiseStore(self.path)
+        resumed = session(reopened, {"loyalty": 0.1}, {"receiving_yards": 200})
+        seen = []
+        def provider(context):
+            seen.append(context)
+            return json.dumps(dict(action="reject", reason="Need more", salaries=None, signing_bonus=None))
+        resumed.respond("round1", Offer("v", (10,), 0), provider)
+        self.assertEqual(seen[0]["personality"], {"loyalty": 0.9})
+        self.assertEqual(seen[0]["performance"], {"receiving_yards": 200})
+        self.assertEqual(reopened.load_team("a").revision, 0)
+        with closing(sqlite3.connect(self.path)) as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM events WHERE kind='actor'").fetchone()[0], 1)
+        reopened.create_team("b", self.ledger())
+        actor = reopened.bind_actor("b", "v", {"loyalty": 0.1}, {"team_trust": 0.2}, access_check=lambda: None)
+        self.assertEqual(actor["personality"], {"loyalty": 0.9})
+        self.assertEqual(actor["relationships"], {"team_trust": 0.2})
+
+    def test_actor_write_denied_by_killswitch_preserves_state(self):
+        self.store.create_team("a", self.ledger())
+        def disabled():
+            raise AccessDisabled("Disabled")
+        with self.assertRaises(AccessDisabled):
+            self.store.bind_actor("a", "v", {"loyalty": 0.9}, {}, access_check=disabled)
+        with closing(sqlite3.connect(self.path)) as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM events").fetchone()[0], 0)
+        self.assertEqual(self.store.load_team("a").revision, 0)
+
     def test_restart_restores_contract_pool_revision_and_receipt(self):
         self.store.create_team("a", self.ledger())
         offer = Offer("r", (4,) * 4, 4)

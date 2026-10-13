@@ -247,6 +247,10 @@ class Ledger:
         """In-memory commit; the durable adapter persists story with finances."""
         return self.sign(request_id, offer, expected_revision, access_check=access_check)
 
+    def bind_actor(self, player_id, personality, relationships, *, access_check):
+        self.negotiation_context(player_id)  # Require a registered player.
+        return {"personality": personality, "relationships": relationships}
+
     def negotiation_history(self, player_id: str):
         return []
 
