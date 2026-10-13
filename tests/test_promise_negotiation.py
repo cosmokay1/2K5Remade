@@ -73,3 +73,13 @@ class PromiseNegotiationTests(unittest.TestCase):
             with self.assertRaises(AccessDisabled):
                 session.respond('disabled',Offer('p',(20,),0),shutdown,promise_goals=(self.goal(),))
             self.assertEqual(store.load_team('a').revision,0)
+
+    def test_provider_cannot_mutate_original_promises_before_accepting(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store,session=self.setup_session(directory)
+            def provider(context):
+                context['promise_goals'][0]['target']=99
+                return self.accept(context)
+            event=session.respond('deal',Offer('p',(20,),0),provider,promise_goals=(self.goal(),))
+            self.assertEqual(event['promise_goals'][0]['target'],8)
+            self.assertEqual(FranchiseStore(store.path).negotiation_history('a','p')[0]['promise_goals'][0]['target'],8)

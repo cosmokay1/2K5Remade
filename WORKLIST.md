@@ -240,5 +240,5 @@ See docs/cloudflare-tunnel.md. Dedicated tunnel/DNS/TLS route is live; full brow
 - [x] Wire promise proposals/accept/reject/counters through provider schemas and the Python pipe/HTTP protocol; native/game UI remains under integration milestones.
 - [x] Commit agreed promises atomically with the contract and story; preserve them across restart.
 - [ ] Derive actual touch/start/yard/win evidence from verified game counters; never infer unavailable targets or starts from other stats.
-- [ ] Apply goal consequences to trust, satisfaction and future negotiation with context for injury, availability and coaching choices.
+- [ ] Apply goal consequences to trust, satisfaction and future negotiation with context for injury, availability and coaching choices. Scores now persist and feed player context; only known final scores can source once-only bounded relationship changes. Context-aware consequence policy and in-game story triggers remain.
 - [ ] Display promised vs observed goals and fulfillment score in the game/browser interface.

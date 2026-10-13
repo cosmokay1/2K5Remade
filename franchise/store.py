@@ -141,6 +141,7 @@ class FranchiseStore:
                 self._validate_story_evidence(payload["story"])
                 data = payload["offer"]
                 receipt = ledger.sign(payload["request_id"], Offer.from_dict(data), payload["expected_revision"])
+                self._remember_promises(ledger,payload)
                 if ledger._cash is not None:
                     ledger._cash.add_contract(receipt.offer, "sign:" + payload["request_id"], track_components=payload.get("cash_components", False))
                     if payload.get("cash_posting") != ledger.cash_snapshot():
@@ -191,6 +192,12 @@ class FranchiseStore:
                 self._apply_relationship(actor, payload["relationship"], payload["delta"])
                 if actor != payload["actor_after"]:
                     raise ValueError("Relationship posting disagrees with replay")
+                ledger.revision += 1
+            elif kind == "promise_score":
+                result = self._compute_promise_score(ledger,payload)
+                if result != payload['result']:
+                    raise ValueError('Promise score disagrees with recorded observations')
+                ledger._promise_scores.append(result)
                 ledger.revision += 1
             elif kind == "draft_pick":
                 order = self._draft_order(db, payload["draft_id"])
@@ -431,6 +438,7 @@ class FranchiseStore:
             if story is not None:
                 self._check_history(db, team_id, offer.player_id, story)
             receipt = ledger.sign(request_id, offer, expected_revision, access_check=access_check)
+            self._remember_promises(ledger,payload)
             if ledger._cash is not None:
                 ledger._cash.add_contract(offer, "sign:" + request_id)
                 payload["cash_components"] = True
@@ -502,11 +510,17 @@ class FranchiseStore:
 
     @staticmethod
     def _relationship_source(db, team, player, request, *, before_revision, before_event_id=None):
-        for event_id, kind, serialized in db.execute("SELECT id,kind,payload FROM events WHERE team_id=? AND request_key IN (?, ?)",
-                (team, "sign:" + request, "dialogue:" + request)):
+        for event_id, kind, serialized in db.execute("SELECT id,kind,payload FROM events WHERE team_id=? AND request_key IN (?, ?, ?)",
+                (team, "sign:" + request, "dialogue:" + request, "promise-score:" + request)):
             if before_event_id is not None and event_id >= before_event_id:
                 continue
             data = json.loads(serialized)
+            if kind == 'promise_score':
+                result = data['result']
+                if (result['player_id'] == player and result['score']['final_achievement_score'] is not None
+                        and data['posting']['revision'] <= before_revision):
+                    return
+                continue
             event = data["story"] if kind == "sign" else data["event"]
             if event is not None and event["offer"]["player_id"] == player and data["posting"]["revision"] <= before_revision:
                 return
@@ -547,6 +561,67 @@ class FranchiseStore:
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'relationship', ?)",
                        (team, key, json.dumps(payload, allow_nan=False)))
             return actor
+
+    @staticmethod
+    def _remember_promises(ledger,payload):
+        story = payload['story']
+        if story is None or not story.get('promise_goals'):
+            return
+        from franchise.promises import goals_from_list
+        goals_from_list(story['promise_goals'])
+        if story.get('action') != 'accept' or story.get('outcome') != 'signed' or story.get('counter_promises') is not None:
+            raise ValueError('Signed acceptance of original promise terms required')
+        ledger._promise_agreements[payload['request_id']] = {'player_id':payload['offer']['player_id'],
+                                                          'goals':story['promise_goals']}
+
+    @staticmethod
+    def _compute_promise_score(ledger,payload):
+        from franchise.promises import goals_from_list,GoalObservation,score_promises
+        if type(payload.get('expected_revision')) is not int or payload['expected_revision'] != ledger.revision:
+            raise Rejected('Promise observation used stale franchise state')
+        agreement = ledger._promise_agreements.get(payload['agreement_request_id'])
+        if agreement is None:
+            raise Rejected('Committed promise agreement required')
+        for previous in ledger._promise_scores:
+            if previous['agreement_request_id'] == payload['agreement_request_id'] and previous['score']['final_achievement_score'] is not None:
+                raise Rejected('Final promise score already recorded; corrections unsupported')
+        if type(payload['source']) is not str or not payload['source'].strip():
+            raise ValueError('Evaluation/period-closure provenance required')
+        observations = payload['observations']
+        fields = {'goal_id','window','value','source','coverage','context'}
+        if type(observations) is not list or any(type(o) is not dict or set(o) != fields for o in observations):
+            raise ValueError('Complete observed goal records required')
+        score = score_promises(goals_from_list(agreement['goals']),tuple(GoalObservation(**o) for o in observations),
+                               window_closed=payload['window_closed'])
+        return {'request_id':payload['request_id'],'agreement_request_id':payload['agreement_request_id'],
+                'player_id':agreement['player_id'],'source':payload['source'],'score':score}
+
+    def record_promise_score(self,team_id,request_id,agreement_request_id,observations,*,window_closed,expected_revision,source):
+        from dataclasses import asdict
+        from franchise.promises import GoalObservation
+        if any(type(v) is not str or not v.strip() for v in (request_id,agreement_request_id)):
+            raise ValueError('Stable score and agreement identities required')
+        if type(observations) is not tuple or any(not isinstance(o,GoalObservation) for o in observations):
+            raise ValueError('Immutable typed observations required')
+        payload = {'request_id':request_id,'agreement_request_id':agreement_request_id,
+                   'observations':[asdict(o) for o in observations],'window_closed':window_closed,
+                   'expected_revision':expected_revision,'source':source}
+        with self._connection(write=True) as db:
+            ledger = self._load(db,team_id)
+            key = 'promise-score:' + request_id
+            row = db.execute('SELECT payload FROM events WHERE team_id=? AND request_key=?',(team_id,key)).fetchone()
+            if row:
+                previous = json.loads(row[0])
+                if any(previous[field] != payload[field] for field in payload):
+                    raise Rejected('Score request already recorded differently')
+                return previous['result']
+            result = self._compute_promise_score(ledger,payload)
+            ledger._promise_scores.append(result)
+            ledger.revision += 1
+            payload.update(result=result,posting=ledger.financial_snapshot())
+            db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,'promise_score',?)",
+                       (team_id,key,json.dumps(payload,allow_nan=False)))
+            return result
 
     @staticmethod
     def _validate_story_evidence(story):

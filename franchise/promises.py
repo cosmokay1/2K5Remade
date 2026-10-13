@@ -33,8 +33,8 @@ class GoalObservation:
     def __post_init__(self):
         if any(type(v) is not str or not v.strip() for v in (self.goal_id,self.window,self.source,self.coverage,self.context)):
             raise ValueError('Goal identity, observation coverage and context required')
-        if self.value is not None and (type(self.value) is not int or self.value < 0):
-            raise ValueError('Observed nonnegative count or explicit unknown required')
+        if self.value is not None and (type(self.value) is not int):
+            raise ValueError('Observed integer value or explicit unknown required')
 
 
 def score_promises(goals, observations, *, window_closed):
@@ -62,7 +62,9 @@ def score_promises(goals, observations, *, window_closed):
         if observed is not None and observed.window != goal.window:
             raise ValueError('Observation window differs from agreed goal')
         value = observed.value if observed is not None else None
-        ratio = min(Fraction(value,goal.target),Fraction(1)) if value is not None else None
+        if value is not None and value < 0 and goal.metric not in {'receiving_yards','rushing_yards','passing_yards'}:
+            raise ValueError('Opportunity/start/win counts cannot be negative')
+        ratio = max(Fraction(0),min(Fraction(value,goal.target),Fraction(1))) if value is not None else None
         if ratio is not None:
             achieved_weight += ratio * goal.importance
             known_weight += goal.importance

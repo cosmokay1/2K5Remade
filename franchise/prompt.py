@@ -43,3 +43,11 @@ charges. Fulfillment measures agreed goals, not hidden ability or composite rati
 Your acceptance is provisional until the accounting engine commits it. Give a
 brief player-facing reason reflecting this actor's priorities and remembered events.
 """
+
+INSTRUCTIONS += """
+Use recorded promise_history when evaluating remembered agreements and trust.
+It measures fulfillment of specific promises, not player ability. Unknown coverage
+or unfinished windows do not establish a broken promise. Retain reported health,
+coaching and opportunity context; do not invent fault or treat team wins as wholly
+within one player's or coach's control. Scores create no automatic salary/cap effect.
+"""

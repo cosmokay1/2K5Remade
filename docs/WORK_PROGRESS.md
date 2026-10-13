@@ -972,3 +972,24 @@ No live inference, salary incentives or actual gameplay counters were added.
 Prior draft/promise-core source commits passed both workflows: draft 78faf5d runs
 38476541257/38476541340, core ca7fa4a runs 38476552766/38476552880. Funding f3f50a7
 also passed both workflows 38475903638/38475903630, verifying the Windows cleanup fix.
+
+## October 13, 2026 — Persistent promise scores and causal trust evidence
+
+Committed agreements reconstruct their typed promises; score events reference a
+real signed agreement and explicit observation/period-closure sources. Scores
+recompute on replay, retry idempotently, reject stale state/conflicting reuse and
+refuse overwriting a complete final result. Unknown/in-progress coverage is retained
+and can later resolve. Player context contains recorded score history, and model
+instructions distinguish promise fulfillment from ability/fault. Scoring advances
+revision for stale-model protection without changing salary/cash balances.
+
+Known final scores may source existing bounded once-only relationship updates;
+unknown/in-progress scores cannot. No automatic blame/reward policy was introduced:
+health/coaching/opportunity context remains required for actual story consequences.
+Negative net yardage stays observed and scores at zero fulfillment; negative counts
+remain invalid. Provider context is copied so acceptance cannot silently mutate
+original offered promises. 195 local tests pass for persistence/restart, score-source
+trust updates, duplicate prevention, source/revision errors, unknown-to-final results,
+negative yardage and model-input isolation. No actual gameplay counters or UI exercised.
+Prior promise-agreement a19d6cd passed Franchise AI run 38476915894 and Build check
+38476915987. Current scoring CI is pending after push.

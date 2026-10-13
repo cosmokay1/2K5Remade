@@ -32,3 +32,10 @@ class PromiseTests(unittest.TestCase):
             score_promises((goal,goal),(),window_closed=True)
         with self.assertRaises(ValueError):
             self.observation('starts',True)
+
+    def test_net_negative_yards_score_zero_but_negative_win_count_rejects(self):
+        goal=self.goal('yards','rushing_yards',100)
+        result=score_promises((goal,),(self.observation('yards',-5),),window_closed=True)
+        self.assertEqual(result['final_achievement_score'],'0')
+        with self.assertRaises(ValueError):
+            score_promises((self.goal('wins','team_wins',10),),(self.observation('wins',-1),),window_closed=True)

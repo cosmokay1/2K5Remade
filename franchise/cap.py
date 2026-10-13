@@ -147,6 +147,8 @@ class Ledger:
         self._rookies = dict(rookies or {})
         self._draft_reservations = {}
         self._draft_rights = {}
+        self._promise_agreements = {}
+        self._promise_scores = []
         if self._rookies.keys() & self._veteran_minimums.keys():
             raise ValueError("A player cannot be classified as both rookie and veteran")
         known = self._rookies.keys() | self._veteran_minimums.keys()
@@ -312,6 +314,10 @@ class Ledger:
         with self._lock:
             return self._rookie_year_one, self._rookie_total
 
+    def promise_history(self, player_id):
+        import json
+        return json.loads(json.dumps([record for record in self._promise_scores if record['player_id'] == player_id]))
+
     def scouting_history(self):
         return [dict(request_id=event['request_id'], decision=dict(event['decision']),
                      draft_round=event['evidence']['draft_round'], overall_pick=event['evidence']['overall_pick'])
@@ -337,6 +343,7 @@ class Ledger:
             scale = self._rookies.get(player_id)
             _, reserved_one, reserved_total = self._draft_reserved(except_player=player_id)
             return {"revision": self.revision, "cap": self.cap, "room": json_amount(self.room),
+                    "promise_history": self.promise_history(player_id),
                     "annual_team_charges": [json_amount(value) for value in self._charges],
                     "roster_reserve": self.roster_reserve,
                     "cash_summary": ({key: value for key, value in self.cash_snapshot().items()

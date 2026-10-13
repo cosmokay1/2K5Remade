@@ -129,7 +129,7 @@ class Negotiation:
         context = {"player_id": self.player_id, **json.loads(self._actor),
                    "offer": offer.to_dict(), "accounting": snapshot,
                    "history": self.events, "promise_goals": proposed}
-        response = provider(context)
+        response = provider(json.loads(json.dumps(context, allow_nan=False)))
         decision = Decision.parse(response, self.player_id)
         if proposed and decision.action == "counter" and "promise_goals" not in json.loads(response):
             raise ValueError("Counter must explicitly preserve, change or withdraw promise proposals")
