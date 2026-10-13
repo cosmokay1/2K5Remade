@@ -629,3 +629,20 @@ sets release_authorized=false and lists unresolved covered-release/offset/void,
 earned/termination/injury and roster-phase facts. This integrates the components
 with authoritative records; a complete release transaction still remains.
 New Windows/Linux CI pending; actual-game gates remain unchanged.
+
+## October 13, 2026 — Source-checked offseason roster valuation component
+
+Verified executed CBA Article 13 section 6(a)(i), PDF page 125 (printed 109).
+Added supported base/prorated-bonus valuation for explicit offseason/regular-season
+phases. Offseason excludes base only up to the applicable minimum for UDFAs or
+twice that minimum for other players outside Top 51; all supplied bonus proration
+remains counted. Rank uses full supported contract value. Material boundary ties
+require an explicit verified selection rather than silently choosing a cheaper
+classification. No phase date/minimum/UDFA status is inferred.
+
+141 local tests pass, including threshold excesses, all bonus retention, bonus-heavy
+rank entry and ambiguous boundary selection. This is a supported salary component,
+not complete Team Salary. Tenders/Offer Sheets, deferred/other bonuses, roster
+statuses, retained liabilities and verified calendar still require integration.
+Existing signing ledger continues conservative all-contract accounting until the
+complete phase transition path is implemented. New Windows/Linux CI pending.

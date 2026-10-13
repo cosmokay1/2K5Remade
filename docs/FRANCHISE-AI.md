@@ -319,3 +319,10 @@ unpaid amounts without changing ownership or finances. Missing allocations or
 unsettled prior-year protected bases reject. `release_authorized` remains false:
 covered-release facts, offsets/voids, earned/termination/injury liabilities and
 phase/roster costs still require complete settlement handling.
+
+`roster_charge` calculates the supported base/prorated-bonus portion for an explicit
+phase using `RosterSalary` records with applicable active/inactive minima, UDFA
+classification and provenance. All bonus proration stays counted. Material Top-51
+boundary ties require supplied selection. This standalone component is not yet
+the signing ledger's phase model; complete Team Salary/calendar/tender/Offer Sheet
+coverage remains pending. Source: executed CBA Article 13 section 6(a)(i).
