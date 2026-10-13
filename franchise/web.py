@@ -4,12 +4,15 @@ import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
+import ssl
 from pathlib import Path
 from franchise.cap import Offer, Rejected
 from franchise.store import FranchiseStore
 
 
-def make_server(store, team_id, token, *, port=8786):
+def make_server(store, team_id, token, *, port=8786, tls_cert=None, tls_key=None):
+    if bool(tls_cert) != bool(tls_key):
+        raise ValueError('TLS certificate and key are required together')
     if type(token) is not str or len(token) < 32 or not token.isascii() or not token.isprintable():
         raise ValueError('A private ASCII API token of at least 32 characters is required')
     if store is not None:
@@ -97,7 +100,26 @@ def make_server(store, team_id, token, *, port=8786):
             else:
                 self.reply(200, result)
 
-    return ThreadingHTTPServer(('127.0.0.1', port), Handler)
+    context = None
+    if tls_cert:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
+        context.load_cert_chain(tls_cert, tls_key)
+
+    class OriginServer(ThreadingHTTPServer):
+        def get_request(self):
+            connection, address = super().get_request()
+            connection.settimeout(5)
+            if context is not None:
+                try:
+                    connection = context.wrap_socket(connection, server_side=True)
+                except BaseException:
+                    connection.close()
+                    raise
+            return connection, address
+
+    return OriginServer(('127.0.0.1', port), Handler)
+
 
 
 def main():
@@ -105,13 +127,15 @@ def main():
     parser.add_argument('--database')
     parser.add_argument('--team')
     parser.add_argument('--port', type=int, default=8786)
+    parser.add_argument('--tls-cert')
+    parser.add_argument('--tls-key')
     args = parser.parse_args()
     if bool(args.database) != bool(args.team):
         parser.error('--database and --team must be supplied together')
     if args.database and not Path(args.database).is_file():
         parser.error('An existing franchise database is required')
     store = FranchiseStore(args.database) if args.database else None
-    server = make_server(store, args.team, os.environ.get('FRANCHISE_WEB_TOKEN'), port=args.port)
+    server = make_server(store, args.team, os.environ.get('FRANCHISE_WEB_TOKEN'), port=args.port, tls_cert=args.tls_cert, tls_key=args.tls_key)
     try:
         server.serve_forever()
     finally:

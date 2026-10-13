@@ -824,3 +824,16 @@ unauthorized rejection, exact preview, over-cap/stale rejection and no mutation.
 Test required sandbox escalation solely to bind an ephemeral localhost port.
 Browser UI, Access login, package downloads and external tunnel traffic remain
 unimplemented/unverified; no claim of a live site or playable web game.
+
+## October 13, 2026 — Live HTTPS/TLS tunnel
+
+After user reconnect, Cloudflare writes succeeded: dedicated llm-2k5 tunnel,
+proxied 2k5 hostname and hostname-scoped HTTP-to-HTTPS 308 rule. Started local
+origin and connector. Origin uses TLS 1.2 minimum with explicit localhost
+certificate verification in cloudflared; TLS verification remains enabled.
+Trusted local TLS and public HTTPS health returned 200; public HTTP redirected
+308 preserving query. Tunnel reported healthy/four active connections. Unauthenticated
+franchise endpoint denial and authenticated unconfigured-state behavior were checked.
+Tokens/key are private ignored local files. Current origin has no attached franchise
+database; browser UI, package downloads, production startup/certificate renewal and
+real-game integration remain outstanding. No paid inference or financial writes.

@@ -5,16 +5,30 @@ section. Current scope implemented: an authenticated HTTP origin for stored
 franchise inspection and contract previews. Browser UI, remote negotiation,
 draft transactions and downloadable playable packages remain unfinished.
 
-## Cloudflare inspection (October 13, 2026)
+## Live Cloudflare route (October 13, 2026)
 
-The connected Cloudflare plugin can read account
-`706dcbc1a70105e02814e5f2a7820456` and active full zone `cosmokay.com`
-(`3b3e424f8b93c580b3070b92e5afaee2`). There is no exact DNS record for
-`2k5.cosmokay.com`. The unrelated `mediabot` tunnel was left alone.
-Creating a dedicated remotely configured `llm-2k5` tunnel returned
-`10000: Authentication error`. No tunnel, configuration or DNS record was created.
-Reconnect the plugin with Tunnel Write and DNS Write scope before retrying;
-do not substitute unrelated credentials or alter other services.
+The reconnected plugin successfully created remotely configured tunnel `llm-2k5`
+(`dc5e0635-6a19-487f-b245-f4b910f6a20f`) in account
+`706dcbc1a70105e02814e5f2a7820456`. Zone `cosmokay.com` is active/full
+(`3b3e424f8b93c580b3070b92e5afaee2`). Proxied CNAME record
+`63f9f9e10cd2d3f6b7dd498337f7b14d` routes `2k5.cosmokay.com` to that tunnel.
+The unrelated mediabot tunnel was left alone.
+
+Ingress routes only this hostname to `https://127.0.0.1:8786`, with originServerName
+`localhost`, explicit trusted certificate file in `.local-runtime/origin.crt`
+and `noTLSVerify: false`; final ingress returns 404. The dedicated local origin
+certificate includes localhost/127.0.0.1 SANs and expires in one year. Renewal
+and persistent host startup remain required before unattended production use.
+Tunnel/API tokens and origin key stay in ignored `.local-runtime`, private modes.
+
+Scoped redirect ruleset `26190b7ff5c84a50995d343915c2d922`, rule
+`e273f0e69c0b4acb81a7129e2ae6b4a6`, sends only HTTP requests for this host to
+HTTPS with 308, retaining path/query. No zone-wide HTTPS settings were changed.
+
+Verified trusted local TLS `/health` 200, public HTTPS `/health` 200 and HTTP
+308 redirect preserving query using curl. Cloudflare reports tunnel healthy with
+four active connections. Python urllib's default agent received an existing edge
+403/1010; curl reached the origin. No firewall settings were weakened.
 
 ## Origin
 
@@ -23,7 +37,7 @@ origin process environment; never put it in source, browser URLs or a package.
 Run from the repository root:
 
 ```sh
-python3 -m franchise.web --database /path/to/existing/franchise.sqlite --team TEAM_ID --port 8786
+python3 -m franchise.web --database /path/to/existing/franchise.sqlite --team TEAM_ID --port 8786 --tls-cert .local-runtime/origin.crt --tls-key .local-runtime/origin.key
 ```
 
 The origin listens on `127.0.0.1` only. `GET /health` exposes generic readiness.
@@ -42,18 +56,19 @@ must retain the existing fresh Google control handshake and restricted runtime
 identity; exposing HTTP must not bypass pending IAM delegation or enable paid
 inference for anonymous callers.
 
-## Pending tunnel configuration
+## Running connector and rollback
 
-After write access is restored, create/reuse the dedicated tunnel and publish
-only this host to `http://127.0.0.1:8786`, with a final `http_status:404` ingress
-rule. Create a proxied CNAME `2k5.cosmokay.com` to the verified tunnel UUID's
-`cfargotunnel.com` hostname. Run its connector on the same host as this service,
-using a securely stored tunnel token; never commit/print that token. Validate
-connector health, HTTPS `/health`, authorized API success and unauthorized 401.
-A local connector requires the host to remain awake; it is not cloud compute.
+The origin and dedicated cloudflared connector currently run on this Mac in local
+process sessions; they are not boot-installed services. The Mac must remain
+awake/online. Restart the origin with the command above and a securely loaded
+web token, then run `cloudflared tunnel run --token-file .local-runtime/tunnel.token`.
+Never print or commit credentials. A cloudflared warning about missing ingress
+at initial startup preceded its remote configuration; actual route succeeded.
 
-Rollback removes only this hostname route/DNS record, then stops the dedicated
-connector/origin. No rollback is needed yet because the mutation failed.
+Rollback: remove only the specified DNS record, redirect rule and dedicated
+hostname route, then stop this project's connector/origin. Preserve unrelated
+zone resources. Full browser UI and authenticated state connection remain next.
 
 Sources: [Cloudflare published applications](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/routing-to-tunnel/),
-[API setup](https://developers.cloudflare.com/tunnel/get-started/).
+[run parameters](https://developers.cloudflare.com/tunnel/reference/run-parameters/),
+[Single Redirect API](https://developers.cloudflare.com/rules/url-forwarding/single-redirects/create-api/).

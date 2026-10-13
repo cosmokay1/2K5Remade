@@ -226,9 +226,9 @@ See packaging/steamdeck/README.md. Candidate packaging is not playable delivery.
 
 - [x] Inspect cosmokay.com and existing tunnel/DNS resources using Cloudflare plugin.
 - [x] Prepare authenticated loopback HTTP franchise inspection/preview origin.
-- [ ] Restore Cloudflare connector Tunnel Write/DNS Write scope (creation returned authentication error).
-- [ ] Create dedicated tunnel and route 2k5.cosmokay.com; verify actual HTTPS traffic.
+- [x] Restore Cloudflare connector write access; dedicated tunnel creation succeeded after reconnect.
+- [x] Create dedicated tunnel and route 2k5.cosmokay.com; verify HTTPS 200, origin certificate validation and scoped HTTP-to-HTTPS 308.
 - [ ] Add authenticated browser franchise UI and project/package section.
 - [ ] Extend live negotiation/draft API with persistent transactions and existing remote killswitch.
 
-See docs/cloudflare-tunnel.md. No tunnel/DNS changes succeeded yet.
+See docs/cloudflare-tunnel.md. Dedicated tunnel/DNS/TLS route is live; full browser franchise delivery remains unfinished.

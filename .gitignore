@@ -64,3 +64,6 @@ mods/presentations/NBC_SNF/assets/branding/*
 mods/teams/*/files/
 mods/teams/*/team.rost
 mods/teams/*/creator.json
+
+# Private local web/tunnel runtime credentials and logs
+/.local-runtime/
