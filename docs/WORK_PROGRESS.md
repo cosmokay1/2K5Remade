@@ -1306,3 +1306,19 @@ breaking the pipe parser. Regression uses a large legacy actor and verifies boun
 error, subsequent preview, no inference and unchanged revision. 231 local tests pass.
 The guard is read-only and does not claim all-operation frame limits or automatic
 truncation of saved records. Game UI handling and real integration remain unfinished.
+
+## October 13, 2026 — Release lifecycle primary-rule review underway
+
+Read-only independent financial review identified a substantive first transaction:
+explicit healthy preseason veteran release before declared first regular-season game,
+with source-backed absence of injury/termination/additional bonus liabilities,
+allocated cash, settled past years and no earned/paid current base. Retain original
+unamortized signing bonus and remaining protected base; preserve unpaid bonus and
+guaranteed base cash and cancel only verified unearned unprotected base. Rookies,
+waiver transfer, offsets/voids/designations and same-team re-sign remain unsupported
+until their obligation/cohort/generation semantics exist. Review reports primary CBA
+Article 13.6(b)(ii), 13.6(d)(iv) and Article 30 checked; full source report is pending
+and no release implementation/authority has been added. Must handle over-cap
+acceleration and subsequent signing restrictions without dropping liabilities.
+History cursor 36493ce Build check 38480930953 passed; Franchise AI run 38480931002
+was confirmed in progress. The financial review agent remains active.
