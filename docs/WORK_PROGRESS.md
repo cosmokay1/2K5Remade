@@ -1445,3 +1445,15 @@ preJune9 or postJune(3,6), buyerbase(10,20,30), sellerpaid9/buyerunpaid60. Guara
 remain with assigned active salary, not guessed seller PV. Full review/design pending;
 no trade authority implemented yet. Next work requires atomic paired team events,
 ownership reassignment, original archives and cash/cap reconciliation on both sides.
+
+## October 13, 2026 — Pure supported trade assignment and replay design review
+
+Parallel implementation adds trades.py/five independent tests: seller original bonus
+cap/paidcash retained, remaining bases/guarantees assigned intact to buyer with no
+bonus or releasePV duplication. Mandatory sourced scope and complete payments reject
+unpaid bonus/unknown or contradictory coverage. Exact global cash/remaining cap
+conservation passes, including elapsed/finalyear/fractional cases;255 fulltests pass.
+Independent replay design review requires independently validating participant actual
+pre-trade histories, not merely equal paired payloads, and nonrecursive final ownership
+validation. Added source/scope/prerequisite docs. No durable trade/guest authority exists
+until paired transaction and replay implementation are validated.
