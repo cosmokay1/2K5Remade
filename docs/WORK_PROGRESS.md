@@ -1528,3 +1528,13 @@ release and preserves all team state.270 local tests pass. Windows fixture56ba13
 Franchise AI38483786386 completed successfully; logs explicitly confirm paired
 assignment/inherited guarantees/conserved cash/restart and269 tests on both OSes.
 No actual guest-game execution/save evidence exists.
+
+## October 13, 2026 — Measured local all-team replay baseline
+
+Added bounded temporary benchmark with supported paired assignment and verified
+history retention.32-team640 short dialogues measured median8.31/max8.96ms;3,200
+measured median32.39/max33.07ms over5 fresh validated reads on this Mac. No persistent
+cache introduced; fixture excludes actual model evidence/guest payload complexity.
+Source syntax/diff and both executable runs passed. No correctness timing threshold,
+Windows/Deck latency or game-thread responsiveness claim is made. Money audit1d3a095
+passed CI38483895093/38483895310; chronology60b54e6 CI was in progress at inspection.
