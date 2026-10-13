@@ -1395,3 +1395,13 @@ malformed native responses. 250 distinct Python tests and portable CTest pass; i
 test-module import duplicated six cases and was corrected before publication.
 No guest release hook or browser control is connected; complete CBA posting policy
 and real runtime validation remain unverified.
+
+## October 13, 2026 — Windows native release acceptance fixture
+
+Extended Win32 smoke client with explicit --release mode and strict protocol request
+for a sourced synthetic release. Python verifier creates original allocated obligations,
+executes C++ pipe release/readback twice across service restart, compares entire
+financial/cash receipt with authoritative replay, and requires exact retained39,
+room-9, unpaid30, removed ownership and revision2. Existing native signing/parent-death
+fixtures remain. Python syntax, diff checks and portable CTest pass locally; Windows
+execution is pending CI and no actual game runtime is claimed.

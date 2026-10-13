@@ -4,8 +4,9 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
-from franchise.books import OpeningBooks
-from franchise.cap import Ledger
+from franchise.books import OpeningBooks,ActiveContract
+from franchise.cap import Ledger,Offer
+from franchise.cash import CashObligation
 from franchise.store import FranchiseStore
 
 
@@ -82,7 +83,30 @@ def main():
         assert store.load_team("a").charges == (10,)
         assert store.load_team("a").contract_terms("v")["guaranteed_salaries"] == [10]
         assert len(store.negotiation_history("a", "v")) == 2
+        release_path=Path(directory)/'release fixture.sqlite'
+        releases=FranchiseStore(release_path)
+        contract=ActiveContract(Offer('v',(10,20,30),9,(0,20,10)),'synthetic Windows original')
+        releases.create_team('a',Ledger.from_opening(OpeningBooks(contracts=(contract,)),cap=30,roster_reserve=0,
+            max_bonus_years=5,veteran_minimums={'v':(1,)*3}))
+        releases.initialize_cash('a',(CashObligation('contract:v','v',69,9,'synthetic bank',(('signing_bonus',9),)),),
+                                source='synthetic payment coverage')
+        original=None
+        for attempt in range(2):
+            result=subprocess.run([sys.argv[1],sys.executable,str(release_path),'--release'],
+                                  text=True,capture_output=True,timeout=20,check=True)
+            responses=[json.loads(line) for line in result.stdout.splitlines()]
+            assert len(responses)==2 and all(reply['error'] is None for reply in responses)
+            if original is None: original=responses
+            else: assert responses==original
+            posting=responses[0]['result']['release']
+            current=FranchiseStore(release_path).load_team('a')
+            assert posting=={'financial':current.financial_snapshot(),'cash':current.cash_snapshot()}
+            assert current.charges==(39,0,0) and current.room==-9 and current.revision==2
+            assert current.cash_snapshot()['unpaid_total']==30
+            assert current.financial_snapshot()['signed_players']==[]
+            assert responses[1]['result']==releases.player_context('a','v')
         print("Native Windows pipe handshake, cap rejection, manual signing, player context and restart verified (synthetic).")
+        print("Native Windows supported release, retained debt/cash and restart retry verified (synthetic).")
 
 
 if __name__ == "__main__":
