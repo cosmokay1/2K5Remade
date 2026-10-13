@@ -93,6 +93,16 @@ invent future published NFL values: separate verified inputs from simulation pol
 - [ ] Feed actual statistics, roles and relationship history; label missing evidence.
 - [ ] Evaluate production with opportunities/context: targets/snaps, efficiency,
       drops, opponents/scheme, health, recency and sample size where available.
+- [ ] Verify whether intended-receiver targets exist in guest state or saved
+      counters; otherwise instrument pass release/outcome events. Handle throws
+      away, interceptions, spikes and nullified plays without inferring targets
+      from receptions. Persist source/provenance for each counter.
+- [ ] Investigate QB pressures as observed play events: identify dropbacks,
+      rushers, timing and disruption; define/test attribution and avoid counting
+      each frame as a new pressure. Do not substitute proximity or sacks silently.
+- [ ] Establish equivalent evidence for played, CPU-played and fast-sim games.
+      If fast simulation exposes no targets/pressures, report them unavailable
+      rather than zero or manufacture them from hidden ratings.
 - [ ] Exclude hidden skill/overall/potential ratings from franchise evaluations;
       do not turn a generated composite grade into a new visible OVR.
 - [ ] Give scouts/agents/teams imperfect observations and uncertainty; rookies
