@@ -2,17 +2,17 @@ from pathlib import Path
 import tempfile
 import unittest
 from franchise.cap import Ledger, Offer, Rejected
+from franchise.books import OpeningBooks, ChargeRecord, RookieTender
 from franchise.rookie import RookieScale
 from franchise.store import FranchiseStore
 
 
 class TenderTests(unittest.TestCase):
     def ledger(self, *, cap=10, tender=1, existing=1):
-        return Ledger(cap=cap, existing_charges=(existing,), roster_reserve=0,
+        return Ledger.from_opening(OpeningBooks(retained=(ChargeRecord("fixture", (existing-tender,), "synthetic retained fixture"),), tenders=(RookieTender("r", tender),)), cap=cap, roster_reserve=0,
                       max_bonus_years=5, veteran_minimums={},
                       rookies={"r": RookieScale(1, (1,) * 4, 1, 20, 80)},
-                      rookie_year_one_allocation=20, rookie_total_allocation=80,
-                      rookie_tenders={"r": tender})
+                      rookie_year_one_allocation=20, rookie_total_allocation=80)
 
     def test_contract_replaces_tender_without_double_count(self):
         ledger = self.ledger(cap=1)

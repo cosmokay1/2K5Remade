@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 from franchise.cap import Ledger, Offer, json_amount
+from franchise.books import OpeningBooks, ActiveContract
 from franchise.negotiation import Negotiation
 from franchise.store import FranchiseStore, StoredLedger
 
@@ -11,9 +12,10 @@ def main():
     with tempfile.TemporaryDirectory() as directory:
         path = Path(directory) / "franchise.sqlite"
         store = FranchiseStore(path)
-        store.create_team("example-team", Ledger(
-            cap=100_000_000, existing_charges=(90_000_000,), roster_reserve=2_000_000,
-            max_bonus_years=5, veteran_minimums={"receiver": (1_000_000,) * 3}))
+        books = OpeningBooks(contracts=(ActiveContract(Offer("existing-roster-fixture", (90_000_000,), 0), "synthetic existing contract"),))
+        store.create_team("example-team", Ledger.from_opening(books,
+            cap=100_000_000, roster_reserve=2_000_000, max_bonus_years=5,
+            veteran_minimums={"receiver": (1_000_000,) * 3, "existing-roster-fixture": (1_000_000,)}))
         offer = Offer("receiver", (6_000_000,) * 3, 6_000_000)
 
         def session(database):

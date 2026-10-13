@@ -8,6 +8,7 @@ import json
 import subprocess
 import sys
 from franchise.cap import Ledger, Offer, Rejected
+from franchise.books import OpeningBooks, ChargeRecord
 from franchise.rookie import RookieScale
 from franchise.store import FranchiseStore, StoredLedger
 from franchise.negotiation import Negotiation
@@ -22,7 +23,7 @@ class StoreTests(unittest.TestCase):
         self.store = FranchiseStore(self.path)
 
     def ledger(self):
-        return Ledger(cap=100, existing_charges=(10,), roster_reserve=0, max_bonus_years=5,
+        return Ledger.from_opening(OpeningBooks(retained=(ChargeRecord("fixture", (10,), "synthetic retained fixture"),)), cap=100, roster_reserve=0, max_bonus_years=5,
                       veteran_minimums={"v": (1,) * 4},
                       rookies={"r": RookieScale(1, (1,) * 4, 1, 20, 80)},
                       rookie_year_one_allocation=20, rookie_total_allocation=80)

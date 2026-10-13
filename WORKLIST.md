@@ -54,8 +54,9 @@ Done when a fresh checkout can run the engine tests and CI reports their results
 - [x] Bound signing-bonus allocation and invalidate offers after budget changes.
 - [x] Resolve F04 with exact rational internal bonus allocations and consistent
       cap/rookie-pool checks; display/game posting conventions still need verification.
-- [ ] Replace caller-maintained aggregate balances with derived contract,
-      tender, retained-obligation, and adjustment records.
+- [x] Derive new durable opening balances from original contract terms, elapsed
+      years, tenders, retained obligations and source adjustments. Existing
+      roster contracts and verified sources still require game import under M5.
 - [x] Add durable team IDs and exclusive player ownership for supported signings
       through `FranchiseStore`; complete imported league/rules data remains pending.
 - [x] Add atomic commits, durable signing receipts, restart/rollback recovery and

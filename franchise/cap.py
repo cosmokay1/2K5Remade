@@ -77,12 +77,20 @@ class Ledger:
                  rookies: dict[str, "RookieScale"] | None = None,
                  rookie_year_one_allocation: int | None = None,
                  rookie_total_allocation: int | None = None,
-                 rookie_tenders: dict[str, int] | None = None):
+                 rookie_tenders: dict[str, int] | None = None,
+                 opening_books=None):
         self._cap = money(cap)
         self._roster_reserve = money(roster_reserve)
         if type(existing_charges) is not tuple or not existing_charges:
             raise ValueError("Existing obligations must include the current year")
-        self._charges = tuple(money(value) for value in existing_charges)
+        for value in existing_charges:
+            if isinstance(value, Fraction):
+                if value < 0:
+                    raise ValueError("Existing charges cannot be negative")
+            else:
+                money(value)
+        self._charges = tuple(existing_charges)
+        self._opening_books = opening_books
         if type(max_bonus_years) is not int or not 1 <= max_bonus_years <= 5:
             raise ValueError("Bonus allocation limit must be between one and five years")
         self._max_bonus_years = max_bonus_years
@@ -111,13 +119,11 @@ class Ledger:
             0 if rookie_year_one_allocation is None else rookie_year_one_allocation))
         self._rookie_total = money(
             0 if rookie_total_allocation is None else rookie_total_allocation)
-        if self._players & self._rookies.keys():
-            raise ValueError("Rookie registry must contain unsigned draft picks only")
         from franchise.rookie import RookieScale
         if any(not isinstance(scale, RookieScale) for scale in self._rookies.values()):
             raise ValueError("Rookie registry must contain verified RookieScale records")
         self._tenders = dict(rookie_tenders or {})
-        if not self._tenders.keys() <= self._rookies.keys():
+        if not self._tenders.keys() <= self._rookies.keys() or self._tenders.keys() & self._players:
             raise ValueError("Rookie tenders require registered unsigned draft picks")
         for amount in self._tenders.values():
             money(amount)
@@ -126,6 +132,21 @@ class Ledger:
             raise ValueError("Rookie tender must match the supplied first-year minimum salary")
         if sum(self._tenders.values()) > self._charges[0]:
             raise ValueError("Declared tenders exceed existing current-year charges")
+        if opening_books is not None:
+            from franchise.books import OpeningBooks
+            if not isinstance(opening_books, OpeningBooks):
+                raise ValueError("Typed opening books required")
+            if (self._charges != opening_books.charges()
+                    or self._players != {item.offer.player_id for item in opening_books.contracts}
+                    or self._tenders != {item.player_id: item.amount for item in opening_books.tenders}):
+                raise ValueError("Opening balances, ownership or tenders disagree with source books")
+
+    @classmethod
+    def from_opening(cls, books, **rules):
+        return cls(existing_charges=books.charges(),
+                   signed_player_ids=frozenset(item.offer.player_id for item in books.contracts),
+                   rookie_tenders={item.player_id: item.amount for item in books.tenders},
+                   opening_books=books, **rules)
 
     @property
     def cap(self) -> int:
@@ -136,7 +157,7 @@ class Ledger:
         with self._lock:
             if self.revision != 0:
                 raise ValueError("Create durable state before committing transactions")
-            return {"cap": self.cap, "existing_charges": list(self._charges),
+            return {"cap": self.cap, "existing_charges": [json_amount(value) for value in self._charges],
                     "roster_reserve": self.roster_reserve,
                     "max_bonus_years": self.max_bonus_years,
                     "veteran_minimums": {key: list(value) for key, value
@@ -145,7 +166,8 @@ class Ledger:
                     "rookies": {key: asdict(value) for key, value in self._rookies.items()},
                     "rookie_year_one_allocation": int(self._rookie_year_one),
                     "rookie_total_allocation": self._rookie_total,
-                    "rookie_tenders": dict(self._tenders)}
+                    "rookie_tenders": dict(self._tenders),
+                    "opening_books": self._opening_books.to_dict() if self._opening_books else None}
 
     @property
     def roster_reserve(self) -> int:

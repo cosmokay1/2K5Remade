@@ -9,13 +9,19 @@ from dataclasses import asdict
 import json
 from pathlib import Path
 import sqlite3
+import uuid
 from franchise.cap import Ledger, Offer, Rejected, json_amount
 from franchise.rookie import RookieScale
+from franchise.books import OpeningBooks, parse_amount
 
 
 def from_config(config: dict) -> Ledger:
     config = dict(config)
-    config["existing_charges"] = tuple(config["existing_charges"])
+    if config.get("opening_books") is None:
+        raise ValueError("Source opening books are missing; explicit migration required")
+    config["existing_charges"] = tuple(parse_amount(value) for value in config["existing_charges"])
+    if config.get("opening_books") is not None:
+        config["opening_books"] = OpeningBooks.from_dict(config["opening_books"])
     config["signed_player_ids"] = frozenset(config["signed_player_ids"])
     config["veteran_minimums"] = {key: tuple(value) for key, value
                                    in config["veteran_minimums"].items()}
@@ -32,12 +38,51 @@ class FranchiseStore:
             raise ValueError("Durable franchise state requires a database file")
         with self._connection(write=True) as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version not in (0, 2):
+            if version not in (0, 3):
                 raise ValueError("Unsupported franchise database version")
             db.execute("CREATE TABLE IF NOT EXISTS teams (id TEXT PRIMARY KEY, config TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS ownership (player_id TEXT PRIMARY KEY, team_id TEXT NOT NULL REFERENCES teams(id))")
             db.execute("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, team_id TEXT NOT NULL REFERENCES teams(id), request_key TEXT NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL, UNIQUE(team_id, request_key))")
-            db.execute("PRAGMA user_version=2")
+            db.execute("PRAGMA user_version=3")
+
+    @classmethod
+    def migrate_v2(cls, path: str | Path, books_by_team: dict[str, OpeningBooks]) -> Path:
+        """Attach verified source books without changing recorded financial results.
+
+        Requires every team and exact reconciliation. A consistent SQLite backup
+        is taken before writes; any failed reconciliation rolls back the migration.
+        """
+        path = Path(path)
+        if not path.is_file():
+            raise ValueError("Migration requires an existing database")
+        instance = cls.__new__(cls)
+        instance.path = str(path)
+        backup = path.with_name(path.stem + ".v2-backup-" + uuid.uuid4().hex + ".sqlite")
+        with instance._connection(write=True) as db:
+            if db.execute("PRAGMA user_version").fetchone()[0] != 2:
+                raise ValueError("Only posting-verified format 2 can use this migration")
+            teams = {team for (team,) in db.execute("SELECT id FROM teams")}
+            if type(books_by_team) is not dict or set(books_by_team) != teams:
+                raise ValueError("Migration requires opening books for every team")
+            if any(not isinstance(books, OpeningBooks) for books in books_by_team.values()):
+                raise ValueError("Typed source books required")
+            # This connection holds the write reservation. A separate read
+            # connection can back up the unchanged, committed source consistently.
+            source = sqlite3.connect(path)
+            target = sqlite3.connect(backup)
+            try:
+                source.backup(target)
+            finally:
+                target.close()
+                source.close()
+            for team, books in books_by_team.items():
+                config = json.loads(db.execute("SELECT config FROM teams WHERE id=?", (team,)).fetchone()[0])
+                config["opening_books"] = books.to_dict()
+                db.execute("UPDATE teams SET config=? WHERE id=?", (json.dumps(config), team))
+            for team in teams:
+                instance._load(db, team)
+            db.execute("PRAGMA user_version=3")
+        return backup
 
     @contextmanager
     def _connection(self, *, write=False):
@@ -58,6 +103,8 @@ class FranchiseStore:
         if type(team_id) is not str or not team_id.strip():
             raise ValueError("Stable team ID required")
         config = ledger.bootstrap_config()
+        if config["opening_books"] is None:
+            raise ValueError("Durable teams require source opening books, not aggregate-only balances")
         with self._connection(write=True) as db:
             if db.execute("SELECT 1 FROM teams WHERE id=?", (team_id,)).fetchone():
                 raise Rejected("Team already exists; refusing to overwrite financial state")

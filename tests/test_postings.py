@@ -6,6 +6,7 @@ import sqlite3
 import tempfile
 import unittest
 from franchise.cap import Ledger, Offer, Rejected
+from franchise.books import OpeningBooks
 from franchise.rookie import RookieScale
 from franchise.store import FranchiseStore
 
@@ -16,7 +17,7 @@ class PostingTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.path = Path(self.directory.name) / "franchise.sqlite"
         self.store = FranchiseStore(self.path)
-        self.store.create_team("a", Ledger(cap=10, existing_charges=(0,), roster_reserve=0,
+        self.store.create_team("a", Ledger.from_opening(OpeningBooks(), cap=10, roster_reserve=0,
             max_bonus_years=5, veteran_minimums={},
             rookies={"r": RookieScale(1, (1,) * 4, 1, 10, 40)},
             rookie_year_one_allocation=10, rookie_total_allocation=40))

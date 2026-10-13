@@ -133,3 +133,23 @@ delivery goal for the actual integrated Windows game; it remains incomplete.
 Continue automatically through unblocked work rather than waiting for another
 user message. The hourly follow-up also remains available. Game assets/saves,
 Windows runtime access and redistribution permission are still external gates.
+
+## October 13, 2026 — Derived opening obligations and verified migration
+
+Added `OpeningBooks`, active original contracts with elapsed years, explicit
+retained charges/adjustments with provenance, and unsigned rookie tenders. Balances
+derive from records; old bonuses are sliced from their original allocation instead
+of being restarted. New durable teams reject opaque aggregate-only totals. Reload
+reconciles source records against the recorded opening balance and ownership.
+Already-signed rookies can exist in a starting roster but cannot retain an unsigned
+tender. Real imported values are still unavailable/unverified.
+
+Format 3 requires source books. The explicit format-2 migration backs up committed
+state, requires every team's source books, and verifies all financial results before
+committing. Failed migrations preserve version and balances. Format 1 remains
+unsupported because posting evidence is absent. No automatic guessed migration.
+
+Local suite: 80 tests, plus the durable offline demo. Tests cover elapsed bonus
+years, fractional original terms, duplicate obligations, signed-rookie ownership,
+source/aggregate mismatches, verified migration backup and rollback. Remote CI
+results remain pending until the implementation commit executes.

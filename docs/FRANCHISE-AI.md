@@ -84,12 +84,23 @@ versions and invalid history stop reconstruction. Initial aggregate charges are
 still supplied externally. All teams must use the same store for shared ownership
 enforcement; standalone `Ledger` objects do not coordinate across teams.
 
-Database format 2 records each contract's actual charges and the complete financial
+Database format 3 records each contract's actual charges and the complete financial
 result of each event. Replay compares those results and reconciles ownership; a
-disagreement blocks further financial writes. Format-1 prototype databases are
-preserved but require an explicit migration; they are never silently reinterpreted
-or overwritten. Migration tooling is still pending. Formatting and precision
-changes therefore cannot silently alter recorded obligations in format 2.
+disagreement blocks further financial writes. New teams require `OpeningBooks`
+and `Ledger.from_opening`: original active contract terms plus elapsed years,
+declared rookie tenders, retained charges and adjustments with provenance. Totals
+and ownership derive from those records and are reconciled on reload. Ordinary
+in-memory unit fixtures can still use aggregate totals, but durable creation
+rejects aggregate-only books.
+
+Format-2 migration requires explicit matching source books for every team:
+`FranchiseStore.migrate_v2(path, books_by_team)`. It first takes a consistent
+SQLite backup, checks opening totals/ownership/tenders and every historical
+posting, then commits the source records and format change atomically. Failure
+leaves original state/version intact. Format-1 data lacks posting evidence and
+is still preserved but unsupported by this migration. No format is silently
+reinterpreted or overwritten. Supplied provenance is metadata; it does not prove
+that source contract values were correctly extracted from a real game save.
 
 Active/counter/rejected negotiation histories, personality changes, real franchise
 imports, releases/trades, migrations and cloud replication are not yet durable
