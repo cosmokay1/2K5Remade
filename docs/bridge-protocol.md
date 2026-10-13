@@ -108,4 +108,29 @@ Responses cannot silently discard a nonempty proposal. Recorded events retain
 `promise_goals` and optional `counter_promises`; signed events commit goals with the
 financial transaction. Retry request IDs must match both money and promise terms.
 The native/game/browser interfaces do not yet present promise controls, and actual
-goal-counter instrumentation/scored consequences remain unfinished.
+game-counter instrumentation and automatic story consequences remain unfinished.
+Source-backed promise scoring and explicit bounded relationship updates are available
+in the engine; they do not prove real-game observations.
+
+
+### Saved player context
+
+A protocol-1 `player_context` request includes `request_id`, `team_id`, `player_id`
+and `timeout_ms` (1–60000). It requires a classified player and a live local
+connection, but no remote AI grant. The result contains `player_id`,
+`financial_revision`, `initialized`, `personality`, `relationships`,
+`agreed_promises` and `promise_history`. Uninitialized legacy actors return null
+personality/relationships; reads never create or rebind them. Initialized actors
+return the saved objects. Signed agreements contain an agreement request identity
+and typed goal array. Native validation checks identity, revision types, actor
+containers and saved goal definitions.
+
+Native negotiation validation also compares the submitted promise array with the
+recorded echo and validates complete counter arrays, including explicit withdrawal.
+These checks protect client response interpretation; guest-state writes still
+require reconciliation and real save/readback verification.
+
+The asset-free Windows pipe fixture at fb62cfd fetched this context after signing,
+compared it to the authoritative database and required the same result after
+client/sidecar restart. Workflow 38479010675 logs confirm execution. This synthetic
+fixture does not establish a game menu, game hook or playable Windows build.

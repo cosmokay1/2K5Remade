@@ -1077,3 +1077,13 @@ and malformed saved goals. Portable CTest passes. Player-context 4118b1d Franchi
 AI run 38478945850 completed successfully; inspected Windows job confirms native
 protocol and existing durable pipe fixture steps passed. The newer context-restart
 fixture and promise-integrity commits still require their own CI results.
+
+## October 13, 2026 — Windows player-context restart evidence
+
+fb62cfd passed Franchise AI run 38479010675 and Build check run 38479010676.
+Completed Windows logs explicitly report player context and restart verification;
+215 tests passed on both Linux and Windows. Updated bridge protocol documentation
+with read semantics, native promise validation and the precise synthetic evidence
+boundary. Corrected the old statement that all promise scoring was unfinished:
+source-backed scoring exists, while actual game counters/automatic consequences do
+not. Newer promise-check CI remains pending and no gameplay claims are made.
