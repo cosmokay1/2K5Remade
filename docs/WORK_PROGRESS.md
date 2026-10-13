@@ -1256,3 +1256,15 @@ Auto-review rejected sending the bearer through the public tunnel; no bypass/ret
 occurred. Public authenticated response was not verified. Corrected fixture CI
 38480372499/38480372500 remained in progress at inspection. UI product question is
 pending; no browser dashboard or playable game exists.
+
+## October 13, 2026 — Saved negotiation stories in player context
+
+Player context now includes authoritative chronological negotiation_history from the
+same validated database read as personality/promises/revision. Shared internal history
+read preserves signed charges and recorded dialogue without model regeneration.
+Native clients validate optional history containers and reject other-player offers.
+Reopened signed-story correspondence and native foreign-player rejection are verified;
+227 Python tests and portable CTest pass. Corrected fixture 2591b5b passed Franchise
+AI run 38480372499 and Build check 38480372500; earlier 3202eed Franchise AI run
+38480331814 failed as documented. This new source has not been deployed to origin.
+Long-history pagination and actual browser/game story presentation remain unfinished.

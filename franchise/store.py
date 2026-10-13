@@ -322,7 +322,8 @@ class FranchiseStore:
                     'relationships':actor['relationships'] if actor else None,
                     'agreed_promises':[{'agreement_request_id':request,'goals':agreement['goals']}
                         for request,agreement in ledger._promise_agreements.items() if agreement['player_id'] == player_id],
-                    'promise_history':ledger.promise_history(player_id)}
+                    'promise_history':ledger.promise_history(player_id),
+                    'negotiation_history':self._negotiation_history(db,team_id,player_id)}
 
     def load_team(self, team_id: str) -> Ledger:
         with self._connection() as db:
@@ -1028,21 +1029,25 @@ class FranchiseStore:
                              (team_id, "draft-scouting:" + request_id)).fetchone()
             return json.loads(row[0])["event"] if row else None
 
+    @staticmethod
+    def _negotiation_history(db,team_id,player_id):
+        history=[]
+        for kind,serialized in db.execute("SELECT kind,payload FROM events WHERE team_id=? AND kind IN ('dialogue','sign') ORDER BY id",(team_id,)):
+            payload=json.loads(serialized)
+            if kind == 'dialogue':
+                event=payload['event']
+            elif payload['story'] is not None:
+                event={**payload['story'],'charges':payload['contract_charges']}
+            else:
+                continue
+            if event['offer']['player_id'] == player_id:
+                history.append(event)
+        return history
+
     def negotiation_history(self, team_id, player_id):
         with self._connection() as db:
-            ledger = self._load(db, team_id)
-            history = []
-            for kind, serialized in db.execute("SELECT kind, payload FROM events WHERE team_id=? ORDER BY id", (team_id,)):
-                payload = json.loads(serialized)
-                if kind == "dialogue":
-                    event = payload["event"]
-                elif kind == "sign" and payload["story"] is not None:
-                    event = {**payload["story"], "charges": payload["contract_charges"]}
-                else:
-                    continue
-                if event["offer"]["player_id"] == player_id:
-                    history.append(event)
-            return history
+            self._load(db,team_id)
+            return self._negotiation_history(db,team_id,player_id)
 
     def recalled_negotiation(self, team_id: str, request_id: str, offer: Offer):
         with self._connection() as db:

@@ -76,7 +76,7 @@ int main() {
         franchise::validate_result(player_reply, player_request);
         player_reply["result"]["agreed_promises"] = {{{"agreement_request_id", "one"}, {"goals", goals}}};
         franchise::validate_result(player_reply, player_request);
-        for (int scenario = 0; scenario < 6; ++scenario) {
+        for (int scenario = 0; scenario < 7; ++scenario) {
             auto bad = player_reply;
             if (scenario == 0) bad["result"]["player_id"] = "other";
             if (scenario == 1) bad["result"]["financial_revision"] = true;
@@ -84,6 +84,7 @@ int main() {
             if (scenario == 3) bad["result"]["promise_history"] = {1};
             if (scenario == 4) bad["result"]["agreed_promises"] = {{{"agreement_request_id", ""}, {"goals", nlohmann::json::array()}}};
             if (scenario == 5) bad["result"]["agreed_promises"][0]["goals"][0]["metric"] = "catching_rating";
+            if (scenario == 6) bad["result"]["negotiation_history"] = {{{"offer", {{"player_id", "other"}, {"salaries", {10}}, {"signing_bonus", 0}}}}};
             bool rejected = false;
             try { franchise::validate_result(bad, player_request); } catch (const std::exception&) { rejected = true; }
             if (!rejected) throw std::runtime_error("Invalid player context accepted");
