@@ -4,6 +4,7 @@
 #include <limits>
 #include <numeric>
 #include <set>
+#include <algorithm>
 
 namespace franchise {
 inline void promise_goals(const nlohmann::json& goals) {
@@ -82,6 +83,15 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         const auto& archive=financial.at("released_contracts").at(request.at("player_id").get<std::string>());
         if (canonical_offer(archive.at("original_contract").at("offer")).at("player_id") != request.at("player_id"))
             throw std::runtime_error("Release archive identity mismatch");
+        auto scope=request.at("scope");
+        auto& exclusions=scope.at("exclusions");
+        if (!exclusions.is_array()) throw std::runtime_error("Invalid release exclusions");
+        for (const auto& item : exclusions)
+            if (!item.is_string()) throw std::runtime_error("Invalid release exclusion identity");
+        std::sort(exclusions.begin(),exclusions.end());
+        if (archive.at("scope") != scope || archive.at("discount") != request.at("discount") ||
+            archive.at("payment_year_offsets") != request.at("payment_year_offsets"))
+            throw std::runtime_error("Response changed release facts or valuation inputs");
         integer_money(cash.at("nominal_total")); integer_money(cash.at("paid_total")); integer_money(cash.at("unpaid_total"));
         if (cash.at("paid_total") > cash.at("nominal_total") || cash.at("unpaid_total").get<int64_t>() !=
             cash.at("nominal_total").get<int64_t>()-cash.at("paid_total").get<int64_t>())

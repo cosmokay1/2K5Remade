@@ -34,13 +34,25 @@ int main() {
         franchise::exact_money("1/2");
         auto release_request=franchise::parse_frame(R"({"operation":"manual_release","player_id":"v","expected_revision":1})");
         auto release_reply=franchise::parse_frame(R"({"error":null,"result":{"decision_mode":"manual","player_id":"v","release":{"financial":{"revision":2,"signed_players":[],"charges":[39],"released_contracts":{"v":{"original_contract":{"offer":{"player_id":"v","salaries":[10,20,30],"signing_bonus":9}}}}},"cash":{"nominal_total":39,"paid_total":9,"unpaid_total":30}}}})");
+        release_request["scope"]={{"source","fixture"},{"exclusions",{"b","a"}}};
+        release_request["discount"]={{"league_year",2026},{"annual_rate",0},{"rate_source","synthetic"}};
+        release_request["payment_year_offsets"]={0,1,2};
+        auto& release_archive=release_reply["result"]["release"]["financial"]["released_contracts"]["v"];
+        release_archive["scope"]=release_request["scope"];
+        release_archive["scope"]["exclusions"]={"a","b"};
+        release_archive["discount"]=release_request["discount"];
+        release_archive["payment_year_offsets"]=release_request["payment_year_offsets"];
         franchise::validate_result(release_reply,release_request);
-        for (int scenario=0;scenario<4;++scenario) {
+        for (int scenario=0;scenario<7;++scenario) {
             auto bad=release_reply;
             if (scenario==0) bad["result"]["release"]["financial"]["signed_players"]={"v"};
             if (scenario==1) bad["result"]["release"]["financial"]["charges"]={39.5};
             if (scenario==2) bad["result"]["release"]["cash"]["unpaid_total"]=0;
             if (scenario==3) bad["result"]["release"]["financial"]["revision"]=3;
+            auto& bad_archive=bad["result"]["release"]["financial"]["released_contracts"]["v"];
+            if (scenario==4) bad_archive["scope"]["source"]="other";
+            if (scenario==5) bad_archive["discount"]["annual_rate"]=1;
+            if (scenario==6) bad_archive["payment_year_offsets"]={0,0,0};
             bool rejected=false;
             try { franchise::validate_result(bad,release_request); } catch (const std::exception&) { rejected=true; }
             if (!rejected) throw std::runtime_error("Invalid release response accepted");

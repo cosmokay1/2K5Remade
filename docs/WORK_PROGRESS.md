@@ -1405,3 +1405,12 @@ financial/cash receipt with authoritative replay, and requires exact retained39,
 room-9, unpaid30, removed ownership and revision2. Existing native signing/parent-death
 fixtures remain. Python syntax, diff checks and portable CTest pass locally; Windows
 execution is pending CI and no actual game runtime is claimed.
+
+## October 13, 2026 — Native release fact and valuation integrity
+
+Native release result validation now requires archived scope, discount profile and
+payment timing to match the submitted facts. Exclusion ordering normalizes before
+comparison; source/rate/offset changes reject. Added portable regressions for valid
+reordered exclusions and altered source, rate or offsets. CTest passes locally.
+Windows release fixture run38482311333 was confirmed in progress; actual guest writes
+remain unavailable and no runtime claim is made.
