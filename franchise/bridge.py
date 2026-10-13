@@ -1,5 +1,6 @@
 """Versioned sidecar request boundary. No guest memory or game-save writes."""
 import time
+import json
 from dataclasses import asdict
 from franchise.cap import Offer, Rejected, json_amount
 from franchise.control import AccessDisabled
@@ -43,7 +44,10 @@ class Bridge:
                 self.connection_check()
                 if time.monotonic() >= deadline:
                     raise TimeoutError('Player context request expired')
-                return self._reply(request_id,result=result)
+                reply=self._reply(request_id,result=result)
+                if len(json.dumps(reply,allow_nan=False).encode('utf-8'))+1 > 65536:
+                    return self._reply(request_id,error='context_too_large',detail='Player context exceeds pipe frame capacity')
+                return reply
             fields = {"protocol", "request_id", "operation", "team_id", "offer", "expected_revision", "timeout_ms"}
             if operation == "negotiate":
                 fields |= {"personality", "performance", "relationships"}

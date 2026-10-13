@@ -1297,3 +1297,12 @@ signing fixture proving filtering happens before the page limit, nonstory signin
 are excluded and older pages neither skip nor repeat the player's stories. 230 local
 tests pass. Saved-story be39a27 passed Franchise AI run 38480679681 and Build check
 38480679677; pagination/newer source CI remains pending. No live game data was used.
+
+## October 13, 2026 — Oversized native player-context read recovery
+
+Native player-context responses now check serialized UTF-8 frame size before returning
+large saved content. Oversized read returns context_too_large/null result rather than
+breaking the pipe parser. Regression uses a large legacy actor and verifies bounded
+error, subsequent preview, no inference and unchanged revision. 231 local tests pass.
+The guard is read-only and does not claim all-operation frame limits or automatic
+truncation of saved records. Game UI handling and real integration remain unfinished.

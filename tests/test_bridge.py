@@ -125,3 +125,16 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(self.store.load_team('a').revision,0)
         self.assertEqual(self.bridge.handle({**request,'player_id':'unknown'})['error'],'state_rejected')
         self.assertEqual(self.bridge.handle({**request,'timeout_ms':True})['error'],'invalid_request')
+
+    def test_oversized_player_context_returns_small_error_and_bridge_remains_usable(self):
+        self.store.bind_actor('a','v',{'biography':'x'*65536},{},access_check=lambda:None)
+        request={'protocol':1,'request_id':'large','operation':'player_context','team_id':'a','player_id':'v','timeout_ms':1000}
+        reply=self.bridge.handle(request)
+        self.assertEqual(reply['error'],'context_too_large')
+        self.assertIsNone(reply['result'])
+        self.assertLess(len(json.dumps(reply).encode('utf-8')),65536)
+        preview=self.bridge.handle({key:value for key,value in {**self.request(),'operation':'preview'}.items()
+                                    if key not in ('personality','performance','relationships')})
+        self.assertIsNone(preview['error'])
+        self.assertEqual(self.store.load_team('a').revision,0)
+        self.assertEqual(self.calls,0)

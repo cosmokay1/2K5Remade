@@ -141,3 +141,10 @@ stored and available to the full history store read; the companion must label th
 recent view rather than imply it is the entire history. Native validation checks
 coverage metadata when present. This bounds event count, not complete response byte
 size: individual evidence/promise payload bounds and browser pagination remain work.
+
+Native player-context reads serialize-check the complete response against the 64 KiB
+pipe frame limit. Oversized context returns `context_too_large` with null result;
+records are retained, no inference/financial mutation occurs and later requests
+remain usable. History pages can retrieve stories separately through authenticated
+HTTP, but large actor/promise payloads still require explicit UI handling. This read
+check does not claim byte-size guarantees for every operation or request identity.
