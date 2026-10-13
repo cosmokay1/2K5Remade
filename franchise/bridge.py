@@ -56,8 +56,12 @@ class Bridge:
                 if type(exclusions) is not list or any(type(item) is not str for item in exclusions) or len(set(exclusions)) != len(exclusions):
                     raise ValueError('Unique explicit release exclusions required')
                 scope['exclusions']=frozenset(exclusions)
-                scope['removed_on']=date.fromisoformat(scope['removed_on'])
-                scope['first_regular_season_game']=date.fromisoformat(scope['first_regular_season_game'])
+                for field in ('removed_on','first_regular_season_game'):
+                    value=scope[field]
+                    parsed=date.fromisoformat(value)
+                    if parsed.isoformat() != value:
+                        raise ValueError('Canonical YYYY-MM-DD release dates required')
+                    scope[field]=parsed
                 discount=dict(request['discount'])
                 discount['annual_rate']=parse_amount(discount['annual_rate'])
                 receipt=self.store.release_preseason_veteran(request['team_id'],request_id,request['player_id'],

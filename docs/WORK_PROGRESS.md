@@ -1414,3 +1414,13 @@ comparison; source/rate/offset changes reject. Added portable regressions for va
 reordered exclusions and altered source, rate or offsets. CTest passes locally.
 Windows release fixture run38482311333 was confirmed in progress; actual guest writes
 remain unavailable and no runtime claim is made.
+
+## October 13, 2026 — Canonical release dates before commit
+
+Native fact comparison exposed a format mismatch: Python date parsing accepted ISO
+basic compact strings then archived extended dates, causing a valid native request
+echo mismatch after transaction. Bridge now requires canonical YYYY-MM-DD for both
+release and first-game dates before any mutation. Added compact-date rollback cases;
+250 local tests pass. Native release fixture a4c83a0 Build check38482311350 passed;
+Franchise AI38482311333 was still in progress at inspection. No Win32 release
+execution success is claimed until its actual step completes.

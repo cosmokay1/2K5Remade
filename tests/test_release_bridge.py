@@ -41,6 +41,8 @@ class ReleaseBridgeTests(unittest.TestCase):
             self.assertEqual(store.load_team('a').financial_snapshot(),before)
             bridge.connection_check=lambda:None
             for changed in ({'decision_mode':'ai'},{'expected_revision':0},{'timeout_ms':True},
-                            {'scope':{**self.request()['scope'],'healthy':False}}):
+                            {'scope':{**self.request()['scope'],'healthy':False}},
+                            {'scope':{**self.request()['scope'],'removed_on':'20260601'}},
+                            {'scope':{**self.request()['scope'],'first_regular_season_game':'20260910'}}):
                 self.assertIsNotNone(bridge.handle({**self.request(),**changed})['error'])
             self.assertEqual(store.load_team('a').financial_snapshot(),before)
