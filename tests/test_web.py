@@ -180,7 +180,7 @@ class WebOriginTests(unittest.TestCase):
             store=FranchiseStore(Path(directory)/'legacy.sqlite')
             store.create_team('a',Ledger.from_opening(OpeningBooks(),cap=100,roster_reserve=0,max_bonus_years=5,
                 veteran_minimums={'v':(1,)},rookies={'d':RookieScale(1,(1,)*4,1,30,150),'u':UndraftedScale((1,)*3)},
-                rookie_year_one_allocation=30,rookie_total_allocation=150,undrafted_bonus_reservation=10))
+                rookie_year_one_allocation=30,rookie_total_allocation=150,undrafted_bonus_reservation=10,undrafted_reservation_source="synthetic fixture reservation"))
             before=store.load_team('a').financial_snapshot()
             players=store.registered_players('a')
             self.assertEqual(players['players'],[

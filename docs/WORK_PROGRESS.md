@@ -1236,6 +1236,11 @@ or game roster import is claimed.
 Verified legacy HTTP player-list/detail reads keep actors absent with AI unconfigured
 and leave finances unchanged. Added mixed veteran/drafted/undrafted registration
 fixture confirming exact classifications and identical discovery after database
-reopening, with no actor creation. 227 local tests pass. Money audit 2f8f6b8 passed
+reopening, with no actor creation. The first fixture run failed on missing UDFA reservation
+provenance and was accidentally pushed as 3202eed before verifying the result.
+The follow-up adds explicit synthetic provenance and reruns validation. Money audit 2f8f6b8 passed
 Franchise AI run 38480116739 and Build check 38480116772; discovery/shutdown source
 CI remained in progress. No browser dashboard or guest roster verification exists.
+
+The sourced discovery fixture repair passed all 227 local tests before publication.
+No accounting code was changed by the fixture repair.
