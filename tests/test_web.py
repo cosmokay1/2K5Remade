@@ -33,11 +33,14 @@ class WebOriginTests(unittest.TestCase):
                     return result
                 self.assertEqual(request('GET', '/api/franchise', authorized=False)[0], 401)
                 before = request('GET', '/api/franchise')[1]
+                self.assertFalse(request('GET','/api/players')[1]['players'][0]['initialized'])
+                self.assertIsNone(request('GET','/api/player?player_id=p')[1]['personality'])
                 self.assertEqual(request('POST', '/api/preview', {'offer': Offer('p', (20,), 0).to_dict(), 'revision': 0})[0], 200)
                 self.assertEqual(request('POST', '/api/preview', {'offer': Offer('p', (101,), 0).to_dict(), 'revision': 0})[0], 409)
                 self.assertEqual(request('POST', '/api/preview', {'offer': Offer('p', (20,), 0).to_dict(), 'revision': True})[0], 409)
                 self.assertEqual(request('POST', '/api/sign', {})[0], 404)
                 self.assertEqual(request('GET', '/api/franchise')[1], before)
+                self.assertEqual(store.load_team('a')._actors,{})
             finally:
                 server.shutdown()
                 worker.join()
@@ -170,3 +173,21 @@ class WebOriginTests(unittest.TestCase):
                 server.shutdown()
                 worker.join()
                 server.server_close()
+
+    def test_registered_player_discovery_keeps_classifications_and_legacy_actors(self):
+        from franchise.rookie import RookieScale,UndraftedScale
+        with tempfile.TemporaryDirectory() as directory:
+            store=FranchiseStore(Path(directory)/'legacy.sqlite')
+            store.create_team('a',Ledger.from_opening(OpeningBooks(),cap=100,roster_reserve=0,max_bonus_years=5,
+                veteran_minimums={'v':(1,)},rookies={'d':RookieScale(1,(1,)*4,1,30,150),'u':UndraftedScale((1,)*3)},
+                rookie_year_one_allocation=30,rookie_total_allocation=150,undrafted_bonus_reservation=10))
+            before=store.load_team('a').financial_snapshot()
+            players=store.registered_players('a')
+            self.assertEqual(players['players'],[
+                {'player_id':'d','contract_classification':'drafted','initialized':False},
+                {'player_id':'u','contract_classification':'undrafted','initialized':False},
+                {'player_id':'v','contract_classification':'veteran','initialized':False}])
+            reopened=FranchiseStore(store.path)
+            self.assertEqual(reopened.registered_players('a'),players)
+            self.assertEqual(reopened.load_team('a').financial_snapshot(),before)
+            self.assertEqual(reopened.load_team('a')._actors,{})

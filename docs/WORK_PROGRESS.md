@@ -1230,3 +1230,12 @@ ratings/names/roles are inferred, no actors generated and no AI requests made.
 HTTP regression verifies authentication, exact store correspondence and unchanged
 revision. 226 local tests pass. This supplies a browser discovery read; no dashboard
 or game roster import is claimed.
+
+## October 13, 2026 — Player discovery preserves legacy state
+
+Verified legacy HTTP player-list/detail reads keep actors absent with AI unconfigured
+and leave finances unchanged. Added mixed veteran/drafted/undrafted registration
+fixture confirming exact classifications and identical discovery after database
+reopening, with no actor creation. 227 local tests pass. Money audit 2f8f6b8 passed
+Franchise AI run 38480116739 and Build check 38480116772; discovery/shutdown source
+CI remained in progress. No browser dashboard or guest roster verification exists.
