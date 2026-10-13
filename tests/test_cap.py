@@ -5,7 +5,7 @@ from franchise.cap import Ledger, Offer, Rejected
 class CapTests(unittest.TestCase):
     def ledger(self):
         return Ledger(cap=100, existing_charges=(80, 70), roster_reserve=5,
-                      max_bonus_years=2)
+                      max_bonus_years=2, veteran_minimums={p: (1,) * 10 for p in ("p", "p1", "p2")})
 
     def test_exact_cap_allowed_and_one_dollar_over_rejected(self):
         accepted = self.ledger()

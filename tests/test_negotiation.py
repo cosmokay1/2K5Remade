@@ -13,7 +13,7 @@ def decision(action="accept", salaries=None, bonus=None):
 class NegotiationTests(unittest.TestCase):
     def session(self):
         ledger = Ledger(cap=100, existing_charges=(90,), roster_reserve=0,
-                        max_bonus_years=5)
+                        max_bonus_years=5, veteran_minimums={"p": (1,) * 4, "other": (1,) * 4})
         return Negotiation(ledger, player_id="p", personality={"winning": 0.9},
                            performance={"yards": 1100}, relationships={"trust": 0.7},
                            access_check=lambda: None)

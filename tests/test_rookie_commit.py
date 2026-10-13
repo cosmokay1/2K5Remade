@@ -9,7 +9,7 @@ class RookieCommitTests(unittest.TestCase):
     def ledger(self, *, cap=2000, year_one=1000, total=4000):
         scale = RookieScale(1, (100, 100, 100, 100), 100, 1000, 4000)
         return Ledger(cap=cap, existing_charges=(0,), roster_reserve=0,
-                      max_bonus_years=5, rookies={"r1": scale, "r2": scale},
+                      max_bonus_years=5, veteran_minimums={"v1": (1,) * 4}, rookies={"r1": scale, "r2": scale},
                       rookie_year_one_allocation=year_one,
                       rookie_total_allocation=total)
 

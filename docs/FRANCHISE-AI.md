@@ -24,6 +24,15 @@ an $8M counteroffer. It reports future obligations and protects current room,
 including a configurable roster reserve. Request retries do not double-charge;
 offers based on an old ledger revision cannot commit.
 
+The signing API now requires `veteran_minimums`: a registry mapping known veteran
+IDs to positive annual salary floors. Drafted rookies remain explicitly registered
+with `RookieScale`. Unknown players reject; no missing classification falls back
+to the veteran path. Every offered veteran year requires a supplied floor and
+must meet it. Example floors are synthetic, not an official annual salary table.
+Modern bonus allocation limits cannot exceed five years. `cap`, `roster_reserve`,
+and `max_bonus_years` are read-only properties. Use `update_budget` with the latest
+revision to change cap/reserve; a material change invalidates outstanding offers.
+
 `franchise/rookie.py` validates drafted-rookie base-salary/signing-bonus proposals:
 four-year terms, supplied annual salary floors and allotment bounds, total
 compensation limits, the year-one-based 25% annual increase restriction, and

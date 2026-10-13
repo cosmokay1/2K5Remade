@@ -1,0 +1,42 @@
+{
+  "observations": {
+    "F01_zero_salary_veteran": {
+      "status": "rejected",
+      "reason": "Veteran offer is below an annual minimum salary"
+    },
+    "F02_unknown_player": {
+      "status": "rejected",
+      "reason": "Player is unknown or contract classification is missing"
+    },
+    "F02_omitted_rookie_registry": {
+      "status": "rejected",
+      "reason": "Player is unknown or contract classification is missing"
+    },
+    "F03_bonus_proration_over_five_years": {
+      "status": "rejected"
+    },
+    "F04_cap_pool_rounding_disagreement": {
+      "current_cap_charge": 2,
+      "year_one_rookie_pool_charge": "5/4"
+    },
+    "F05_recreated_state_loses_receipts": {
+      "fresh_ledger_accepts_same_request_again": true,
+      "original_revision": 1,
+      "new_revision": 1
+    },
+    "F06_two_teams_can_sign_same_player": {
+      "team_a_revision": 1,
+      "team_b_revision": 1
+    },
+    "F07_cap_change_without_revision": {
+      "status": "stale offer rejected"
+    },
+    "F08_rookie_tender_not_replaced": {
+      "supplied_existing_draft_tender": 1,
+      "new_contract_year_one_charge": 1,
+      "recorded_team_charge": 2,
+      "expected_after_replacing_tender": 1
+    }
+  },
+  "bonus_conservation_cases_verified": 5050
+}

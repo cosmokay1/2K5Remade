@@ -7,6 +7,15 @@ Eight reproducible findings and multiple missing lifecycle rules prevent a
 claim of modern NFL financial correctness. This audit does not prove a cap bug
 in the original NFL 2K5 game or change its behavior.
 
+**Repair update, October 13, 2026:** F01, F02, F03, and F07 now have regression
+coverage and are addressed at the prototype boundary. Veteran identities and
+positive annual floors are mandatory; unknown/unclassified IDs reject; bonus
+allocation is capped at five years; budget changes advance revision. Floors and
+classification still need authoritative imported data. F04, F05, F06, and F08
+remain open, along with the missing lifecycle rules below. Original audit
+evidence and findings are preserved as the baseline at commit `02a10ac`.
+See [current checks](money-audit-after-repairs.json). The suite now has 46 tests.
+
 ## Scope and evidence
 
 Reviewed all implementation files in `franchise/`, examples, tests, configuration,

@@ -46,7 +46,8 @@ def main():
         else:
             provider = scripted
         ledger = Ledger(cap=100_000_000, existing_charges=(90_000_000, 80_000_000),
-                        roster_reserve=2_000_000, max_bonus_years=5)
+                        roster_reserve=2_000_000, max_bonus_years=5,
+                        veteran_minimums={"receiver-01": (1_000_000,) * 3})
         session = Negotiation(ledger, player_id="receiver-01",
                               personality={"money": 0.9, "loyalty": 0.4, "winning": 0.7},
                               performance={"receiving_yards": 1100, "touchdowns": 8},

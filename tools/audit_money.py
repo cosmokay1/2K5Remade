@@ -1,17 +1,17 @@
 """Reproduce money-audit findings using synthetic data; no cloud/game writes.
 
 Run from the workspace root: python3 -m tools.audit_money
-These observations describe current defects, not expected-correct behavior.
+Resolved findings are rechecked; open findings remain synthetic reproductions.
 """
 from dataclasses import asdict
 from fractions import Fraction
 import json
-from franchise.cap import Ledger, Offer
+from franchise.cap import Ledger, Offer, Rejected
 from franchise.rookie import RookieScale
 
 
 def ledger(**overrides):
-    args = dict(cap=100, existing_charges=(0,), roster_reserve=0, max_bonus_years=5)
+    args = dict(cap=100, existing_charges=(0,), roster_reserve=0, max_bonus_years=5, veteran_minimums={p: (1,) * 10 for p in ("veteran", "v", "same-player")})
     args.update(overrides)
     return Ledger(**args)
 
@@ -19,27 +19,21 @@ def ledger(**overrides):
 def main():
     observations = {}
 
-    zero = ledger()
-    receipt = zero.sign("zero", Offer("veteran", (0,), 0), 0)
-    observations["F01_zero_salary_veteran"] = asdict(receipt)
-
-    unknown = ledger()
-    unknown.sign("unknown", Offer("nonexistent-player", (1,), 0), 0)
-    observations["F02_unknown_player"] = {"accepted": True, "charges": unknown.charges}
-
-    rookie = ledger(rookie_year_one_allocation=10, rookie_total_allocation=40)
-    rookie.sign("rookie", Offer("unregistered-draft-pick", (1,), 0), 0)
-    observations["F02_omitted_rookie_registry"] = {
-        "one_year_contract_accepted": True,
-        "rookie_pool_unchanged": str(rookie.rookie_remaining),
-    }
-
-    excessive = ledger(max_bonus_years=10, cap=1)
-    excessive.sign("bonus", Offer("v", (0,) * 10, 10), 0)
-    observations["F03_bonus_proration_over_five_years"] = {
-        "accepted_at_one_dollar_room": True, "charges": excessive.charges,
-        "five_year_allocation_first_year": Offer("v", (0,) * 10, 10).charges(5)[0],
-    }
+    for finding, player in [("F01_zero_salary_veteran", "veteran"),
+                            ("F02_unknown_player", "nonexistent-player"),
+                            ("F02_omitted_rookie_registry", "unregistered-draft-pick")]:
+        try:
+            ledger().sign("probe", Offer(player, (0,), 0), 0)
+        except Rejected as error:
+            observations[finding] = {"status": "rejected", "reason": str(error)}
+        else:
+            raise AssertionError(f"Regression: {finding} accepted")
+    try:
+        ledger(max_bonus_years=10)
+    except ValueError:
+        observations["F03_bonus_proration_over_five_years"] = {"status": "rejected"}
+    else:
+        raise AssertionError("Regression: excess bonus allocation accepted")
 
     scale = RookieScale(1, (1,) * 4, 1, 10, 40)
     fractional = ledger(rookies={"r": scale}, rookie_year_one_allocation=10,
@@ -68,12 +62,13 @@ def main():
 
     mutable = ledger(cap=10)
     snapshot = mutable.negotiation_context("v")
-    mutable.cap = 100
-    mutable.sign("mutable", Offer("v", (20,), 0), snapshot["revision"])
-    observations["F07_cap_change_without_revision"] = {
-        "snapshot_cap": snapshot["cap"], "current_cap": mutable.cap,
-        "accepted_using_old_revision": True,
-    }
+    mutable.update_budget(cap=100, roster_reserve=0, expected_revision=0)
+    try:
+        mutable.sign("mutable", Offer("v", (20,), 0), snapshot["revision"])
+    except Rejected:
+        observations["F07_cap_change_without_revision"] = {"status": "stale offer rejected"}
+    else:
+        raise AssertionError("Regression: stale budget offer accepted")
 
     tender = ledger(existing_charges=(1,), rookies={"r": scale},
                     rookie_year_one_allocation=10, rookie_total_allocation=40)
@@ -87,7 +82,7 @@ def main():
 
     verified = 0
     for years in range(1, 11):
-        for limit in range(1, 11):
+        for limit in range(1, 6):
             for bonus in range(101):
                 offer = Offer("test", (3,) * years, bonus)
                 charges = offer.charges(limit)

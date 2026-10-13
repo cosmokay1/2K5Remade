@@ -13,7 +13,7 @@ class ControlTests(unittest.TestCase):
                 "expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()}
 
     def ledger(self):
-        return Ledger(cap=100, existing_charges=(90,), roster_reserve=0, max_bonus_years=5)
+        return Ledger(cap=100, existing_charges=(90,), roster_reserve=0, max_bonus_years=5, veteran_minimums={"p": (1,) * 4})
 
     def test_switch_requires_true_and_supported_protocol(self):
         validate_control(self.enabled())
