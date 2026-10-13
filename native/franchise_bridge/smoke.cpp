@@ -7,7 +7,7 @@ int wmain(int argc, wchar_t** argv) {
     const bool abrupt = argc == 4 && std::wstring(argv[3]) == L"--abrupt";
     if (argc == 4 && !replay && !abrupt) return 2;
     try {
-        franchise::PipeClient client(argv[1], argv[2]);
+        franchise::PipeClient client(argv[1], argv[2], franchise::ServiceMode::OfflineFixture);
         if (abrupt) {
             std::cout << client.process_id() << std::endl;
             std::cin.get();

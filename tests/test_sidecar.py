@@ -1,4 +1,6 @@
 import json
+import io
+from unittest.mock import patch
 from pathlib import Path
 import subprocess
 import sys
@@ -87,3 +89,27 @@ class SidecarTests(unittest.TestCase):
             self.assertFalse(thread.is_alive())
             self.assertEqual(store.load_team("a").revision, 0)
             self.assertEqual(store.negotiation_history("a", "v"), [])
+
+    def test_ai_initialization_failure_preserves_explicit_manual_financial_path(self):
+        from franchise.sidecar import main
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.sqlite"
+            store = FranchiseStore(path)
+            store.create_team("a", Ledger.from_opening(OpeningBooks(), cap=100,
+                roster_reserve=0, max_bonus_years=5, veteran_minimums={"v": (1,)}))
+            manual = request()
+            manual.update(operation="manual_sign", decision_mode="manual")
+            for key in ("personality", "performance", "relationships"):
+                del manual[key]
+            messages = [dict(protocol=1, request_id="hello", operation="hello"), manual]
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with patch.object(sys, "argv", ["sidecar", "--database", str(path), "--provider", "vertex"]), \
+                 patch.object(sys, "stdin", io.StringIO("".join(json.dumps(item) + "\n" for item in messages))), \
+                 patch.object(sys, "stdout", stdout), patch.object(sys, "stderr", stderr), \
+                 patch("franchise.vertex_provider.VertexProvider", side_effect=RuntimeError("SECRET")):
+                main()
+            responses = [json.loads(line) for line in stdout.getvalue().splitlines()]
+            self.assertEqual(responses[0]["error"], "ai_disabled")
+            self.assertEqual(responses[1]["result"]["decision_mode"], "manual")
+            self.assertEqual(store.load_team("a").charges, (10,))
+            self.assertNotIn("SECRET", stdout.getvalue() + stderr.getvalue())

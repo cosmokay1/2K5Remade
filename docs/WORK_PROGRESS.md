@@ -710,3 +710,22 @@ Native envelope/parser `2da51f2` passed Windows/Linux in
 [run 38469551016](https://github.com/cosmokay1/2K5Remade/actions/runs/38469551016).
 Operation-specific native and new counter-preview CI remain pending. Actual
 franchise UI/game writes and complete financial lifecycle are still unfinished.
+
+## October 13, 2026 — AI startup failure keeps financial enforcement available
+
+Fixed recovery gap: failed Vertex/runtime initialization no longer terminates the
+sidecar. AI requests deny explicitly; existing database-backed preview/manual
+operations remain available. No scripted decision or owner-credential fallback
+is selected after failure. Diagnostics are generic stderr text, never provider
+secret/stack content.
+
+Native PipeClient now requires an explicit service mode. Runtime mode launches
+Vertex plus the configured keyless impersonation flag; the test executable stays
+explicitly offline. 145 local tests pass, including injected startup failure,
+AI-disabled response, deliberate cap-enforced manual signing and error redaction.
+Live identity access/production credential permissions remain unverified.
+
+Prior native result validation `f2674a4` passed Windows/Linux in
+[run 38469873021](https://github.com/cosmokay1/2K5Remade/actions/runs/38469873021).
+New native launch-mode build/execution CI pending. Real guest integration remains
+unfinished; no game playability claim.

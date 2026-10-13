@@ -8,6 +8,7 @@
 #include <thread>
 
 namespace franchise {
+enum class ServiceMode { OfflineFixture, VertexRuntime };
 // Quote one Windows command-line argument, including embedded quotes/backslashes.
 inline std::wstring quote(const std::wstring& value) {
     std::wstring result = L"\"";
@@ -40,7 +41,9 @@ class PipeClient {
         if (output_) { CloseHandle(output_); output_ = nullptr; }
     }
 public:
-    PipeClient(const std::wstring& python, const std::wstring& database) {
+    PipeClient(const std::wstring& python, const std::wstring& database, ServiceMode mode) {
+        if (mode != ServiceMode::OfflineFixture && mode != ServiceMode::VertexRuntime)
+            throw std::runtime_error("Explicit supported service mode required");
         SECURITY_ATTRIBUTES attributes{sizeof(SECURITY_ATTRIBUTES), nullptr, TRUE};
         HANDLE child_input = nullptr, child_output = nullptr;
         if (!CreatePipe(&child_input, &input_, &attributes, 0) ||
@@ -78,9 +81,10 @@ public:
         startup.StartupInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
         startup.lpAttributeList = attributes_list;
         PROCESS_INFORMATION info{};
-        // Explicit fixture only. Production credentials and mode are not wired here.
-        std::wstring command = quote(python) + L" -m franchise.sidecar --database " +
-                               quote(database) + L" --provider offline-fixture";
+        // Mode is fixed before launch; runtime never falls back to a fixture.
+        std::wstring command = quote(python) + L" -m franchise.sidecar --database " + quote(database) +
+            (mode == ServiceMode::OfflineFixture ? L" --provider offline-fixture" :
+             L" --provider vertex --impersonate-runtime");
         BOOL started = CreateProcessW(python.c_str(), command.data(), nullptr, nullptr,
                                       TRUE, CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT,
                                       nullptr, nullptr, &startup.StartupInfo, &info);

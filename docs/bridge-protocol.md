@@ -37,7 +37,7 @@ A native pipe client and actual game-thread integration are still pending.
 
 `native/franchise_bridge` builds a standalone Windows C++17 transport check.
 `PipeClient.submit/ready/take` runs pipe I/O asynchronously; one request at a time.
-It currently launches only the offline fixture. Build and execute through the
+The smoke check explicitly selects the offline fixture. Build and execute through the
 Windows CI steps or `tools.check_native_bridge`. This is transport evidence only.
 Guest hooks, JSON result validation, production launch/authentication, lifecycle
 placement and reconciliation with actual saves remain required.
@@ -86,3 +86,10 @@ submitted offer/guarantee identity, decision outcome/action and manual mode. Mon
 must be integer or canonical reduced rational charges; floating-point money rejects.
 This does not independently calculate cap usage or authorize guest writes. Real
 state reconciliation and save/readback remain required.
+
+Native `PipeClient` requires explicit `ServiceMode::OfflineFixture` or
+`ServiceMode::VertexRuntime`. Runtime mode launches Vertex with runtime
+impersonation; no owner or scripted fallback. AI startup failure leaves the
+sidecar's financial/manual service available with `ai_disabled` for AI requests
+and a generic stderr diagnostic. Manual signing remains a deliberate operation.
+Live runtime authentication and game integration remain unverified.

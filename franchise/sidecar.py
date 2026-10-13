@@ -91,16 +91,24 @@ def main():
                                    salaries=None, signing_bonus=None))
         access_check = lambda: None  # Explicit synthetic test mode, no live inference.
     else:
-        from franchise.vertex_provider import VertexProvider
-        config = json.loads((Path(__file__).resolve().parents[1] / "config/google.json").read_text())
-        credentials = None
-        control_credentials = None
-        if args.impersonate_runtime:
-            from franchise.google_credentials import runtime_credentials
-            credentials = runtime_credentials(config["project"], config["runtime_service_account"])
-            control_credentials = runtime_credentials(config["project"], config["runtime_service_account"])
-        provider = VertexProvider(project=config["project"], location=config["location"], model=config["model"], credentials=credentials)
-        access_check = GoogleControl(project=config["project"], bucket=config["control_bucket"], object_name=config["control_object"], credentials=control_credentials)
+        try:
+            from franchise.vertex_provider import VertexProvider
+            config = json.loads((Path(__file__).resolve().parents[1] / "config/google.json").read_text())
+            credentials = None
+            control_credentials = None
+            if args.impersonate_runtime:
+                from franchise.google_credentials import runtime_credentials
+                credentials = runtime_credentials(config["project"], config["runtime_service_account"])
+                control_credentials = runtime_credentials(config["project"], config["runtime_service_account"])
+            provider = VertexProvider(project=config["project"], location=config["location"], model=config["model"], credentials=credentials)
+            access_check = GoogleControl(project=config["project"], bucket=config["control_bucket"], object_name=config["control_object"], credentials=control_credentials)
+        except Exception:
+            # Financial/manual operations stay authoritative. Never substitute
+            # scripted player decisions or owner credentials after AI failure.
+            def unavailable(*_):
+                raise AccessDisabled("AI initialization unavailable")
+            provider = access_check = unavailable
+            print("AI unavailable: check runtime authentication and optional dependencies.", file=sys.stderr)
     serve(Bridge(FranchiseStore(args.database), provider=provider, access_check=access_check), sys.stdin, sys.stdout)
 
 
