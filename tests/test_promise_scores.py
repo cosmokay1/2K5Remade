@@ -10,12 +10,12 @@ from franchise.store import FranchiseStore,StoredLedger
 
 
 class PromiseScoreTests(unittest.TestCase):
-    def setup_store(self,directory):
+    def setup_store(self,directory,goals=None):
         store=FranchiseStore(Path(directory)/'state.sqlite')
         store.create_team('a',Ledger.from_opening(OpeningBooks(),cap=100,roster_reserve=0,max_bonus_years=5,veteran_minimums={'p':(1,)}))
         session=Negotiation(StoredLedger(store,'a'),player_id='p',personality={},performance={'source':'synthetic'},relationships={'trust':0.6},access_check=lambda:None)
         session.respond('deal',Offer('p',(20,),0),lambda _:json.dumps({'action':'accept','reason':'Starting role','salaries':None,'signing_bonus':None}),
-            promise_goals=(PromiseGoal('starts','starts',8,80,'fixture season','authored proposal'),))
+            promise_goals=goals if goals is not None else (PromiseGoal('starts','starts',8,80,'fixture season','authored proposal'),))
         return store
     def observation(self,value):
         return (GoalObservation('starts','fixture season',value,'synthetic stats','full fixture coverage','No verified injury/coaching context'),)
@@ -105,3 +105,34 @@ class PromiseScoreTests(unittest.TestCase):
                 db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(payload),id))
                 db.commit()
             self.assertEqual(self.score(FranchiseStore(store.path)),expected)
+
+    def test_multiple_windows_durable_retry_and_financial_conservation(self):
+        from franchise.performance import PerformanceEvidence,Observation
+        from franchise.promises import TeamResults
+        with tempfile.TemporaryDirectory() as directory:
+            goals=(PromiseGoal('early','starts',4,1,'early','proposal'),
+                   PromiseGoal('wins','team_wins',10,1,'season','proposal'))
+            store=self.setup_store(directory,goals)
+            early=PerformanceEvidence('p','early','played',(Observation('games_started',4,'fixture'),),
+                                      'early totals',team_id='a',complete_window=True)
+            season=PerformanceEvidence('p','season','cpu_played',(),'season totals',team_id='a',complete_window=True)
+            before=store.load_team('a').charges
+            # Missing team results stay unknown, rather than becoming zero wins.
+            progress=store.record_promise_performance('a','progress','deal',(early,season),window_closed=False,
+                expected_revision=1,source='fixture evaluation',context='fixture health')
+            self.assertIsNone(progress['score']['final_achievement_score'])
+            team=TeamResults('a','season','cpu_played',10,17,'fixture standings','season totals',complete_window=True)
+            def final(snapshot=early):
+                return store.record_promise_performance('a','final','deal',(snapshot,season),window_closed=True,
+                    expected_revision=2,source='fixture evaluation',context='fixture health',team_results=(team,))
+            expected=final()
+            self.assertEqual(expected['score']['final_achievement_score'],'1')
+            store=FranchiseStore(store.path)
+            self.assertEqual(final(),expected)
+            changed=PerformanceEvidence('p','early','played',(Observation('games_started',3,'fixture'),),
+                                        'early totals',team_id='a',complete_window=True)
+            with self.assertRaises(Rejected): final(changed)
+            ledger=store.load_team('a')
+            self.assertEqual(ledger.charges,before)
+            self.assertEqual(ledger.revision,3)
+            self.assertEqual(ledger.promise_history('p'),[progress,expected])

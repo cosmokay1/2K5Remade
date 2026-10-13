@@ -1097,3 +1097,13 @@ coverage. Team results remain separate per window and partial evidence prevents
 finalization. Tests verify distinct windows/modes, stable goal ordering, complete
 versus partial scores and ambiguous/missing snapshot rejection. 216 local tests pass.
 Actual game instrumentation and automatic calendar transitions remain unfinished.
+
+## October 13, 2026 — Durable multi-window scoring acceptance fixture
+
+Added a committed two-window promise scenario through record_promise_performance:
+early played starts plus season CPU-played wins. Missing team results remain unknown;
+complete separately sourced standings finalize the score. Reopening the database
+replays identical history, an identical request retries without revision changes,
+and changed evidence under the same request rejects. Financial charges remain
+unchanged throughout; exact revision progression is checked. 217 local tests pass.
+This verifies durable engine behavior with synthetic evidence, not real game stats.
