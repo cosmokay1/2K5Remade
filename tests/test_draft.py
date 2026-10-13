@@ -54,6 +54,8 @@ class DraftComparisonTests(unittest.TestCase):
     def test_concurrent_budget_change_invalidates_comparison(self):
         ledger = self.ledger()
         class ChangedAfterPreview:
+            def management_context(self):
+                return ledger.management_context()
             def negotiation_context(self, player):
                 return ledger.negotiation_context(player)
             def preview_offer(self, offer, revision):

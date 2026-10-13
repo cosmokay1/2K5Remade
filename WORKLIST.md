@@ -102,7 +102,7 @@ invent future published NFL values: separate verified inputs from simulation pol
 - [x] Verify a real model acceptance cannot force an over-cap contract.
 - [x] Add offer previews using the same financial validation as final commits.
       Durable previews also check league ownership; previews do not reserve room.
-- [ ] Add player/agent and team/GM priorities with persistence and bounded updates.
+- [ ] Add player/agent and team/GM priorities with persistence and bounded updates. Source-backed immutable GM profiles now persist with original team configuration and feed private draft context; player priorities and bounded relationship updates already persist. GM evolution and actual CPU team strategy remain.
 - [ ] Feed actual statistics, roles and relationship history; label missing evidence.
 - [ ] Evaluate production with opportunities/context: targets/snaps, efficiency,
       drops, opponents/scheme, health, recency and sample size where available.

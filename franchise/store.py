@@ -19,6 +19,9 @@ from franchise.cash import CashBook, CashObligation
 
 def from_config(config: dict) -> Ledger:
     config = dict(config)
+    if config.get("management_profile") is not None:
+        from franchise.management import ManagementProfile
+        config["management_profile"] = ManagementProfile.from_dict(config["management_profile"])
     if config.get("rookie_pool_opening") is not None:
         from franchise.rookie_opening import RookiePoolOpening
         config["rookie_pool_opening"] = RookiePoolOpening.from_dict(config["rookie_pool_opening"])
@@ -624,6 +627,9 @@ class StoredLedger:
     def __init__(self, store: FranchiseStore, team_id: str):
         self.store, self.team_id = store, team_id
         store.load_team(team_id)
+
+    def management_context(self):
+        return self.store.load_team(self.team_id).management_context()
 
     def negotiation_context(self, player_id):
         return self.store.load_team(self.team_id).negotiation_context(player_id)

@@ -1,5 +1,8 @@
 import http.client
 import json
+import shutil
+import ssl
+import subprocess
 from pathlib import Path
 import tempfile
 import threading
@@ -91,6 +94,42 @@ class WebOriginTests(unittest.TestCase):
                 enabled = False
                 self.assertEqual(send(request)[1]['error'], 'ai_disabled')
                 self.assertEqual(send({**request,'team_id':'another'})[0], 400)
+            finally:
+                server.shutdown()
+                worker.join()
+                server.server_close()
+
+    @unittest.skipUnless(shutil.which('openssl'), 'TLS fixture generation requires OpenSSL CLI')
+    def test_tls_origin_requires_trusted_certificate_and_matches_hostname(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cert, key = root / 'origin.crt', root / 'origin.key'
+            subprocess.run(['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
+                '-subj', '/CN=localhost', '-addext', 'subjectAltName=DNS:localhost,IP:127.0.0.1',
+                '-keyout', str(key), '-out', str(cert)], check=True, capture_output=True)
+            server = make_server(None, None, 't'*32, port=0, tls_cert=cert, tls_key=key)
+            worker = threading.Thread(target=server.serve_forever)
+            worker.start()
+            try:
+                connection = http.client.HTTPSConnection(*server.server_address, context=ssl.create_default_context(), timeout=5)
+                try:
+                    with self.assertRaises(ssl.SSLCertVerificationError):
+                        connection.request('GET', '/health')
+                finally:
+                    connection.close()
+                context = ssl.create_default_context(cafile=str(cert))
+                connection = http.client.HTTPSConnection(*server.server_address, context=context, timeout=5)
+                try:
+                    connection.request('GET', '/health')
+                    response = connection.getresponse()
+                    self.assertEqual(response.status, 200)
+                    self.assertEqual(json.loads(response.read())['status'], 'ready')
+                finally:
+                    connection.close()
+                import socket
+                with socket.create_connection(server.server_address, timeout=5) as raw:
+                    with self.assertRaises(ssl.SSLCertVerificationError):
+                        context.wrap_socket(raw, server_hostname='wrong-host.invalid')
             finally:
                 server.shutdown()
                 worker.join()

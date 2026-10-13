@@ -854,3 +854,22 @@ Latest TLS 6440101 CI was still running when inspected; no full-game validation.
 
 TLS commit `6440101` subsequently passed Franchise AI CI run 38474298115 and
 inherited build check run 38474298056. The inherited timeout did not recur.
+
+## October 13, 2026 — Private durable management priorities and TLS regression
+
+Added ManagementProfile with stable manager identity, authored source and bounded
+finite priorities for win-now, development, continuity, financial flexibility and
+risk tolerance. Unknown/duplicate priorities, booleans and nonfinite weights reject.
+Profiles persist in original team configuration, survive store replay and feed
+private draft comparison context. Player/agent accounting prompts do not expose GM
+priorities. Financial postings and cap authority are unchanged. Profile evolution,
+actual CPU offer/draft selection and game hooks remain unfinished.
+
+168 local tests pass. New TLS integration check rejects an untrusted origin and
+wrong certificate hostname, then succeeds with the explicit trusted certificate.
+OpenSSL generates ephemeral test credentials; no keys are committed. TLS fixture
+check skips explicitly if OpenSSL CLI is unavailable. Existing persistent negotiation
+example preserves agreement, exact balances and no regeneration after restart.
+Prior HTTP negotiation commit 8463519 passed Franchise AI CI run 38474521864 and
+inherited Build check run 38474521234. Browser framework choice remains open after
+the user requested clarification of the term workspace; no UI stack was assumed.

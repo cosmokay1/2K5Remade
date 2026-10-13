@@ -63,6 +63,9 @@ def comparison_context(ledger, *, expected_revision, draft_round, overall_pick,
             raise ValueError('Team needs require position, role, reason and source')
     validate_performance(team_needs)
     needs = json.loads(json.dumps(team_needs, allow_nan=False))
+    management = ledger.management_context()
+    if management['accounting']['revision'] != expected_revision or type(expected_revision) is not int:
+        raise Rejected('Draft comparison used stale franchise state')
     candidates = []
     for prospect in prospects:
         context = prospect.to_context()
@@ -85,5 +88,5 @@ def comparison_context(ledger, *, expected_revision, draft_round, overall_pick,
         raise Rejected('Draft comparison used stale franchise state')
     return {'purpose': 'draft_comparison', 'financial_revision': expected_revision,
             'draft_round': draft_round, 'overall_pick': overall_pick,
-            'team_needs': needs, 'prospects': candidates,
+            'team_needs': needs, 'management': management, 'prospects': candidates,
             'instructions': 'Compare observed production, opportunities, role, competition and sourced personality. Explain uncertainty and missing evidence. Do not infer hidden ratings or treat unavailable counters as zero. Contract estimates are independently previewed and do not reserve cap or rookie allocation.'}

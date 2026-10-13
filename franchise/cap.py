@@ -102,7 +102,11 @@ class Ledger:
                  rookie_total_allocation: int | None = None,
                  rookie_tenders: dict[str, int] | None = None,
                  opening_books=None, veteran_minimum_profile=None,
-                 undrafted_bonus_reservation=None, undrafted_reservation_source=None, rookie_pool_opening=None):
+                 undrafted_bonus_reservation=None, undrafted_reservation_source=None, rookie_pool_opening=None, management_profile=None):
+        from franchise.management import ManagementProfile
+        if management_profile is not None and not isinstance(management_profile, ManagementProfile):
+            raise ValueError('Typed management profile required')
+        self._management_profile = management_profile
         self._cap = money(cap)
         self._roster_reserve = money(roster_reserve)
         if type(existing_charges) is not tuple or not existing_charges:
@@ -278,7 +282,8 @@ class Ledger:
                     "undrafted_reservation_source": self._undrafted_reservation_source,
                     "rookie_pool_opening": self._rookie_pool_opening.to_dict() if self._rookie_pool_opening else None,
                     "veteran_minimum_profile": self._veteran_minimum_profile.to_dict() if self._veteran_minimum_profile else None,
-                    "opening_books": self._opening_books.to_dict() if self._opening_books else None}
+                    "opening_books": self._opening_books.to_dict() if self._opening_books else None,
+                    "management_profile": self._management_profile.to_dict() if self._management_profile else None}
 
     @property
     def roster_reserve(self) -> int:
@@ -304,6 +309,12 @@ class Ledger:
     def rookie_remaining(self) -> tuple[Fraction, int]:
         with self._lock:
             return self._rookie_year_one, self._rookie_total
+
+    def management_context(self) -> dict:
+        """Private team decision input; not exposed in player/agent prompts."""
+        with self._lock:
+            return {"management_profile": self._management_profile.to_dict() if self._management_profile else None,
+                    "accounting": self.financial_snapshot()}
 
     def negotiation_context(self, player_id: str) -> dict:
         with self._lock:
