@@ -183,10 +183,12 @@ class DraftComparisonTests(unittest.TestCase):
             with self.assertRaisesRegex(Rejected, 'evidence changed'):
                 session.recommend('stale', concurrent, **inputs)
             self.assertEqual([item['request_id'] for item in ledger.scouting_history()], ['other'])
-            with sqlite3.connect(store.path) as db:
+            from contextlib import closing
+            with closing(sqlite3.connect(store.path)) as db:
                 row = db.execute("SELECT id,payload FROM events WHERE kind='draft_scouting'").fetchone()
                 payload = json.loads(row[1])
                 payload['event']['evidence']['financial_revision'] = 99
                 db.execute('UPDATE events SET payload=? WHERE id=?', (json.dumps(payload), row[0]))
+                db.commit()
             with self.assertRaises(Rejected):
                 store.load_team('a')
