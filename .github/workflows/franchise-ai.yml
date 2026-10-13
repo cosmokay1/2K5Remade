@@ -1,0 +1,32 @@
+# Portable engine checks only. No game assets, credentials, or paid inference.
+name: Franchise AI checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  engine:
+    name: Engine (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-2022]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Financial, negotiation and shutdown tests
+        run: python -m unittest discover -s tests -v
+      - name: Audit regression checks and compensation conservation
+        run: python -m tools.audit_money
+      - name: Offline contract and negotiation examples
+        run: |
+          python -m examples.negotiation
+          python -m examples.story_negotiation --provider scripted

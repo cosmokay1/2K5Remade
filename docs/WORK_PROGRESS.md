@@ -50,3 +50,17 @@ User authentication step: `gh auth refresh -h github.com -s workflow`.
 After authorization, cherry-pick `bd1f801`, resolve the progress-log addition if
 needed, push, and verify real workflow results before checking the M0 item.
 While B05 remains, continue M1 work rather than retrying the same failed push.
+
+## October 13, 2026 — Portable CI
+
+Added `Franchise AI checks` on Linux and Windows/Python 3.12. It runs the unit
+suite, audited money regression/conservation checks, and both offline examples.
+It needs no game assets, cloud credentials, SDK installation or paid inference.
+This is engine validation only; native bridge compilation and actual Windows
+game execution are still separate worklist gates.
+
+Local validation: 48 tests and both offline examples pass. Remote CI result must
+be recorded after the workflow actually executes; a pushed workflow is not a
+green CI result.
+
+The user completed workflow authorization. Applied the preserved workflow; remote validation is pending.
