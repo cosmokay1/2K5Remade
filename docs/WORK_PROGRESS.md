@@ -679,3 +679,18 @@ Native protocol CMake/CTest now runs on both CI platforms; Windows additionally
 runs the real process/transaction fixture. Locally compiled with AppleClang and
 passed the C++ malformed-envelope suite; all 143 Python tests pass.
 New Windows/Linux CI pending; no guest memory or game state writes introduced.
+
+## October 13, 2026 — Native operation and contract-result validation
+
+Native pipe responses now validate operation-specific handshake, preview revision,
+submitted offer identity/terms, decision action/outcome and explicit manual mode.
+Annual guarantees are normalized for missing/empty zero terms but cannot disappear
+when positive. Integer money rejects floats/negative/out-of-range values; exact
+charge fractions must be positive, reduced canonical numerator/denominator strings.
+Signed/preview charge counts must match the offered annual term.
+
+Compiled locally and passed C++ checks for changed guarantees, floating charges,
+noncanonical rational values and mislabeled manual decisions. All 143 Python tests
+remain passing. This validates wire types/identity, not independent cap calculation
+or a guest-state commit. Actual game mapping, readback reconciliation and save
+transactions remain required before writes. New Windows/Linux CI pending.

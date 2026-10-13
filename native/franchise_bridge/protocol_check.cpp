@@ -1,4 +1,4 @@
-#include "protocol.h"
+#include "contract_response.h"
 #include <iostream>
 
 int main() {
@@ -18,7 +18,21 @@ int main() {
             if (!rejected) throw std::runtime_error("Malformed response accepted");
         }
         franchise::decode_response(R"({"protocol":1,"request_id":"one","result":null,"error":"busy","detail":null})", "one");
-        std::cout << "Protocol envelope validation passed" << std::endl;
+        auto request = franchise::parse_frame(R"({"operation":"manual_sign","request_id":"one","offer":{"player_id":"v","salaries":[10],"signing_bonus":0,"guaranteed_salaries":[8]}})");
+        auto reply = franchise::parse_frame(R"({"error":null,"result":{"request_id":"one","offer":{"player_id":"v","salaries":[10],"signing_bonus":0,"guaranteed_salaries":[8]},"action":"accept","outcome":"signed","counter":null,"decision_mode":"manual","charges":[10]}})");
+        franchise::validate_result(reply, request);
+        for (int scenario = 0; scenario < 4; ++scenario) {
+            auto bad = reply;
+            if (scenario == 0) bad["result"]["offer"]["guaranteed_salaries"] = {0};
+            if (scenario == 1) bad["result"]["charges"] = {10.5};
+            if (scenario == 2) bad["result"]["charges"] = {"2/4"};
+            if (scenario == 3) bad["result"]["decision_mode"] = "automatic";
+            bool rejected = false;
+            try { franchise::validate_result(bad, request); } catch (const std::exception&) { rejected = true; }
+            if (!rejected) throw std::runtime_error("Invalid contract result accepted");
+        }
+        franchise::exact_money("1/2");
+        std::cout << "Protocol envelope and contract validation passed" << std::endl;
         return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << std::endl; return 1; }
 }

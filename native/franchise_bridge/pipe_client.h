@@ -1,6 +1,6 @@
 #pragma once
 #include <windows.h>
-#include "protocol.h"
+#include "contract_response.h"
 #include <chrono>
 #include <future>
 #include <stdexcept>
@@ -26,6 +26,7 @@ class PipeClient {
     HANDLE input_ = nullptr, output_ = nullptr, process_ = nullptr, job_ = nullptr;
     std::future<std::string> pending_;
     std::string request_id_;
+    nlohmann::json request_;
     void close() noexcept {
         if (input_) { CloseHandle(input_); input_ = nullptr; }
         if (process_) {
@@ -105,6 +106,7 @@ public:
         auto request = parse_frame(json);
         if (!request.is_object() || !request.contains("request_id") || !request["request_id"].is_string())
             throw std::runtime_error("Request ID required");
+        request_ = request;
         request_id_ = request["request_id"].get<std::string>();
         if (request_id_.empty()) throw std::runtime_error("Request ID required");
         pending_ = std::async(std::launch::async, [this, json = std::move(json)] {
@@ -136,7 +138,7 @@ public:
         if (!ready()) throw std::runtime_error("Response not ready");
         try {
             auto response = pending_.get();
-            decode_response(response, request_id_);
+            validate_result(decode_response(response, request_id_), request_);
             return response;
         }
         catch (...) { close(); throw; }

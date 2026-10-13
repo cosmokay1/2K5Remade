@@ -80,3 +80,9 @@ Duplicate JSON fields and excessive nesting reject. Malformed replies terminate
 the transport. The parser uses checksum-pinned nlohmann/json v3.12.0 with its MIT
 license retained. Operation-specific result/financial-field validation remains
 required before any game-memory write can be enabled.
+
+Native result validation checks handshake shape, preview revision and charge term,
+submitted offer/guarantee identity, decision outcome/action and manual mode. Money
+must be integer or canonical reduced rational charges; floating-point money rejects.
+This does not independently calculate cap usage or authorize guest writes. Real
+state reconciliation and save/readback remain required.
