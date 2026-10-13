@@ -1172,3 +1172,12 @@ No actor is generated or bound by scouting reads. Regression covers contradictor
 cross-team input before provider call, canonical advice and tampered replay; prior
 historical-before-binding fixture still passes. 223 local tests pass. Actual guest
 integration remains unfinished and source CI is pending.
+
+## October 13, 2026 — Cross-team chronology and in-flight personality acceptance
+
+Added scenarios for actor binding on another team after existing advice and during
+an in-flight provider call. Old advice remains readable because replay uses prior
+event IDs; conflicting in-flight advice rejects and creates no scouting receipt.
+Both paths preserve the full financial snapshot across database reopening. 224 local
+tests pass. Cross-team fix CI 38479859663/38479859594 and chronological fixture
+38479792769/38479792749 were confirmed in progress. No actual game execution occurred.

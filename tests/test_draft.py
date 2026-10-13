@@ -317,3 +317,32 @@ class DraftComparisonTests(unittest.TestCase):
                 db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(payload),row[0]))
                 db.commit()
             with self.assertRaisesRegex(Rejected,'cross-team'): store.load_team('a')
+
+    def test_cross_team_personality_binding_respects_history_and_inflight_advice(self):
+        import tempfile,json
+        from franchise.books import OpeningBooks
+        from franchise.draft import DraftScouting
+        from franchise.store import FranchiseStore
+        for during_inference in (False,True):
+            with self.subTest(during_inference=during_inference), tempfile.TemporaryDirectory() as directory:
+                store,ledger,inputs=self.durable_scouting(directory)
+                store.create_team('b',Ledger.from_opening(OpeningBooks(),cap=20,roster_reserve=0,
+                    max_bonus_years=5,veteran_minimums={},rookies=self.ledger()._rookies,
+                    rookie_year_one_allocation=25,rookie_total_allocation=100))
+                before=store.load_team('a').financial_snapshot()
+                def bind(): store.bind_actor('b','a',{'money':0.8},{},access_check=lambda:None)
+                def provider(_):
+                    if during_inference: bind()
+                    return json.dumps({'action':'recommend','player_id':'a','reason':'Observed production','uncertainty':'Targets unknown'})
+                session=DraftScouting(ledger,access_check=lambda:None)
+                if during_inference:
+                    with self.assertRaisesRegex(Rejected,'cross-team'): session.recommend('advice',provider,**inputs)
+                else:
+                    expected=session.recommend('advice',provider,**inputs)
+                    bind()
+                reopened=FranchiseStore(store.path)
+                self.assertEqual(reopened.load_team('a').financial_snapshot(),before)
+                if during_inference:
+                    self.assertIsNone(reopened.recalled_scouting('a','advice'))
+                else:
+                    self.assertEqual(reopened.recalled_scouting('a','advice'),expected)
