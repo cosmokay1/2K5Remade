@@ -1559,3 +1559,15 @@ Added corrupt unrequested-team retry regression;271 fulltests pass. Benchmark no
 verifies/times paired retries;32-team640 recorded evidence measured readmedian22.21ms
 and paired-retry22.48ms on this Mac. Syntax/diff and executable benchmark pass.
 Windows/game/Deck performance and actual guest integration remain unverified.
+
+## October 13, 2026 — Preserve bonus layers in pure restructure calculation
+
+Parallel primary-rule research and cash-boundary review produced an immutable bonus
+layer representation and sourced healthy preseason guaranteed-base conversion.
+Independent elapsed-year arithmetic preserves old proration, exact total compensation
+and paid history; new bonus remains unpaid. Legacy empty-layer serialization stays
+unchanged. Ledger/rookie imports and release/trade operations reject layers until
+durable cash, amendment replay and lifecycle integration support them. No game write,
+model call or actual cap import occurred.278 tests pass; synthetic money audit and
+syntax/diff checks pass. Prior1eaa58f passed Windows Franchise AI38484953683 and
+Build check38484953749. Durable restructuring and real runtime gates remain open.

@@ -91,6 +91,9 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       cash/cap/ownership events with independent league replay. Consideration, rookies,
       unpaid bonus, return-contract generations and other trade protections remain.
 - [ ] Implement extensions/restructures without erasing existing bonus layers.
+      Pure sourced preseason guaranteed-base conversion and immutable bonus layers now
+      preserve exact old/new schedules. Durable cash, amendment replay, subsequent
+      release/trade support and actual guest transactions remain.
 - [ ] Implement offseason/regular-season accounting and roster-status costs.
 - [ ] Implement dated June-1 treatment, supported tenders/tags and salary benefits.
 - [ ] Implement incentive settlement, cap adjustments, carryover and year rollover.

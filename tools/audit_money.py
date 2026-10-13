@@ -127,6 +127,32 @@ def trade_findings():
     return {'scenarios':scenarios,'scope':'Synthetic supported preseason contract assignment; consideration and real game/runtime unverified'}
 
 
+def restructure_findings():
+    from datetime import date
+    from franchise.books import ActiveContract
+    from franchise.cash import CashObligation
+    from franchise.restructures import (EXCLUDED_RESTRUCTURE_TERMS,
+        PreseasonRestructureScope, calculate_preseason_restructure)
+    contract = ActiveContract(Offer('v', (10,10,10,20,30,40,50), 10,
+        (10,10,10,20,0,0,0)), 'synthetic original', elapsed_years=2)
+    cash = CashObligation('contract:v','v',180,30,'synthetic allocated cash',
+        (('signing_bonus',10),('base:0',10),('base:1',10)))
+    scope = PreseasonRestructureScope(2026,date(2026,6,1),date(2026,9,10),0,
+        True,True,True,EXCLUDED_RESTRUCTURE_TERMS,'synthetic floors','synthetic amendment')
+    plan = calculate_preseason_restructure(contract,cash,scope=scope,
+        converted_base=8,annual_minimums=(2,)*5,record_id='audit:conversion')
+    expected = tuple(Fraction(n,5) for n in (28,118,168,208,258))
+    assert plan.contract.charges() == expected
+    assert sum(expected) == sum(contract.charges())
+    assert plan.cash_obligation.amount == cash.amount and plan.cash_obligation.paid == cash.paid
+    assert plan.bonus_layer.cash_component not in dict(plan.cash_obligation.paid_components)
+    return {'scope':'pure synthetic calculation; no durable amendment or game posting',
+            'before_charges':contract.charges(),'after_charges':expected,
+            'nominal_cash':cash.amount,'paid_cash':cash.paid,
+            'new_unpaid_bonus':plan.bonus_layer.amount,
+            'old_bonus_remaining':6,'new_bonus_component':plan.bonus_layer.cash_component}
+
+
 def main():
     observations = {}
 
@@ -205,6 +231,7 @@ def main():
                       "durable_path": durable_findings(),
                       "supported_release_path": release_findings(),
                       "supported_assignment_path": trade_findings(),
+                      "pure_restructure_calculation": restructure_findings(),
                       "implemented_component_scope": {
                           "cash": "Nominal sourced obligations, component-allocated payments and guarantee present-value projections; full settlement/vesting is incomplete.",
                           "guarantees": "Explicit fully guaranteed base salary terms; no partial injury/skill/cap protection or automatic vesting.",
@@ -214,7 +241,7 @@ def main():
                           "draft": "Durable ordered rights and management funding reservations; actual game pick/contract posting remains unverified.",
                       },
                       "unimplemented_accounting": ["complete cash settlement and guarantee protections/vesting", "complete releases and trades",
-                          "extensions and restructures", "complete Team Salary and roster-phase transitions", "season rollover and carryover",
+                          "extensions and durable restructures", "complete Team Salary and roster-phase transitions", "season rollover and carryover",
                           "complete rookie options/escalators", "verified game import/posting"],
                       "bonus_conservation_cases_verified": verified}, indent=2, default=json_amount))
 

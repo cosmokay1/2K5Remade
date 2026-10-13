@@ -70,6 +70,8 @@ responsibilities; this plan does not validate trade consideration or guest state
     if type(record_id) is not str or not record_id.strip():
         raise ValueError('Stable trade calculation identity required')
     offer = contract.offer
+    if contract.bonus_layers:
+        raise ValueError('Layered contract trade requires separate bonus/cash reconciliation')
     if (cash.obligation_id != 'contract:' + offer.player_id or cash.player_id != offer.player_id
             or cash.amount != sum(offer.salaries) + offer.signing_bonus or cash.paid_components is None):
         raise ValueError('Allocated original nominal contract cash required')

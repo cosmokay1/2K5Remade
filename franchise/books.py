@@ -10,11 +10,41 @@ from franchise.cap import Offer, json_amount, money
 
 
 @dataclass(frozen=True)
+class BonusLayer:
+    record_id: str
+    amount: int
+    original_start_index: int
+    allocation_years: int
+    source: str
+
+    @property
+    def cash_component(self):
+        return 'bonus:' + self.record_id
+
+    def __post_init__(self):
+        if any(type(value) is not str or not value.strip() for value in (self.record_id, self.source)):
+            raise ValueError('Bonus layer requires identity and provenance')
+        if money(self.amount) == 0:
+            raise ValueError('Additional bonus layer must be positive')
+        if type(self.original_start_index) is not int or self.original_start_index < 0:
+            raise ValueError('Original-year bonus start index required')
+        if type(self.allocation_years) is not int or not 1 <= self.allocation_years <= 5:
+            raise ValueError('Bonus layer allocation must be one through five years')
+
+    @classmethod
+    def from_dict(cls, record):
+        if type(record) is not dict or set(record) != {'record_id','amount','original_start_index','allocation_years','source'}:
+            raise ValueError('Unexpected bonus layer fields')
+        return cls(**record)
+
+
+@dataclass(frozen=True)
 class ActiveContract:
     offer: Offer
     source: str
     elapsed_years: int = 0
     bonus_years: int = 5
+    bonus_layers: tuple[BonusLayer, ...] = ()
 
     def __post_init__(self):
         if type(self.source) is not str or not self.source.strip():
@@ -22,9 +52,34 @@ class ActiveContract:
         if type(self.elapsed_years) is not int or not 0 <= self.elapsed_years < len(self.offer.salaries):
             raise ValueError("Active contract must have remaining years")
         self.offer.charges(self.bonus_years)
+        if type(self.bonus_layers) is not tuple or any(not isinstance(layer, BonusLayer) for layer in self.bonus_layers):
+            raise ValueError('Immutable typed bonus layers required')
+        if len({layer.record_id for layer in self.bonus_layers}) != len(self.bonus_layers):
+            raise ValueError('Duplicate bonus layer identity')
+        if any(layer.original_start_index + layer.allocation_years > len(self.offer.salaries) for layer in self.bonus_layers):
+            raise ValueError('Bonus allocation cannot exceed original contract term')
 
     def charges(self):
-        return self.offer.charges(self.bonus_years)[self.elapsed_years:]
+        original = self.offer.charges(self.bonus_years)
+        return tuple(value + sum((Fraction(layer.amount, layer.allocation_years) for layer in self.bonus_layers
+            if layer.original_start_index <= i < layer.original_start_index + layer.allocation_years), Fraction(0))
+            for i, value in enumerate(original) if i >= self.elapsed_years)
+
+    def to_dict(self):
+        return {'offer': self.offer.to_dict(), 'source': self.source, 'elapsed_years': self.elapsed_years,
+                'bonus_years': self.bonus_years,
+                **({'bonus_layers': [asdict(layer) for layer in self.bonus_layers]} if self.bonus_layers else {})}
+
+    @classmethod
+    def from_dict(cls, record):
+        keys = {'offer', 'source', 'elapsed_years', 'bonus_years'}
+        if type(record) is not dict or set(record) not in (keys, keys | {'bonus_layers'}):
+            raise ValueError('Unexpected active contract fields')
+        layers = record.get('bonus_layers', [])
+        if type(layers) is not list or any(type(layer) is not dict for layer in layers):
+            raise ValueError('Serialized bonus layer objects required')
+        return cls(Offer.from_dict(record['offer']), record['source'], record['elapsed_years'], record['bonus_years'],
+                   tuple(BonusLayer.from_dict(layer) for layer in layers))
 
 
 @dataclass(frozen=True)
@@ -101,7 +156,7 @@ class OpeningBooks:
                      for i in range(years))
 
     def to_dict(self):
-        return {"contracts": [{**asdict(item), "offer": item.offer.to_dict()} for item in self.contracts],
+        return {"contracts": [item.to_dict() for item in self.contracts],
                 "retained": [{**asdict(item), "annual_charges": [json_amount(value) for value in item.annual_charges]} for item in self.retained],
                 "adjustments": [{**asdict(item), "annual_charges": [json_amount(value) for value in item.annual_charges]} for item in self.adjustments],
                 "tenders": [asdict(item) for item in self.tenders]}
@@ -112,9 +167,7 @@ class OpeningBooks:
             raise ValueError("Unexpected opening book fields")
         contracts = []
         for item in data["contracts"]:
-            offer = item["offer"]
-            contracts.append(ActiveContract(Offer.from_dict(offer),
-                                            item["source"], item["elapsed_years"], item["bonus_years"]))
+            contracts.append(ActiveContract.from_dict(item))
         def records(key):
             return tuple(ChargeRecord(item["record_id"], tuple(parse_amount(value) for value in item["annual_charges"]), item["source"])
                          for item in data[key])

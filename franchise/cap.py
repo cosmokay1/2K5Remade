@@ -201,6 +201,8 @@ class Ledger:
             from franchise.books import OpeningBooks
             if not isinstance(opening_books, OpeningBooks):
                 raise ValueError("Typed opening books required")
+            if any(item.bonus_layers for item in opening_books.contracts):
+                raise ValueError("Layered contracts require durable restructure cash reconciliation")
             if (self._charges != opening_books.charges()
                     or self._players != {item.offer.player_id for item in opening_books.contracts}
                     or self._tenders != {item.player_id: item.amount for item in opening_books.tenders}):

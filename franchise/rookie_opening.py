@@ -23,6 +23,8 @@ class RookiePoolOpening:
             raise ValueError("Explicit immutable cohort identities required")
         if type(self.prior_contracts) is not tuple or any(not isinstance(item, ActiveContract) for item in self.prior_contracts):
             raise ValueError("Explicit prior current-cohort contract records required")
+        if any(item.bonus_layers for item in self.prior_contracts):
+            raise ValueError("Layered rookie contracts require unsupported reconciliation")
         if len({item.offer.player_id for item in self.prior_contracts}) != len(self.prior_contracts):
             raise ValueError("Multiple prior contracts for a rookie require unsupported reconciliation")
         if not {item.offer.player_id for item in self.prior_contracts} <= self.cohort_player_ids:

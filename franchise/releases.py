@@ -81,6 +81,8 @@ veteran classification before applying this plan to durable state.
     if scope.league_year != discount.league_year:
         raise ValueError('Release and discount league years disagree')
     offer = contract.offer
+    if contract.bonus_layers:
+        raise ValueError('Layered contract release requires separate bonus/cash reconciliation')
     if (cash.player_id != offer.player_id or cash.obligation_id != 'contract:' + offer.player_id
             or cash.amount != sum(offer.salaries) + offer.signing_bonus or cash.paid_components is None):
         raise ValueError('Allocated original nominal contract cash required')
