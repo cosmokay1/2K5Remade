@@ -164,3 +164,20 @@ class TradeStoreTests(unittest.TestCase):
             self.assertEqual(self.trade(reopened),original)
             self.assertEqual(self.states(FranchiseStore(store.path)),before)
             self.assertEqual(reopened.load_team('b').cash_snapshot()['unpaid_total'],25)
+
+    def test_incoming_assignment_establishes_chronology_for_later_release(self):
+        from fractions import Fraction
+        from franchise.guarantees import DiscountProfile
+        from franchise.releases import PreseasonReleaseScope,EXCLUDED_LIABILITIES
+        with tempfile.TemporaryDirectory() as directory:
+            store=self.setup_store(directory)
+            self.trade(store)
+            before=self.states(store)
+            for year,day in ((2026,date(2026,5,31)),(2027,date(2027,6,1))):
+                scope=PreseasonReleaseScope(year,day,date(year,9,11),EXCLUDED_LIABILITIES,
+                    True,True,0,'fixture contradictory later release')
+                with self.assertRaises(Rejected):
+                    store.release_preseason_veteran('b','wrong-'+str(year),'v',scope=scope,
+                        discount=DiscountProfile(year,Fraction(0),'synthetic zero'),payment_year_offsets=(0,1,2),
+                        expected_revision=2,access_check=lambda:None)
+            self.assertEqual(self.states(FranchiseStore(store.path)),before)

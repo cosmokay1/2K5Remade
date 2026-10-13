@@ -124,6 +124,7 @@ class Ledger:
         self._contracts = {item.offer.player_id: item.offer for item in opening_books.contracts} if opening_books else {}
         self._active_contracts = {item.offer.player_id: item for item in opening_books.contracts} if opening_books else {}
         self._released = {}
+        self._last_transaction_date = None
         self._traded_out = {}
         self._traded_in = {}
         self._cash = None
@@ -261,6 +262,7 @@ class Ledger:
             cash = self._cash.records['contract:' + player_id]
             plan = calculate_preseason_release(contract, cash, scope=scope, discount=discount,
                 payment_year_offsets=payment_year_offsets, record_id=record_id)
+            self._check_transaction_date(scope.league_year,scope.removed_on)
             existing_ids = self._retained_record_ids()
             if any(record.record_id in existing_ids for record in plan.retained):
                 raise Rejected('Release retained-record identity already exists')
@@ -278,12 +280,26 @@ class Ledger:
             # binding; an overage does not erase a valid retained obligation.
             self._charges = charges
             self._released[player_id] = plan
+            self._last_transaction_date=scope.removed_on
             del self._active_contracts[player_id]
             self._players.remove(player_id)
             self._cash.records[cash.obligation_id] = plan.cash_obligation
             self._cash.revision += 1
             self.revision += 1
             return plan
+
+    def _check_transaction_date(self,year,on):
+        known_years=[]
+        if self._veteran_minimum_profile is not None:
+            known_years.append(self._veteran_minimum_profile.start_year)
+        if self._rookie_pool_opening is not None:
+            known_years.append(self._rookie_pool_opening.league_year)
+        if self._last_transaction_date is not None:
+            known_years.append(self._last_transaction_date.year)
+            if on < self._last_transaction_date:
+                raise Rejected('Dated transaction precedes established franchise chronology')
+        if any(known != year for known in known_years):
+            raise Rejected('Transaction requires an unsupported league-year transition')
 
     def _retained_record_ids(self):
         ids = {record.record_id for plan in self._released.values() for record in plan.retained}
@@ -306,6 +322,7 @@ class Ledger:
             if cash is None:
                 raise Rejected('Allocated original cash required for trade')
             plan = calculate_preseason_trade(contract, cash, scope=scope, record_id=record_id)
+            self._check_transaction_date(scope.league_year,scope.traded_on)
             if plan.retained_bonus.record_id in self._retained_record_ids():
                 raise Rejected('Trade retained-record identity already exists')
             if (self._veteran_minimum_profile is not None
@@ -320,6 +337,7 @@ class Ledger:
                 raise Rejected('Trade credits exceed recorded obligations')
             self._charges = charges
             self._traded_out[player_id] = plan
+            self._last_transaction_date=scope.traded_on
             del self._active_contracts[player_id]
             self._players.remove(player_id)
             self._cash.records[cash.obligation_id] = plan.seller_cash
@@ -342,6 +360,7 @@ class Ledger:
                 scope=plan.scope, record_id=plan.retained_bonus.record_id[:-len(suffix)])
             if recalculated != plan:
                 raise ValueError('Trade plan disagrees with original obligations')
+            self._check_transaction_date(plan.scope.league_year,plan.scope.traded_on)
             player = plan.buyer_contract.offer.player_id
             if player in self._rookies or player not in self._veteran_minimums:
                 raise Rejected('Supported veteran classification required for trade')
@@ -360,6 +379,7 @@ class Ledger:
             self._active_contracts[player] = plan.buyer_contract
             self._players.add(player)
             self._traded_in[player] = plan
+            self._last_transaction_date=plan.scope.traded_on
             self._cash.records[plan.buyer_cash.obligation_id] = plan.buyer_cash
             self._cash.revision += 1
             self.revision += 1

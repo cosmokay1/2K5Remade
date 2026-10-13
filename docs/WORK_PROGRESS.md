@@ -1516,3 +1516,15 @@ verified. Complete audit succeeds with5,050 bonus-conservation cases and existin
 release/signing scenarios. Consideration/game/runtime scope is explicitly unverified.
 Windows paired fixture38483786386/38483786465 remained in progress; prior manual
 bridge Build check38483689271 passed while engine38483689268 was still running.
+
+## October 13, 2026 — Dated financial chronology and Windows assignment proof
+
+Release/outgoing/incoming assignment now checks source salary/rookie profile year
+and prior dated financial operation before mutation. Backward dates or crossing into
+another year require an unsupported explicit year transition and reject. Chronology
+is derived during event replay without changing prior posting shape; it is not a
+complete franchise calendar. Regression rejects pre-assignment or next-year recipient
+release and preserves all team state.270 local tests pass. Windows fixture56ba13f
+Franchise AI38483786386 completed successfully; logs explicitly confirm paired
+assignment/inherited guarantees/conserved cash/restart and269 tests on both OSes.
+No actual guest-game execution/save evidence exists.
