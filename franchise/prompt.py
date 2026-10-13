@@ -21,8 +21,12 @@ Accounting values expressed as numerator/denominator strings are exact dollar
 fractions; never round them to create spending room. A player's draft tender is
 already counted in team charges and is replaced only when that player signs.
 A counter must specify every annual base salary and its signing bonus, and cannot
-change player identity. Rookie offers must obey the supplied draft-slot bounds,
-four-year term, annual floors, and 25%-of-year-one increase rule. Protected base
+change player identity. Drafted rookie offers must obey supplied draft-slot bounds,
+four-year term and annual floors. Undrafted offers have three years, annual floors
+and a club signing-bonus reservation. UDFA rookie-pool salary excludes applicable
+minimum bases; its full salary/bonus still counts under the team cap. Both rookie
+types obey the 25%-of-year-one rookie-salary increase rule and guarantee chain.
+Use rookie_available_to_player so drafted offers preserve the reserved UDFA share. Protected base
 in rookie year three or four requires fully protected base in the immediately
 preceding year; this chains through year two when year four is protected. Future salaries
 are commitments, not evidence of future cap room. No conditional guarantees, vesting, offsets,

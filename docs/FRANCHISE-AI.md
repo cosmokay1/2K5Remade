@@ -338,3 +338,14 @@ Counteroffer events include `counter_validation`: an eligible shared-validator
 preview or an ineligible reason at the observed revision. A demand is not a legal
 commitment or reservation. Later acceptance must still validate current funds,
 ownership, rookie rules and floors. Historic eligibility is not current cap room.
+
+Register `UndraftedScale` alongside drafted `RookieScale` in the rookie registry.
+UDFA contracts have three years; rookie pool charges count compensation above the
+applicable minima, while cap charges retain full salaries/bonus. Supply
+`undrafted_bonus_reservation` and `undrafted_reservation_source` with shared club
+pools. Drafted availability preserves the unused reservation (one-third for year
+one, full amount for total); UDFA bonuses consume the reservation atomically.
+No draft tender belongs to an undrafted rookie. Context reports each player's
+available pools and rookie type. Legacy unprofiled drafted-only fixtures do not
+prove full modern club allocation accounting; actual annual/cohort inputs remain
+required. Source: executed CBA Article 7 sections 1–3.

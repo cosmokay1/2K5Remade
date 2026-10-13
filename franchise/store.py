@@ -12,7 +12,7 @@ from pathlib import Path
 import sqlite3
 import uuid
 from franchise.cap import Ledger, Offer, Rejected, json_amount, money
-from franchise.rookie import RookieScale
+from franchise.rookie import RookieScale, UndraftedScale
 from franchise.books import OpeningBooks, parse_amount
 from franchise.cash import CashBook, CashObligation
 
@@ -30,7 +30,7 @@ def from_config(config: dict) -> Ledger:
     config["signed_player_ids"] = frozenset(config["signed_player_ids"])
     config["veteran_minimums"] = {key: tuple(value) for key, value
                                    in config["veteran_minimums"].items()}
-    config["rookies"] = {key: RookieScale(**{**value,
+    config["rookies"] = {key: (RookieScale if "draft_round" in value else UndraftedScale)(**{**value,
                               "minimum_salaries": tuple(value["minimum_salaries"])})
                          for key, value in config["rookies"].items()}
     return Ledger(**config)

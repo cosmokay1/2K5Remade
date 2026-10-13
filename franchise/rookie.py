@@ -46,6 +46,9 @@ class RookieScale:
     def fifth_year_option_eligible(self) -> bool:
         return self.draft_round == 1
 
+    def pool_charges(self, offer: Offer):
+        return offer.charges(4)
+
     def validate(self, offer: Offer, *, club_year_one_remaining: int | Fraction,
                  club_total_remaining: int) -> None:
         if isinstance(club_year_one_remaining, Fraction):
@@ -73,3 +76,36 @@ class RookieScale:
             raise Rejected("Rookie raise exceeds 25% of year-one rookie salary")
         if charges[0] > club_year_one_remaining or total > club_total_remaining:
             raise Rejected("Rookie offer exceeds remaining club rookie allocation")
+
+
+@dataclass(frozen=True)
+class UndraftedScale:
+    minimum_salaries: tuple[int, int, int]
+
+    def __post_init__(self):
+        if type(self.minimum_salaries) is not tuple or len(self.minimum_salaries) != 3:
+            raise ValueError("Three verified annual UDFA minimum salaries required")
+        if any(money(value) == 0 for value in self.minimum_salaries):
+            raise ValueError("UDFA minimum salaries must be positive")
+
+    @property
+    def fifth_year_option_eligible(self):
+        return False
+
+    def pool_charges(self, offer: Offer):
+        return tuple(charge - minimum for charge, minimum in zip(offer.charges(4), self.minimum_salaries))
+
+    def validate(self, offer: Offer, *, club_year_one_remaining, club_total_remaining,
+                 club_undrafted_bonus_remaining):
+        if len(offer.salaries) != 3:
+            raise Rejected("Undrafted rookie contracts must cover exactly three years")
+        if any(salary < minimum for salary, minimum in zip(offer.salaries, self.minimum_salaries)):
+            raise Rejected("UDFA offer is below an annual minimum salary")
+        validate_rookie_guarantees(offer)
+        charges = self.pool_charges(offer)
+        if any(charges[i] - charges[i - 1] > charges[0] / 4 for i in range(1, 3)):
+            raise Rejected("UDFA raise exceeds 25% of year-one rookie salary")
+        if charges[0] > club_year_one_remaining or sum(charges) > club_total_remaining:
+            raise Rejected("UDFA offer exceeds remaining club rookie allocation")
+        if offer.signing_bonus > club_undrafted_bonus_remaining:
+            raise Rejected("UDFA signing bonus exceeds remaining undrafted reservation")

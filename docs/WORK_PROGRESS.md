@@ -759,3 +759,23 @@ accounting remain next work; no claim that full rookie lifecycle is complete.
 Prior denied-auth recovery `759bfac` passed Windows/Linux/native in
 [run 38470751973](https://github.com/cosmokay1/2K5Remade/actions/runs/38470751973).
 IAM delegation approval is still pending and has not been bypassed.
+
+## October 13, 2026 — Undrafted rookie acquisition and shared reservation accounting
+
+Verified CBA Article 7 definitions and three-year UDFA term. Added UndraftedScale
+with annual floors, exact excess-over-minimum pool salary, 25% increase/guarantee
+checks and explicit bonus reservation. Full salary/bonus remains in team cap.
+Ledger/store support mixed rookie registries, shared pool deductions and persisted
+reservation balance. Drafted offers preserve the unused reserved share; previews
+use the same limits. Modern salary-profile/UDFA registries require a source-backed
+reservation input; no annual published reservation is invented. Legacy unprofiled
+drafted-only fixtures retain their supplied budget convention.
+
+153 local tests pass, including mixed exact-cap signing/restart/retry, minimum-only
+UDFA cap cost with zero pool cost, reserved-share protection, fractional bonus
+conservation and atomic term/raise/bonus/guarantee rejections. Pool values are
+synthetic fixtures, not verified real annual draft allotments. Initial imported
+cohort/pool reconciliation, annual growth/rounding, incentive/non-base components,
+options/escalators and full rookie lifecycle remain required.
+Prior guarantee-chain `1b207fd` passed Windows/Linux in run 38471147416.
+New acquisition implementation CI pending; game integration remains unfinished.
