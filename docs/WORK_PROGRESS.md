@@ -1635,3 +1635,13 @@ New SQL read tests explicitly close handles for Windows cleanup.3b78231 passed F
 38486364011 and Build38486364039; direct Windows logs confirm299 tests and native
 restructure schedules/unpaid cash/restart fixture. This proves synthetic pipe
 execution, not actual gameplay or save/load integration.
+
+## October 13, 2026 — Historical signing retry after an amendment
+
+Added durable restart regression starting from a newly signed guaranteed contract,
+recorded original-bonus payment and sourced restructure. Retrying the original
+signing receipt returns its historical receipt while leaving amended terms, all
+bonus layers, finances and cash unchanged.305 full tests and executable synthetic
+money audit pass. Player-inspection26ead88 CI38486762451 had Linux success and
+Windows still running at inspection; Build38486762354 also pending. No new game
+execution/save evidence or external gate resolution is claimed.

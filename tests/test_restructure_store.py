@@ -135,3 +135,25 @@ class RestructureStoreTests(unittest.TestCase):
         with self.assertRaises(sqlite3.IntegrityError):self.amend()
         self.assertEqual(self.store.load_team('a').financial_snapshot(),before)
         self.assertEqual(self.store.load_team('a').cash_snapshot(),cash)
+
+    def test_original_signing_retry_returns_receipt_without_restoring_pre_amendment_terms(self):
+        from franchise.cap import Offer
+        path=Path(self.temp.name)/'signed.sqlite'
+        store=FranchiseStore(path)
+        store.create_team('a',Ledger.from_opening(OpeningBooks(),cap=200,roster_reserve=0,
+            max_bonus_years=5,veteran_minimums={'v':(2,)*3}))
+        store.initialize_cash('a',(),source='synthetic empty cash')
+        offer=Offer('v',(10,20,30),9,(10,20,10))
+        original=store.sign('a','original',offer,1)
+        store.record_payment('a','bonus-paid','contract:v',9,expected_cash_revision=1,
+            source='synthetic bonus payment',payment_reference='bonus-1',component='signing_bonus')
+        store.restructure_preseason_veteran('a','conversion','v',scope=self.fixture.scope(),
+            converted_base=8,expected_revision=3,access_check=lambda:None)
+        reopened=FranchiseStore(path)
+        before=reopened.load_team('a').financial_snapshot()
+        cash=reopened.load_team('a').cash_snapshot()
+        self.assertEqual(reopened.sign('a','original',offer,1),original)
+        self.assertEqual(reopened.load_team('a').financial_snapshot(),before)
+        self.assertEqual(reopened.load_team('a').cash_snapshot(),cash)
+        self.assertEqual(reopened.load_team('a').active_contract('v').offer.salaries,(2,20,30))
+        self.assertEqual(reopened.load_team('a').guarantee_cash('v')['unpaid_signing_bonus'],8)
