@@ -105,3 +105,19 @@ class ReleaseStoreTests(unittest.TestCase):
             reopened=FranchiseStore(store.path)
             self.assertEqual((reopened.load_team('a').financial_snapshot(),reopened.load_team('a').cash_snapshot()),before)
             with self.assertRaises(Rejected):reopened.sign('b','steal',Offer('v',(10,),0),0)
+
+    def test_old_signing_retry_after_release_does_not_restore_contract_or_ownership(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store=FranchiseStore(Path(directory)/'retry.sqlite')
+            store.create_team('a',Ledger.from_opening(OpeningBooks(),cap=100,roster_reserve=0,
+                max_bonus_years=5,veteran_minimums={'v':(1,)*3}))
+            store.initialize_cash('a',(),source='fixture empty original cash')
+            offer=Offer('v',(10,20,30),9,(0,20,10))
+            receipt=store.sign('a','original',offer,1)
+            self.release(store,expected_revision=2)
+            reopened=FranchiseStore(store.path)
+            before=reopened.load_team('a').financial_snapshot(),reopened.load_team('a').cash_snapshot()
+            self.assertEqual(reopened.sign('a','original',offer,1),receipt)
+            self.assertEqual((reopened.load_team('a').financial_snapshot(),reopened.load_team('a').cash_snapshot()),before)
+            self.assertEqual(before[0]['signed_players'],[])
+            self.assertEqual(before[1]['unpaid_total'],39)

@@ -1349,3 +1349,14 @@ pre/postJune charges, other retained obligations, scope failures, retry, restart
 access rollback, tampered cash and SQL failure after ownership delete. 246 local tests
 pass. No real game controls/runtime or complete waiver/offset/injury/calendar remedies
 exist; exact NFL posting rounding and source rate verification remain unresolved.
+
+## October 13, 2026 — Independent durable release review and identity fix
+
+Independent read-only reviewer confirmed cash ceilings and rollback, and reproduced
+retained-record ID collision with original obligations. Release now checks generated
+bonus/base identities against original retained/adjustment records and prior releases
+before mutation. Added collision/no-mutation regression plus durable old-signing
+retry after release; original receipt returns without restoring ownership, cap or
+nominal cash. 248 local tests pass. Pure calculation d56373a passed Franchise AI run
+38481364854 and Build check38481365063; durable release d108266 CI38481644411/
+38481644391 remained in progress at inspection. No guest-game integration is claimed.

@@ -12,10 +12,10 @@ class ReleaseLedgerTests(unittest.TestCase):
     def setUp(self):
         self.fixture = release_fixtures.PreseasonReleaseTests()
 
-    def ledger(self, *, cap=100):
+    def ledger(self, *, cap=100, retained_id='existing-debt'):
         books = OpeningBooks(contracts=(self.fixture.contract(),
             ActiveContract(Offer('other', (5, 6, 7, 8), 0), 'other synthetic contract')),
-            retained=(ChargeRecord('existing-debt', (2, 3, 4, 5, 6), 'synthetic retained debt'),))
+            retained=(ChargeRecord(retained_id, (2, 3, 4, 5, 6), 'synthetic retained debt'),))
         ledger = Ledger.from_opening(books, cap=cap, roster_reserve=0, max_bonus_years=5,
             veteran_minimums={'v': (1, 1, 1), 'other': (1, 1, 1, 1), 'free': (1,)})
         ledger._cash = CashBook((self.fixture.cash(),), 'synthetic allocated cash')
@@ -57,6 +57,13 @@ class ReleaseLedgerTests(unittest.TestCase):
         self.assertEqual(ledger.charges[0], 46)
         with self.assertRaises(Rejected):
             ledger.sign('new', Offer('free', (1,), 0), 1)
+
+    def test_release_cannot_reuse_original_retained_record_identity(self):
+        ledger=self.ledger(retained_id='release:v:bonus')
+        before,cash=ledger.financial_snapshot(),ledger.cash_snapshot()
+        with self.assertRaisesRegex(Rejected,'identity already exists'):self.release(ledger)
+        self.assertEqual(ledger.financial_snapshot(),before)
+        self.assertEqual(ledger.cash_snapshot(),cash)
 
     def test_failures_leave_finances_cash_ownership_and_original_contract_unchanged(self):
         ledger = self.ledger()

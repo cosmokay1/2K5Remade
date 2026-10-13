@@ -258,6 +258,11 @@ class Ledger:
             cash = self._cash.records['contract:' + player_id]
             plan = calculate_preseason_release(contract, cash, scope=scope, discount=discount,
                 payment_year_offsets=payment_year_offsets, record_id=record_id)
+            existing_ids={record.record_id for prior in self._released.values() for record in prior.retained}
+            if self._opening_books is not None:
+                existing_ids.update(record.record_id for record in (*self._opening_books.retained,*self._opening_books.adjustments))
+            if any(record.record_id in existing_ids for record in plan.retained):
+                raise Rejected('Release retained-record identity already exists')
             if (self._veteran_minimum_profile is not None
                     and self._veteran_minimum_profile.start_year != scope.league_year):
                 raise Rejected('Release year disagrees with salary profile')
