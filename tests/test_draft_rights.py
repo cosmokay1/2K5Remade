@@ -123,3 +123,31 @@ class DraftRightsTests(unittest.TestCase):
             self.assertEqual(reopened.load_team('a').revision,1)
             self.assertEqual(reopened.load_team('a').room,20)
             self.assertEqual([item['request_id'] for item in reopened.load_team('a').scouting_history()],['advice','fresh'])
+
+    def test_ai_shutdown_after_advice_preserves_manual_cap_enforcement(self):
+        import json
+        from franchise.draft import DraftScouting,Prospect
+        from franchise.performance import PerformanceEvidence
+        from franchise.store import StoredLedger
+        with tempfile.TemporaryDirectory() as directory:
+            store,_=self.setup_store(directory)
+            offer=Offer('p',(10,)*4,0)
+            evidence=PerformanceEvidence('p','fixture','cpu_played',(),'unknown fixture production')
+            prospect=Prospect('p','WR','slot','fixture college','fixture',(evidence,),{},'fixture',offer,'fixture estimate')
+            DraftScouting(StoredLedger(store,'a'),access_check=lambda:None).recommend('advice',lambda _:json.dumps(
+                {'action':'recommend','player_id':'p','reason':'Role fit','uncertainty':'Production unknown'}),
+                expected_revision=0,draft_round=1,overall_pick=1,prospects=(prospect,),team_needs=[])
+            before={team:store.load_team(team).financial_snapshot() for team in ('a','b')}
+            def disabled(): raise AccessDisabled('fixture remote shutdown after advice')
+            with self.assertRaises(AccessDisabled):
+                store.commit_draft_pick('a','ai','fixture-draft',1,offer,0,funding_source='fixture estimate',
+                    access_check=disabled,decision_mode='ai',scouting_request_id='advice')
+            store=FranchiseStore(store.path)
+            self.assertEqual({team:store.load_team(team).financial_snapshot() for team in ('a','b')},before)
+            with self.assertRaises(Rejected):
+                store.commit_draft_pick('a','manual-bad','fixture-draft',1,Offer('p',(31,)*4,0),0,
+                    funding_source='fixture estimate',access_check=lambda:None,decision_mode='manual')
+            posting=self.pick(store,'a',1,'p')
+            self.assertEqual(FranchiseStore(store.path).load_team('a').financial_snapshot(),posting)
+            self.assertEqual(store.load_team('a').room,20)
+            self.assertEqual(store.load_team('b').financial_snapshot(),before['b'])

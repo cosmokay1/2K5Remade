@@ -1211,3 +1211,12 @@ Team Salary/phase transitions and authoritative releases. Release/trade/restruct
 year rollover/options and real guest import remain unresolved. This output change
 adds no financial authority. Cross-team fix f6bd2ec passed Franchise AI run
 38479859663 and Build check 38479859594; later source checks remain pending.
+
+## October 13, 2026 — Draft AI shutdown and manual recovery acceptance
+
+Added a recorded-advice scenario where remote access denies inside the final AI pick
+transaction. Reopening confirms both teams' financial snapshots remain identical,
+with no pick/right/funding posting. An over-cap explicit manual pick still rejects;
+a legal explicit manual pick then commits at the original order and revision with
+one reservation. 226 local tests pass. The fixture uses a synthetic shutdown guard,
+not live cloud credentials or actual game UI. Latest source CI remained in progress.
