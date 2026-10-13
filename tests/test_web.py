@@ -170,7 +170,7 @@ class WebOriginTests(unittest.TestCase):
                 self.assertEqual(get('/api/player?player_id=p&team_id=other')[0],400)
                 self.assertEqual(get('/api/history?player_id=p',False)[0],401)
                 self.assertEqual(get('/api/history?player_id=p')[1]['events'],[])
-                for query in ('limit=0','limit=21','limit=true','before_event_id=-1','limit=1&limit=2','unknown=1'):
+                for query in ('limit=0','limit=21','limit=true','before_event_id=-1','before_event_id='+str(2**63),'limit=1&limit=2','unknown=1'):
                     self.assertEqual(get('/api/history?player_id=p&'+query)[0],400)
                 self.assertEqual(get('/api/history?player_id=unknown')[0],404)
                 self.assertEqual(store.load_team('a').revision,0)

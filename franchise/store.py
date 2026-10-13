@@ -312,8 +312,8 @@ class FranchiseStore:
     def negotiation_history_page(self,team_id,player_id,*,before_event_id=None,limit=10):
         if type(limit) is not int or not 1 <= limit <= 20:
             raise ValueError('History page limit must be 1 through 20')
-        if before_event_id is not None and (type(before_event_id) is not int or before_event_id < 1):
-            raise ValueError('Positive history cursor required')
+        if before_event_id is not None and (type(before_event_id) is not int or not 1 <= before_event_id <= 2**63-1):
+            raise ValueError('Positive SQLite event identity required')
         with self._connection() as db:
             ledger=self._load(db,team_id)
             ledger.negotiation_context(player_id)

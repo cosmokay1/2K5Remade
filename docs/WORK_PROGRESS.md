@@ -1288,3 +1288,12 @@ stories after append/reopen, reject invalid cursors/query fields, verify auth/un
 players and preserve charges. 229 local tests pass. Per-story byte bounds, browser
 rendering and actual game story presentation remain unfinished. New API is not yet
 reloaded into the public origin.
+
+## October 13, 2026 — History cursor bounds and mixed-event isolation
+
+Found cursor values exceeding SQLite signed event IDs reached sqlite binding overflow;
+now reject before querying with ValueError/HTTP 400. Added mixed-player and manual
+signing fixture proving filtering happens before the page limit, nonstory signings
+are excluded and older pages neither skip nor repeat the player's stories. 230 local
+tests pass. Saved-story be39a27 passed Franchise AI run 38480679681 and Build check
+38480679677; pagination/newer source CI remains pending. No live game data was used.

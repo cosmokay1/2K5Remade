@@ -174,6 +174,22 @@ class PromiseScoreTests(unittest.TestCase):
             self.assertEqual([e['story']['request_id'] for e in third['events']+second['events']+first['events']],
                              ['deal','page-0','page-1','page-2','page-3','page-4'])
             self.assertIsNone(third['next_before_event_id'])
-            for invalid in (True,0,-1,'1'):
+            for invalid in (True,0,-1,'1',2**63):
                 with self.assertRaises(ValueError):store.negotiation_history_page('a','p',before_event_id=invalid)
             self.assertEqual(store.load_team('a').charges[0],20)
+
+    def test_history_pages_filter_other_players_and_nonstory_signings_before_limit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store=FranchiseStore(Path(directory)/'mixed.sqlite')
+            store.create_team('a',Ledger.from_opening(OpeningBooks(),cap=100,roster_reserve=0,max_bonus_years=5,
+                veteran_minimums={'p':(1,),'q':(1,)}))
+            for index,player in enumerate(('p','q','p','q','q')):
+                store.record_negotiation('a',{'request_id':'mixed-'+str(index),'offer':Offer(player,(10,),0).to_dict(),
+                    'action':'reject','reason':'Fixture','counter':None,'outcome':'player_rejected'},access_check=lambda:None)
+            store.sign('a','manual',Offer('p',(10,),0),0)
+            page=store.negotiation_history_page('a','p',limit=1)
+            self.assertEqual([e['story']['request_id'] for e in page['events']],['mixed-2'])
+            older=store.negotiation_history_page('a','p',limit=1,before_event_id=page['next_before_event_id'])
+            self.assertEqual([e['story']['request_id'] for e in older['events']],['mixed-0'])
+            self.assertIsNone(older['next_before_event_id'])
+            self.assertEqual(store.load_team('a').charges[0],10)
