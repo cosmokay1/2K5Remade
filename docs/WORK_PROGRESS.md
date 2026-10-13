@@ -364,3 +364,19 @@ remain unverified/pending.
 108 local tests pass, including AI-off manual signing, over-cap rejection,
 idempotent retry, missing explicit mode and disconnected-client rejection.
 Repaired native Windows CI remains pending at this entry.
+
+## October 13, 2026 — Source-checked termination bonus component
+
+Read executed CBA Article 13 section 6(b)(ii), PDF page 126 (printed 110). Added
+exact signing-bonus acceleration from original terms and elapsed proration.
+Actual removal on/before June 1 places remaining bonus in current charges; actual
+removal after June 1 retains current proration and accelerates future proration
+into next-year charges, except final CBA year 2030. Source/version recorded.
+
+112 local tests pass, including June-1/June-2 boundary, elapsed bonus conservation,
+fractional allocations, exhausted five-year proration and final-year exception.
+Dates requiring a following-calendar-year league mapping are rejected. Early
+post-June-1 designations are not supported. This component does NOT authorize
+release: base guarantees, earned salary, injury/termination protections and
+roster replacement costs remain required before a full transaction exists.
+No game fields were changed or guessed. Remote verification remains pending.

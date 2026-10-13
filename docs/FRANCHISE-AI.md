@@ -242,3 +242,9 @@ Model-backed writes verify the conversation request sequence as well as financia
 state. A concurrent response invalidates an in-flight acceptance/counter, even if
 cap revision did not change. The caller should submit a new request after refreshing
 history; an obsolete response is not committed or silently regenerated.
+
+`signing_bonus_acceleration` models only the retained signing-bonus component of
+a termination using original contract terms, elapsed years and actual removal
+date. Its source is executed CBA Article 13 section 6(b)(ii). It does not release
+a player or compute total dead charges: guarantees, earned salaries, termination
+pay, injury protections and roster effects remain separate pending work.
