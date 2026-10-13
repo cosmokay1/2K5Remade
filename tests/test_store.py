@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -40,13 +41,13 @@ class StoreTests(unittest.TestCase):
 
     def test_database_failure_rolls_back_ownership_and_story(self):
         self.store.create_team("a", self.ledger())
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             db.execute("CREATE TRIGGER fail_event BEFORE INSERT ON events BEGIN SELECT RAISE(ABORT, 'injected failure'); END")
         with self.assertRaises(sqlite3.IntegrityError):
             self.store.sign("a", "one", Offer("v", (10,), 0), 0, story={"reason": "Deal"})
         self.assertEqual(self.store.load_team("a").revision, 0)
         self.assertEqual(self.store.stories("a"), [])
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             self.assertEqual(db.execute("SELECT count(*) FROM ownership").fetchone()[0], 0)
 
     def test_two_process_connections_cannot_sign_same_player_to_two_teams(self):
@@ -141,7 +142,7 @@ class StoreTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.store.sign("a", "one", Offer("v", (10,), 0), 0, story=story)
         self.assertEqual(self.store.load_team("a").revision, 0)
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             db.execute("PRAGMA user_version=2")
         with self.assertRaisesRegex(ValueError, "version"):
             FranchiseStore(self.path)

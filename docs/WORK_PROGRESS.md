@@ -94,3 +94,8 @@ This addresses F05 and F06 for supported operations through the shared store,
 not every game/standalone path. Aggregate bootstrap balances, F04 precision and
 F08 tender replacement remain open. Active negotiations/relationship changes,
 full contract lifecycle and actual game-save synchronization remain incomplete.
+
+First CI run `38458788876`: Linux passed; Windows failed during cleanup of two
+test-owned SQLite connections. The store's connection lifecycle was not the
+failure. Fixed explicit test connection closure; a new remote run must verify
+the correction before claiming Windows persistence checks pass.
