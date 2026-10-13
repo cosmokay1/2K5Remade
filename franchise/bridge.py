@@ -1,0 +1,82 @@
+"""Versioned sidecar request boundary. No guest memory or game-save writes."""
+import time
+from franchise.cap import Offer, Rejected
+from franchise.control import AccessDisabled
+from franchise.negotiation import Negotiation
+from franchise.store import StoredLedger
+
+PROTOCOL = 1
+
+
+class Bridge:
+    def __init__(self, store, *, provider, access_check):
+        if not callable(provider) or not callable(access_check):
+            raise ValueError("Provider and remote access check required")
+        self.store, self.provider, self.access_check = store, provider, access_check
+
+    def handle(self, request):
+        request_id = request.get("request_id") if type(request) is dict else None
+        try:
+            if type(request) is not dict or type(request_id) is not str or not request_id.strip():
+                raise ValueError("Request object and stable request ID required")
+            if type(request.get("protocol")) is not int or request["protocol"] != PROTOCOL:
+                return self._reply(request_id, error="protocol_mismatch")
+            operation = request.get("operation")
+            if operation == "hello":
+                if set(request) != {"protocol", "request_id", "operation"}:
+                    raise ValueError("Unexpected handshake fields")
+                self.access_check()
+                return self._reply(request_id, result={"ai_enabled": True, "operations": ["preview", "negotiate"]})
+            fields = {"protocol", "request_id", "operation", "team_id", "offer", "expected_revision", "timeout_ms"}
+            if operation == "negotiate":
+                fields |= {"personality", "performance", "relationships"}
+            elif operation != "preview":
+                raise ValueError("Unsupported operation")
+            if set(request) != fields:
+                raise ValueError("Unexpected request fields")
+            if type(request["team_id"]) is not str or not request["team_id"].strip():
+                raise ValueError("Stable team ID required")
+            timeout = request["timeout_ms"]
+            if type(timeout) is not int or not 1 <= timeout <= 60_000:
+                raise ValueError("Timeout must be 1-60000 milliseconds")
+            deadline = time.monotonic() + timeout / 1000
+            def guarded_access():
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("Request expired")
+                self.access_check()
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("Request expired")
+            data = request["offer"]
+            if type(data) is not dict or set(data) != {"player_id", "salaries", "signing_bonus"} or type(data["salaries"]) is not list:
+                raise ValueError("Complete offer required")
+            offer = Offer(data["player_id"], tuple(data["salaries"]), data["signing_bonus"])
+            ledger = StoredLedger(self.store, request["team_id"])
+            if operation == "preview":
+                # AI-off clients retain cap enforcement and manual previews.
+                result = ledger.preview_offer(offer, request["expected_revision"])
+            else:
+                guarded_access()
+                if type(request["expected_revision"]) is not int:
+                    raise ValueError("Integer client revision required")
+                session = Negotiation(ledger, player_id=offer.player_id,
+                    personality=request["personality"], performance=request["performance"],
+                    relationships=request["relationships"], access_check=guarded_access)
+                result = session.respond(request_id, offer, self.provider,
+                                         expected_revision=request["expected_revision"])
+            return self._reply(request_id, result=result)
+        except AccessDisabled:
+            return self._reply(request_id, error="ai_disabled")
+        except TimeoutError:
+            return self._reply(request_id, error="timeout")
+        except Rejected as exc:
+            return self._reply(request_id, error="state_rejected", detail=str(exc))
+        except (ValueError, KeyError, TypeError):
+            return self._reply(request_id, error="invalid_request")
+        except Exception:
+            # Never put cloud credentials, provider internals or tracebacks on wire.
+            return self._reply(request_id, error="service_failure")
+
+    @staticmethod
+    def _reply(request_id, *, result=None, error=None, detail=None):
+        return {"protocol": PROTOCOL, "request_id": request_id, "result": result,
+                "error": error, "detail": detail}

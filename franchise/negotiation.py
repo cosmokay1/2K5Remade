@@ -73,11 +73,11 @@ class Negotiation:
         with self._lock:
             return json.loads(json.dumps(self._events))
 
-    def respond(self, request_id: str, offer: Offer, provider) -> dict:
+    def respond(self, request_id: str, offer: Offer, provider, *, expected_revision=None) -> dict:
         with self._lock:
-            return self._respond(request_id, offer, provider)
+            return self._respond(request_id, offer, provider, expected_revision=expected_revision)
 
-    def _respond(self, request_id: str, offer: Offer, provider) -> dict:
+    def _respond(self, request_id: str, offer: Offer, provider, *, expected_revision=None) -> dict:
         self._access_check()
         if offer.player_id != self.player_id:
             raise ValueError("Offer belongs to another player")
@@ -102,6 +102,8 @@ class Negotiation:
         if self._signed:
             raise ValueError("Negotiation is already signed")
         snapshot = self.ledger.negotiation_context(self.player_id)
+        if expected_revision is not None and (type(expected_revision) is not int or expected_revision != snapshot["revision"]):
+            raise Rejected("Offer was based on stale client franchise state")
         context = {"player_id": self.player_id, **json.loads(self._actor),
                    "offer": asdict(offer), "accounting": snapshot,
                    "history": self.events}

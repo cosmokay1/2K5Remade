@@ -284,3 +284,21 @@ The prior actor-persistence commit `5573e4a` passed Windows/Linux in
 [run 38463887477](https://github.com/cosmokay1/2K5Remade/actions/runs/38463887477).
 This closes a prerequisite for asynchronous bridge work; game responsiveness and
 actual native integration remain unimplemented/unverified. New CI pending.
+
+## October 13, 2026 — Versioned bridge request boundary
+
+Added protocol-1 hello/preview/negotiate handler over the durable store. Strict
+fields, request IDs, integer client financial revisions and 1-60000ms deadlines
+are validated. Negotiation rechecks the client's revision after session setup,
+and deadline/remote access checks run through inference and final transaction
+guards. Durable retries reuse committed responses despite advanced revision.
+AI-off previews still enforce cap rules. Provider failures return a generic error
+without credentials/stack details. No game or save mutation interface is exposed.
+
+104 local tests pass: wire sign/retry, stale client revision, protocol mismatch,
+expired request, disabled-AI preview and provider error redaction. This is the
+request handler only: process transport, native client and asynchronous game-thread
+integration remain required. No native/game acceptance claim. CI pending.
+
+Verified prior conversation-consistency commit `db4fa98` on Windows/Linux in
+[run 38464014062](https://github.com/cosmokay1/2K5Remade/actions/runs/38464014062).
