@@ -1360,3 +1360,13 @@ retry after release; original receipt returns without restoring ownership, cap o
 nominal cash. 248 local tests pass. Pure calculation d56373a passed Franchise AI run
 38481364854 and Build check38481365063; durable release d108266 CI38481644411/
 38481644391 remained in progress at inspection. No guest-game integration is claimed.
+
+## October 13, 2026 — Executable supported-release money audit
+
+Extended tools.audit_money with independently expected durable pre/postJune release
+scenarios: cap(39,0,0)/room-9 versus(33,6,0)/room-3; nominal39, paid9, unpaid30,
+cancelled unearned30. Audit asserts removed ownership, identical restart receipt and
+unaffordable signing rejection without mutation. Synthetic zero-rate/prototype scope
+is explicit. Audit succeeds alongside5,050 bonus-conservation checks. Durable release
+d108266 passed Franchise AI38481644411 and Build check38481644391; reviewed identity
+fix9b94fee CI remained in progress. Actual game import/execution remains unverified.

@@ -52,6 +52,46 @@ def durable_findings():
                 "scope": "Synthetic durable signings; not original game or complete NFL lifecycle"}
 
 
+def release_findings():
+    from datetime import date
+    from franchise.books import ActiveContract
+    from franchise.cash import CashObligation
+    from franchise.guarantees import DiscountProfile
+    from franchise.releases import PreseasonReleaseScope,EXCLUDED_LIABILITIES
+    findings={}
+    for day,expected in ((date(2026,6,1),(39,0,0)),(date(2026,6,2),(33,6,0))):
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'release.sqlite'
+            store=FranchiseStore(path)
+            contract=ActiveContract(Offer('v',(10,20,30),9,(0,20,10)),'synthetic audit original')
+            store.create_team('a',Ledger.from_opening(OpeningBooks(contracts=(contract,)),cap=30,
+                roster_reserve=0,max_bonus_years=5,veteran_minimums={'v':(1,)*3,'free':(1,)*3}))
+            store.initialize_cash('a',(CashObligation('contract:v','v',69,9,'synthetic bank',(('signing_bonus',9),)),),
+                                  source='synthetic complete payment coverage')
+            inputs=dict(scope=PreseasonReleaseScope(2026,day,date(2026,9,10),EXCLUDED_LIABILITIES,True,True,0,
+                'synthetic verified exclusions'),discount=DiscountProfile(2026,Fraction(0),'synthetic zero discount'),
+                payment_year_offsets=(0,1,2),expected_revision=1,access_check=lambda:None)
+            receipt=store.release_preseason_veteran('a','release','v',**inputs)
+            reopened=FranchiseStore(path)
+            assert reopened.release_preseason_veteran('a','release','v',**inputs) == receipt
+            current=reopened.load_team('a')
+            assert current.charges == expected and current.revision == 2
+            assert current.financial_snapshot()['signed_players'] == []
+            assert current.cash_snapshot()['nominal_total'] == 39 and current.cash_snapshot()['unpaid_total'] == 30
+            before=current.financial_snapshot()
+            try:
+                reopened.sign('a','unaffordable',Offer('free',(1,),0),2)
+            except Rejected:
+                pass
+            else:
+                raise AssertionError('Release-induced cap debt allowed a new signing')
+            assert reopened.load_team('a').financial_snapshot() == before
+            findings[day.isoformat()]={'annual_cap':list(expected),'current_room':json_amount(current.room),
+                'nominal_cash':39,'paid_cash':9,'unpaid_cash':30,'cancelled_unearned_base':30,
+                'ownership_removed':True,'restart_receipt_identical':True,'unaffordable_signing_rejected':True}
+    return {'scenarios':findings,'scope':'Synthetic supported healthy preseason veteran release; zero rate is not a published rate; game/runtime and complete NFL lifecycle unverified'}
+
+
 def main():
     observations = {}
 
@@ -128,6 +168,7 @@ def main():
                 verified += 1
     print(json.dumps({"observations": observations,
                       "durable_path": durable_findings(),
+                      "supported_release_path": release_findings(),
                       "implemented_component_scope": {
                           "cash": "Nominal sourced obligations, component-allocated payments and guarantee present-value projections; full settlement/vesting is incomplete.",
                           "guarantees": "Explicit fully guaranteed base salary terms; no partial injury/skill/cap protection or automatic vesting.",
