@@ -197,3 +197,19 @@ new layer allocation, annual floors, unchanged nominal/paid history and cash
 posting totals. The asset-free Windows `--restructure` fixture also compares
 receipts across restart with durable engine state. These checks are not actual
 guest synchronization or an independent complete NFL cap implementation.
+
+## Saved player contract inspection
+
+`player_context` also returns this player's `contract_accounting`, separately from
+personality and initialization. Null means no saved contract for this team; it does
+not mean zero salary, a free agent, or an observed game roster status. When present,
+the view identifies active, released or assigned engine history, saved terms and
+bonus layers, explicitly scoped annual charges, and this player's known cash and
+guarantees. Unknown cash coverage remains null. Other players' obligations and
+whole-team cash records are excluded.
+
+The authenticated `/api/player?player_id=...` endpoint shares this read-only view.
+It reads one freshly validated engine snapshot and does not initialize actors or
+change financial revisions. Source accounting still requires real game import
+and reconciliation; browser display and actual guest roster verification remain
+separate delivery requirements.

@@ -374,7 +374,29 @@ class FranchiseStore:
             ledger.negotiation_context(player_id)  # Require classified identity.
             actor = ledger._actors.get(player_id)
             history=self._negotiation_history(db,team_id,player_id)
+            accounting = None
+            if player_id in ledger._contracts:
+                if player_id in ledger._active_contracts:
+                    contract = ledger._active_contracts[player_id]
+                    charges = contract.charges()
+                    status, charge_scope = 'active', 'active_contract'
+                elif player_id in ledger._released:
+                    plan = ledger._released[player_id]
+                    contract, charges = plan.original_contract, plan.charges()
+                    status, charge_scope = 'released', 'retained_obligations'
+                elif player_id in ledger._traded_out:
+                    plan = ledger._traded_out[player_id]
+                    contract, charges = plan.original_contract, plan.retained_bonus.annual_charges
+                    status, charge_scope = 'assigned', 'retained_obligations'
+                else:
+                    raise ValueError('Historical contract has no supported accounting status')
+                cash = ledger._cash.records.get('contract:' + player_id) if ledger._cash is not None else None
+                accounting = {'status':status,'contract':contract.to_dict(),
+                    'annual_charges':[json_amount(value) for value in charges], 'charge_scope':charge_scope,
+                    'cash_obligation':cash.to_dict() if cash is not None else None,
+                    'guarantees':ledger.guarantee_cash(player_id)}
             return {'player_id':player_id,'financial_revision':ledger.revision,'initialized':actor is not None,
+                    'contract_accounting':accounting,
                     'personality':actor['personality'] if actor else None,
                     'relationships':actor['relationships'] if actor else None,
                     'agreed_promises':[{'agreement_request_id':request,'goals':agreement['goals']}

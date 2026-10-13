@@ -165,6 +165,69 @@ int main() {
         auto player_request = franchise::parse_frame(R"({"operation":"player_context","player_id":"v"})");
         auto player_reply = franchise::parse_frame(R"({"error":null,"result":{"player_id":"v","financial_revision":0,"initialized":true,"personality":{},"relationships":{},"agreed_promises":[],"promise_history":[]}})");
         franchise::validate_result(player_reply, player_request);
+        player_reply["result"]["contract_accounting"]=nullptr;
+        franchise::validate_result(player_reply,player_request);
+        auto accounting=nlohmann::json{{"status","active"},{"charge_scope","active_contract"},
+            {"annual_charges",{19,37}},{"contract",restructure_archive["contract"]},
+            {"cash_obligation",restructure_archive["cash_obligation"]},
+            {"guarantees",{{"unpaid_guaranteed_base_by_original_year",{0,12,10}},
+                {"unpaid_signing_bonus",8},{"unpaid_original_signing_bonus",0},
+                {"unpaid_bonus_layers",{{"bonus:restructure:conversion",8}}},{"obligation_source","synthetic paid history"}}}};
+        player_reply["result"]["contract_accounting"]=accounting;
+        franchise::validate_result(player_reply,player_request);
+        auto unknown=accounting;
+        unknown["cash_obligation"].erase("paid_components"); unknown["guarantees"]=nullptr;
+        player_reply["result"]["contract_accounting"]=unknown;
+        franchise::validate_result(player_reply,player_request);
+        unknown["cash_obligation"]=nullptr;
+        player_reply["result"]["contract_accounting"]=unknown;
+        franchise::validate_result(player_reply,player_request);
+        auto retained=accounting;
+        retained["status"]="released"; retained["charge_scope"]="retained_obligations"; retained["annual_charges"]={36};
+        retained["cash_obligation"]["amount"]=49;
+        player_reply["result"]["contract_accounting"]=retained;
+        franchise::validate_result(player_reply,player_request);
+        retained["status"]="assigned";
+        retained["cash_obligation"]=nullptr;
+        retained["guarantees"]={{"unpaid_guaranteed_base_by_original_year",{0,0,0}},
+            {"unpaid_signing_bonus",0},{"unpaid_original_signing_bonus",0},
+            {"unpaid_bonus_layers",{{"bonus:restructure:conversion",0}}}};
+        player_reply["result"]["contract_accounting"]=retained;
+        franchise::validate_result(player_reply,player_request);
+        retained["cash_obligation"]=accounting["cash_obligation"];
+        retained["cash_obligation"]["amount"]=27; retained["cash_obligation"]["paid"]=27;
+        retained["cash_obligation"]["paid_components"].push_back({"bonus:restructure:conversion",8});
+        retained["guarantees"]={{"unpaid_guaranteed_base_by_original_year",{0,0,0}},{"unpaid_signing_bonus",0}};
+        player_reply["result"]["contract_accounting"]=retained;
+        franchise::validate_result(player_reply,player_request);
+        player_reply["result"]["contract_accounting"]=accounting;
+        for (int scenario=0;scenario<20;++scenario) {
+            auto bad=player_reply;
+            auto& saved=bad["result"]["contract_accounting"];
+            if (scenario==0) saved["extra"]=true;
+            if (scenario==1) saved["status"]="unsigned";
+            if (scenario==2) saved["charge_scope"]="retained_obligations";
+            if (scenario==3) saved["annual_charges"]={19};
+            if (scenario==4) saved["annual_charges"]={"2/4",37};
+            if (scenario==5) saved["contract"]["offer"]["player_id"]="other";
+            if (scenario==6) saved["contract"]["elapsed_years"]=true;
+            if (scenario==7) saved["contract"]["bonus_layers"].push_back(saved["contract"]["bonus_layers"][0]);
+            if (scenario==8) saved["contract"]["bonus_layers"][0]["original_start_index"]=std::numeric_limits<int64_t>::max();
+            if (scenario==9) saved["cash_obligation"]["player_id"]="other";
+            if (scenario==10) saved["cash_obligation"]["amount"]=18;
+            if (scenario==11) saved["cash_obligation"]["paid_components"][0][1]=8;
+            if (scenario==12) saved["guarantees"]["unpaid_guaranteed_base_by_original_year"]={12};
+            if (scenario==13) saved["guarantees"]["unpaid_guaranteed_base_by_original_year"][1]=13;
+            if (scenario==14) saved["guarantees"]["unpaid_signing_bonus"]=7;
+            if (scenario==15) saved["guarantees"]["unpaid_bonus_layers"]={{"bonus:other",8}};
+            if (scenario==16) saved["guarantees"]["unpaid_original_signing_bonus"]=true;
+            if (scenario==17) saved["guarantees"]["ability_rating"]=99;
+            if (scenario==18) {saved["status"]="assigned";saved["charge_scope"]="retained_obligations";}
+            if (scenario==19) saved["contract"]["source"]=" ";
+            bool rejected=false;
+            try { franchise::validate_result(bad,player_request); } catch (const std::exception&) { rejected=true; }
+            if (!rejected) throw std::runtime_error("Invalid saved player accounting accepted: "+std::to_string(scenario));
+        }
         player_reply["result"]["agreed_promises"] = {{{"agreement_request_id", "one"}, {"goals", goals}}};
         franchise::validate_result(player_reply, player_request);
         for (int scenario = 0; scenario < 7; ++scenario) {

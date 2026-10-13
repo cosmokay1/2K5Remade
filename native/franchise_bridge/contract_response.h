@@ -5,6 +5,7 @@
 #include <numeric>
 #include <set>
 #include <algorithm>
+#include <map>
 
 namespace franchise {
 inline void promise_goals(const nlohmann::json& goals) {
@@ -84,6 +85,110 @@ inline void restructure_cash_record(const nlohmann::json& cash) {
         paid=checked_money_sum(paid,row[1]);
     }
     if (paid!=cash.at("paid").get<int64_t>()) throw std::runtime_error("Amendment payments disagree");
+}
+inline void validate_contract_accounting(const nlohmann::json& accounting, const std::string& player) {
+    if (accounting.is_null()) return; // Explicitly unavailable, never a zero balance.
+    if (!accounting.is_object() || accounting.size()!=6) throw std::runtime_error("Invalid saved player accounting");
+    const auto status=accounting.at("status").get<std::string>();
+    if ((status!="active" && status!="released" && status!="assigned") ||
+        accounting.at("charge_scope")!=(status=="active" ? "active_contract" : "retained_obligations"))
+        throw std::runtime_error("Invalid saved accounting lifecycle");
+    const auto& contract=accounting.at("contract");
+    if (!contract.is_object() || !(contract.size()==4 || (contract.size()==5 && contract.contains("bonus_layers"))) ||
+        !contract.at("source").is_string() || contract.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
+        throw std::runtime_error("Invalid saved contract source");
+    const auto offer=canonical_offer(contract.at("offer"));
+    if (offer.at("player_id")!=player) throw std::runtime_error("Foreign saved contract");
+    integer_money(contract.at("elapsed_years")); integer_money(contract.at("bonus_years"));
+    const auto elapsed=contract.at("elapsed_years").get<int64_t>();
+    const auto term=offer.at("salaries").size();
+    if (elapsed>=static_cast<int64_t>(term) || contract.at("bonus_years")<1 || contract.at("bonus_years")>5)
+        throw std::runtime_error("Invalid saved contract allocation");
+    const auto& charges=accounting.at("annual_charges");
+    if (!charges.is_array() || charges.empty() || (status=="active" && charges.size()!=term-static_cast<size_t>(elapsed)))
+        throw std::runtime_error("Invalid saved charge coverage");
+    for (const auto& value : charges) exact_money(value);
+    std::map<std::string,int64_t> ceilings{{"signing_bonus",offer.at("signing_bonus").get<int64_t>()}}, layers;
+    for (size_t i=0;i<term;++i) ceilings["base:"+std::to_string(i)]=offer.at("salaries")[i].get<int64_t>();
+    int64_t total_bonus=offer.at("signing_bonus").get<int64_t>();
+    if (contract.contains("bonus_layers")) {
+        if (!contract.at("bonus_layers").is_array()) throw std::runtime_error("Invalid saved bonus layers");
+        for (const auto& layer : contract.at("bonus_layers")) {
+            if (!layer.is_object() || layer.size()!=5 || !layer.at("record_id").is_string() ||
+                layer.at("record_id").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos ||
+                !layer.at("source").is_string() || layer.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
+                throw std::runtime_error("Invalid saved bonus identity");
+            integer_money(layer.at("amount")); integer_money(layer.at("original_start_index")); integer_money(layer.at("allocation_years"));
+            const auto start=layer.at("original_start_index").get<int64_t>(), years=layer.at("allocation_years").get<int64_t>();
+            if (layer.at("amount")==0 || start>=static_cast<int64_t>(term) || years<1 || years>5 ||
+                years>static_cast<int64_t>(term)-start ||
+                !layers.emplace("bonus:"+layer.at("record_id").get<std::string>(),layer.at("amount").get<int64_t>()).second)
+                throw std::runtime_error("Invalid saved bonus allocation");
+            total_bonus=checked_money_sum(total_bonus,layer.at("amount"));
+        }
+    }
+    ceilings.insert(layers.begin(),layers.end());
+    const auto& cash=accounting.at("cash_obligation");
+    if (!cash.is_null()) {
+        if (!cash.is_object() || !(cash.size()==5 || (cash.size()==6 && cash.contains("paid_components"))) ||
+            cash.at("player_id")!=player || cash.at("obligation_id")!="contract:"+player ||
+            !cash.at("source").is_string() || cash.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
+            throw std::runtime_error("Invalid saved cash identity");
+        integer_money(cash.at("amount")); integer_money(cash.at("paid"));
+        if (cash.at("paid")>cash.at("amount")) throw std::runtime_error("Saved cash overpayment");
+        if (status=="active") {
+            int64_t nominal=total_bonus;
+            for (const auto& salary : offer.at("salaries")) nominal=checked_money_sum(nominal,salary);
+            if (cash.at("amount")!=nominal) throw std::runtime_error("Active cash disagrees with compensation");
+        } else if (status=="assigned" && cash.at("amount")!=cash.at("paid"))
+            throw std::runtime_error("Assigned cash remains payable");
+        if (cash.contains("paid_components")) {
+            restructure_cash_record(cash);
+            for (const auto& row : cash.at("paid_components")) {
+                const auto found=ceilings.find(row[0].get<std::string>());
+                if (found==ceilings.end() || row[1]>found->second) throw std::runtime_error("Saved payment exceeds compensation");
+            }
+        }
+    }
+    const auto& guarantees=accounting.at("guarantees");
+    if (guarantees.is_null()) return; // Historical payment allocation may be unknown.
+    if (!guarantees.is_object()) throw std::runtime_error("Invalid saved guarantees");
+    const std::set<std::string> fields={"unpaid_guaranteed_base_by_original_year","unpaid_signing_bonus",
+        "obligation_source","unpaid_bonus_layers","unpaid_original_signing_bonus"};
+    for (auto field=guarantees.begin();field!=guarantees.end();++field)
+        if (!fields.count(field.key())) throw std::runtime_error("Unknown saved guarantee field");
+    const auto& bases=guarantees.at("unpaid_guaranteed_base_by_original_year");
+    if (!bases.is_array() || bases.size()!=term) throw std::runtime_error("Invalid saved guarantee coverage");
+    for (size_t i=0;i<term;++i) {
+        integer_money(bases[i]);
+        if (bases[i]>offer.at("guaranteed_salaries")[i] || (status=="assigned" && bases[i]!=0))
+            throw std::runtime_error("Saved guarantee exceeds original protection");
+    }
+    integer_money(guarantees.at("unpaid_signing_bonus"));
+    if (guarantees.at("unpaid_signing_bonus")>total_bonus || (status=="assigned" && guarantees.at("unpaid_signing_bonus")!=0))
+        throw std::runtime_error("Invalid saved unpaid bonus");
+    if (guarantees.contains("obligation_source") && (!guarantees.at("obligation_source").is_string() ||
+        guarantees.at("obligation_source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos))
+        throw std::runtime_error("Missing guarantee provenance");
+    // Assigned archives may intentionally expose only settled aggregate debt.
+    if (status=="assigned" && guarantees.size()==2) return;
+    if (layers.empty()) {
+        if (guarantees.contains("unpaid_bonus_layers") || guarantees.contains("unpaid_original_signing_bonus"))
+            throw std::runtime_error("Unrelated saved bonus guarantees");
+    } else {
+        integer_money(guarantees.at("unpaid_original_signing_bonus"));
+        int64_t unpaid=guarantees.at("unpaid_original_signing_bonus").get<int64_t>();
+        const auto& unpaid_layers=guarantees.at("unpaid_bonus_layers");
+        if (unpaid>offer.at("signing_bonus").get<int64_t>() || !unpaid_layers.is_object() || unpaid_layers.size()!=layers.size())
+            throw std::runtime_error("Invalid saved unpaid bonus coverage");
+        for (const auto& layer : layers) {
+            const auto& amount=unpaid_layers.at(layer.first);
+            integer_money(amount);
+            if (amount>layer.second) throw std::runtime_error("Unpaid bonus exceeds original layer");
+            unpaid=checked_money_sum(unpaid,amount);
+        }
+        if (unpaid!=guarantees.at("unpaid_signing_bonus")) throw std::runtime_error("Saved unpaid bonus total disagrees");
+    }
 }
 inline void validate_restructure(const nlohmann::json& result, const nlohmann::json& request) {
     const auto player=request.at("player_id").get<std::string>();
@@ -296,6 +401,8 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         if (result.at("player_id") != request.at("player_id") || !result.at("player_id").is_string())
             throw std::runtime_error("Player context identity mismatch");
         integer_money(result.at("financial_revision"));
+        if (result.contains("contract_accounting"))
+            validate_contract_accounting(result.at("contract_accounting"),request.at("player_id").get<std::string>());
         if (!result.at("initialized").is_boolean() || !result.at("agreed_promises").is_array() ||
             !result.at("promise_history").is_array()) throw std::runtime_error("Invalid player context");
         const bool initialized = result.at("initialized").get<bool>();

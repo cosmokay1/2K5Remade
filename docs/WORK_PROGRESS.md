@@ -1620,3 +1620,18 @@ its exact request against the durable engine locally; actual Win32 fixture run
 awaits CI. Earlier3e8a3f2 Windows cleanup failure fixed in4f551ca, fresh workflows
 38486232604/38486232593 were still running at inspection. Actual guest/UI write
 and playable game/save evidence remain absent.
+
+## October 13, 2026 — Saved player contract accounting inspection
+
+Player context now exposes only the selected player's saved active/released/assigned
+contract, bonus layers, explicitly scoped charges, cash obligation and guarantees
+from one validated snapshot. Unknown contract/cash coverage remains null; actor
+initialization and engine accounting are distinct from actual game roster facts.
+Authenticated HTTP inspection shares the read-only view without revision writes.
+304 full Python tests pass. Native optional-context validation covers shape,
+identity, lifecycle, bonus allocation, exact amounts and cash/guarantee arithmetic;
+20 malformed accounting scenarios and valid lifecycle fixtures pass portable CTest.
+New SQL read tests explicitly close handles for Windows cleanup.3b78231 passed Franchise AI
+38486364011 and Build38486364039; direct Windows logs confirm299 tests and native
+restructure schedules/unpaid cash/restart fixture. This proves synthetic pipe
+execution, not actual gameplay or save/load integration.
