@@ -70,18 +70,17 @@ responsibilities; this plan does not validate trade consideration or guest state
     if type(record_id) is not str or not record_id.strip():
         raise ValueError('Stable trade calculation identity required')
     offer = contract.offer
-    if contract.bonus_layers:
-        raise ValueError('Layered contract trade requires separate bonus/cash reconciliation')
     if (cash.obligation_id != 'contract:' + offer.player_id or cash.player_id != offer.player_id
-            or cash.amount != sum(offer.salaries) + offer.signing_bonus or cash.paid_components is None):
+            or cash.amount != contract.nominal_cash or cash.paid_components is None):
         raise ValueError('Allocated original nominal contract cash required')
     paid = dict(cash.paid_components)
-    ceilings = {'signing_bonus': offer.signing_bonus,
-                **{'base:' + str(i): salary for i, salary in enumerate(offer.salaries)}}
+    ceilings = contract.compensation_components()
     if any(key not in ceilings or amount > ceilings[key] for key, amount in paid.items()):
         raise ValueError('Payment allocations disagree with original contract')
-    if paid.get('signing_bonus', 0) != offer.signing_bonus:
-        raise ValueError('Signing bonus must already be fully paid')
+    bonuses = {'signing_bonus': offer.signing_bonus,
+               **{layer.cash_component: layer.amount for layer in contract.bonus_layers}}
+    if any(paid.get(key, 0) != amount for key, amount in bonuses.items()):
+        raise ValueError('Every signing bonus layer must already be fully paid')
     for i, salary in enumerate(offer.salaries):
         amount = paid.get('base:' + str(i), 0)
         if i < contract.elapsed_years:

@@ -59,6 +59,16 @@ class ActiveContract:
         if any(layer.original_start_index + layer.allocation_years > len(self.offer.salaries) for layer in self.bonus_layers):
             raise ValueError('Bonus allocation cannot exceed original contract term')
 
+    def compensation_components(self):
+        """Nominal payable components; their allocation never implies payment."""
+        return {'signing_bonus': self.offer.signing_bonus,
+                **{'base:' + str(i): amount for i, amount in enumerate(self.offer.salaries)},
+                **{layer.cash_component: layer.amount for layer in self.bonus_layers}}
+
+    @property
+    def nominal_cash(self):
+        return sum(self.compensation_components().values())
+
     def charges(self):
         original = self.offer.charges(self.bonus_years)
         return tuple(value + sum((Fraction(layer.amount, layer.allocation_years) for layer in self.bonus_layers

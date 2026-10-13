@@ -15,7 +15,7 @@ allocation years and source. ActiveContract adds each layer to the original sche
 original Offer.signing_bonus is never reset. Empty layers preserve legacy serialized
 shape. Nonempty layers round-trip through typed opening books, but Ledger and rookie
 opening imports reject them until durable cash and amendment replay are implemented.
-Release and trade calculators also reject them rather than dropping compensation.
+Pure release and trade calculators preserve every layer. Durable imports remain closed.
 
 Synthetic arithmetic example: original seven-year contract with bonus10 spread over
 five years and two elapsed years has remaining bonus charges(2,2,2,0,0). Remaining
@@ -27,7 +27,7 @@ they do not satisfy actual NFL minimum salaries.
 Nominal compensation and paid history remain unchanged. Creating the new bonus does
 not record its payment. Deferred new-bonus payment terms are explicitly excluded. The plan preserves the original contract/cash and amended
 terms; durable component payment ceilings, protected bonus reporting, atomic revision
-checks, idempotent receipts, replay and subsequent release/trade support remain next.
+checks, idempotent receipts, replay and durable subsequent release/trade support remain next.
 Exact internal fractions follow the unresolved rounding policy in cap-posting-policy.md.
 
 ## Primary rules and limits
@@ -41,3 +41,16 @@ These support the modeled components, not automatic verification of supplied fac
 The calculation rejects terms extending past2030 to avoid unsupported final-CBA-year
 rules. Extensions, repeated amendments, rookies, voids, offsets, benefits, contingent
 compensation and actual game synchronization remain unsupported.
+
+## Subsequent pure lifecycle calculations
+
+For the elapsed synthetic example above, release after June1 retains cap charges
+(128/5,52/5): protected remaining base22 plus all remaining bonus14. Nominal cash
+retained60 includes paid history30 and unpaid30 (base22 plus conversion bonus8).
+Paying some conversion bonus changes unpaid cash, never cap acceleration.
+
+Assignment after June1 requires all bonus components paid. Seller retained bonus
+charges(18/5,52/5) total14; buyer bases(2,20,30,40,50) total142. Seller cash38 plus
+buyer cash142 preserves original180. Original typed layer archives survive snapshot
+and reconstruction. These are pure fixtures; no durable amendment, game lifecycle
+or payment import is established by them.

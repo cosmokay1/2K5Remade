@@ -94,15 +94,48 @@ class PreseasonRestructureTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'final-CBA'):
             self.plan(scope=scope)
 
-    def test_release_and_trade_reject_layers_before_cash_or_debt_can_be_lost(self):
+    def test_layered_release_preserves_unpaid_converted_bonus_and_every_cap_layer(self):
         from franchise.releases import calculate_preseason_release
-        from franchise.trades import calculate_preseason_trade
-        from tests import test_releases,test_trades
+        from tests import test_releases
         release=test_releases.PreseasonReleaseTests().plan()
+        plan=self.plan()
+        result=calculate_preseason_release(plan.contract,plan.cash_obligation,scope=release.scope,
+            discount=release.discount,payment_year_offsets=(0,)*5,record_id='release')
+        # Old bonus6 + new bonus8 + protected bases2+20 =36.
+        self.assertEqual(result.charges(),(36,))
+        self.assertEqual((result.cash_obligation.amount,result.cash_obligation.paid),(60,30))
+        self.assertEqual(result.cancelled_unearned_base,120)
+        after=calculate_preseason_release(plan.contract,plan.cash_obligation,
+            scope=replace(release.scope,removed_on=date(2026,6,2)),discount=release.discount,
+            payment_year_offsets=(0,)*5,record_id='release-after')
+        self.assertEqual(after.charges(),(Fraction(128,5),Fraction(52,5)))
+        self.assertEqual(after.original_contract.bonus_layers,plan.contract.bonus_layers)
+        partial=replace(plan.cash_obligation,paid=34,
+            paid_components=plan.cash_obligation.paid_components+((plan.bonus_layer.cash_component,4),))
+        paid_result=calculate_preseason_release(plan.contract,partial,scope=release.scope,
+            discount=release.discount,payment_year_offsets=(0,)*5,record_id='release-partial')
+        self.assertEqual(paid_result.charges(),(36,))
+        self.assertEqual(paid_result.cash_obligation.amount-paid_result.cash_obligation.paid,26)
+        excess=replace(plan.cash_obligation,paid=39,
+            paid_components=plan.cash_obligation.paid_components+((plan.bonus_layer.cash_component,9),))
+        with self.assertRaisesRegex(ValueError,'original compensation'):
+            calculate_preseason_release(plan.contract,excess,scope=release.scope,
+                discount=release.discount,payment_year_offsets=(0,)*5,record_id='release-invalid')
+
+    def test_layered_trade_requires_new_bonus_paid_and_preserves_original_amortization(self):
+        from franchise.trades import calculate_preseason_trade
+        from tests import test_trades
         trade=test_trades.PreseasonTradeTests().scope()
         plan=self.plan()
-        with self.assertRaisesRegex(ValueError,'Layered contract release'):
-            calculate_preseason_release(plan.contract,plan.cash_obligation,scope=release.scope,
-                discount=release.discount,payment_year_offsets=(0,)*5,record_id='release')
-        with self.assertRaisesRegex(ValueError,'Layered contract trade'):
+        with self.assertRaisesRegex(ValueError,'Every signing bonus layer'):
             calculate_preseason_trade(plan.contract,plan.cash_obligation,scope=trade,record_id='trade')
+        cash=replace(plan.cash_obligation,paid=38,
+            paid_components=plan.cash_obligation.paid_components+((plan.bonus_layer.cash_component,8),))
+        result=calculate_preseason_trade(plan.contract,cash,scope=trade,record_id='trade')
+        self.assertEqual(result.retained_bonus.annual_charges,(14,))
+        self.assertEqual(result.buyer_contract.offer.salaries,(2,20,30,40,50))
+        self.assertEqual(result.buyer_contract.offer.guaranteed_salaries,(2,20,0,0,0))
+        self.assertFalse(result.buyer_contract.bonus_layers)
+        self.assertEqual((result.seller_cash.amount,result.buyer_cash.amount),(38,142))
+        after=calculate_preseason_trade(plan.contract,cash,scope=replace(trade,traded_on=date(2026,6,2)),record_id='trade-after')
+        self.assertEqual(after.retained_bonus.annual_charges,(Fraction(18,5),Fraction(52,5)))

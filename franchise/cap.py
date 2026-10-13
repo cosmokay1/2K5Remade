@@ -390,8 +390,7 @@ class Ledger:
     @staticmethod
     def _trade_snapshot(plan):
         def contract_data(contract):
-            return {'offer': contract.offer.to_dict(), 'source': contract.source,
-                    'elapsed_years': contract.elapsed_years, 'bonus_years': contract.bonus_years}
+            return contract.to_dict()
         scope = plan.scope
         return {'original_contract': contract_data(plan.original_contract),
                 'original_cash': plan.original_cash.to_dict(),
@@ -411,8 +410,7 @@ class Ledger:
     @staticmethod
     def _release_snapshot(plan):
         contract, scope, discount = plan.original_contract, plan.scope, plan.discount
-        return {'original_contract': {'offer': contract.offer.to_dict(), 'source': contract.source,
-                    'elapsed_years': contract.elapsed_years, 'bonus_years': contract.bonus_years},
+        return {'original_contract': contract.to_dict(),
                 'original_cash': plan.original_cash.to_dict(),
                 'scope': {'league_year': scope.league_year, 'removed_on': scope.removed_on.isoformat(),
                     'first_regular_season_game': scope.first_regular_season_game.isoformat(),

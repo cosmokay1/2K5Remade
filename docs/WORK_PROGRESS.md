@@ -1571,3 +1571,16 @@ durable cash, amendment replay and lifecycle integration support them. No game w
 model call or actual cap import occurred.278 tests pass; synthetic money audit and
 syntax/diff checks pass. Prior1eaa58f passed Windows Franchise AI38484953683 and
 Build check38484953749. Durable restructuring and real runtime gates remain open.
+
+## October 13, 2026 — Carry restructure layers through pure release/assignment
+
+Nominal compensation components now identify each conversion bonus separately.
+Pure release preserves unpaid bonus cash and accelerates all original/new layers;
+pure assignment requires every bonus paid, retains seller debt and assigns remaining
+base/guarantees. Independent elapsed-year expectations verify release36 split
+128/5+52/5 and assignment seller14 split18/5+52/5; cash60/30 release and38+142=180
+assignment reconcile. Contract snapshots and assignment reconstruction retain typed
+layers while legacy empty-layer shape stays unchanged.281 full tests, extended
+synthetic money audit, syntax and diff checks pass. Durable layered imports stay
+closed pending amendment/cash/replay support; no actual game execution established.
+Foundationab2d986 Franchise AI38485612032 passed; Build38485612146 remained running.

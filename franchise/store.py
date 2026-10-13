@@ -547,9 +547,8 @@ class FranchiseStore:
         for field in ('traded_on','seller_first_regular_season_game','buyer_first_regular_season_game'):
             scope[field]=date.fromisoformat(scope[field])
         scope['exclusions']=frozenset(scope['exclusions'])
-        original=dict(common['original_contract'])
-        offer=Offer.from_dict(original.pop('offer'))
-        return calculate_preseason_trade(ActiveContract(offer,**original),CashObligation.from_dict(common['original_cash']),
+        original=ActiveContract.from_dict(common['original_contract'])
+        return calculate_preseason_trade(original,CashObligation.from_dict(common['original_cash']),
             scope=PreseasonTradeScope(**scope),record_id=common['record_id'])
 
     def _replay_trade(self,db,ledger,team,kind,payload):
@@ -629,8 +628,7 @@ class FranchiseStore:
             self._check_cash_components(source)
             self._check_cash_components(target)
             original=plan.original_contract
-            common.update(original_contract={'offer':original.offer.to_dict(),'source':original.source,
-                'elapsed_years':original.elapsed_years,'bonus_years':original.bonus_years},original_cash=plan.original_cash.to_dict(),
+            common.update(original_contract=original.to_dict(),original_cash=plan.original_cash.to_dict(),
                 after={seller:{'financial':source.financial_snapshot(),'cash':source.cash_snapshot()},
                        buyer:{'financial':target.financial_snapshot(),'cash':target.cash_snapshot()}})
             access_check()

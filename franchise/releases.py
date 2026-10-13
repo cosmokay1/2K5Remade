@@ -81,14 +81,11 @@ veteran classification before applying this plan to durable state.
     if scope.league_year != discount.league_year:
         raise ValueError('Release and discount league years disagree')
     offer = contract.offer
-    if contract.bonus_layers:
-        raise ValueError('Layered contract release requires separate bonus/cash reconciliation')
     if (cash.player_id != offer.player_id or cash.obligation_id != 'contract:' + offer.player_id
-            or cash.amount != sum(offer.salaries) + offer.signing_bonus or cash.paid_components is None):
+            or cash.amount != contract.nominal_cash or cash.paid_components is None):
         raise ValueError('Allocated original nominal contract cash required')
     paid = dict(cash.paid_components)
-    ceilings = {'signing_bonus': offer.signing_bonus,
-                **{'base:' + str(i): salary for i, salary in enumerate(offer.salaries)}}
+    ceilings = contract.compensation_components()
     if any(key not in ceilings or amount > ceilings[key] for key, amount in paid.items()):
         raise ValueError('Payment allocation disagrees with original compensation')
     for i, salary in enumerate(offer.salaries):
@@ -109,7 +106,9 @@ veteran classification before applying this plan to durable state.
     settled_cash = CashObligation(cash.obligation_id, cash.player_id, cash.amount - cancelled,
         cash.paid, cash.source + '; preseason release: ' + scope.source, cash.paid_components)
     # Cash remains nominal. Present-value cap discount never erases cash owed.
-    expected_unpaid = base.nominal_unpaid + offer.signing_bonus - paid.get('signing_bonus', 0)
+    bonuses = {'signing_bonus': offer.signing_bonus,
+               **{layer.cash_component: layer.amount for layer in contract.bonus_layers}}
+    expected_unpaid = base.nominal_unpaid + sum(amount - paid.get(key, 0) for key, amount in bonuses.items())
     if settled_cash.amount - settled_cash.paid != expected_unpaid:
         raise ValueError('Retained nominal cash does not reconcile')
     return ReleasePlan(contract, cash, scope, discount, payment_year_offsets,

@@ -146,11 +146,31 @@ def restructure_findings():
     assert sum(expected) == sum(contract.charges())
     assert plan.cash_obligation.amount == cash.amount and plan.cash_obligation.paid == cash.paid
     assert plan.bonus_layer.cash_component not in dict(plan.cash_obligation.paid_components)
+    from dataclasses import replace
+    from franchise.releases import EXCLUDED_LIABILITIES, PreseasonReleaseScope, calculate_preseason_release
+    from franchise.guarantees import DiscountProfile
+    from franchise.trades import EXCLUDED_TRADE_LIABILITIES, PreseasonTradeScope, calculate_preseason_trade
+    released = calculate_preseason_release(plan.contract,plan.cash_obligation,
+        scope=PreseasonReleaseScope(2026,date(2026,6,2),date(2026,9,10),EXCLUDED_LIABILITIES,
+            True,True,0,'synthetic layered release'),discount=DiscountProfile(2026,Fraction(0),'synthetic zero rate'),
+        payment_year_offsets=(0,1,2,3,4),record_id='audit:release')
+    assert released.charges() == (Fraction(128,5),Fraction(52,5))
+    assert (released.cash_obligation.amount,released.cash_obligation.paid) == (60,30)
+    settled = replace(plan.cash_obligation,paid=38,
+        paid_components=plan.cash_obligation.paid_components+((plan.bonus_layer.cash_component,8),))
+    traded = calculate_preseason_trade(plan.contract,settled,
+        scope=PreseasonTradeScope(2026,date(2026,6,2),date(2026,9,10),date(2026,9,11),
+            EXCLUDED_TRADE_LIABILITIES,True,0,True,True,'synthetic layered assignment'),record_id='audit:trade')
+    assert traded.retained_bonus.annual_charges == (Fraction(18,5),Fraction(52,5))
+    assert (traded.seller_cash.amount,traded.buyer_cash.amount) == (38,142)
     return {'scope':'pure synthetic calculation; no durable amendment or game posting',
             'before_charges':contract.charges(),'after_charges':expected,
             'nominal_cash':cash.amount,'paid_cash':cash.paid,
             'new_unpaid_bonus':plan.bonus_layer.amount,
-            'old_bonus_remaining':6,'new_bonus_component':plan.bonus_layer.cash_component}
+            'old_bonus_remaining':6,'new_bonus_component':plan.bonus_layer.cash_component,
+            'layered_release_charges':released.charges(),'layered_release_cash':60,
+            'layered_trade_seller_bonus':traded.retained_bonus.annual_charges,
+            'layered_trade_cash':{'seller':38,'buyer':142}}
 
 
 def main():
