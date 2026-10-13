@@ -2,6 +2,7 @@
 import json
 import subprocess
 from franchise.prompt import INSTRUCTIONS
+from franchise.promises import METRICS
 
 
 VERTEX_SCHEMA = {
@@ -11,9 +12,14 @@ VERTEX_SCHEMA = {
         "reason": {"type": "STRING"},
         "salaries": {"type": "ARRAY", "nullable": True, "items": {"type": "INTEGER"}},
         "signing_bonus": {"type": "INTEGER", "nullable": True},
+        "promise_goals": {"type":"ARRAY", "nullable":True, "items":{"type":"OBJECT",
+            "properties":{"goal_id":{"type":"STRING"},"metric":{"type":"STRING","enum":sorted(METRICS)},
+                          "target":{"type":"INTEGER"},"importance":{"type":"INTEGER"},
+                          "window":{"type":"STRING"},"source":{"type":"STRING"}},
+            "required":["goal_id","metric","target","importance","window","source"]}},
         "guaranteed_salaries": {"type": "ARRAY", "nullable": True, "items": {"type": "INTEGER"}},
     },
-    "required": ["action", "reason", "salaries", "signing_bonus", "guaranteed_salaries"],
+    "required": ["action", "reason", "salaries", "signing_bonus", "guaranteed_salaries", "promise_goals"],
 }
 
 

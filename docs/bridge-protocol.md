@@ -93,3 +93,19 @@ impersonation; no owner or scripted fallback. AI startup failure leaves the
 sidecar's financial/manual service available with `ai_disabled` for AI requests
 and a generic stderr diagnostic. Manual signing remains a deliberate operation.
 Live runtime authentication and game integration remain unverified.
+
+### Nonfinancial promise proposals
+
+Protocol-1 negotiate requests optionally include `promise_goals`, an array of exact
+objects with `goal_id`, `metric`, positive integer `target`, integer `importance`
+(1-100), `window` and `source`. Supported metrics: touches (carries plus receptions),
+starts, receiving/rushing/passing yards and team wins. Omission means no proposed
+goals. These terms create no salary, bonus or cap charge.
+
+Accepted/rejected model responses use null promise_goals and preserve the proposal.
+Counter responses specify a complete array, including [] for explicit withdrawal.
+Responses cannot silently discard a nonempty proposal. Recorded events retain
+`promise_goals` and optional `counter_promises`; signed events commit goals with the
+financial transaction. Retry request IDs must match both money and promise terms.
+The native/game/browser interfaces do not yet present promise controls, and actual
+goal-counter instrumentation/scored consequences remain unfinished.

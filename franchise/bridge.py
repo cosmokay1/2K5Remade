@@ -36,6 +36,8 @@ class Bridge:
                 fields |= {"decision_mode"}
             elif operation != "preview":
                 raise ValueError("Unsupported operation")
+            if operation == "negotiate" and "promise_goals" in request:
+                fields |= {"promise_goals"}
             if set(request) != fields:
                 raise ValueError("Unexpected request fields")
             if type(request["team_id"]) is not str or not request["team_id"].strip():
@@ -78,8 +80,10 @@ class Bridge:
                 session = Negotiation(ledger, player_id=offer.player_id,
                     personality=request["personality"], performance=request["performance"],
                     relationships=request["relationships"], access_check=guarded_access)
+                from franchise.promises import goals_from_list
                 result = session.respond(request_id, offer, self.provider,
-                                         expected_revision=request["expected_revision"])
+                                         expected_revision=request["expected_revision"],
+                                         promise_goals=goals_from_list(request.get("promise_goals", [])))
             return self._reply(request_id, result=result)
         except AccessDisabled:
             return self._reply(request_id, error="ai_disabled")

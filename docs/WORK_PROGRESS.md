@@ -956,3 +956,19 @@ These scores measure promises, not player ability, and produce no cash/cap effec
 185 local tests pass. Provider/pipe/HTTP negotiation terms, atomic promise agreement,
 persistent scoring and story/relationship consequences remain to be wired; existing
 live negotiation still does not offer promises. No actual game counters were observed.
+
+## October 13, 2026 — Promise-aware negotiation and atomic agreements
+
+Provider schemas/instructions, Negotiation and Python pipe/HTTP bridge accept typed
+optional promise proposals. Model acceptance preserves them; counters explicitly
+preserve/change/withdraw the full set. Accepted goals persist in the signing story
+within the same transaction as finances. Restart retries recall both money/goals
+without inference and reject changed promises under the same request ID. Guarantees,
+cap validation, shutdown and legacy no-promise callers remain supported. 189 local
+tests pass, including goal counter, pipe request/retry, atomic save/restart, over-cap
+rejection and shutdown during acceptance. Promise score persistence and causal
+relationship/story consequences, plus native/game/browser controls remain next.
+No live inference, salary incentives or actual gameplay counters were added.
+Prior draft/promise-core source commits passed both workflows: draft 78faf5d runs
+38476541257/38476541340, core ca7fa4a runs 38476552766/38476552880. Funding f3f50a7
+also passed both workflows 38475903638/38475903630, verifying the Windows cleanup fix.

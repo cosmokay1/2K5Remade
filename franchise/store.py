@@ -550,6 +550,11 @@ class FranchiseStore:
 
     @staticmethod
     def _validate_story_evidence(story):
+        if story is not None and "promise_goals" in story:
+            from franchise.promises import goals_from_list
+            goals_from_list(story["promise_goals"])
+            if story.get("counter_promises") is not None:
+                goals_from_list(story["counter_promises"])
         if story is None or "evidence" not in story:
             return  # Existing/manual records carry no model evidence claim.
         from franchise.negotiation import validate_performance
@@ -578,7 +583,8 @@ class FranchiseStore:
         decision = Decision.parse(json.dumps({"action": event["action"], "reason": event["reason"],
             "salaries": counter["salaries"] if counter else None,
             "signing_bonus": counter["signing_bonus"] if counter else None,
-            "guaranteed_salaries": counter.get("guaranteed_salaries") if counter else None}), data["player_id"])
+            "guaranteed_salaries": counter.get("guaranteed_salaries") if counter else None,
+            **({"promise_goals": event["counter_promises"] if counter else None} if "counter_promises" in event else {})}), data["player_id"])
         expected = {"counter": "counteroffer", "reject": "player_rejected", "accept": "accounting_rejected"}
         if event["outcome"] != expected[decision.action] or (counter and counter["player_id"] != data["player_id"]):
             raise ValueError("Dialogue decision and outcome disagree")

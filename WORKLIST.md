@@ -237,8 +237,8 @@ See docs/cloudflare-tunnel.md. Dedicated tunnel/DNS/TLS route is live; full brow
 
 - [x] Define sourced nonfinancial goals for touches, starts, position-specific yards and team wins, with an explicit time window and player importance.
 - [x] Score observed achievement with unknown coverage and period closure; keep this separate from hidden player ability and salary incentives.
-- [ ] Wire promise proposals/accept/reject/counters through provider schemas and the client protocol.
-- [ ] Commit agreed promises atomically with the contract and story; preserve them across restart.
+- [x] Wire promise proposals/accept/reject/counters through provider schemas and the Python pipe/HTTP protocol; native/game UI remains under integration milestones.
+- [x] Commit agreed promises atomically with the contract and story; preserve them across restart.
 - [ ] Derive actual touch/start/yard/win evidence from verified game counters; never infer unavailable targets or starts from other stats.
 - [ ] Apply goal consequences to trust, satisfaction and future negotiation with context for injury, availability and coaching choices.
 - [ ] Display promised vs observed goals and fulfillment score in the game/browser interface.

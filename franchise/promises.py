@@ -75,3 +75,22 @@ def score_promises(goals, observations, *, window_closed):
             'observed_progress':str(achieved_weight/known_weight) if known_weight else None,
             'final_achievement_score':str(achieved_weight/total_weight) if window_closed and known_weight == total_weight else None,
             'financial_effect':None}
+
+
+def goals_from_list(data):
+    if type(data) is not list:
+        raise ValueError('Complete promise goal list required')
+    fields = {'goal_id','metric','target','importance','window','source'}
+    if any(type(item) is not dict or set(item) != fields for item in data):
+        raise ValueError('Unexpected promise goal fields')
+    goals = tuple(PromiseGoal(**item) for item in data)
+    if len({goal.goal_id for goal in goals}) != len(goals):
+        raise ValueError('Unique promise identities required')
+    return goals
+
+
+GOAL_SCHEMA = {'type':'object','additionalProperties':False,
+    'properties':{'goal_id':{'type':'string'},'metric':{'type':'string','enum':sorted(METRICS)},
+                  'target':{'type':'integer'},'importance':{'type':'integer'},
+                  'window':{'type':'string'},'source':{'type':'string'}},
+    'required':['goal_id','metric','target','importance','window','source']}

@@ -3,6 +3,7 @@ import json
 from dataclasses import asdict, dataclass
 from threading import RLock
 from franchise.cap import Ledger, Offer, Rejected, json_amount
+from franchise.promises import GOAL_SCHEMA, goals_from_list
 
 
 DECISION_SCHEMA = {
@@ -12,9 +13,10 @@ DECISION_SCHEMA = {
         "reason": {"type": "string"},
         "salaries": {"type": ["array", "null"], "items": {"type": "integer"}},
         "signing_bonus": {"type": ["integer", "null"]},
+        "promise_goals": {"type": ["array", "null"], "items": GOAL_SCHEMA},
         "guaranteed_salaries": {"type": ["array", "null"], "items": {"type": "integer"}},
     },
-    "required": ["action", "reason", "salaries", "signing_bonus", "guaranteed_salaries"],
+    "required": ["action", "reason", "salaries", "signing_bonus", "guaranteed_salaries", "promise_goals"],
 }
 
 
@@ -23,18 +25,20 @@ class Decision:
     action: str
     reason: str
     counter: Offer | None
+    counter_promises: tuple = ()
 
     @classmethod
     def parse(cls, text: str, player_id: str):
         data = json.loads(text)
         required = set(DECISION_SCHEMA["required"])
-        if type(data) is not dict or set(data) not in (required, required - {"guaranteed_salaries"}):
+        if type(data) is not dict or set(data) not in (required, required - {"guaranteed_salaries"}, required - {"promise_goals"}, required - {"guaranteed_salaries", "promise_goals"}):
             raise ValueError("Unexpected model decision fields")
         if data["action"] not in ("accept", "reject", "counter"):
             raise ValueError("Unknown negotiation action")
         if type(data["reason"]) is not str or not data["reason"].strip():
             raise ValueError("Decision must include a reason")
         counter = None
+        counter_promises = ()
         if data["action"] == "counter":
             if type(data["salaries"]) is not list:
                 raise ValueError("Counteroffer requires annual salaries")
@@ -42,9 +46,11 @@ class Decision:
             if guarantees is not None and type(guarantees) is not list:
                 raise ValueError("Annual counter guarantees required")
             counter = Offer(player_id, tuple(data["salaries"]), data["signing_bonus"], tuple(guarantees or ()))
-        elif data["salaries"] is not None or data["signing_bonus"] is not None or data.get("guaranteed_salaries") is not None:
+            if "promise_goals" in data:
+                counter_promises = goals_from_list(data["promise_goals"])
+        elif data["salaries"] is not None or data["signing_bonus"] is not None or data.get("guaranteed_salaries") is not None or data.get("promise_goals") is not None:
             raise ValueError("Accept/reject cannot silently change offered terms")
-        return cls(data["action"], data["reason"], counter)
+        return cls(data["action"], data["reason"], counter, counter_promises)
 
 
 class Negotiation:
@@ -80,23 +86,29 @@ class Negotiation:
         with self._lock:
             return json.loads(json.dumps(self._events))
 
-    def respond(self, request_id: str, offer: Offer, provider, *, expected_revision=None) -> dict:
+    def respond(self, request_id: str, offer: Offer, provider, *, expected_revision=None, promise_goals=()) -> dict:
         with self._lock:
-            return self._respond(request_id, offer, provider, expected_revision=expected_revision)
+            return self._respond(request_id, offer, provider, expected_revision=expected_revision, promise_goals=promise_goals)
 
-    def _respond(self, request_id: str, offer: Offer, provider, *, expected_revision=None) -> dict:
+    def _respond(self, request_id: str, offer: Offer, provider, *, expected_revision=None, promise_goals=()) -> dict:
         self._access_check()
+        if type(promise_goals) is not tuple:
+            raise ValueError("Immutable promise proposals required")
+        proposed = [asdict(goal) for goal in promise_goals]
+        goals_from_list(proposed)
         if offer.player_id != self.player_id:
             raise ValueError("Offer belongs to another player")
         if type(request_id) is not str or not request_id.strip():
             raise ValueError("A negotiation request ID is required")
         prior = self._replies.get(request_id)
         if prior is not None:
-            if prior[0] != offer:
+            if prior[0] != offer or prior[1].get("promise_goals", []) != proposed:
                 raise ValueError("Negotiation request ID reused with different terms")
             return json.loads(json.dumps(prior[1]))
         recorded = self.ledger.recalled_negotiation(request_id, offer)
         if recorded is not None:
+            if recorded.get("promise_goals", []) != proposed:
+                raise ValueError("Negotiation request ID reused with different promises")
             self._replies[request_id] = (offer, recorded)
             if not any(event["request_id"] == request_id for event in self._events):
                 self._events.append(recorded)
@@ -116,8 +128,11 @@ class Negotiation:
             raise Rejected("Offer was based on stale client franchise state")
         context = {"player_id": self.player_id, **json.loads(self._actor),
                    "offer": offer.to_dict(), "accounting": snapshot,
-                   "history": self.events}
-        decision = Decision.parse(provider(context), self.player_id)
+                   "history": self.events, "promise_goals": proposed}
+        response = provider(context)
+        decision = Decision.parse(response, self.player_id)
+        if proposed and decision.action == "counter" and "promise_goals" not in json.loads(response):
+            raise ValueError("Counter must explicitly preserve, change or withdraw promise proposals")
         self._access_check()
         event = {"request_id": request_id, "offer": offer.to_dict(),
                  "action": decision.action, "reason": decision.reason,
@@ -125,6 +140,9 @@ class Negotiation:
                  "outcome": "pending",
                  "evidence": {**json.loads(self._actor), "financial_revision": snapshot["revision"]},
                  "history_request_ids": [entry["request_id"] for entry in context["history"]]}
+        if proposed or decision.counter_promises:
+            event["promise_goals"] = proposed
+            event["counter_promises"] = [asdict(goal) for goal in decision.counter_promises] if decision.action == "counter" else None
         if decision.action == "accept":
             try:
                 receipt = self.ledger.commit_negotiation(

@@ -30,7 +30,16 @@ Use rookie_available_to_player so drafted offers preserve the reserved UDFA shar
 in rookie year three or four requires fully protected base in the immediately
 preceding year; this chains through year two when year four is protected. Future salaries
 are commitments, not evidence of future cap room. No conditional guarantees, vesting, offsets,
-incentives, options, trades, releases, or playing-time promises may be added.
+incentives, options, trades, releases, or monetary incentives may be added.
+Nonfinancial promise_goals may negotiate touches (carries plus receptions), starts,
+receiving/rushing/passing yards or team wins. Targets are not touches. Separate
+coach-controlled role commitments from uncertain production/team outcomes. Use
+explicit positive integer targets, player importance 1-100, observation window,
+stable goal_id and fictional proposal source. Do not claim future outcomes as facts.
+Accept/reject must return null promise_goals and preserve proposed goals exactly.
+A counter returns a complete promise_goals array, including [] to withdraw them;
+never silently discard proposed promises. Promises create no salary, bonus or cap
+charges. Fulfillment measures agreed goals, not hidden ability or composite ratings.
 Your acceptance is provisional until the accounting engine commits it. Give a
 brief player-facing reason reflecting this actor's priorities and remembered events.
 """

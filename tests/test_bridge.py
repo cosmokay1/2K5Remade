@@ -99,3 +99,15 @@ class BridgeTests(unittest.TestCase):
         changed = {**request, "offer": {**request["offer"], "guaranteed_salaries": [0]}}
         self.assertEqual(self.bridge.handle(changed)["error"], "state_rejected")
         self.assertEqual(self.store.load_team("a").revision, 1)
+
+    def test_optional_promise_terms_persist_and_changed_retry_is_rejected(self):
+        goal={'goal_id':'starts','metric':'starts','target':8,'importance':80,
+              'window':'synthetic next season','source':'authored fixture'}
+        request=self.request(promise_goals=[goal])
+        reply=self.bridge.handle(request)
+        self.assertEqual(reply['result']['promise_goals'],[goal])
+        self.assertEqual(self.bridge.handle(request),reply)
+        changed=self.bridge.handle(self.request(promise_goals=[{**goal,'target':12}]))
+        self.assertEqual(changed['error'],'invalid_request')
+        self.assertEqual(self.calls,1)
+        self.assertEqual(self.store.load_team('a').revision,1)
