@@ -210,3 +210,25 @@ class DraftComparisonTests(unittest.TestCase):
                 db.commit()
             with self.assertRaises(Rejected):
                 store.load_team('a')
+
+    def test_recorded_scouting_evidence_revalidates_on_database_replay(self):
+        import json,sqlite3,tempfile
+        from contextlib import closing
+        from franchise.draft import DraftScouting
+        for scenario in ('duplicate','foreign','opportunities','missing_counters'):
+            with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as directory:
+                store,ledger,inputs=self.durable_scouting(directory)
+                DraftScouting(ledger,access_check=lambda:None).recommend('advice',lambda _:json.dumps(
+                    {'action':'recommend','player_id':'a','reason':'Observed production','uncertainty':'Targets unknown'}),**inputs)
+                with closing(sqlite3.connect(store.path)) as db:
+                    row=db.execute("SELECT id,payload FROM events WHERE kind='draft_scouting'").fetchone()
+                    payload=json.loads(row[1])
+                    windows=payload['event']['evidence']['prospects'][0]['performance']
+                    if scenario == 'duplicate': windows.append(windows[0])
+                    if scenario == 'foreign': windows[0]['player_id']='b'
+                    if scenario == 'opportunities':
+                        windows[0]['observations']['targets']={'value':1,'source':'fixture','unavailable_reason':None}
+                    if scenario == 'missing_counters': windows[0]['missing_counters']=[]
+                    db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(payload),row[0]))
+                    db.commit()
+                with self.assertRaises(ValueError): store.load_team('a')

@@ -1127,3 +1127,15 @@ recommendation. Separate simulation modes remain explicit records rather than be
 summed. Regression verifies no provider call and unchanged financial state on rejection.
 219 local tests pass. Actual scouting observations and guest draft integration remain
 unfinished; the new boundary does not infer opportunity counters or hidden grades.
+
+## October 13, 2026 — Durable scouting evidence reconstruction
+
+Scouting write/replay validation now reconstructs typed PerformanceEvidence and
+Observation records for every candidate, requiring player ownership, unique
+window/mode identities and exact derived context metadata. This rejects duplicate
+history snapshots, foreign player identity, impossible receptions/targets and
+falsified missing-counter coverage rather than trusting persisted JSON containers.
+Database-tampering regressions exercise all four cases; 220 local tests pass.
+Durable multi-window c9133c2 passed Franchise AI run 38479378828 and Build check
+38479379061. Recent draft/evidence commits still awaited their own CI at inspection.
+No real-game observations or playable runtime were available.

@@ -3,7 +3,28 @@ import json
 from dataclasses import dataclass
 from franchise.cap import Offer, Rejected
 from franchise.negotiation import validate_performance
-from franchise.performance import PerformanceEvidence
+from franchise.performance import PerformanceEvidence, Observation
+
+
+def validate_observation_contexts(player_id, windows):
+    """Reconstruct typed evidence on durable replay, including coverage metadata."""
+    if type(windows) is not list or not windows:
+        raise ValueError('Recorded prospect observation windows required')
+    identities=set()
+    for window in windows:
+        if type(window) is not dict or type(window.get('observations')) is not dict:
+            raise ValueError('Complete recorded observation context required')
+        records=[]
+        for counter,record in window['observations'].items():
+            if type(record) is not dict or set(record) != {'value','source','unavailable_reason'}:
+                raise ValueError('Complete sourced counter observation required')
+            records.append(Observation(counter,**record))
+        evidence=PerformanceEvidence(window.get('player_id'),window.get('window'),window.get('mode'),
+            tuple(records),window.get('coverage'),team_id=window.get('team_id'),complete_window=window.get('complete_window'))
+        identity=(evidence.window,evidence.mode)
+        if evidence.player_id != player_id or identity in identities or evidence.to_context() != window:
+            raise ValueError('Inconsistent or duplicate recorded prospect evidence')
+        identities.add(identity)
 
 
 @dataclass(frozen=True)
@@ -215,6 +236,7 @@ def validate_scouting(event, ledger):
             or context['overall_pick'] < 1):
         raise ValueError('Identified draft comparison required')
     for item in prospects:
+        validate_observation_contexts(item['player_id'],item.get('performance'))
         validation = item.get('contract_validation')
         if type(validation) is not dict or validation.get('status') not in ('eligible', 'ineligible'):
             raise ValueError('Financial estimate validation required')
