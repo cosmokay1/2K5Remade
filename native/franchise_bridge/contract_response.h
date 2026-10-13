@@ -66,6 +66,48 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
     if (!response["error"].is_null()) return;
     const auto& result = response["result"];
     auto operation = request.at("operation").get<std::string>();
+    if (operation == "manual_trade") {
+        const auto seller=request.at("seller").get<std::string>(), buyer=request.at("buyer").get<std::string>();
+        if (seller.empty() || buyer.empty() || seller == buyer || result.at("decision_mode") != "manual" ||
+            result.at("seller") != seller || result.at("buyer") != buyer || result.at("player_id") != request.at("player_id"))
+            throw std::runtime_error("Invalid manual assignment identity");
+        const auto& postings=result.at("trade");
+        if (!postings.is_object() || postings.size()!=2) throw std::runtime_error("Invalid paired assignment postings");
+        auto scope=request.at("scope");
+        auto& exclusions=scope.at("exclusions");
+        if (!exclusions.is_array()) throw std::runtime_error("Invalid assignment exclusions");
+        for (const auto& item : exclusions) if (!item.is_string()) throw std::runtime_error("Invalid assignment exclusion identity");
+        std::sort(exclusions.begin(),exclusions.end());
+        for (const auto& team : {seller,buyer}) {
+            const auto& financial=postings.at(team).at("financial");
+            const auto& cash=postings.at(team).at("cash");
+            const auto& expected_json=request.at(team==seller ? "seller_revision" : "buyer_revision");
+            integer_money(expected_json); integer_money(financial.at("revision"));
+            const auto expected=expected_json.get<int64_t>();
+            if (expected==std::numeric_limits<int64_t>::max() || financial.at("revision")!=expected+1 ||
+                !financial.at("charges").is_array() || !financial.at("signed_players").is_array())
+                throw std::runtime_error("Invalid assignment revision or charges");
+            size_t owner_count=0;
+            for (const auto& player : financial.at("signed_players")) {
+                if (!player.is_string()) throw std::runtime_error("Invalid assignment player list");
+                if (player==request.at("player_id")) ++owner_count;
+            }
+            if (owner_count!=(team==buyer ? 1 : 0)) throw std::runtime_error("Invalid assigned player ownership");
+            for (const auto& charge : financial.at("charges")) exact_money(charge);
+            integer_money(cash.at("nominal_total")); integer_money(cash.at("paid_total")); integer_money(cash.at("unpaid_total"));
+            if (cash.at("paid_total")>cash.at("nominal_total") || cash.at("unpaid_total").get<int64_t>() !=
+                cash.at("nominal_total").get<int64_t>()-cash.at("paid_total").get<int64_t>())
+                throw std::runtime_error("Invalid assigned cash totals");
+            const auto& archive=financial.at(team==seller ? "outgoing_trades" : "incoming_trades").at(request.at("player_id").get<std::string>());
+            if (archive.at("scope")!=scope || canonical_offer(archive.at("original_contract").at("offer")).at("player_id")!=request.at("player_id"))
+                throw std::runtime_error("Response changed assignment source facts");
+        }
+        const auto player=request.at("player_id").get<std::string>();
+        if (postings.at(seller).at("financial").at("outgoing_trades").at(player) !=
+            postings.at(buyer).at("financial").at("incoming_trades").at(player))
+            throw std::runtime_error("Paired assignment archives disagree");
+        return;
+    }
     if (operation == "manual_release") {
         if (result.at("decision_mode") != "manual" || result.at("player_id") != request.at("player_id"))
             throw std::runtime_error("Invalid manual release identity");

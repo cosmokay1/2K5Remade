@@ -43,6 +43,24 @@ int main() {
         release_archive["discount"]=release_request["discount"];
         release_archive["payment_year_offsets"]=release_request["payment_year_offsets"];
         franchise::validate_result(release_reply,release_request);
+        auto trade_request=franchise::parse_frame(R"({"operation":"manual_trade","seller":"a","buyer":"b","player_id":"v","seller_revision":1,"buyer_revision":1,"scope":{"source":"fixture","exclusions":[]}})");
+        auto trade_reply=franchise::parse_frame(R"({"error":null,"result":{"decision_mode":"manual","seller":"a","buyer":"b","player_id":"v","trade":{"a":{"financial":{"revision":2,"charges":[9],"signed_players":[]},"cash":{"nominal_total":9,"paid_total":9,"unpaid_total":0}},"b":{"financial":{"revision":2,"charges":[10,20,30],"signed_players":["v"]},"cash":{"nominal_total":60,"paid_total":0,"unpaid_total":60}}}}})");
+        auto assignment_archive=nlohmann::json{{"scope",trade_request["scope"]},{"original_contract",release_archive["original_contract"]}};
+        trade_reply["result"]["trade"]["a"]["financial"]["outgoing_trades"]={{"v",assignment_archive}};
+        trade_reply["result"]["trade"]["b"]["financial"]["incoming_trades"]={{"v",assignment_archive}};
+        franchise::validate_result(trade_reply,trade_request);
+        for (int scenario=0;scenario<6;++scenario) {
+            auto bad=trade_reply;
+            if (scenario==0) bad["result"]["trade"]["a"]["financial"]["signed_players"]={"v"};
+            if (scenario==1) bad["result"]["trade"]["b"]["financial"]["signed_players"]=nlohmann::json::array();
+            if (scenario==2) bad["result"]["trade"]["b"]["financial"]["revision"]=3;
+            if (scenario==3) bad["result"]["trade"]["b"]["financial"]["incoming_trades"]["v"]["scope"]["source"]="other";
+            if (scenario==4) bad["result"]["trade"]["b"]["cash"]["unpaid_total"]=55;
+            if (scenario==5) bad["result"]["trade"]["b"]["financial"]["incoming_trades"]["v"]["assigned_base"]=60;
+            bool rejected=false;
+            try { franchise::validate_result(bad,trade_request); } catch (const std::exception&) { rejected=true; }
+            if (!rejected) throw std::runtime_error("Invalid paired assignment accepted");
+        }
         for (int scenario=0;scenario<7;++scenario) {
             auto bad=release_reply;
             if (scenario==0) bad["result"]["release"]["financial"]["signed_players"]={"v"};

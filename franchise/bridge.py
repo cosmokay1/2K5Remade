@@ -29,7 +29,40 @@ class Bridge:
                 if set(request) != {"protocol", "request_id", "operation"}:
                     raise ValueError("Unexpected handshake fields")
                 self.access_check()
-                return self._reply(request_id, result={"ai_enabled": True, "operations": ["preview", "negotiate", "manual_sign", "manual_release", "player_context"]})
+                return self._reply(request_id, result={"ai_enabled": True, "operations": ["preview", "negotiate", "manual_sign", "manual_release", "manual_trade", "player_context"]})
+            if operation == 'manual_trade':
+                from datetime import date
+                from franchise.trades import PreseasonTradeScope
+                if set(request) != {'protocol','request_id','operation','seller','buyer','player_id','seller_revision',
+                                    'buyer_revision','timeout_ms','decision_mode','scope'} or request['decision_mode'] != 'manual':
+                    raise ValueError('Explicit complete manual assignment required')
+                timeout=request['timeout_ms']
+                if type(timeout) is not int or not 1 <= timeout <= 60000:
+                    raise ValueError('Timeout must be 1-60000 milliseconds')
+                deadline=time.monotonic()+timeout/1000
+                def trade_access():
+                    self.connection_check()
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError('Assignment request expired')
+                trade_access()
+                if type(request['scope']) is not dict:
+                    raise ValueError('Sourced assignment facts required')
+                scope=dict(request['scope'])
+                exclusions=scope['exclusions']
+                if type(exclusions) is not list or any(type(item) is not str for item in exclusions) or len(set(exclusions)) != len(exclusions):
+                    raise ValueError('Unique explicit assignment exclusions required')
+                scope['exclusions']=frozenset(exclusions)
+                for field in ('traded_on','seller_first_regular_season_game','buyer_first_regular_season_game'):
+                    value=scope[field]
+                    parsed=date.fromisoformat(value)
+                    if parsed.isoformat() != value:
+                        raise ValueError('Canonical YYYY-MM-DD assignment dates required')
+                    scope[field]=parsed
+                receipt=self.store.trade_preseason_veteran(request_id,request['seller'],request['buyer'],request['player_id'],
+                    scope=PreseasonTradeScope(**scope),seller_revision=request['seller_revision'],buyer_revision=request['buyer_revision'],
+                    access_check=trade_access)
+                return self._reply(request_id,result={'decision_mode':'manual','player_id':request['player_id'],
+                    'seller':request['seller'],'buyer':request['buyer'],'trade':receipt})
             if operation == 'manual_release':
                 from datetime import date
                 from franchise.releases import PreseasonReleaseScope

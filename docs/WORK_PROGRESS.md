@@ -1484,3 +1484,15 @@ three-club chain changes no current cash/cap/ownership state.267 local tests pas
 Atomic trade efc262f runs38483265439/38483265491 remained in progress at inspection;
 pure trade2ac6a53 passed38482850540/38482850516. Real guest transaction/gameplay and
 official posting precision remain unverified.
+
+## October 13, 2026 — Manual paired assignment through client bridge
+
+Strict protocol1 manual_trade accepts both participant revisions and mandatory
+canonical sourced scope, without provider/remote AI calls. Final connection/deadline
+failure rolls back both participants. Native result checks both revisions/owners,
+exact charges/cash arithmetic and unchanged paired archives/facts. Tests cover AI-off
+commit/retry, source/mode/stale/date rejection, disconnect rollback and malformed
+native replies. Found bool==int retry equality gap; store release/trade methods now
+reject noninteger revisions before prior-receipt comparison.269 local tests and
+portable CTest pass. Actual Win32 assignment transport and game controls remain
+unverified; trade consideration and official posting precision remain unsupported.

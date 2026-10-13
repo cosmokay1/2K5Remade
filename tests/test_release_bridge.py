@@ -26,6 +26,7 @@ class ReleaseBridgeTests(unittest.TestCase):
             self.assertEqual(reply['result']['release']['financial']['signed_players'],[])
             self.assertEqual(reply['result']['release']['cash']['unpaid_total'],30)
             self.assertEqual(bridge.handle(self.request()),reply)
+            self.assertEqual(bridge.handle({**self.request(),'expected_revision':True})['error'],'invalid_request')
             self.assertEqual(store.load_team('a').revision,2)
 
     def test_disconnect_and_invalid_scope_leave_release_uncommitted(self):

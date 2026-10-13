@@ -594,6 +594,8 @@ class FranchiseStore:
             raise ValueError('Distinct identified trade participants required')
         if not isinstance(scope,PreseasonTradeScope) or not callable(access_check):
             raise ValueError('Sourced trade scope and final access check required')
+        if any(type(revision) is not int or revision < 0 for revision in (seller_revision,buyer_revision)):
+            raise ValueError('Integer participant revisions required')
         scope_data=asdict(scope)
         for field in ('traded_on','seller_first_regular_season_game','buyer_first_regular_season_game'):
             scope_data[field]=getattr(scope,field).isoformat()
@@ -658,6 +660,8 @@ class FranchiseStore:
             raise ValueError('Stable release identities and final access check required')
         if not isinstance(scope,PreseasonReleaseScope) or not isinstance(discount,DiscountProfile) or type(payment_year_offsets) is not tuple:
             raise ValueError('Typed sourced release inputs required')
+        if type(expected_revision) is not int or expected_revision < 0:
+            raise ValueError('Integer release revision required')
         scope_data=asdict(scope)
         scope_data.update(removed_on=scope.removed_on.isoformat(),first_regular_season_game=scope.first_regular_season_game.isoformat(),
                           exclusions=sorted(scope.exclusions))

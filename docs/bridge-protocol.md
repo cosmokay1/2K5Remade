@@ -161,3 +161,15 @@ Result contains decision_mode, player_id and release {financial,cash} original r
 Native validation checks revision progression, player removal/archive identity, exact
 charges and nominal/paid/unpaid totals. This does not independently calculate CBA
 posting rules or grant guest-memory write authority. No game/browser release UI exists.
+
+### Explicit supported manual assignment
+
+`manual_trade` requires protocol1, request_id, seller, buyer, player_id,
+seller_revision, buyer_revision, timeout_ms, decision_mode=`manual` and complete
+PreseasonTradeScope JSON. Dates must be canonical YYYY-MM-DD and exclusions a unique
+array. It calls no model and needs local connection/deadline validity at final paired
+commit. Result contains manual mode, identities and `trade` receipts keyed by each
+team, each {financial,cash}. Native validation checks both revisions, one recipient
+owner/no seller owner, exact charges/cash totals, unchanged scope and identical shared
+assignment archives. These are response integrity checks, not independent NFL/game
+reconciliation. No native/game/browser assignment controls are implemented.
