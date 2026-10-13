@@ -41,6 +41,35 @@ def main():
             failed = subprocess.run([sys.argv[1], python, database],
                                     text=True, capture_output=True, timeout=20)
             assert failed.returncode != 0, "Native client must fail closed on launch/service failure"
+        # Keep a process handle open before triggering parent termination, so PID
+        # reuse cannot turn this ownership check into a false positive.
+        import ctypes
+        from ctypes import wintypes
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        kernel.OpenProcess.restype = wintypes.HANDLE
+        kernel.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        kernel.WaitForSingleObject.restype = wintypes.DWORD
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        parent = subprocess.Popen([sys.argv[1], sys.executable, str(path), "--abrupt"],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        child = None
+        try:
+            child_pid = int(parent.stdout.readline())
+            child = kernel.OpenProcess(0x00100000, False, child_pid)  # SYNCHRONIZE
+            assert child, "Could not observe sidecar process"
+            parent.stdin.write("exit\n")
+            parent.stdin.flush()
+            assert parent.wait(timeout=5) == 0
+            assert kernel.WaitForSingleObject(child, 5000) == 0, "Sidecar survived abrupt native parent exit"
+        finally:
+            if parent.poll() is None:
+                parent.kill()
+                parent.wait(timeout=5)
+            for stream in (parent.stdin, parent.stdout, parent.stderr):
+                stream.close()
+            if child:
+                kernel.CloseHandle(child)
         assert store.load_team("a").revision == 1
         assert store.load_team("a").charges == (10,)
         assert len(store.negotiation_history("a", "v")) == 2

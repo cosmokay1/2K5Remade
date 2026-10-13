@@ -55,3 +55,10 @@ The native transport compiled and executed on Windows at `dd1ed9e`, CI run
 38464795249. That revision verifies handshake/preview/dialogue/restart and launch
 failure exits. The expanded manual-signing/cap-rejection native fixture requires
 its own subsequent passing Windows run. Neither fixture exercises the actual game.
+
+Native sidecar ownership uses a Windows job assigned at process creation, with
+termination on final job-handle close. Windows 10/Server 2016+ required. See
+[Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects)
+and [UpdateProcThreadAttribute](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute).
+The abrupt-parent-exit fixture requires Windows runtime evidence before this
+implementation can be treated as verified.

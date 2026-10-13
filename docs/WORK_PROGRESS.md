@@ -394,3 +394,18 @@ legal manual signing, and identical agreement recall from a second native proces
 The final database must have exactly one signing revision, ten dollars in charges
 and the earlier rejection plus manual story. New Windows evidence pending; local
 112 portable tests remain passing. Original build/rights/real-save gates persist.
+
+## October 13, 2026 — Native parent/sidecar lifetime ownership
+
+Native client now creates its sidecar in a noninherited Windows job with
+KILL_ON_JOB_CLOSE, assigned atomically through PROC_THREAD_ATTRIBUTE_JOB_LIST.
+This avoids starting inference before ownership assignment. Configuration failure
+rejects launch; normal cleanup retains existing graceful pipe close before kill.
+Requires Windows 10/Server 2016 or later, matching the current Windows CI target.
+Primary API references: Microsoft Job Objects and UpdateProcThreadAttribute docs.
+
+Expanded Windows fixture deliberately calls ExitProcess without C++ destructors.
+The verifier opens the sidecar process handle before signaling parent exit, then
+requires termination within five seconds, avoiding PID-reuse ambiguity. Actual
+Windows compilation/execution of this addition is pending. 112 local portable
+tests still pass; no cloud calls/game assets used.

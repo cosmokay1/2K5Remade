@@ -4,9 +4,15 @@
 int wmain(int argc, wchar_t** argv) {
     if (argc != 3 && argc != 4) return 2;
     const bool replay = argc == 4 && std::wstring(argv[3]) == L"--replay";
-    if (argc == 4 && !replay) return 2;
+    const bool abrupt = argc == 4 && std::wstring(argv[3]) == L"--abrupt";
+    if (argc == 4 && !replay && !abrupt) return 2;
     try {
         franchise::PipeClient client(argv[1], argv[2]);
+        if (abrupt) {
+            std::cout << client.process_id() << std::endl;
+            std::cin.get();
+            ExitProcess(0);  // Deliberately bypass all client destructors.
+        }
         const char* requests[] = {
             R"({"protocol":1,"request_id":"hello","operation":"hello"})",
             R"({"protocol":1,"request_id":"preview","operation":"preview","team_id":"a","offer":{"player_id":"v","salaries":[10],"signing_bonus":0},"expected_revision":0,"timeout_ms":1000})",

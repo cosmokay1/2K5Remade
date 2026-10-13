@@ -22,7 +22,7 @@ inline std::wstring quote(const std::wstring& value) {
 }
 
 class PipeClient {
-    HANDLE input_ = nullptr, output_ = nullptr, process_ = nullptr;
+    HANDLE input_ = nullptr, output_ = nullptr, process_ = nullptr, job_ = nullptr;
     std::future<std::string> pending_;
     void close() noexcept {
         if (input_) { CloseHandle(input_); input_ = nullptr; }
@@ -33,6 +33,7 @@ class PipeClient {
             }
             CloseHandle(process_); process_ = nullptr;
         }
+        if (job_) { CloseHandle(job_); job_ = nullptr; }
         if (output_) { CloseHandle(output_); output_ = nullptr; }
     }
 public:
@@ -50,16 +51,38 @@ public:
             CloseHandle(child_input); CloseHandle(child_output); close();
             throw std::runtime_error("Pipe inheritance configuration failed");
         }
-        STARTUPINFOW startup{}; startup.cb = sizeof(startup);
-        startup.dwFlags = STARTF_USESTDHANDLES;
-        startup.hStdInput = child_input; startup.hStdOutput = child_output;
-        startup.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+        job_ = CreateJobObjectW(nullptr, nullptr);
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION limits{};
+        limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+        SIZE_T attribute_size = 0;
+        InitializeProcThreadAttributeList(nullptr, 1, 0, &attribute_size);
+        auto attributes_list = static_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(
+            HeapAlloc(GetProcessHeap(), 0, attribute_size));
+        bool initialized = attributes_list && InitializeProcThreadAttributeList(attributes_list, 1, 0, &attribute_size);
+        bool configured = initialized && job_ &&
+            SetInformationJobObject(job_, JobObjectExtendedLimitInformation, &limits, sizeof(limits)) &&
+            UpdateProcThreadAttribute(attributes_list, 0, PROC_THREAD_ATTRIBUTE_JOB_LIST,
+                                      &job_, sizeof(job_), nullptr, nullptr);
+        if (!configured) {
+            if (initialized) DeleteProcThreadAttributeList(attributes_list);
+            if (attributes_list) HeapFree(GetProcessHeap(), 0, attributes_list);
+            CloseHandle(child_input); CloseHandle(child_output); close();
+            throw std::runtime_error("Sidecar ownership setup failed");
+        }
+        STARTUPINFOEXW startup{}; startup.StartupInfo.cb = sizeof(startup);
+        startup.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
+        startup.StartupInfo.hStdInput = child_input; startup.StartupInfo.hStdOutput = child_output;
+        startup.StartupInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+        startup.lpAttributeList = attributes_list;
         PROCESS_INFORMATION info{};
         // Explicit fixture only. Production credentials and mode are not wired here.
         std::wstring command = quote(python) + L" -m franchise.sidecar --database " +
                                quote(database) + L" --provider offline-fixture";
         BOOL started = CreateProcessW(python.c_str(), command.data(), nullptr, nullptr,
-                                      TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &startup, &info);
+                                      TRUE, CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT,
+                                      nullptr, nullptr, &startup.StartupInfo, &info);
+        DeleteProcThreadAttributeList(attributes_list);
+        HeapFree(GetProcessHeap(), 0, attributes_list);
         CloseHandle(child_input); CloseHandle(child_output);
         if (!started) { close(); throw std::runtime_error("Sidecar launch failed"); }
         process_ = info.hProcess; CloseHandle(info.hThread);
@@ -71,6 +94,7 @@ public:
         if (pending_.valid()) pending_.wait();
         close();
     }
+    DWORD process_id() const { return GetProcessId(process_); }
     void submit(std::string json) {
         if (!process_) throw std::runtime_error("Client is disconnected");
         if (pending_.valid()) throw std::runtime_error("Client request already pending");
