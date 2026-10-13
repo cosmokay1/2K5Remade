@@ -1424,3 +1424,24 @@ release and first-game dates before any mutation. Added compact-date rollback ca
 250 local tests pass. Native release fixture a4c83a0 Build check38482311350 passed;
 Franchise AI38482311333 was still in progress at inspection. No Win32 release
 execution success is claimed until its actual step completes.
+
+## October 13, 2026 — Windows native release execution verified
+
+Native fixture a4c83a0 passed Franchise AI38482311333 and Build check38482311350.
+Completed logs explicitly confirm Windows supported release, retained debt/cash and
+restart retry;250 tests passed Windows and Linux. Later native-fact/canonical-date
+changes still require their own CI. This is synthetic C++/Python transport evidence,
+not playable Remade guest execution or save/load verification.
+
+## October 13, 2026 — Preseason trade primary-rule review
+
+Independent review verifies CBAArticle13§6(b)(ii) bonus acceleration applies to trades,
+AppendixA paragraph17 contract assignment requires assignee performance, and release
+PV rule13§6(d)(iv) does not establish seller guarantee-PV charges for ordinary trades.
+Unpaid signing-bonus responsibility is not inferred from retained cap debt; initial
+supported trade must require fully paid bonus pending actual contractual assignment
+terms. Synthetic expectation: original10,20,30/bonus9/protected0,20,10 gives seller
+preJune9 or postJune(3,6), buyerbase(10,20,30), sellerpaid9/buyerunpaid60. Guarantees
+remain with assigned active salary, not guessed seller PV. Full review/design pending;
+no trade authority implemented yet. Next work requires atomic paired team events,
+ownership reassignment, original archives and cash/cap reconciliation on both sides.
