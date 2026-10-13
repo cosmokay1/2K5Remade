@@ -837,3 +837,20 @@ franchise endpoint denial and authenticated unconfigured-state behavior were che
 Tokens/key are private ignored local files. Current origin has no attached franchise
 database; browser UI, package downloads, production startup/certificate renewal and
 real-game integration remain outstanding. No paid inference or financial writes.
+
+## October 13, 2026 — Durable HTTP negotiation boundary
+
+Added token-authenticated HTTP negotiation through the existing Bridge, limited
+to the configured franchise and negotiate operation, with one inference/no queue.
+Default AI remains disabled. Explicit vertex-runtime startup uses restricted
+impersonated credentials and remote GoogleControl; no owner fallback or IAM change.
+165 tests pass locally. Actual loopback test verifies disabled-before-model,
+shutdown-during-model acceptance with unchanged finances, durable sign/retry with
+no regenerated model decision, restart revision and cross-team denial. Public
+origin still has no database/model, and browser UI/live inference remain unfinished.
+Prior a3a0949 Franchise AI CI passed; its inherited build check failed fetching the
+xboxrecomp submodule because GitHub TCP connection timed out, before compilation.
+Latest TLS 6440101 CI was still running when inspected; no full-game validation.
+
+TLS commit `6440101` subsequently passed Franchise AI CI run 38474298115 and
+inherited build check run 38474298056. The inherited timeout did not recur.

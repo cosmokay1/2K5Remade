@@ -229,6 +229,6 @@ See packaging/steamdeck/README.md. Candidate packaging is not playable delivery.
 - [x] Restore Cloudflare connector write access; dedicated tunnel creation succeeded after reconnect.
 - [x] Create dedicated tunnel and route 2k5.cosmokay.com; verify HTTPS 200, origin certificate validation and scoped HTTP-to-HTTPS 308.
 - [ ] Add authenticated browser franchise UI and project/package section.
-- [ ] Extend live negotiation/draft API with persistent transactions and existing remote killswitch.
+- [ ] Extend live negotiation/draft API with persistent transactions and existing remote killswitch. HTTP negotiation now shares durable Bridge transactions and fresh access checks; actual restricted-runtime inference and draft transactions remain unverified/unimplemented.
 
 See docs/cloudflare-tunnel.md. Dedicated tunnel/DNS/TLS route is live; full browser franchise delivery remains unfinished.

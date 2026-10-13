@@ -2,7 +2,7 @@
 
 Requested destination: franchise browser interface/API plus a project/package
 section. Current scope implemented: an authenticated HTTP origin for stored
-franchise inspection and contract previews. Browser UI, remote negotiation,
+franchise inspection and contract previews. Browser UI, verified live-model negotiation,
 draft transactions and downloadable playable packages remain unfinished.
 
 ## Live Cloudflare route (October 13, 2026)
@@ -45,7 +45,7 @@ The origin listens on `127.0.0.1` only. `GET /health` exposes generic readiness.
 database/team, financial endpoints return 503. `GET /api/franchise` and
 `POST /api/preview` require `Authorization: Bearer TOKEN`. A preview body has
 exact fields `offer` and `revision`, using the same Offer JSON as the pipe bridge.
-It does not sign, reserve funds, call a model or toggle the Google AI switch.
+A preview does not sign, reserve funds, call a model or toggle the Google AI switch.
 Existing state must already be initialized and source-reconciled. Responses are
 uncached; error responses omit state, credentials and exception detail.
 
@@ -72,3 +72,25 @@ zone resources. Full browser UI and authenticated state connection remain next.
 Sources: [Cloudflare published applications](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/routing-to-tunnel/),
 [run parameters](https://developers.cloudflare.com/tunnel/reference/run-parameters/),
 [Single Redirect API](https://developers.cloudflare.com/rules/url-forwarding/single-redirects/create-api/).
+
+## Negotiation transport
+
+`POST /api/negotiate` uses the existing protocol-1 `negotiate` request envelope,
+including request ID, configured team ID, offer, expected revision, timeout and
+actor evidence. Other teams and operations are rejected. One negotiation executes
+at a time without a request queue; another receives 429 busy. Durable history,
+exclusive ownership, final cap validation, idempotent recall and fresh remote
+shutdown checks use the same Bridge/Negotiation/store path as the native pipe.
+Successful model acceptance can sign a contract; the preview endpoint cannot.
+
+The origin defaults to `--ai disabled`. `--ai vertex-runtime` explicitly configures
+only the restricted keyless runtime identity, with separate Google control/provider
+credentials and no administrator fallback. Authentication/dependency failures keep
+AI unavailable while inspection/preview remain usable. Pending runtime delegation
+approval is unchanged; no IAM grant or live model call was made for HTTP work.
+Current public origin has neither a database nor an enabled model. Remote transport
+supports saved prototype contracts; this is not a verified retail-game integration.
+HTTP retries can recall a committed agreement by stable request ID after a lost
+response. Client disconnects through an HTTP proxy cannot prove transaction rollback;
+retry the same ID rather than generating a new agreement. Server deadlines and
+remote shutdown are enforced at the transaction boundary.
