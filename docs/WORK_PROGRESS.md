@@ -907,3 +907,22 @@ ordering and money reservations remain unfinished. The site is not game integrat
 
 Prior advisor commit `b6dcef4` passed Franchise AI run 38475122079 and inherited
 Build check run 38475122081.
+
+## October 13, 2026 — Draft management funding reservations
+
+Added explicit sourced management earmarks for drafted-rookie contract estimates.
+Other signings preserve reserved current-year cap room and year-one/total rookie
+allocation, including the reserved UDFA share. Existing draft tenders are credited
+once. Earmarks change no NFL salary charges, actual rookie spending, cash owed or
+pick rights; actual signing removes its own earmark and posts only real terms.
+Explicit management withdrawal restores availability, without releasing a contract.
+Store events replay/retry atomically; final access denial rolls back reservation.
+179 local tests pass, including exact fractional funds, pool protection, signing
+replacement, no double-counted tender, withdrawal, restart/retry and shutdown.
+Draft ownership/order and verified game hooks remain required.
+
+Durable scouting CI run 38475440449 passed Linux but failed Windows cleanup because
+the corruption test kept a sqlite3 connection open after its transaction context.
+Changed the test to close explicitly in isolated commit bdc1ce9; CI verification
+is pending. The inherited build check run 38475440546 passed. This failure was not
+reported as a green workflow.

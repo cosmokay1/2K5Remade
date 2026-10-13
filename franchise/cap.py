@@ -145,6 +145,7 @@ class Ledger:
         self.revision = 0
         self._lock = RLock()
         self._rookies = dict(rookies or {})
+        self._draft_reservations = {}
         if self._rookies.keys() & self._veteran_minimums.keys():
             raise ValueError("A player cannot be classified as both rookie and veteran")
         known = self._rookies.keys() | self._veteran_minimums.keys()
@@ -333,6 +334,7 @@ class Ledger:
             if player_id not in self._rookies and player_id not in self._veteran_minimums:
                 raise Rejected("Player is unknown or contract classification is missing")
             scale = self._rookies.get(player_id)
+            _, reserved_one, reserved_total = self._draft_reserved(except_player=player_id)
             return {"revision": self.revision, "cap": self.cap, "room": json_amount(self.room),
                     "annual_team_charges": [json_amount(value) for value in self._charges],
                     "roster_reserve": self.roster_reserve,
@@ -344,7 +346,7 @@ class Ledger:
                                               "source": self._veteran_minimum_profile.source}
                                              if self._veteran_minimum_profile else None),
                     "existing_player_tender": self._tenders.get(player_id, 0),
-                    "room_for_replacing_player_tender": json_amount(self.room + self._tenders.get(player_id, 0)),
+                    "room_for_replacing_player_tender": json_amount(self.room + self._tenders.get(player_id, 0) + self._draft_reserved(player_id_only=player_id)[0]),
                     "rookie_scale": asdict(scale) if scale else None,
                     "rookie_allocation_profile": ({"league_year": self._rookie_pool_opening.league_year,
                                                     "source": self._rookie_pool_opening.source}
@@ -352,8 +354,8 @@ class Ledger:
                     "rookie_type": ("drafted" if hasattr(scale, "draft_round") else "undrafted") if scale else None,
                     "undrafted_bonus_remaining": self._undrafted_bonus_remaining,
                     "rookie_available_to_player": ({
-                        "year_one": json_amount(max(0, self._rookie_year_one - (Fraction(self._undrafted_bonus_remaining or 0, 3) if hasattr(scale, "draft_round") else 0))),
-                        "total": max(0, self._rookie_total - ((self._undrafted_bonus_remaining or 0) if hasattr(scale, "draft_round") else 0))} if scale else None),
+                        "year_one": json_amount(max(0, self._rookie_year_one - reserved_one - (Fraction(self._undrafted_bonus_remaining or 0, 3) if hasattr(scale, "draft_round") else 0))),
+                        "total": max(0, self._rookie_total - reserved_total - ((self._undrafted_bonus_remaining or 0) if hasattr(scale, "draft_round") else 0))} if scale else None),
                     "rookie_year_one_remaining": str(self._rookie_year_one),
                     "rookie_total_remaining": self._rookie_total,
                     "max_bonus_years": 4 if scale else self.max_bonus_years}
@@ -364,7 +366,7 @@ class Ledger:
 
     @property
     def room(self) -> int | Fraction:
-        return self.cap - self._charges[0] - self.roster_reserve
+        return self.cap - self._charges[0] - self.roster_reserve - self._draft_reserved()[0]
 
     def sign(self, request_id: str, offer: Offer, expected_revision: int,
              *, access_check=None) -> Signing:
@@ -409,8 +411,47 @@ class Ledger:
                     "rookie_year_one_remaining": str(self._rookie_year_one),
                     "rookie_total_remaining": self._rookie_total,
                     "rookie_tenders": dict(self._tenders),
+                    **({"draft_management_reservations": {player: {"offer": offer.to_dict(), "source": source}
+                        for player, (offer, source) in self._draft_reservations.items()}} if self._draft_reservations else {}),
                     **({"undrafted_bonus_remaining": self._undrafted_bonus_remaining}
                        if self._undrafted_bonus_remaining is not None else {})}
+
+    def _draft_reserved(self, *, except_player=None, player_id_only=None):
+        cap = one = Fraction(0)
+        total = 0
+        for player, (offer, _) in self._draft_reservations.items():
+            if player == except_player or (player_id_only is not None and player != player_id_only):
+                continue
+            charges = self._rookies[player].pool_charges(offer)
+            cap += max(0, offer.charges(4)[0] - self._tenders.get(player, 0))
+            one += charges[0]
+            total += int(sum(charges))
+        return cap, one, total
+
+    def reserve_draft_funding(self, offer, expected_revision, *, source):
+        """Management earmark only: no NFL salary charge, contract or pick right."""
+        with self._lock:
+            if type(source) is not str or not source.strip():
+                raise ValueError('Draft estimate source required')
+            from franchise.rookie import RookieScale
+            if not isinstance(self._rookies.get(offer.player_id), RookieScale):
+                raise Rejected('Drafted rookie estimate required')
+            if offer.player_id in self._draft_reservations:
+                raise Rejected('Draft funding already reserved; explicit withdrawal required')
+            self._validate_offer(offer, expected_revision)
+            self._draft_reservations[offer.player_id] = (offer, source)
+            self.revision += 1
+
+    def withdraw_draft_funding(self, player_id, expected_revision, *, source):
+        with self._lock:
+            if type(source) is not str or not source.strip():
+                raise ValueError('Management withdrawal source required')
+            if type(expected_revision) is not int or expected_revision != self.revision:
+                raise Rejected('Draft funding withdrawal used stale franchise state')
+            if player_id not in self._draft_reservations:
+                raise Rejected('No draft funding reservation')
+            del self._draft_reservations[player_id]
+            self.revision += 1
 
     def _validate_offer(self, offer: Offer, expected_revision: int):
         if type(expected_revision) is not int or expected_revision != self.revision:
@@ -419,17 +460,20 @@ class Ledger:
             raise Rejected("Player is already signed; extensions are unsupported")
         if offer.player_id in self._prior_rookie_players:
             raise Rejected("Prior cohort contract requires unsupported rookie release/re-sign reconciliation")
+        reserved_cap, reserved_one, reserved_total = self._draft_reserved(except_player=offer.player_id)
+        available_one = self._rookie_year_one - reserved_one
+        available_total = self._rookie_total - reserved_total
         scale = self._rookies.get(offer.player_id)
         if scale is not None:
             from franchise.rookie import UndraftedScale
             if isinstance(scale, UndraftedScale):
-                scale.validate(offer, club_year_one_remaining=self._rookie_year_one,
-                    club_total_remaining=self._rookie_total,
+                scale.validate(offer, club_year_one_remaining=available_one,
+                    club_total_remaining=available_total,
                     club_undrafted_bonus_remaining=self._undrafted_bonus_remaining)
             else:
                 reservation = self._undrafted_bonus_remaining or 0
-                scale.validate(offer, club_year_one_remaining=max(0, self._rookie_year_one - Fraction(reservation, 3)),
-                               club_total_remaining=max(0, self._rookie_total - reservation))
+                scale.validate(offer, club_year_one_remaining=max(0, available_one - Fraction(reservation, 3)),
+                               club_total_remaining=max(0, available_total - reservation))
         else:
             minimums = self._veteran_minimums.get(offer.player_id)
             if minimums is None:
@@ -440,8 +484,9 @@ class Ledger:
                 raise Rejected("Veteran offer is below an annual minimum salary")
         charges = offer.charges(4 if scale is not None else self.max_bonus_years)
         tender = self._tenders.get(offer.player_id, 0)
-        if charges[0] - tender > self.room:
-            raise Rejected(f"Offer exceeds available cap room by {charges[0] - tender - self.room}")
+        available_room = self.cap - self._charges[0] - self.roster_reserve - reserved_cap
+        if charges[0] - tender > available_room:
+            raise Rejected(f"Offer exceeds available cap room by {charges[0] - tender - available_room}")
         years = max(len(charges), len(self._charges))
         updated = tuple(
             (self._charges[i] if i < len(self._charges) else 0)
@@ -462,7 +507,7 @@ class Ledger:
                     "contract_charges": [json_amount(value) for value in charges],
                     "replaced_tender": tender,
                     "annual_team_charges_after": [json_amount(value) for value in updated],
-                    "room_after": json_amount(self.cap - updated[0] - self.roster_reserve),
+                    "room_after": json_amount(self.cap - updated[0] - self.roster_reserve - self._draft_reserved(except_player=offer.player_id)[0]),
                     "contract_cash": sum(offer.salaries) + offer.signing_bonus,
                     "fully_guaranteed_base": sum(offer.guaranteed_salaries),
                     "rookie_year_one_after": json_amount(self._rookie_year_one - scale.pool_charges(offer)[0]) if scale else None,
@@ -486,6 +531,7 @@ class Ledger:
             bonus_years=4 if scale is not None else self.max_bonus_years)
         self._requests[request_id] = receipt
         self._tenders.pop(offer.player_id, None)
+        self._draft_reservations.pop(offer.player_id, None)
         if scale is not None:
             pool_charges = scale.pool_charges(offer)
             self._rookie_year_one -= pool_charges[0]

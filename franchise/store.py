@@ -188,6 +188,10 @@ class FranchiseStore:
                 if actor != payload["actor_after"]:
                     raise ValueError("Relationship posting disagrees with replay")
                 ledger.revision += 1
+            elif kind == "draft_reserve":
+                ledger.reserve_draft_funding(Offer.from_dict(payload["offer"]), payload["expected_revision"], source=payload["source"])
+            elif kind == "draft_withdraw":
+                ledger.withdraw_draft_funding(payload["player_id"], payload["expected_revision"], source=payload["source"])
             elif kind == "draft_scouting":
                 from franchise.draft import validate_scouting
                 validate_scouting(payload["event"], ledger)
@@ -588,6 +592,48 @@ class FranchiseStore:
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'dialogue', ?)",
                        (team_id, key, json.dumps(payload, allow_nan=False)))
             return event
+
+    def reserve_draft_funding(self, team_id, request_id, offer, expected_revision, *, source, access_check):
+        if type(request_id) is not str or not request_id.strip():
+            raise ValueError('Stable funding request ID required')
+        payload = {"offer": offer.to_dict(), "expected_revision": expected_revision, "source": source}
+        with self._connection(write=True) as db:
+            ledger = self._load(db, team_id)
+            key = "draft-reserve:" + request_id
+            row = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, key)).fetchone()
+            if row:
+                previous = json.loads(row[0])
+                if any(previous[field] != payload[field] for field in payload):
+                    raise Rejected('Funding request already recorded differently')
+                access_check()
+                return previous["posting"]
+            if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (offer.player_id,)).fetchone():
+                raise Rejected('Player already belongs to a team')
+            ledger.reserve_draft_funding(offer, expected_revision, source=source)
+            access_check()
+            payload["posting"] = ledger.financial_snapshot()
+            db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,'draft_reserve',?)",
+                       (team_id, key, json.dumps(payload, allow_nan=False)))
+            return payload["posting"]
+
+    def withdraw_draft_funding(self, team_id, request_id, player_id, expected_revision, *, source):
+        if type(request_id) is not str or not request_id.strip():
+            raise ValueError('Stable withdrawal request ID required')
+        payload = {"player_id": player_id, "expected_revision": expected_revision, "source": source}
+        with self._connection(write=True) as db:
+            ledger = self._load(db, team_id)
+            key = "draft-withdraw:" + request_id
+            row = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, key)).fetchone()
+            if row:
+                previous = json.loads(row[0])
+                if any(previous[field] != payload[field] for field in payload):
+                    raise Rejected('Withdrawal request already recorded differently')
+                return previous["posting"]
+            ledger.withdraw_draft_funding(player_id, expected_revision, source=source)
+            payload["posting"] = ledger.financial_snapshot()
+            db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,'draft_withdraw',?)",
+                       (team_id, key, json.dumps(payload, allow_nan=False)))
+            return payload["posting"]
 
     def record_scouting(self, team_id, event, *, access_check):
         from franchise.draft import validate_scouting
