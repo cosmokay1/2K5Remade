@@ -13,6 +13,20 @@ class RookieCommitTests(unittest.TestCase):
                       rookie_year_one_allocation=year_one,
                       rookie_total_allocation=total)
 
+    def test_illegal_late_guarantee_cannot_consume_cap_or_rookie_pool(self):
+        ledger = self.ledger()
+        before = ledger.financial_snapshot()
+        offer = Offer("r1", (100,) * 4, 40, (0, 0, 100, 100))
+        with self.assertRaisesRegex(Rejected, "preceding-year"):
+            ledger.preview_offer(offer, 0)
+        with self.assertRaisesRegex(Rejected, "preceding-year"):
+            ledger.sign("illegal", offer, 0)
+        self.assertEqual(ledger.financial_snapshot(), before)
+        legal = Offer("r1", (100,) * 4, 40, (0, 100, 100, 50))
+        ledger.sign("legal", legal, 0)
+        self.assertEqual(ledger.contract_terms("r1")["guaranteed_salaries"], [0, 100, 100, 50])
+        self.assertEqual(ledger.charges, (110,) * 4)
+
     def test_rookie_cannot_use_veteran_term(self):
         ledger = self.ledger()
         with self.assertRaisesRegex(Rejected, "four years"):

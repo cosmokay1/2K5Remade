@@ -45,3 +45,16 @@ class RookieTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RookieGuaranteeChainTests(unittest.TestCase):
+    def test_third_and_fourth_year_protection_requires_full_prior_year(self):
+        scale = RookieScale(1, (10,) * 4, 10, 100, 400)
+        for guarantees in ((0, 0, 1, 0), (0, 10, 5, 1), (0, 5, 10, 0)):
+            with self.subTest(guarantees=guarantees), self.assertRaisesRegex(Rejected, "preceding-year"):
+                scale.validate(Offer("r", (10,) * 4, 0, guarantees),
+                               club_year_one_remaining=100, club_total_remaining=400)
+        scale.validate(Offer("r", (10,) * 4, 0, (0, 10, 10, 5)),
+                       club_year_one_remaining=100, club_total_remaining=400)
+        scale.validate(Offer("r", (10,) * 4, 0, (0, 5, 0, 0)),
+                       club_year_one_remaining=100, club_total_remaining=400)

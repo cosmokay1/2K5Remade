@@ -227,3 +227,16 @@ Missing retail binary/controlled saves still prevent that investigation. Passing
 acquisition tests do not prove a complete modern franchise accounting system.
 The next finance work must introduce explicit cash/guarantee obligations and
 complete their lifecycle rather than assuming missing liabilities are zero.
+
+### Newly verified rule dependencies
+
+- Article 7 section 3(h): late rookie protections require preceding-year full
+  protection; the drafted validator now enforces this supported subset.
+- Article 7 sections 1(i), 2(d)-(e), 3(a): UDFA term/reservation and reserved share
+  of club pools must be represented explicitly before full rookie accounting.
+- Article 2 section 5 states rounding for computed/used agreement amounts,
+  including Team Salary. Its interaction with exact internal proration, official
+  posting and cap authorization needs explicit resolution. Current rational
+  acquisition arithmetic must not be presented as complete NFL posting policy.
+
+Source: executed 2020 CBA; retail-game rounding remains unverified.

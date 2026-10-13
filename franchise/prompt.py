@@ -22,7 +22,9 @@ fractions; never round them to create spending room. A player's draft tender is
 already counted in team charges and is replaced only when that player signs.
 A counter must specify every annual base salary and its signing bonus, and cannot
 change player identity. Rookie offers must obey the supplied draft-slot bounds,
-four-year term, annual floors, and 25%-of-year-one increase rule. Future salaries
+four-year term, annual floors, and 25%-of-year-one increase rule. Protected base
+in rookie year three or four requires fully protected base in the immediately
+preceding year; this chains through year two when year four is protected. Future salaries
 are commitments, not evidence of future cap room. No conditional guarantees, vesting, offsets,
 incentives, options, trades, releases, or playing-time promises may be added.
 Your acceptance is provisional until the accounting engine commits it. Give a

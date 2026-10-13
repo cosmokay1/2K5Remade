@@ -744,3 +744,18 @@ SDK initialization, AI-disabled response, over-cap manual rejection, legal manua
 signing and secret redaction. Startup recovery `43f5181` passed Windows/Linux in
 [run 38470323280](https://github.com/cosmokay1/2K5Remade/actions/runs/38470323280);
 counter previews `2c21065` also passed run 38470077869. New test CI pending.
+
+## October 13, 2026 — Rookie guarantee-chain correction from primary source
+
+Executed CBA Article 7 section 3(h), PDF page 48 (printed 33), exposed a missing
+condition in the drafted-rookie validator. Protected year-three/four base now
+requires full preceding-year base protection in the supported base/traditional
+bonus subset. Model instructions include this restriction. Preview and signing
+share the check; illegal terms consume no cap or rookie pool.
+
+148 local tests pass with partial/full prior-year protections and atomic rejected
+preview/sign checks. UDFA three-year contracts and explicit shared/reserved pool
+accounting remain next work; no claim that full rookie lifecycle is complete.
+Prior denied-auth recovery `759bfac` passed Windows/Linux/native in
+[run 38470751973](https://github.com/cosmokay1/2K5Remade/actions/runs/38470751973).
+IAM delegation approval is still pending and has not been bypassed.

@@ -2,11 +2,25 @@
 
 Annual allotments/minimums must be supplied from a verified season ruleset.
 Ledger uses this validator before its atomic team-cap/club-pool commit.
-Guarantees, incentives, options, and escalators need separate implementations.
+Full base guarantees include the required preceding-year protection rule.
+Conditional protections, incentives, options and escalators remain incomplete.
 """
 from dataclasses import dataclass
 from fractions import Fraction
 from franchise.cap import Offer, Rejected, money
+
+
+def validate_rookie_guarantees(offer: Offer):
+    """Article 7 section 3(h), base-plus-traditional-bonus subset only.
+
+    Year-three/four protection requires fully protected preceding-year base;
+    traditional signing bonus is already a committed component in this subset.
+    Conditional bonus entitlement/forfeiture requires separate treatment.
+    """
+    guarantees = offer.guaranteed_salaries or (0,) * len(offer.salaries)
+    for year in range(2, len(offer.salaries)):
+        if guarantees[year] > 0 and guarantees[year - 1] != offer.salaries[year - 1]:
+            raise Rejected("Later rookie guarantee requires full preceding-year protection")
 
 
 @dataclass(frozen=True)
@@ -42,6 +56,7 @@ class RookieScale:
         money(club_total_remaining)
         if len(offer.salaries) != 4:
             raise Rejected("Drafted rookie contracts must cover exactly four years")
+        validate_rookie_guarantees(offer)
         if any(salary < minimum for salary, minimum
                in zip(offer.salaries, self.minimum_salaries)):
             raise Rejected("Rookie offer is below an annual minimum salary")
