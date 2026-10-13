@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from franchise.books import OpeningBooks
-from franchise.cap import Ledger, Offer
+from franchise.books import OpeningBooks, ActiveContract
+from franchise.cap import Ledger, Offer, Rejected
 from franchise.negotiation import Decision, Negotiation
 from franchise.store import FranchiseStore, StoredLedger
 
@@ -43,3 +43,21 @@ class GuaranteeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "silently change"):
             Decision.parse(json.dumps(dict(action="accept", reason="Yes", salaries=None,
                 signing_bonus=None, guaranteed_salaries=[10])), "v")
+
+    def test_elapsed_import_preserves_original_guarantees_and_retry_cannot_change_them(self):
+        original = Offer("old", (10, 20), 6, (10, 15))
+        books = OpeningBooks(contracts=(ActiveContract(original, "synthetic original guarantee record", elapsed_years=1),))
+        restored = OpeningBooks.from_dict(books.to_dict())
+        self.assertEqual(restored.contracts[0].offer, original)
+        self.assertEqual(restored.charges(), (23,))
+        with tempfile.TemporaryDirectory() as directory:
+            store = FranchiseStore(Path(directory) / "state.sqlite")
+            store.create_team("a", Ledger.from_opening(restored, cap=100, roster_reserve=0,
+                max_bonus_years=5, veteran_minimums={"old": (1,), "new": (1, 1)}))
+            offer = Offer("new", (10, 20), 6, (10, 15))
+            store.sign("a", "same-id", offer, 0)
+            changed = Offer("new", (10, 20), 6, (10, 0))
+            with self.assertRaisesRegex(Rejected, "different terms"):
+                store.sign("a", "same-id", changed, 0)
+            self.assertEqual(store.load_team("a").contract_terms("new")["guaranteed_salaries"], [10, 15])
+            self.assertEqual(store.load_team("a").contract_terms("old")["guaranteed_salaries"], [10, 15])

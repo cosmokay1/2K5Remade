@@ -34,6 +34,7 @@ def main():
                 assert agreement["result"]["outcome"] == "signed"
                 assert agreement["result"]["decision_mode"] == "manual"
                 assert agreement["result"]["charges"] == [10]
+                assert agreement["result"]["offer"]["guaranteed_salaries"] == [10]
             else:
                 assert responses[1] == agreement
         for python, database in ((sys.executable, str(Path(directory) / "missing.sqlite")),
@@ -72,6 +73,7 @@ def main():
                 kernel.CloseHandle(child)
         assert store.load_team("a").revision == 1
         assert store.load_team("a").charges == (10,)
+        assert store.load_team("a").contract_terms("v")["guaranteed_salaries"] == [10]
         assert len(store.negotiation_history("a", "v")) == 2
         print("Native Windows pipe handshake, cap rejection, manual signing and restart verified (synthetic).")
 

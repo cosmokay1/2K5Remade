@@ -78,6 +78,8 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       for historical start years rather than silently combining incompatible eras.
 - [ ] Load annual minimums and draft allotments with recorded source/version.
 - [ ] Separate cash owed/paid, cap charges, guarantees, and management reserves.
+      Nominal cash/payment ledger and full base-guarantee terms are implemented;
+      paid guarantee allocation, settlement and management cash budgets remain.
 - [ ] Model guarantee protections/vesting and supported bonus components.
 - [ ] Implement releases/retirement and retained obligations/dead charges.
 - [ ] Implement atomic trades with both teams' obligations and ownership.

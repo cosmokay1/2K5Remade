@@ -511,3 +511,18 @@ allocation, release settlement and rookie option guarantee lifecycle remain
 required. Original retail guarantee data is still unknown; not treated as verified
 zero. Primary definition: NFL Football Operations contract-language glossary.
 No paid inference/game assets used; new Windows/Linux CI pending.
+
+## October 13, 2026 — Guarantee import/retry and native wire acceptance checks
+
+New integration cases prove original annual guarantees survive elapsed-year
+opening-book import and durable reload. A retry with identical salary/bonus but
+reduced guarantees rejects, including through bridge requests, without changing
+contract/revision. Expanded native Windows manual-sign fixture now sends and
+verifies full base guarantee terms through wire, story, restart and contract readback.
+New native execution remains pending. 122 local tests pass.
+
+Verified preceding guarantee terms `ec05229` in
+[run 38466915357](https://github.com/cosmokay1/2K5Remade/actions/runs/38466915357),
+payment evidence `ed7a97a` in run 38466601230 and nominal cash ledger `72f9a15`
+in run 38466351288. All passed Windows/Linux and native transport fixtures.
+This evidence does not establish guarantee settlement, retail import or gameplay.

@@ -90,3 +90,12 @@ class BridgeTests(unittest.TestCase):
         request["decision_mode"] = "manual"
         self.assertEqual(self.bridge.handle(request)["error"], "ai_disabled")
         self.assertEqual(self.store.load_team("a").revision, 0)
+
+    def test_bridge_preserves_guarantees_and_rejects_conflicting_retry(self):
+        request = self.request(offer=dict(player_id="v", salaries=[10], signing_bonus=0, guaranteed_salaries=[8]))
+        result = self.bridge.handle(request)
+        self.assertEqual(result["result"]["offer"]["guaranteed_salaries"], [8])
+        self.assertEqual(self.store.load_team("a").contract_terms("v")["guaranteed_salaries"], [8])
+        changed = {**request, "offer": {**request["offer"], "guaranteed_salaries": [0]}}
+        self.assertEqual(self.bridge.handle(changed)["error"], "state_rejected")
+        self.assertEqual(self.store.load_team("a").revision, 1)
