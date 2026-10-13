@@ -1,0 +1,173 @@
+# NFL 2K5 franchise AI delivery worklist
+
+## Delivery target
+
+A tested Windows build of the independent Remade fork in which actual franchise
+negotiations use persistent personalities, performance, relationships, and
+history; all financial transactions obey the supported modern NFL cap/rookie
+rules; saves preserve contracts and stories; and remote shutdown stops AI
+decisions without corrupting the franchise.
+
+**A Python demo, a passing toolchain check, a synthetic bridge, or a compiled EXE
+alone does not meet this target. Actual game execution and save/load verification
+are required.** No completion date is promised before the runtime inputs exist.
+
+Repository: https://github.com/cosmokay1/2K5Remade
+Branch: `codex/franchise-negotiation`. Progress evidence: [WORK_PROGRESS.md](docs/WORK_PROGRESS.md).
+Resume from the earliest unblocked unchecked item, respecting dependencies.
+
+## Current blockers
+
+| ID | Missing input | What it blocks | Independent work that continues |
+|---|---|---|---|
+| B01 | Legally obtained Xbox `default.xbe` and extracted game assets | Verified guest addresses, financial field mapping, real gameplay | Financial engine, persistence, negotiation, diagnostics, bridge protocol, synthetic integration |
+| B02 | Raw franchise saves and companion metadata; controlled transaction pairs | Contract decoding, reconciliation and save round trips | Synthetic import fixtures, read-only diff tooling, state schema |
+| B03 | Windows machine/runner capable of running the user's legal game | Runtime reproduction, UI/gameplay validation, delivery acceptance | Portable engine tests and asset-free Windows compilation checks |
+| B04 | Written upstream/third-party permission or suitable licenses | Redistribution of modified binaries and affected bundled components | Original source development, attribution, permission-request drafts |
+
+The user currently has no game binary/save. Never download retail assets to
+resolve that blocker. Do not repeatedly ask for the same missing input. Report
+the required inputs once when an otherwise ready milestone reaches that gate.
+
+## M0 — Provenance and repeatable development
+
+- [x] Create GitHub-recognized fork; preserve upstream ancestry/notices.
+- [x] Identify our original additions and document unresolved permission scope.
+- [x] Commit/push development work without publishing installers.
+- [ ] Add automated portable financial/negotiation tests to fork CI.
+- [ ] Add asset-free Windows checks for our bridge/runtime additions; clearly
+      distinguish these from a full game build/test.
+- [ ] Keep public configuration free of credentials and retail assets.
+
+Done when a fresh checkout can run the engine tests and CI reports their results.
+
+## M1 — Authoritative and durable money state
+
+- [x] Reject unknown/unclassified players and under-floor veteran offers.
+- [x] Bound signing-bonus allocation and invalidate offers after budget changes.
+- [ ] Resolve F04 with a single documented internal precision/posting policy.
+- [ ] Replace caller-maintained aggregate balances with derived contract,
+      tender, retained-obligation, and adjustment records.
+- [ ] Add durable league/player/team identities and exclusive player ownership.
+- [ ] Add atomic commits, durable request receipts, and restart/crash recovery.
+- [ ] Store financial transaction and associated story event together.
+- [ ] Replace a rookie tender when its contract commits (F08).
+- [ ] Add import/reconciliation failures that stop writes on inconsistent data.
+
+Done when restart, retries, competing teams, and interrupted commits preserve
+exact obligations, ownership, cap balances, rookie pools, and story history.
+
+## M2 — Modern contract and season lifecycle
+
+- [ ] Define verified league-year rules; explicitly choose economic treatment
+      for historical start years rather than silently combining incompatible eras.
+- [ ] Load annual minimums and draft allotments with recorded source/version.
+- [ ] Separate cash owed/paid, cap charges, guarantees, and management reserves.
+- [ ] Model guarantee protections/vesting and supported bonus components.
+- [ ] Implement releases/retirement and retained obligations/dead charges.
+- [ ] Implement atomic trades with both teams' obligations and ownership.
+- [ ] Implement extensions/restructures without erasing existing bonus layers.
+- [ ] Implement offseason/regular-season accounting and roster-status costs.
+- [ ] Implement dated June-1 treatment, supported tenders/tags and salary benefits.
+- [ ] Implement incentive settlement, cap adjustments, carryover and year rollover.
+- [ ] Complete drafted/undrafted rookie rules, pool accounting, option exercise,
+      and performance escalators; never auto-exercise a fifth year.
+- [ ] Re-audit money using independent expected examples from primary rule sources.
+
+Done when supported operations reconcile across at least two synthetic seasons.
+Explicitly reject unimplemented terms; do not silently drop liabilities. Do not
+invent future published NFL values: separate verified inputs from simulation policy.
+
+## M3 — Negotiation and story simulation
+
+- [x] Add structured Gemini/Vertex AI decisions and a mandatory final cap gate.
+- [x] Verify a real model acceptance cannot force an over-cap contract.
+- [ ] Add offer previews using the same financial validation as final commits.
+- [ ] Add player/agent and team/GM priorities with persistence and bounded updates.
+- [ ] Feed actual statistics, roles and relationship history; label missing evidence.
+- [ ] Implement team accept/reject/counter strategy within legal financial limits.
+- [ ] Make guarantees and supported nonfinancial promises meaningful negotiated terms.
+- [ ] Trigger stories from committed events and actual consequences, not invented facts.
+- [ ] Add negotiation deadlines, withdrawal, holdout/request state, and resolution.
+- [ ] Bound inference frequency; cache recorded decisions; add usage/cost telemetry.
+- [ ] Test different personalities on the same situation and validate multiweek continuity.
+
+Done when an offline league scenario and a bounded live scenario produce distinct,
+coherent negotiations and persistent consequences without violating financial rules.
+
+## M4 — Remote control and client bridge
+
+- [x] Verify private remote switch denies disabled/expired/unavailable handshakes.
+- [x] Verify shutdown during inference and before commit leaves finances unchanged.
+- [ ] Separate admin switch-write access from client read/inference permissions.
+- [ ] Design a versioned local bridge with request IDs, state revision, protocol
+      compatibility, timeouts and explicit error handling.
+- [ ] Keep game thread responsive while inference runs; reject obsolete responses.
+- [ ] Ship a cooperative client handshake without distributing owner credentials.
+- [ ] Ensure AI shutdown preserves financial enforcement and provides a clearly
+      labeled manual/deterministic decision path; no silent native cap bypass.
+- [ ] Test disconnects, expired credentials, protocol mismatch and service restart.
+
+Done when the synthetic native client completes a transaction and all failures
+leave game/engine state consistent. Remote control is not tamper-proof DRM.
+
+## M5 — Verified Remade integration (B01/B02 gate)
+
+- [ ] Establish a baseline game build and franchise behavior with the legal game.
+- [ ] Map contract records, cap/tender fields, player identity, statistics and save data.
+- [ ] Trace signing, extension, release, trade, draft and year-transition functions.
+- [ ] Trace CPU-controlled paths as well as user menu paths; avoid double decisions.
+- [ ] Intercept a single verified free-agent signing through existing patch conventions.
+- [ ] Commit legal terms to the actual game and verify readback/save/reload.
+- [ ] Integrate all supported roster transactions and season advancement.
+- [ ] Reconcile the external ledger and guest state before every financial write.
+- [ ] Add real franchise negotiation UI with cap/cash/guarantee effects and reasons.
+- [ ] Integrate persistent stories/relationships into the actual franchise experience.
+- [ ] Add opt-in configuration, backups, recovery and explicit migration handling.
+
+Done only when real guest state, engine state, displayed terms and reloaded saves
+agree. Never patch guessed addresses or fabricate unknown contract fields.
+
+## M6 — Playable Windows acceptance (B01/B02/B03 gate)
+
+- [ ] Launch into franchise and finish an actual game or simulation week.
+- [ ] Complete a veteran and drafted-rookie negotiation in the game UI.
+- [ ] Show an unaffordable deal rejected in game with no roster/save mutation.
+- [ ] Exercise player/CPU release, trade and renewal paths with correct accounting.
+- [ ] Save, exit, restart and verify identical finances/history/ownership.
+- [ ] Advance through draft/offseason into the next year without lost obligations.
+- [ ] Disable remote AI during an in-flight request and verify safe manual recovery.
+- [ ] Verify cloud failure does not freeze the game or corrupt its saves.
+- [ ] Capture build revision, Windows environment, scenario, logs and screenshots
+      or video demonstrating each acceptance case.
+
+Done when all cases pass on the real game. Label test failures and unsupported
+areas clearly; do not equate queued CI with a passing result.
+
+## M7 — Lawful delivery (B04 gate)
+
+- [ ] Resolve release rights and preserve evidence of granted permissions.
+- [ ] Verify inherited and optional component notices in the actual artifact.
+- [ ] Package an opt-in installer/source build requiring the user's own game.
+- [ ] Ship setup, authentication, shutdown, backup and recovery instructions.
+- [ ] Publish/attach only permitted artifacts with verified checksums and version.
+- [ ] Mark the work complete only after M6 and all release requirements pass.
+
+## Autonomous work rules
+
+Continue useful work while external gates are blocked. Do not spend turns only
+rewriting plans or rerunning passing tests without new evidence. Prefer completing
+one meaningful milestone per continuation. Inspect dirty state; preserve user
+changes. Update this file and the progress log with actual evidence. Commit and
+push validated source changes to the fork; do not force-push upstream history.
+
+Respect the user's shutdown command: never automatically renew or re-enable the
+AI grant. Use offline fixtures by default; do not run recurring paid model tests
+or provision ongoing cloud services without a concrete authorized need. Do not
+send the unsent maintainer request without human authorization.
+
+An hourly follow-up in this chat resumes this work. Keep notifications limited
+to meaningful milestones, failures, new actionable blockers or verified delivery.
+If every remaining item is externally blocked, record the exact gates and avoid
+repeated unchanged blocker messages. Disable the follow-up when delivery is
+verified or the user cancels it.
