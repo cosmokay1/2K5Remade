@@ -1538,3 +1538,14 @@ cache introduced; fixture excludes actual model evidence/guest payload complexit
 Source syntax/diff and both executable runs passed. No correctness timing threshold,
 Windows/Deck latency or game-thread responsiveness claim is made. Money audit1d3a095
 passed CI38483895093/38483895310; chronology60b54e6 CI was in progress at inspection.
+
+## October 13, 2026 — Recorded negotiation evidence replay measurement
+
+Extended bounded benchmark with real Negotiation/StoredLedger recording, scripted
+reject provider, typed synthetic performance/unknown targets+pressures, actors,
+proposed goals and prior-history references. No inference/cloud/retail data.32-team
+640 evidence events measured median22.55/max22.94ms;3,200 measured111.76/113.79ms.
+Both runs verified exact history retention and paired assignment charges. Documented
+short-dialogue workload underestimation and cumulative read cost; no speculative cache
+or Windows/game responsiveness claim added. Chronology60b54e6 passed Franchise AI
+38484083446 and Build check38484083550; prior benchmark CI remained in progress.

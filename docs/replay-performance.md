@@ -22,3 +22,19 @@ makes one measurement unsuitable as a universal latency contract. These results 
 not justify introducing persistent replay caching yet. Windows/Deck performance,
 large sourced statistics/promise/history payloads and actual guest responsiveness
 still require their own runtime measurements.
+
+`--recorded-context` builds stories through the real Negotiation/StoredLedger path
+using a scripted rejection provider, typed synthetic performance with unknown targets/
+pressures, persisted actors, nonfinancial proposals and complete prior-request IDs.
+No paid model or cloud calls occur. This measures heavier recorded evidence without
+claiming realistic narrative length or real player data; fixture preparation is slower.
+
+| Teams | Recorded evidence events | Median validated read | Maximum of5 reads |
+|---|---:|---:|---:|
+|32|640|22.55 ms|22.94 ms|
+|32|3,200|111.76 ms|113.79 ms|
+
+The short-dialogue baseline materially understates this workload. Multiple independent
+reads during a request can accumulate this cost; actual Windows/Deck profiles and
+normal game histories must be measured before promising a deadline. The benchmark
+keeps full history validation and adds no stale-state cache.
