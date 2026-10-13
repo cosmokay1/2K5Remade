@@ -598,3 +598,16 @@ redaction/no fallback, conflicting auth-mode rejection and SDK credential inject
 No live impersonation/model request, new impersonation grant or switch renewal
 performed. Source ADC/IAM Credentials API/target permission and effective runtime
 read/inference access remain unverified; M4 deployment separation stays incomplete.
+
+## October 13, 2026 — Runtime credential/control failure-boundary checks
+
+Control credential refresh requests now force a 15-second HTTP timeout. A refresh
+that still leaves credentials expired denies before sending an old token. Valid
+authentication tokens may be reused, but each handshake still retrieves the
+remote object; disabled/unavailable state is never masked by a cached grant.
+
+136 local tests pass. New cases use injected runtime credentials to prove fresh
+switch reads across enabled→disabled→unavailable results, no owner ADC fallback,
+forced refresh timeout, expired-refresh rejection and sensitive-error redaction.
+These are offline credential-boundary tests, not effective live impersonation
+verification. No cloud grants, switch writes or paid inference performed. CI pending.

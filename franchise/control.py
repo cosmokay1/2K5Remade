@@ -55,7 +55,13 @@ class GoogleControl:
                     credentials, _ = google.auth.default(
                         scopes=["https://www.googleapis.com/auth/devstorage.read_only"])
                 if not credentials.valid:
-                    credentials.refresh(AuthRequest())
+                    auth_request = AuthRequest()
+                    def bounded_request(*args, **kwargs):
+                        kwargs["timeout"] = 15
+                        return auth_request(*args, **kwargs)
+                    credentials.refresh(bounded_request)
+                if not credentials.valid:
+                    raise AccessDisabled("AI handshake credentials expired")
                 token = credentials.token
             if not token:
                 raise AccessDisabled("AI handshake credentials unavailable")

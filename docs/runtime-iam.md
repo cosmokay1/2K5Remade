@@ -32,3 +32,9 @@ impersonate it; token-creator/federation grants were not added.
 Primary references:
 [Vertex AI access control](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/access-control)
 and [Cloud Storage IAM roles](https://docs.cloud.google.com/storage/docs/access-control/iam-roles).
+
+Control refresh HTTP calls use a 15-second timeout and reject expired credentials
+even after refresh. Reusing a valid token never reuses the remote enabled grant:
+each handshake fetches the switch again. Offline tests cover disable/unavailability
+with cached tokens and failed refresh without owner ADC fallback. Effective live
+identity access remains unverified.
