@@ -172,3 +172,30 @@ def observe_promises(goals, performance, *, player_id, team_id, context, team_re
         results.append(GoalObservation(goal.goal_id,goal.window,value,source,coverage,
                        context+'; mode='+performance.mode+'; '+detail,complete_window=complete))
     return tuple(results)
+
+
+def observe_promise_windows(goals, performances, *, player_id, team_id, context, team_results=()):
+    """Map separate declared windows; never sum overlapping snapshots or modes."""
+    from franchise.performance import PerformanceEvidence
+    if type(goals) is not tuple or not goals or any(not isinstance(g,PromiseGoal) for g in goals):
+        raise ValueError('Immutable agreed goals required')
+    if len({g.goal_id for g in goals}) != len(goals):
+        raise ValueError('Unique goal identities required')
+    if type(performances) is not tuple or not performances or any(not isinstance(p,PerformanceEvidence) for p in performances):
+        raise ValueError('Immutable typed performance windows required')
+    if type(team_results) is not tuple or any(not isinstance(t,TeamResults) for t in team_results):
+        raise ValueError('Immutable typed team windows required')
+    by_window = {p.window:p for p in performances}
+    teams = {t.window:t for t in team_results}
+    windows = {g.window for g in goals}
+    if len(by_window) != len(performances) or len(teams) != len(team_results):
+        raise ValueError('Ambiguous duplicate window snapshots or simulation modes')
+    if set(by_window) != windows or not set(teams) <= windows:
+        raise ValueError('Exactly one player snapshot per agreed window required')
+    observed = {}
+    for window,performance in by_window.items():
+        subset = tuple(g for g in goals if g.window == window)
+        for observation in observe_promises(subset,performance,player_id=player_id,team_id=team_id,
+                                           context=context,team_results=teams.get(window)):
+            observed[observation.goal_id] = observation
+    return tuple(observed[g.goal_id] for g in goals)

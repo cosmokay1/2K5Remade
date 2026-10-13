@@ -47,3 +47,21 @@ class PromiseObservationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.observe((self.goal('starts'),),PerformanceEvidence('p','fixture season','cpu_played',(),
                          'foreign club',team_id='b',complete_window=True))
+
+    def test_multiple_windows_preserve_goals_and_partial_coverage(self):
+        from franchise.promises import observe_promise_windows
+        goals=(PromiseGoal('early','starts',4,1,'early','agreement'),
+               PromiseGoal('season','team_wins',10,1,'season','agreement'))
+        early=PerformanceEvidence('p','early','played',(Observation('games_started',4,'starts'),),
+                                  'early coverage',team_id='a',complete_window=True)
+        season=PerformanceEvidence('p','season','cpu_played',(),'season coverage',team_id='a',complete_window=True)
+        team=TeamResults('a','season','cpu_played',10,17,'standings','season coverage',complete_window=True)
+        result=observe_promise_windows(goals,(season,early),player_id='p',team_id='a',context='fixture',team_results=(team,))
+        self.assertEqual([o.goal_id for o in result],['early','season'])
+        self.assertEqual(score_promises(goals,result,window_closed=True)['final_achievement_score'],'1')
+        partial=TeamResults('a','season','cpu_played',10,17,'standings','partial')
+        result=observe_promise_windows(goals,(early,season),player_id='p',team_id='a',context='fixture',team_results=(partial,))
+        self.assertIsNone(score_promises(goals,result,window_closed=True)['final_achievement_score'])
+        for snapshots in ((early,), (early,season,season)):
+            with self.assertRaises(ValueError):
+                observe_promise_windows(goals,snapshots,player_id='p',team_id='a',context='fixture')

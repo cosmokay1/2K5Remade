@@ -1087,3 +1087,13 @@ with read semantics, native promise validation and the precise synthetic evidenc
 boundary. Corrected the old statement that all promise scoring was unfinished:
 source-backed scoring exists, while actual game counters/automatic consequences do
 not. Newer promise-check CI remains pending and no gameplay claims are made.
+
+## October 13, 2026 — Multiple promise observation windows
+
+Added explicit multi-window mapping and connected it to durable performance scoring.
+Exactly one sourced player snapshot per agreed window is required; duplicate/mixed
+mode snapshots, missing or unrelated windows reject rather than summing uncertain
+coverage. Team results remain separate per window and partial evidence prevents
+finalization. Tests verify distinct windows/modes, stable goal ordering, complete
+versus partial scores and ambiguous/missing snapshot rejection. 216 local tests pass.
+Actual game instrumentation and automatic calendar transitions remain unfinished.

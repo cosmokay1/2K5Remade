@@ -673,13 +673,15 @@ class FranchiseStore:
 
     def record_promise_performance(self,team_id,request_id,agreement_request_id,performance,*,window_closed,
                                    expected_revision,source,context,team_results=None):
-        from franchise.promises import goals_from_list,observe_promises
+        from franchise.promises import goals_from_list,observe_promises,observe_promise_windows
         ledger = self.load_team(team_id)
         agreement = ledger._promise_agreements.get(agreement_request_id)
         if agreement is None:
             raise Rejected('Committed promise agreement required')
-        observations = observe_promises(goals_from_list(agreement['goals']),performance,
-            player_id=agreement['player_id'],team_id=team_id,context=context,team_results=team_results)
+        mapper = observe_promise_windows if type(performance) is tuple else observe_promises
+        observations = mapper(goals_from_list(agreement['goals']),performance,
+            player_id=agreement['player_id'],team_id=team_id,context=context,
+            team_results=() if type(performance) is tuple and team_results is None else team_results)
         return self.record_promise_score(team_id,request_id,agreement_request_id,observations,
             window_closed=window_closed,expected_revision=expected_revision,source=source)
 
