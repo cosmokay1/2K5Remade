@@ -1,6 +1,7 @@
 """Versioned sidecar request boundary. No guest memory or game-save writes."""
 import time
-from franchise.cap import Offer, Rejected
+from dataclasses import asdict
+from franchise.cap import Offer, Rejected, json_amount
 from franchise.control import AccessDisabled
 from franchise.negotiation import Negotiation
 from franchise.store import StoredLedger
@@ -9,10 +10,11 @@ PROTOCOL = 1
 
 
 class Bridge:
-    def __init__(self, store, *, provider, access_check):
+    def __init__(self, store, *, provider, access_check, connection_check=lambda: None):
         if not callable(provider) or not callable(access_check):
             raise ValueError("Provider and remote access check required")
         self.store, self.provider, self.access_check = store, provider, access_check
+        self.connection_check = connection_check
 
     def handle(self, request):
         request_id = request.get("request_id") if type(request) is dict else None
@@ -26,10 +28,12 @@ class Bridge:
                 if set(request) != {"protocol", "request_id", "operation"}:
                     raise ValueError("Unexpected handshake fields")
                 self.access_check()
-                return self._reply(request_id, result={"ai_enabled": True, "operations": ["preview", "negotiate"]})
+                return self._reply(request_id, result={"ai_enabled": True, "operations": ["preview", "negotiate", "manual_sign"]})
             fields = {"protocol", "request_id", "operation", "team_id", "offer", "expected_revision", "timeout_ms"}
             if operation == "negotiate":
                 fields |= {"personality", "performance", "relationships"}
+            elif operation == "manual_sign":
+                fields |= {"decision_mode"}
             elif operation != "preview":
                 raise ValueError("Unsupported operation")
             if set(request) != fields:
@@ -40,9 +44,12 @@ class Bridge:
             if type(timeout) is not int or not 1 <= timeout <= 60_000:
                 raise ValueError("Timeout must be 1-60000 milliseconds")
             deadline = time.monotonic() + timeout / 1000
-            def guarded_access():
+            def local_access():
+                self.connection_check()
                 if time.monotonic() >= deadline:
                     raise TimeoutError("Request expired")
+            def guarded_access():
+                local_access()
                 self.access_check()
                 if time.monotonic() >= deadline:
                     raise TimeoutError("Request expired")
@@ -54,6 +61,16 @@ class Bridge:
             if operation == "preview":
                 # AI-off clients retain cap enforcement and manual previews.
                 result = ledger.preview_offer(offer, request["expected_revision"])
+            elif operation == "manual_sign":
+                if request["decision_mode"] != "manual":
+                    raise ValueError("Explicit manual decision required")
+                local_access()
+                story = {"request_id": request_id, "offer": asdict(offer),
+                         "action": "accept", "reason": "Explicit manual agreement",
+                         "counter": None, "outcome": "signed", "decision_mode": "manual"}
+                receipt = self.store.sign(request["team_id"], request_id, offer,
+                    request["expected_revision"], access_check=local_access, story=story)
+                result = {**story, "charges": [json_amount(value) for value in receipt.charges]}
             else:
                 guarded_access()
                 if type(request["expected_revision"]) is not int:

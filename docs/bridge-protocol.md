@@ -41,3 +41,12 @@ It currently launches only the offline fixture. Build and execute through the
 Windows CI steps or `tools.check_native_bridge`. This is transport evidence only.
 Guest hooks, JSON result validation, production launch/authentication, lifecycle
 placement and reconciliation with actual saves remain required.
+
+## Explicit manual path
+
+`manual_sign` uses the preview fields plus `decision_mode: "manual"`. It commits
+through the authoritative signing validator with a clearly labeled manual story.
+It requires neither inference nor an enabled AI grant, but still rejects cap,
+rookie, ownership, stale-state, expired-request and disconnected-client failures.
+Clients must deliberately select this operation; AI errors never trigger it
+automatically. This engine path is not yet connected to an actual game UI.

@@ -16,6 +16,12 @@ def serve(bridge, reader, writer):
     disconnected, busy = Event(), Event()
     output_lock = Lock()
     original_check = bridge.access_check
+    original_connection = bridge.connection_check
+    def connection_check():
+        if disconnected.is_set():
+            raise AccessDisabled("Client disconnected")
+        original_connection()
+    bridge.connection_check = connection_check
     def check():
         if disconnected.is_set():
             raise AccessDisabled("Client disconnected")
@@ -65,6 +71,7 @@ def serve(bridge, reader, writer):
     finally:
         disconnected.set()
         bridge.access_check = original_check
+        bridge.connection_check = original_connection
 
 
 def main():

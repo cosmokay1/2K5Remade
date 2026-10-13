@@ -62,3 +62,31 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(result["error"], "service_failure")
         self.assertNotIn("SECRET", json.dumps(result))
         self.assertEqual(self.store.load_team("a").revision, 0)
+
+    def test_manual_sign_when_ai_disabled_still_enforces_cap_and_retries(self):
+        def disabled():
+            raise AccessDisabled("Disabled")
+        self.bridge.access_check = disabled
+        request = self.request(operation="manual_sign", decision_mode="manual")
+        for field in ("personality", "performance", "relationships"):
+            del request[field]
+        too_large = {**request, "offer": {**request["offer"], "salaries": [101]}}
+        self.assertEqual(self.bridge.handle(too_large)["error"], "state_rejected")
+        self.assertEqual(self.store.load_team("a").revision, 0)
+        result = self.bridge.handle(request)
+        self.assertEqual(result["result"]["decision_mode"], "manual")
+        self.assertEqual(self.bridge.handle(request), result)
+        self.assertEqual(self.store.load_team("a").charges, (10,))
+        self.assertEqual(self.calls, 0)
+
+    def test_manual_sign_requires_explicit_mode_and_active_connection(self):
+        request = self.request(operation="manual_sign", decision_mode="automatic")
+        for field in ("personality", "performance", "relationships"):
+            del request[field]
+        self.assertEqual(self.bridge.handle(request)["error"], "invalid_request")
+        def disconnected():
+            raise AccessDisabled("Disconnected")
+        self.bridge.connection_check = disconnected
+        request["decision_mode"] = "manual"
+        self.assertEqual(self.bridge.handle(request)["error"], "ai_disabled")
+        self.assertEqual(self.store.load_team("a").revision, 0)

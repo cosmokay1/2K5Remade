@@ -351,3 +351,16 @@ Python executable, without changing the successful financial state.
 
 The native milestone remains unverified until the repaired code executes on
 Windows. This is a concrete failed runtime check, not a playable-game result.
+
+## October 13, 2026 — Financially enforced explicit manual path
+
+Bridge `manual_sign` requires explicit manual decision mode and commits via the
+same durable financial gate, labeled as manual in persistent story history. It
+works while remote AI is disabled without provider calls. Local deadline and
+connection checks remain mandatory at the write boundary; AI errors never fall
+through to this operation. Game UI selection and native cap-path replacement
+remain unverified/pending.
+
+108 local tests pass, including AI-off manual signing, over-cap rejection,
+idempotent retry, missing explicit mode and disconnected-client rejection.
+Repaired native Windows CI remains pending at this entry.
