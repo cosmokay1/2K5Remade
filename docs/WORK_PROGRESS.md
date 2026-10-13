@@ -123,3 +123,13 @@ Local validation: 70 tests, money audit checks and all three offline demos pass.
 New tests include fractional cap boundaries, equal cap/pool charges, altered
 postings/charges, lost ownership, old-format preservation, and tender replacement.
 Remote results must be recorded after the new code executes.
+
+Verified `5628e06` in
+[CI run 38460444346](https://github.com/cosmokay1/2K5Remade/actions/runs/38460444346):
+Linux and Windows passed all 70 tests, money checks and offline demos.
+
+The user explicitly requested uninterrupted continued work. Set an active
+delivery goal for the actual integrated Windows game; it remains incomplete.
+Continue automatically through unblocked work rather than waiting for another
+user message. The hourly follow-up also remains available. Game assets/saves,
+Windows runtime access and redistribution permission are still external gates.
