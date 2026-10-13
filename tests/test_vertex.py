@@ -34,3 +34,21 @@ class VertexTests(unittest.TestCase):
     def test_missing_configuration_rejected_before_sdk_import(self):
         with self.assertRaises(ValueError):
             VertexProvider(project="", location="global", model="test")
+
+    def test_draft_schema_and_instructions_do_not_change_default_negotiation(self):
+        from franchise.draft import DRAFT_INSTRUCTIONS, DRAFT_VERTEX_SCHEMA
+        from franchise.vertex_provider import VERTEX_SCHEMA
+        from franchise.prompt import INSTRUCTIONS
+        response = SimpleNamespace(candidates=[SimpleNamespace(finish_reason="STOP")], text='{}')
+        client = SimpleNamespace(models=SimpleNamespace(generate_content=Mock(return_value=response)))
+        provider = VertexProvider(project='test', location='global', model='test', client=client,
+                                  instructions=DRAFT_INSTRUCTIONS, response_schema=DRAFT_VERTEX_SCHEMA)
+        provider({'purpose':'draft_comparison'})
+        config = client.models.generate_content.call_args.kwargs['config']
+        self.assertEqual(config['response_schema'], DRAFT_VERTEX_SCHEMA)
+        self.assertEqual(config['system_instruction'], DRAFT_INSTRUCTIONS)
+        default = self.provider(response)
+        default({})
+        config = default._client.models.generate_content.call_args.kwargs['config']
+        self.assertEqual(config['response_schema'], VERTEX_SCHEMA)
+        self.assertEqual(config['system_instruction'], INSTRUCTIONS)

@@ -19,11 +19,19 @@ VERTEX_SCHEMA = {
 
 class VertexProvider:
     def __init__(self, *, project: str, location: str, model: str, client=None,
-                 use_gcloud_login: bool = False, credentials=None):
+                 use_gcloud_login: bool = False, credentials=None,
+                 instructions=INSTRUCTIONS, response_schema=None):
         if not all(type(value) is str and value.strip() for value in (project, location, model)):
             raise ValueError("GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION, and GEMINI_MODEL are required")
         if credentials is not None and use_gcloud_login:
             raise ValueError("Runtime credentials cannot fall back to owner gcloud login")
+        if type(instructions) is not str or not instructions.strip():
+            raise ValueError('Model instructions required')
+        schema = VERTEX_SCHEMA if response_schema is None else response_schema
+        if type(schema) is not dict:
+            raise ValueError('Structured decision schema required')
+        self.instructions = instructions
+        self.response_schema = json.loads(json.dumps(schema, allow_nan=False))
         self.model = model
         if client is None:
             try:
@@ -52,9 +60,9 @@ class VertexProvider:
         try:
             result = self._client.models.generate_content(
                 model=self.model, contents=json.dumps(context),
-                config={"system_instruction": INSTRUCTIONS,
+                config={"system_instruction": self.instructions,
                         "response_mime_type": "application/json",
-                        "response_schema": VERTEX_SCHEMA,
+                        "response_schema": self.response_schema,
                         "max_output_tokens": 4096})
         except Exception:
             # Avoid echoing credentials or raw cloud error bodies.

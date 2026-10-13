@@ -873,3 +873,22 @@ example preserves agreement, exact balances and no regeneration after restart.
 Prior HTTP negotiation commit 8463519 passed Franchise AI CI run 38474521864 and
 inherited Build check run 38474521234. Browser framework choice remains open after
 the user requested clarification of the term workspace; no UI stack was assumed.
+
+## October 13, 2026 — Shutdown-guarded draft scouting advisor
+
+Added strict recommend/defer model advice with eligible-shortlist identity checks,
+required reason/uncertainty, frozen sourced context, stale financial/evidence
+rejection and fresh access checks before/after inference. Same-session request
+retries reuse recorded advice; all-ineligible boards defer without inference.
+Vertex supports a dedicated draft schema/instructions while preserving the default
+player negotiation schema. No paid calls were made. 172 local tests pass, including
+model choice of an over-cap candidate, shutdown during inference, concurrent
+budget changes, no-inference deferral and both provider schema paths.
+
+This is read-only scouting advice, explicitly not an exercised draft pick or fund
+reservation. Durable scouting history, league pick order/rights and atomic draft
+commitments remain required before franchise draft integration. Same-session cache
+is not restart persistence. This step does not satisfy the complete draft milestone.
+
+Previous management/TLS commit `d396f59` passed Franchise AI run 38474883517
+and inherited Build check run 38474883715.
