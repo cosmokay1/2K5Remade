@@ -5,6 +5,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 import ssl
+from urllib.parse import parse_qs
 from threading import Lock
 from pathlib import Path
 from franchise.cap import Offer, Rejected
@@ -61,6 +62,28 @@ def make_server(store, team_id, token, *, port=8786, tls_cert=None, tls_key=None
                     'source': 'https://github.com/cosmokay1/2K5Remade',
                     'capabilities': ['authenticated_franchise_inspection', 'contract_preview'],
                     'game_integration': 'unfinished', 'paid_inference': False})
+            elif self.path.partition('?')[0] == '/api/player':
+                if not self.authorized():
+                    return
+                if store is None:
+                    self.reply(503, {'error': 'franchise_not_configured'})
+                    return
+                try:
+                    query = self.path.partition('?')[2]
+                    if len(query) > 4096:
+                        raise ValueError('Query too large')
+                    fields = parse_qs(query,keep_blank_values=True,strict_parsing=True)
+                    if set(fields) != {'player_id'} or len(fields['player_id']) != 1:
+                        raise ValueError('Single player identity required')
+                    result = store.player_context(team_id,fields['player_id'][0])
+                except Rejected:
+                    self.reply(404, {'error': 'player_unavailable'})
+                except (ValueError,TypeError):
+                    self.reply(400, {'error': 'invalid_request'})
+                except Exception:
+                    self.reply(503, {'error': 'franchise_unavailable'})
+                else:
+                    self.reply(200,result)
             elif self.path == '/api/franchise':
                 if not self.authorized():
                     return

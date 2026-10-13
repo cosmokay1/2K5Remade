@@ -94,3 +94,14 @@ HTTP retries can recall a committed agreement by stable request ID after a lost
 response. Client disconnects through an HTTP proxy cannot prove transaction rollback;
 retry the same ID rather than generating a new agreement. Server deadlines and
 remote shutdown are enforced at the transaction boundary.
+
+Saved player context is available through authenticated
+`GET /api/player?player_id=STABLE_ID` when a database/team is configured. It returns
+personality, relationships, signed promise goals, promise history, initialization
+status and financial revision from one validated read snapshot. Unknown players
+return 404; duplicate/extra/blank query parameters return 400. It performs no AI
+request, personality generation or financial mutation and remains usable with AI
+disabled. The equivalent native protocol operation is `player_context`, with
+`team_id`, `player_id`, `request_id`, `protocol: 1` and `timeout_ms`. Native response
+validation rejects mismatched identities and malformed context containers. This
+is an API boundary, not a implemented browser dashboard or game menu.

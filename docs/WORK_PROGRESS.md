@@ -1034,3 +1034,15 @@ required. Previous initialization ab1b338 CI was still running when first inspec
 
 Initialization commit ab1b338 subsequently passed Franchise AI run 38478074874
 and Build check run 38478074859.
+
+## October 13, 2026 — Saved player context read boundary
+
+Added a single validated database snapshot exposing saved personality, relationships,
+signed promise goals and promise history. Protocol-1 player_context and authenticated
+GET /api/player expose it without inference, actor rebinding or financial writes.
+Strict query validation, unknown-player responses and native response identity/type
+checks are covered. 215 Python tests and portable C++ protocol CTest pass locally.
+The public running origin has no franchise database configured; no dashboard or
+actual game menu integration is claimed. Bootstrap e8e9e95 passed Franchise AI run
+38478464352 and Build check run 38478464544. Windows verification of this new source
+is pending CI; game/Deck execution and legal source assets remain external gates.

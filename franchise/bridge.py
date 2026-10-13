@@ -28,7 +28,22 @@ class Bridge:
                 if set(request) != {"protocol", "request_id", "operation"}:
                     raise ValueError("Unexpected handshake fields")
                 self.access_check()
-                return self._reply(request_id, result={"ai_enabled": True, "operations": ["preview", "negotiate", "manual_sign"]})
+                return self._reply(request_id, result={"ai_enabled": True, "operations": ["preview", "negotiate", "manual_sign", "player_context"]})
+            if operation == 'player_context':
+                if set(request) != {'protocol','request_id','operation','team_id','player_id','timeout_ms'}:
+                    raise ValueError('Unexpected player context fields')
+                if type(request['team_id']) is not str or not request['team_id'].strip():
+                    raise ValueError('Stable team required')
+                timeout = request['timeout_ms']
+                if type(timeout) is not int or not 1 <= timeout <= 60000:
+                    raise ValueError('Timeout must be 1-60000 milliseconds')
+                deadline = time.monotonic() + timeout / 1000
+                self.connection_check()
+                result = self.store.player_context(request['team_id'],request['player_id'])
+                self.connection_check()
+                if time.monotonic() >= deadline:
+                    raise TimeoutError('Player context request expired')
+                return self._reply(request_id,result=result)
             fields = {"protocol", "request_id", "operation", "team_id", "offer", "expected_revision", "timeout_ms"}
             if operation == "negotiate":
                 fields |= {"personality", "performance", "relationships"}

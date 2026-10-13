@@ -134,3 +134,34 @@ class WebOriginTests(unittest.TestCase):
                 server.shutdown()
                 worker.join()
                 server.server_close()
+
+    def test_authenticated_player_context_and_strict_query(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store=FranchiseStore(Path(directory)/'state.sqlite')
+            store.create_franchise({'a':Ledger.from_opening(OpeningBooks(),cap=100,roster_reserve=0,
+                max_bonus_years=5,veteran_minimums={'p':(1,)})},seed='fixture-world')
+            server=make_server(store,'a','t'*32,port=0)
+            worker=threading.Thread(target=server.serve_forever)
+            worker.start()
+            try:
+                def get(path,authenticated=True):
+                    connection=http.client.HTTPConnection(*server.server_address,timeout=5)
+                    connection.request('GET',path,headers={'Authorization':'Bearer '+'t'*32} if authenticated else {})
+                    response=connection.getresponse()
+                    result=response.status,json.loads(response.read())
+                    connection.close()
+                    return result
+                self.assertEqual(get('/api/player?player_id=p',False)[0],401)
+                status,profile=get('/api/player?player_id=p')
+                self.assertEqual(status,200)
+                self.assertTrue(profile['initialized'])
+                self.assertEqual(profile['personality'],store.load_team('a')._actors['p']['personality'])
+                self.assertEqual(get('/api/player?player_id=p&player_id=p')[0],400)
+                self.assertEqual(get('/api/player?player_id=')[0],400)
+                self.assertEqual(get('/api/player?player_id=unknown')[0],404)
+                self.assertEqual(get('/api/player?player_id=p&team_id=other')[0],400)
+                self.assertEqual(store.load_team('a').revision,0)
+            finally:
+                server.shutdown()
+                worker.join()
+                server.server_close()

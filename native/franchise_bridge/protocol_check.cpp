@@ -32,6 +32,20 @@ int main() {
             if (!rejected) throw std::runtime_error("Invalid contract result accepted");
         }
         franchise::exact_money("1/2");
+        auto player_request = franchise::parse_frame(R"({"operation":"player_context","player_id":"v"})");
+        auto player_reply = franchise::parse_frame(R"({"error":null,"result":{"player_id":"v","financial_revision":0,"initialized":true,"personality":{},"relationships":{},"agreed_promises":[],"promise_history":[]}})");
+        franchise::validate_result(player_reply, player_request);
+        for (int scenario = 0; scenario < 5; ++scenario) {
+            auto bad = player_reply;
+            if (scenario == 0) bad["result"]["player_id"] = "other";
+            if (scenario == 1) bad["result"]["financial_revision"] = true;
+            if (scenario == 2) bad["result"]["personality"] = nullptr;
+            if (scenario == 3) bad["result"]["promise_history"] = {1};
+            if (scenario == 4) bad["result"]["agreed_promises"] = {{{"agreement_request_id", ""}, {"goals", nlohmann::json::array()}}};
+            bool rejected = false;
+            try { franchise::validate_result(bad, player_request); } catch (const std::exception&) { rejected = true; }
+            if (!rejected) throw std::runtime_error("Invalid player context accepted");
+        }
         std::cout << "Protocol envelope and contract validation passed" << std::endl;
         return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << std::endl; return 1; }

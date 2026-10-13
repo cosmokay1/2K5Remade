@@ -111,3 +111,17 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(changed['error'],'invalid_request')
         self.assertEqual(self.calls,1)
         self.assertEqual(self.store.load_team('a').revision,1)
+
+    def test_player_context_is_read_only_available_when_ai_is_disabled(self):
+        expected=self.store.bind_actor('a','v',{'money':0.8},{'trust':0.6},access_check=lambda:None)
+        def disabled():raise AccessDisabled('fixture shutdown')
+        self.bridge.access_check=disabled
+        request={'protocol':1,'request_id':'profile','operation':'player_context','team_id':'a','player_id':'v','timeout_ms':1000}
+        reply=self.bridge.handle(request)
+        self.assertIsNone(reply['error'])
+        self.assertEqual(reply['result']['personality'],expected['personality'])
+        self.assertTrue(reply['result']['initialized'])
+        self.assertEqual(self.calls,0)
+        self.assertEqual(self.store.load_team('a').revision,0)
+        self.assertEqual(self.bridge.handle({**request,'player_id':'unknown'})['error'],'state_rejected')
+        self.assertEqual(self.bridge.handle({**request,'timeout_ms':True})['error'],'invalid_request')

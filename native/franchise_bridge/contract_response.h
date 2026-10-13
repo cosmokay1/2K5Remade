@@ -48,6 +48,26 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
     if (!response["error"].is_null()) return;
     const auto& result = response["result"];
     auto operation = request.at("operation").get<std::string>();
+    if (operation == "player_context") {
+        if (result.at("player_id") != request.at("player_id") || !result.at("player_id").is_string())
+            throw std::runtime_error("Player context identity mismatch");
+        integer_money(result.at("financial_revision"));
+        if (!result.at("initialized").is_boolean() || !result.at("agreed_promises").is_array() ||
+            !result.at("promise_history").is_array()) throw std::runtime_error("Invalid player context");
+        const bool initialized = result.at("initialized").get<bool>();
+        for (const auto* field : {"personality", "relationships"}) {
+            if (initialized ? !result.at(field).is_object() : !result.at(field).is_null())
+                throw std::runtime_error("Invalid player initialization context");
+        }
+        for (const auto& agreement : result.at("agreed_promises")) {
+            if (!agreement.is_object() || !agreement.at("agreement_request_id").is_string() ||
+                agreement.at("agreement_request_id").get<std::string>().empty() || !agreement.at("goals").is_array())
+                throw std::runtime_error("Invalid promise agreement context");
+        }
+        for (const auto& history : result.at("promise_history"))
+            if (!history.is_object()) throw std::runtime_error("Invalid promise history context");
+        return;
+    }
     if (operation == "hello") {
         if (!result.contains("ai_enabled") || !result["ai_enabled"].is_boolean() || result["ai_enabled"] != true ||
             !result.contains("operations") || !result["operations"].is_array()) throw std::runtime_error("Invalid handshake result");

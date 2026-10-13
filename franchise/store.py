@@ -294,6 +294,21 @@ class FranchiseStore:
             raise ValueError("Draft rights disagree with recorded pick history")
         return ledger
 
+    def player_context(self,team_id,player_id):
+        """One validated read snapshot; never generates/rebinds an actor."""
+        if type(player_id) is not str or not player_id.strip():
+            raise ValueError('Stable player identity required')
+        with self._connection() as db:
+            ledger = self._load(db,team_id)
+            ledger.negotiation_context(player_id)  # Require classified identity.
+            actor = ledger._actors.get(player_id)
+            return {'player_id':player_id,'financial_revision':ledger.revision,'initialized':actor is not None,
+                    'personality':actor['personality'] if actor else None,
+                    'relationships':actor['relationships'] if actor else None,
+                    'agreed_promises':[{'agreement_request_id':request,'goals':agreement['goals']}
+                        for request,agreement in ledger._promise_agreements.items() if agreement['player_id'] == player_id],
+                    'promise_history':ledger.promise_history(player_id)}
+
     def load_team(self, team_id: str) -> Ledger:
         with self._connection() as db:
             return self._load(db, team_id)
