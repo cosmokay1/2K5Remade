@@ -663,3 +663,19 @@ retention, offseason/regular-season difference and unchanged authoritative state
 Complete phase calendar, status/Offer Sheet/other compensation treatment and
 atomic phase transitions remain required before projected room can authorize a
 signing. New Windows/Linux CI pending; actual game inputs remain unavailable.
+
+## October 13, 2026 — Native response envelope validation
+
+Added C++ protocol decoder before the pipe client returns a response. It requires
+exact envelope fields, integer protocol 1, matching nonempty request identity,
+object success/null error or null result/nonempty error, and valid detail shape.
+JSON parsing rejects duplicate fields, oversized frames and excessive nesting.
+A malformed response closes the client rather than allowing a later request to
+consume it. Operation-specific finance/game-field validation remains pending.
+
+Uses nlohmann/json v3.12.0 release header pinned by published SHA-256; exact MIT
+notice preserved and attribution updated. Build artifacts stay outside source.
+Native protocol CMake/CTest now runs on both CI platforms; Windows additionally
+runs the real process/transaction fixture. Locally compiled with AppleClang and
+passed the C++ malformed-envelope suite; all 143 Python tests pass.
+New Windows/Linux CI pending; no guest memory or game state writes introduced.

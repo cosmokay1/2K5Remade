@@ -73,3 +73,10 @@ runtime account using authorized source ADC and short-lived credentials. No
 service-account key or owner-CLI fallback is used. Local credential/schema tests
 do not establish live impersonation permission; IAM Credentials API, authorized
 source identity and target-account impersonation grants still need verification.
+
+The native client now validates response envelopes before returning them: exact
+fields, protocol, matching request identity and consistent success/error shape.
+Duplicate JSON fields and excessive nesting reject. Malformed replies terminate
+the transport. The parser uses checksum-pinned nlohmann/json v3.12.0 with its MIT
+license retained. Operation-specific result/financial-field validation remains
+required before any game-memory write can be enabled.

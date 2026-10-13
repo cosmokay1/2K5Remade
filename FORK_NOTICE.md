@@ -36,6 +36,9 @@ revision labels rather than presenting an earlier inspection as a new one.
   files, including the 2K Football Mod Tools, extract-xiso, Kenney, and mod-package
   notices. This document does not replace their terms or claim rights to their
   branding, media, or other assets.
+- Native protocol validation downloads the checksum-pinned nlohmann/json v3.12.0
+  single header at build time. Preserve its [MIT license](docs/third-party/nlohmann-json-LICENSE.MIT).
+  This dependency does not change rights to inherited Remade code.
 - Google Gen AI is an optional externally installed SDK; we do not vendor it.
   Modern contract research links to NFL/NFLPA sources; no CBA PDF is bundled.
 
