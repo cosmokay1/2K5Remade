@@ -139,9 +139,12 @@ int main() {
         auto buyer_cash=franchise::parse_frame(R"({"obligation_id":"contract:v","player_id":"v","amount":60,"paid":0,"source":"synthetic assigned bases","paid_components":[]})");
         auto compact_release=release_reply,compact_trade=trade_reply,compact_restructure=restructure_reply;
         compact_release["result"]["release"]["financial"]["released_contracts"]["v"]["cash_obligation"]=released_cash;
+        auto original_cash=released_cash;original_cash["amount"]=69;original_cash["source"]="synthetic original cash";
+        compact_release["result"]["release"]["financial"]["released_contracts"]["v"]["original_cash"]=original_cash;
         for (const auto& team : {std::string("a"),std::string("b")}) {
             auto& archive=compact_trade["result"]["trade"][team]["financial"][team=="a" ? "outgoing_trades" : "incoming_trades"]["v"];
             archive["seller_cash"]=seller_cash;archive["buyer_cash"]=buyer_cash;
+            archive["original_cash"]=original_cash;
         }
         auto summarize=[](nlohmann::json& cash,const nlohmann::json& target) {
             const auto nominal=target.at("amount").get<int64_t>(),paid=target.at("paid").get<int64_t>();
@@ -190,6 +193,55 @@ int main() {
                 bool rejected=false;
                 try { franchise::validate_result(bad,bad_request); } catch (const std::exception&) { rejected=true; }
                 if (!rejected) throw std::runtime_error("Invalid compact receipt accepted: "+operation+"/"+std::to_string(scenario));
+            }
+        }
+        auto returned_release=compact_release, returned_request=release_request;
+        returned_release["result"]["receipt_format"]="target_v1";returned_request["receipt_format"]="target_v1";
+        auto& returned_archive=returned_release["result"]["release"]["financial"]["released_contracts"]["v"];
+        const auto returned_cash_id="contract-gen:"+std::string(64,'d');
+        returned_archive["original_cash"]["obligation_id"]=returned_cash_id;
+        returned_archive["cash_obligation"]["obligation_id"]=returned_cash_id;
+        returned_release["result"]["release"]["cash"]["obligations"][0]["obligation_id"]=returned_cash_id;
+        franchise::validate_result(returned_release,returned_request);
+        for (const auto& operation : {std::string("manual_release"),std::string("manual_trade")}) {
+            auto base=operation=="manual_release" ? compact_release : compact_trade;
+            auto input=operation=="manual_release" ? release_request : trade_request;
+            input["receipt_format"]="target_v1";base["result"]["receipt_format"]="target_v1";
+            for (int scenario=0;scenario<8;++scenario) {
+                auto bad=base;
+                if (operation=="manual_release") {
+                    auto& archive=bad["result"]["release"]["financial"]["released_contracts"]["v"];
+                    auto& target=archive["cash_obligation"];
+                    if (scenario==0) {target["obligation_id"]="foreign";archive["original_cash"]["obligation_id"]="foreign";}
+                    if (scenario==1) target["obligation_id"]=returned_cash_id;
+                    if (scenario==2) archive["original_cash"]["player_id"]="other";
+                    if (scenario==3) {target["paid"]=8;target["paid_components"]={{"signing_bonus",8}};}
+                    if (scenario==4) target["paid_components"]={{"base:0",9}};
+                    if (scenario==5) {archive["original_cash"]["paid"]=8;archive["original_cash"]["paid_components"]={{"signing_bonus",8}};}
+                    if (scenario==6) target["amount"]=70;
+                    if (scenario==7) archive["original_cash"].erase("paid_components");
+                    summarize(bad["result"]["release"]["cash"],target);
+                } else {
+                    auto archive=bad["result"]["trade"]["a"]["financial"]["outgoing_trades"]["v"];
+                    if (scenario==0) for (const auto* key : {"original_cash","seller_cash","buyer_cash"}) archive[key]["obligation_id"]="foreign";
+                    if (scenario==1) archive["original_cash"]["obligation_id"]=returned_cash_id;
+                    if (scenario==2) archive["buyer_cash"]["amount"]=61;
+                    if (scenario==3) {
+                        archive["seller_cash"]["amount"]=8;archive["seller_cash"]["paid"]=8;
+                        archive["seller_cash"]["paid_components"]={{"signing_bonus",8}};archive["buyer_cash"]["amount"]=61;
+                    }
+                    if (scenario==4) archive["seller_cash"]["paid_components"]={{"base:0",9}};
+                    if (scenario==5) {archive["original_cash"]["paid"]=8;archive["original_cash"]["paid_components"]={{"signing_bonus",8}};}
+                    if (scenario==6) {archive["buyer_cash"]["paid"]=1;archive["buyer_cash"]["paid_components"]={{"base:0",1}};}
+                    if (scenario==7) archive["original_cash"].erase("paid_components");
+                    for (const auto& team : {std::string("a"),std::string("b")}) {
+                        bad["result"]["trade"][team]["financial"][team=="a" ? "outgoing_trades" : "incoming_trades"]["v"]=archive;
+                        summarize(bad["result"]["trade"][team]["cash"],archive[team=="a" ? "seller_cash" : "buyer_cash"]);
+                    }
+                }
+                bool rejected=false;
+                try { franchise::validate_result(bad,input); } catch (const std::exception&) { rejected=true; }
+                if (!rejected) throw std::runtime_error("Invalid compact cash provenance accepted: "+operation+"/"+std::to_string(scenario));
             }
         }
         auto generational_trade_request=trade_request, generational_trade_reply=trade_reply;

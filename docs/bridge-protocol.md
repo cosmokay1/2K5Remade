@@ -247,3 +247,10 @@ or vice versa, because receipt format is a transport choice, not new financial
 terms. A large affected archive or ownership list can still exceed capacity and
 reject safely. This is a bounded transaction receipt, not a complete league
 reconciliation or proof of guest-game posting.
+
+Compact release cash must retain the original obligation ID, player and settled
+payment history; release cannot increase its nominal cash liability. Compact
+legacy trades bind original, seller and buyer records to `contract:<player>` and
+conserve nominal cash while preserving the seller's allocated payment history.
+Generation assignments retain their explicit source and destination identities.
+Matching wire/archive copies alone do not satisfy these provenance checks.

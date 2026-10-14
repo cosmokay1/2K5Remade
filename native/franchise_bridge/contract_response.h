@@ -130,6 +130,35 @@ inline std::string generation_cash_identity(const nlohmann::json& value, const s
         throw std::runtime_error("Invalid saved agreement identity");
     return prefix=="contract-gen:" ? identity : "contract:"+player;
 }
+inline void compact_release_cash(const nlohmann::json& archive, const std::string& player) {
+    const auto& original=archive.at("original_cash");
+    const auto& settled=archive.at("cash_obligation");
+    restructure_cash_record(original); restructure_cash_record(settled);
+    const auto identity=original.at("obligation_id").get<std::string>();
+    if (identity!="contract:"+player) {
+        if (identity.rfind("contract-gen:",0)!=0) throw std::runtime_error("Invalid released cash identity");
+        generation_cash_identity(original.at("obligation_id"),player);
+    }
+    if (original.at("player_id")!=player || settled.at("player_id")!=player ||
+        settled.at("obligation_id")!=original.at("obligation_id") || settled.at("amount")>original.at("amount") ||
+        settled.at("paid")!=original.at("paid") || settled.at("paid_components").dump()!=original.at("paid_components").dump())
+        throw std::runtime_error("Release changed original cash identity or payments");
+}
+inline void trade_cash_records(const nlohmann::json& archive, const std::string& player,
+                               const std::string& source, const std::string& destination) {
+    const auto& original=archive.at("original_cash");
+    const auto& seller=archive.at("seller_cash");
+    const auto& buyer=archive.at("buyer_cash");
+    for (const auto* record : {&original,&seller,&buyer}) {
+        restructure_cash_record(*record);
+        if (record->at("player_id")!=player) throw std::runtime_error("Trade cash belongs to another player");
+    }
+    if (original.at("obligation_id")!=source || seller.at("obligation_id")!=source || buyer.at("obligation_id")!=destination ||
+        checked_money_sum(seller.at("amount").get<int64_t>(),buyer.at("amount"))!=original.at("amount").get<int64_t>() ||
+        seller.at("amount")!=seller.at("paid") || seller.at("paid")!=original.at("paid") ||
+        seller.at("paid_components").dump()!=original.at("paid_components").dump() || buyer.at("paid")!=0)
+        throw std::runtime_error("Trade changed cash identity, conservation or payment history");
+}
 inline void validate_contract_accounting(const nlohmann::json& accounting, const std::string& player) {
     if (accounting.is_null()) return; // Explicitly unavailable, never a zero balance.
     if (!accounting.is_object() || !(accounting.size()==6 ||
@@ -401,16 +430,7 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
                 throw std::runtime_error("Trade failed to create destination agreement");
             const auto& outgoing=result.at("trade").at(seller).at("financial").at("outgoing_trades").at(request.at("player_id").get<std::string>());
             const auto& incoming=result.at("trade").at(buyer).at("financial").at("incoming_trades").at(request.at("player_id").get<std::string>());
-            for (const auto* name : {"original_cash","seller_cash","buyer_cash"}) {
-                restructure_cash_record(outgoing.at(name));
-                if (outgoing.at(name).at("player_id")!=request.at("player_id"))
-                    throw std::runtime_error("Trade cash belongs to another player");
-            }
-            if (checked_money_sum(outgoing.at("seller_cash").at("amount").get<int64_t>(),outgoing.at("buyer_cash").at("amount"))!=outgoing.at("original_cash").at("amount").get<int64_t>() ||
-                outgoing.at("seller_cash").at("amount")!=outgoing.at("seller_cash").at("paid") ||
-                outgoing.at("seller_cash").at("paid")!=outgoing.at("original_cash").at("paid") ||
-                outgoing.at("buyer_cash").at("paid")!=0)
-                throw std::runtime_error("Trade cash does not reconcile");
+            trade_cash_records(outgoing,request.at("player_id").get<std::string>(),source_cash,destination_cash);
             if (outgoing.dump()!=incoming.dump() || outgoing.at("original_cash").at("obligation_id")!=source_cash ||
                 outgoing.at("seller_cash").at("obligation_id")!=source_cash || outgoing.at("buyer_cash").at("obligation_id")!=destination_cash)
                 throw std::runtime_error("Trade changed agreement cash identity");
@@ -446,6 +466,9 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
             const auto& archive=financial.at(team==seller ? "outgoing_trades" : "incoming_trades").at(request.at("player_id").get<std::string>());
             if (compact) {
                 target_financial(financial,team==seller ? "outgoing_trades" : "incoming_trades",request.at("player_id").get<std::string>());
+                if (!request.contains("seller_generation_id"))
+                    trade_cash_records(archive,request.at("player_id").get<std::string>(),
+                        "contract:"+request.at("player_id").get<std::string>(),"contract:"+request.at("player_id").get<std::string>());
                 const auto& target=archive.at(team==seller ? "seller_cash" : "buyer_cash");
                 if (target.at("player_id")!=request.at("player_id")) throw std::runtime_error("Compact trade cash belongs to another player");
                 target_cash(cash,target);
@@ -477,6 +500,7 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         const auto& archive=financial.at("released_contracts").at(request.at("player_id").get<std::string>());
         if (compact) {
             target_financial(financial,"released_contracts",request.at("player_id").get<std::string>());
+            compact_release_cash(archive,request.at("player_id").get<std::string>());
             if (archive.at("cash_obligation").at("player_id")!=request.at("player_id")) throw std::runtime_error("Compact release cash belongs to another player");
             target_cash(cash,archive.at("cash_obligation"));
         } else if (cash.contains("other_obligations")) throw std::runtime_error("Unmarked compact cash summary");

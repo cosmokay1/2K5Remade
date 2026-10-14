@@ -108,6 +108,38 @@ class CompactReceiptTests(unittest.TestCase):
                 self.assertEqual(len(payload['posting']['released_contracts']),30)
                 self.assertEqual(len(payload['cash_posting']['obligations']),53)
 
+    def test_compact_release_of_returned_agreement_preserves_prior_debt(self):
+        from tests import test_return_store
+        fixture=test_return_store.ReturnStoreTests();fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        fixture.migrate();fixture.sign()
+        identity=fixture.store.load_team('a').contract_identity('v').generation_id
+        request={**self.requests()[0],'request_id':'compact-return-release','expected_revision':5,
+            'receipt_format':'target_v1','timeout_ms':5000}
+        bridge=self.bridge(fixture.store);reply=bridge.handle(request)
+        self.assertIsNone(reply['error'],reply)
+        cash=reply['result']['release']['cash']
+        self.assertEqual(cash['obligations'][0]['obligation_id'],identity)
+        self.assertEqual(cash['obligations'][0]['amount'],8)
+        self.assertEqual(cash['other_obligations'],dict(count=1,nominal_total=39,paid_total=9,unpaid_total=30))
+        self.assertEqual(reply['result']['release']['financial']['charges'],[47,0,0])
+        self.assertEqual(bridge.handle(request),reply)
+        self.assertEqual(fixture.store.load_team('a').generation_cash(fixture.old_id).amount,39)
+
+    def test_release_original_cash_identity_and_settled_components_cannot_be_replaced(self):
+        with tempfile.TemporaryDirectory() as directory:
+            full=self.bridge(self.setup_store(directory)).handle(self.requests()[0])['result']
+            for scenario in ('identity','player','paid','components','amount'):
+                changed=deepcopy(full)
+                original=changed['release']['financial']['released_contracts']['v']['original_cash']
+                if scenario=='identity':original['obligation_id']='contract:other'
+                if scenario=='player':original['player_id']='other'
+                if scenario=='paid':original.update(paid=10,paid_components=[['signing_bonus',10]])
+                if scenario=='components':original['paid_components']=[['base:0',9]]
+                if scenario=='amount':original['amount']=9
+                with self.subTest(scenario=scenario),self.assertRaises(ValueError):
+                    compact_lifecycle_result(changed,'manual_release')
+
     def test_format_allowed_only_on_exact_supported_operations(self):
         with tempfile.TemporaryDirectory() as directory:
             bridge=self.bridge(self.setup_store(directory))

@@ -60,7 +60,14 @@ def compact_lifecycle_result(result,operation):
     player=result['player_id']
     projected={**result,'receipt_format':TARGET_FORMAT}
     if operation=='manual_release':
-        projected['release']=_participant(result['release'],player,'released_contracts','cash_obligation')
+        archive=result['release']['financial']['released_contracts'][player]
+        original=CashObligation.from_dict(archive['original_cash'])
+        if original.player_id!=player or original.paid_components is None:
+            raise ValueError('Allocated original release cash required')
+        projected['release']=_participant(result['release'],player,'released_contracts','cash_obligation',original.obligation_id)
+        target=CashObligation.from_dict(projected['release']['cash']['obligations'][0])
+        if target.paid!=original.paid or target.paid_components!=original.paid_components or target.amount>original.amount:
+            raise ValueError('Release changed settled cash or increased nominal liability')
     elif operation=='manual_restructure':
         expected=_identity_cash(result['generation_id'],player) if 'generation_id' in result else 'contract:'+player
         projected['restructure']=_participant(result['restructure'],player,'restructures','cash_obligation',expected)

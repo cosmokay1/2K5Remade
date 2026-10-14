@@ -2048,3 +2048,23 @@ actual Python reply. New Windows process execution remains pending CI.
 The previous 01dcf17 Windows CI 38498584782 succeeded: 421 tests and the actual
 native oversized lifecycle rejection/restart fixture passed. No retail game
 execution, guest write or save/load evidence is implied by either fixture.
+
+### Compact cash identity and settled history (2026-10-13)
+
+Audit found that matching target/archive cash records alone did not bind a
+compact release to its original cash identity. Python and native release checks
+now require the original allocated cash record, canonical legacy or generation
+identity, matching settled identity/player, unchanged paid amounts and payment
+components, and nominal liability no greater than the original. Compact legacy
+trade checks bind all original/seller/buyer cash records to contract:player,
+conserve nominal cash exactly and preserve seller payment history. The same
+trade helper also checks versioned assignments without changing receipt shape.
+
+All 429 Python tests and portable native checks pass. Added 16 native corruption
+cases that alter both wire and archive records, plus a valid returned release.
+Python cases cover original identity/player/payment/component/amount corruption
+and a returned release preserving old cash39 plus new cash8 and team cap47.
+The rebuilt C++ harness still accepts the actual 2915-byte Python receipt.
+The earlier compact Windows run 38498978074 was still live when checked; no
+restart or new Windows execution is claimed here. Retail runtime/save gates
+remain unresolved.
