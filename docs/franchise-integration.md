@@ -642,3 +642,20 @@ User confirms the offer screen is open; no submission was requested. This is
 a real read-only candidate observation plus external resolver execution. The
 game bridge still has no resolver invocation, current-book import or financial
 authorization; live AI negotiation is not proved by this match.
+
+
+## Private Windows sidecar interpreter
+
+The explicit installer packages CPython3.13.16 Windows amd64 after verifying
+the official archive SHA256. It retains PSF notices and isolates the standard
+library/application path via python313._pth. See
+[Python runtime provenance](third-party/python-runtime.md). Third-party SDKs
+are not auto-installed; no owner credentials or AI grant is copied.
+
+Private Deck native C/C++ pipe fixtures compiled with the existing licensed
+compiler and ran against packaged Python under Wine9, including synthetic
+financial lifecycle/restart checks. Under Proton11 in a separate test prefix,
+pythonw imports the real sidecar/SQLite; an authored no-console C-host fixture
+exits0 after handshake, preview, manual sign, player context and restart assertions.
+The game launcher/provider configuration remains unchanged. This checks packaged
+transport compatibility, not guest transaction integration or Vertex authorization.

@@ -24,8 +24,8 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 ## Latest verified state — October 14, 2026
 
-- Latest published verified source: `712582b`. Build `38605154365` and Franchise AI
-  `38605154405` passed. CI checks asset-free runtime and bridge components;
+- Latest published verified source: `a4e89c1`. Build `38606568296` and Franchise AI
+  `38606568593` passed. CI checks asset-free runtime and bridge components;
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.
@@ -278,7 +278,7 @@ coherent negotiations and persistent consequences without violating financial ru
       compatibility, timeouts and explicit error handling. Native offline transaction
       verified at `d2d9e0b`, run `38465198052`; game integration remains under M5.
 - [ ] Keep game thread responsive while inference runs; reject obsolete responses.
-- [ ] Ship a cooperative client handshake without distributing owner credentials.
+- [ ] Ship a cooperative client handshake without distributing owner credentials. A pinned private Windows CPython runtime is installed with license/checksum and isolated application path; synthetic native pipe checks pass with it under Wine, and no-console import/C-host checks exit0 under Deck Proton. Optional SDK vendoring, authorized runtime credentials, live control execution and real-franchise import remain pending.
 - [ ] Validate bounded native lifecycle receipts in the integrated game before long-franchise runtime validation; opt-in target_v1 receipts now retain target archives and reconcile team cash totals. Precommit capacity checks reject oversized replies without mutation; actual guest reconciliation remains unverified.
 - [ ] Ensure AI shutdown preserves financial enforcement and provides a clearly
       labeled manual/deterministic decision path; no silent native cap bypass.

@@ -4171,3 +4171,40 @@ controlled screen. The game bridge does not call the resolver yet; automatic
 franchise selection, runtime calendar and whole-book financial reconciliation
 remain required before a signing operation can use the candidate. Do not report
 this read-only match as AI negotiation integration or financial authorization.
+
+
+## October14,2026 — Private Windows Python service runtime
+
+Added tools.install_embedded_python for explicit private CPython3.13.16 amd64
+packaging. Official archiveSHA256
+97dae5274cc54867065e8d5a3226e48c35017ed332a0fdb0e27d5b5821961297
+verified before extraction. LICENSE.txt and provenance retained; isolated ._pth
+includes only bundled library, interpreter directory and explicit relative
+authored application root. Existing destinations and bad hashes reject without
+overwrite. Actual official-archive manual checks passed for notice/path/refusal
+behavior. No pip, SDK, credentials, cloud infrastructure or control enablement
+was added.
+
+Installed privately in Deck dependencies/python-3.13.16; source-relative path
+is ..\..\source. Wine9 execution reportsPython3.13.16/SQLite3.50.4 and imports
+franchise.sidecar. Actual native bridge and C-host fixtures compiled and complete
+tools.check_native_bridge suite exited0 with synthetic financial/lifecycle,
+personality, restart and budget-policy checks. Log: python-pipe-check.log.
+No model requests or retail data were used in these fixture databases.
+
+Proton isolated-prefix check first failed because the prefix parent directory
+was missing, then stalled its console host under headless SSH. Inspected the
+known test processes/command/display state; stopped only its Python/conhost
+processes after diagnosing the console wait. Switched the authored check to
+pythonw. Import result verifiesPython3.13.16/SQLite3.50.4 and actual sidecar
+source under Proton11.0-100. A second authored check launches the native C host
+with CREATE_NO_WINDOW and exits0 after two synthetic handshake/preview/manual
+sign/context/restart runs. Its charge10/room90 assertions are synthetic.
+Result-artifact retrieval then hit a transient SSH port22 timeout; the completed
+check's exit0 is observed, but its JSON artifact has not yet been read back.
+Separate test prefix and private fixture DBs preserve the game prefix/saves.
+
+Optional Google SDK vendoring, authorized scoped runtime identity, actual remote
+hello and real-franchise import remain required. Game provider remains unset
+and original signing judgment still runs. Publisheda4e89c1 passed
+Build38606568296 and Franchise AI38606568593;0eb0135 also completed both workflows.
