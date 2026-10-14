@@ -2548,3 +2548,12 @@ SwitchToThread performs sched_yield and conservatively returns false because
 POSIX does not report an actual thread handoff. Linux CI now runs this regression
 before the full runtime build. New pinned-revision CI remains pending; these checks
 do not establish game execution, Windows/Deck playability or franchise save/load.
+
+### Pressure and quarterback-hit source triage (2026-10-13)
+
+Inspected the broadcast boundary, copied player totals and native-popup forwarding.
+The current sack presentation event carries no play/defender/QB identity or final
+penalty disposition; it is insufficient for franchise attribution. No pressure
+or hit field exists in that boundary, which does not establish engine absence.
+Added docs/pressure-investigation.md with concrete contact, overlap, nullification,
+mode-coverage and save/load capture requirements. No counters or offsets invented.

@@ -145,6 +145,7 @@ invent future published NFL values: separate verified inputs from simulation pol
       away, interceptions, spikes and nullified plays without inferring targets
       from receptions. Persist source/provenance for each counter.
 - [ ] Investigate QB pressures and quarterback hits as distinct observed play events: identify dropbacks,
+      Source triage and capture requirements: [pressure investigation](docs/pressure-investigation.md).
       rushers, timing and disruption; define/test attribution and avoid counting
       each frame as a new pressure. Do not substitute proximity or sacks silently.
       For hits, verify actual contact and timing relative to pass release; attribute
