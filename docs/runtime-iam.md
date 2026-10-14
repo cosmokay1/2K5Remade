@@ -52,6 +52,19 @@ Do not work around this gate with owner fallback, distributed keys or another
 identity. Offline tests confirm denied runtime impersonation leaves AI disabled
 while explicit manual transactions retain the same cap validator.
 
+October14 read-only revalidation confirms the exact direct inference/control
+grants above and zero user-managed keys. The service-account-level policy has
+no direct delegation bindings. Inherited source-principal permissions were not
+audited by this check; no impersonation/token request was retried.
+
+A private reviewable proposal now scopes Token Creator to this one runtime
+service account, one existing administrator and a fixed time condition expiring
+October15,2026 at19:10:27UTC. Explicit human approval is requested before any
+binding change. The built-in role permits short-lived access/ID token creation
+and signing; it is not merely object-read permission. No project-wide delegation,
+keys, paid request, AI enablement or control renewal is proposed. No automatic
+grant renewal or extending the reviewable expiry is authorized.
+
 
 ## Required persistent request and token budget
 

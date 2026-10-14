@@ -4545,3 +4545,25 @@ from NFLPA's general benefits FAQ, including IR exclusion. Recorded source/secti
 and refused to substitute retirement-credit rules or assume missing pay/list
 eligibility. No credit count/minimum was assigned; Trotter remains pending.
 No database/game writes, model calls or control changes.
+
+## October14,2026 — Runtime IAM gate revalidated and scoped proposal prepared
+
+Read service-account policy using current administrative CLI login: no direct
+delegation bindings. Existing audit_runtime_iam independently confirms exact
+runtime prediction/service-use grants, object-get restricted to ai-control.json,
+no direct switch-write grant and zero user-managed keys. No inherited-permission
+or effective model-access claim. No owner control-read/inference fallback,
+impersonation token request, IAM mutation, paid model or killswitch change.
+
+CLI initially selected unsupported systemPython3.9. Selecting already installed
+Python3.12 through command-local CLOUDSDK_PYTHON resolved it; no install or global
+environment change. Private runtime-delegation-proposal.json names the existing
+administrator, exact target/role and fixed request-time condition ending
+2026-10-15T19:10:27Z. No administrator identity is published in source docs.
+
+Requested explicit approval for this time-limited service-account-only binding.
+Explained the earlier automatic review rejection of persistent IAM delegation;
+approval remains pending. Built-in Token Creator includes token creation/signing,
+not just reading control. No automatic renewal or expiry extension is proposed.
+Independent game/book work remains available; the overall goal is not blocked
+or complete solely because live scoped-runtime verification awaits this input.
