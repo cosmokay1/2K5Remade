@@ -6,7 +6,12 @@ has been tested under Proton. The current repository does not build an integrate
 playable game without the reviewed guest integration and legal assets.
 
 The local packager accepts an explicit manifest, preserves relative file paths,
-records SHA-256 hashes and refuses to overwrite an existing ZIP. It does not fetch
+records SHA-256 hashes and refuses to overwrite an existing ZIP. It rejects
+case-insensitive file/directory collisions, inconsistent directory-prefix spelling
+and descendants of the reserved receipt file. Directory casing stays consistent
+so extraction on a case-sensitive filesystem does not split one Windows logical
+directory. Win32 reserved device names include superscript COM/LPT variants; see
+[Microsoft naming rules](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file). It does not fetch
 assets, install Proton, create credentials or publish a release. Inspect every
 listed file for credentials before packaging; filename checks cannot establish
 that arbitrary JSON or executable contents are safe to distribute. Redistribution

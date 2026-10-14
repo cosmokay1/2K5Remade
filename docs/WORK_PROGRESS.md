@@ -1696,3 +1696,16 @@ cache growth.328 full tests cover later corrupted results, changed source/identi
 boolean/offer claims, new-read freshness and bounded retention. Independent review
 found no skipped financial authority. No game/Windows/Deck latency claim or paid
 inference.50f37c8 passed CI38490369770/38490369723; b4e0d77 CI remained running.
+
+## October 13, 2026 — Portable package archive-layout validation
+
+Packaging audit reproduced accepted file/directory casefold collisions, reserved
+receipt descendants and mixed directory casing that split one Windows logical
+folder in ZIP layout. These now reject before output creation; existing archives
+remain unchanged. Primary Microsoft naming rules also confirm six superscript
+COM/LPT device variants, now excluded with extensions/in directories. Positive
+nested runtime fixture preserves exact archive paths and hashed bytes.330 full
+tests and diff checks pass. No retail assets, game runtime, release ZIP or
+Proton execution supplied; this improves candidate tooling without claiming
+playable delivery. b4e0d77 CI passed38490590450/38490590375; latest999f884 CI
+38490946024/38490945988 remained running at inspection.
