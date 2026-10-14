@@ -128,6 +128,8 @@ class Negotiation:
         refreshed, snapshot = self.ledger.negotiation_inputs(self.player_id, refreshed)
         if snapshot["current_contract_owned"]:
             raise ValueError("Player is currently signed; extensions are unsupported")
+        if snapshot.get('classification_pending'):
+            raise Rejected('Observed player salary classification is unavailable; no inference submitted')
         self._actor = json.dumps({**refreshed, "performance": actor["performance"]}, allow_nan=False)
         if expected_revision is not None and (type(expected_revision) is not int or expected_revision != snapshot["revision"]):
             raise Rejected("Offer was based on stale client franchise state")

@@ -63,6 +63,9 @@ the three private saves (1696/1696/1697 contracts). Durable books now preserve
 legacy cap/ownership and permit cap-constrained new modern deals; the private
 32-team restart check retains1697 IDs/actors/exact current charges. Free-agent
 floors, cash/rookie sources, calendar conversion and actual guest writes remain.
+Observed FA identity initialization now covers all1937 players in the private
+32-team import, including240 FAs. Missing salary classification stays explicit
+and rejects before inference/signing; it is not replaced with a zero-credit floor.
 
 The user identified cost-control expansion as a distraction. Stop adding spending
 policies, quota layers or supporting infrastructure. Keep the existing request/

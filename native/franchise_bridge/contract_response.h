@@ -1244,6 +1244,14 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         if (result.at("player_id") != request.at("player_id") || !result.at("player_id").is_string())
             throw std::runtime_error("Player context identity mismatch");
         integer_money(result.at("financial_revision"));
+        if (result.contains("classification_pending") || result.contains("observed_player_source")) {
+            if (!result.contains("classification_pending") || result.at("classification_pending")!=true ||
+                !result.contains("observed_player_source") || !result.at("observed_player_source").is_string() ||
+                result.at("observed_player_source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos ||
+                !result.at("contract_accounting").is_null() || result.contains("legacy_contract") ||
+                (result.contains("calendar_contract_context") && !result.at("calendar_contract_context").is_null()))
+                throw std::runtime_error("Invalid pending player classification context");
+        }
         if (result.contains("legacy_contract") || result.contains("legacy_liability_scope")) {
             if (!result.contains("legacy_contract") || !result.contains("legacy_liability_scope") ||
                 result.at("legacy_liability_scope")!="original cap schedule; cash/protections/lifecycle unverified" ||

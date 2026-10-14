@@ -51,6 +51,14 @@ Year transitions require the same adaptation policy; switching economies needs
 an explicit verified migration rather than silently changing salary floors.
 Actual game-to-rule calendar binding remains an adapter requirement.
 
+An explicit `observed_player_ids` registry with source provenance may initialize
+identities whose contract classification is still unknown. It does not supply a
+zero-credit minimum or authorize a new owned modern contract. Their saved
+personalities/relationships are readable with `classification_pending=true`;
+manual acquisition rejects missing floors and negotiation rejects before model
+inference. This separates verified roster identity from unverified financial
+rules. Existing classified players retain their previous context/config shape.
+
 ```sh
 python3 -m tools.create_franchise --input /path/to/bootstrap.json --database /path/to/new-franchise.sqlite
 ```

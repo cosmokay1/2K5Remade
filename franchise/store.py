@@ -44,6 +44,10 @@ def from_config(config: dict) -> Ledger:
     if config.get("opening_books") is not None:
         config["opening_books"] = OpeningBooks.from_dict(config["opening_books"])
     config["signed_player_ids"] = frozenset(config["signed_player_ids"])
+    if 'observed_player_ids' in config:
+        if type(config['observed_player_ids']) is not list or len(config['observed_player_ids']) != len(set(config['observed_player_ids'])):
+            raise ValueError('Unique observed registry identities required')
+        config['observed_player_ids'] = frozenset(config['observed_player_ids'])
     config["veteran_minimums"] = {key: tuple(value) for key, value
                                    in config["veteran_minimums"].items()}
     config["rookies"] = {key: (RookieScale if "draft_round" in value else UndraftedScale)(**{**value,
@@ -878,7 +882,7 @@ class FranchiseStore:
             players=[]
             for player in sorted(ledger.registered_player_ids):
                 context=ledger.negotiation_context(player)
-                players.append({'player_id':player,'contract_classification':('legacy' if player in ledger._legacy_contracts else context['rookie_type'] or 'veteran'),
+                players.append({'player_id':player,'contract_classification':('pending' if context.get('classification_pending') else 'legacy' if player in ledger._legacy_contracts else context['rookie_type'] or 'veteran'),
                                 'initialized':player in ledger._actors})
             return {'team_id':team_id,'financial_revision':ledger.revision,'players':players,
                     'scope':'registered contract identities; guest roster membership unverified'}
@@ -913,7 +917,7 @@ class FranchiseStore:
             raise ValueError('Unsupported player context format')
         with self._connection() as db:
             ledger = self._load(db,team_id)
-            ledger.negotiation_context(player_id)  # Require classified identity.
+            context = ledger.negotiation_context(player_id)  # Require declared identity; floors may remain unknown.
             actor = ledger._actors.get(player_id)
             history=self._negotiation_history(db,team_id,player_id)
             accounting = None
@@ -925,6 +929,8 @@ class FranchiseStore:
                 else:
                     accounting=self._generation_accounting_view(ledger,agreement)
             result = {'player_id':player_id,'financial_revision':ledger.revision,'initialized':actor is not None,
+                    **({'classification_pending':True,'observed_player_source':context['observed_player_source']}
+                       if context.get('classification_pending') else {}),
                     **({'legacy_contract':ledger._legacy_contracts[player_id].to_dict(),
                         'legacy_liability_scope':'original cap schedule; cash/protections/lifecycle unverified'}
                        if player_id in ledger._legacy_contracts else {}),

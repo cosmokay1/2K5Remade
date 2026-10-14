@@ -8,6 +8,39 @@ from franchise.store import FranchiseStore
 
 
 class FranchiseInitializationTests(unittest.TestCase):
+    def test_observed_free_agent_initializes_without_inventing_salary_classification(self):
+        from franchise.bridge import Bridge
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)/'state.sqlite'; store = FranchiseStore(path)
+            ledger = Ledger.from_opening(OpeningBooks(), cap=100, roster_reserve=0,
+                max_bonus_years=5, veteran_minimums={}, observed_player_ids=frozenset({'pending'}),
+                observed_player_source='authored pinned roster')
+            store.create_franchise({'a':ledger}, seed='observed-world')
+            reopened = FranchiseStore(path); context = reopened.player_context('a','pending')
+            self.assertTrue(context['initialized']); self.assertTrue(context['classification_pending'])
+            self.assertEqual(context['personality'], initial_actor('observed-world','pending')['personality'])
+            self.assertEqual(reopened.registered_players('a')['players'][0]['contract_classification'],'pending')
+            self.assertIsNone(reopened.load_team('a').negotiation_context('pending')['veteran_minimum_salaries'])
+            before = reopened.load_team('a').financial_snapshot()
+            with self.assertRaises(Rejected): reopened.sign('a','manual',Offer('pending',(10,),0),0)
+            provider = Mock(side_effect=AssertionError('Unclassified player must not reach model'))
+            bridge = Bridge(reopened,provider=provider,access_check=lambda:None)
+            reply=bridge.handle({'protocol':1,'request_id':'unknown-floor','operation':'negotiate','team_id':'a',
+                'offer':{'player_id':'pending','salaries':[10],'signing_bonus':0},'expected_revision':0,
+                'timeout_ms':1000,'personality':{},'performance':{},'relationships':{}})
+            self.assertEqual(reply['error'],'state_rejected'); provider.assert_not_called()
+            self.assertEqual(reopened.load_team('a').financial_snapshot(),before)
+
+    def test_observed_identity_registry_cannot_authorize_missing_owned_classification(self):
+        with self.assertRaises(ValueError):
+            Ledger.from_opening(OpeningBooks(contracts=(ActiveContract(Offer('pending',(10,),0),'authored'),)),
+                cap=100,roster_reserve=0,max_bonus_years=5,veteran_minimums={},
+                observed_player_ids=frozenset({'pending'}),observed_player_source='authored snapshot')
+        with self.assertRaises(ValueError):
+            Ledger.from_opening(OpeningBooks(),cap=100,roster_reserve=0,max_bonus_years=5,
+                veteran_minimums={},observed_player_ids=frozenset({'pending'}))
+
     def ledger(self,owned):
         return Ledger.from_opening(OpeningBooks(contracts=(ActiveContract(Offer(owned,(10,),0),'synthetic roster'),)),
             cap=100,roster_reserve=0,max_bonus_years=5,veteran_minimums={'p':(1,),'q':(1,),'free-agent':(1,)})

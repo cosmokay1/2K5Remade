@@ -106,7 +106,8 @@ class Ledger:
                  rookie_total_allocation: int | None = None,
                  rookie_tenders: dict[str, int] | None = None,
                  opening_books=None, veteran_minimum_profile=None,
-                 undrafted_bonus_reservation=None, undrafted_reservation_source=None, rookie_pool_opening=None, management_profile=None):
+                 undrafted_bonus_reservation=None, undrafted_reservation_source=None, rookie_pool_opening=None, management_profile=None,
+                 observed_player_ids=frozenset(), observed_player_source=None):
         from franchise.management import ManagementProfile
         if management_profile is not None and not isinstance(management_profile, ManagementProfile):
             raise ValueError('Typed management profile required')
@@ -126,6 +127,15 @@ class Ledger:
         self._contracts = {item.offer.player_id: item.offer for item in opening_books.contracts} if opening_books else {}
         self._active_contracts = {item.offer.player_id: item for item in opening_books.contracts} if opening_books else {}
         self._legacy_contracts = {item.player_id: item for item in opening_books.legacy_contracts} if opening_books else {}
+        if type(observed_player_ids) is not frozenset or any(type(p) is not str or not p.strip() for p in observed_player_ids):
+            raise ValueError('Immutable observed player identities required')
+        if observed_player_ids:
+            if type(observed_player_source) is not str or not observed_player_source.strip():
+                raise ValueError('Observed player registry requires source provenance')
+        elif observed_player_source is not None:
+            raise ValueError('Observed registry source requires player identities')
+        self._observed_player_ids = observed_player_ids
+        self._observed_player_source = observed_player_source
         self._released = {}
         self._last_transaction_date = None
         self._traded_out = {}
@@ -171,7 +181,7 @@ class Ledger:
         self._promise_scores = []
         if self._rookies.keys() & self._veteran_minimums.keys():
             raise ValueError("A player cannot be classified as both rookie and veteran")
-        known = self.registered_player_ids
+        known = self._rookies.keys() | self._veteran_minimums.keys() | self._legacy_contracts.keys()
         if not self._players <= known:
             raise ValueError("Signed players must exist in the player registry")
         if self._rookies and (rookie_year_one_allocation is None
@@ -268,7 +278,7 @@ class Ledger:
 
     @property
     def registered_player_ids(self):
-        return self._rookies.keys() | self._veteran_minimums.keys() | self._legacy_contracts.keys()
+        return self._rookies.keys() | self._veteran_minimums.keys() | self._legacy_contracts.keys() | self._observed_player_ids
 
     def bind_team_identity(self, team_id):
         from franchise.generations import legacy_identity
@@ -1005,6 +1015,8 @@ class Ledger:
             if self.revision != 0:
                 raise ValueError("Create durable state before committing transactions")
             return {"cap": self.cap, "existing_charges": [json_amount(value) for value in self._charges],
+                    **({'observed_player_ids':sorted(self._observed_player_ids),
+                        'observed_player_source':self._observed_player_source} if self._observed_player_ids else {}),
                     "roster_reserve": self.roster_reserve,
                     "max_bonus_years": self.max_bonus_years,
                     "veteran_minimums": {key: list(value) for key, value
@@ -1075,6 +1087,8 @@ class Ledger:
             scale = self._rookies.get(player_id)
             _, reserved_one, reserved_total = self._draft_reserved(except_player=player_id)
             return {"revision": self.revision, "cap": self.cap, "room": json_amount(self.room),
+                    **({'classification_pending':True,'observed_player_source':self._observed_player_source}
+                       if player_id not in self._rookies and player_id not in self._veteran_minimums and player_id not in self._legacy_contracts else {}),
                     **({'legacy_contract': self._legacy_contracts[player_id].to_dict(),
                         'legacy_liability_scope': 'original cap schedule; cash/protections/lifecycle unverified'}
                        if player_id in self._legacy_contracts else {}),

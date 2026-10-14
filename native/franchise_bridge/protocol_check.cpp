@@ -1097,6 +1097,21 @@ int main() {
             try { franchise::validate_result(bad,player_request); } catch(const std::exception&) { rejected=true; }
             if (!rejected) throw std::runtime_error("Invalid legacy context accepted");
         }
+        auto pending_reply=player_reply;
+        pending_reply["result"]["contract_accounting"]=nullptr;
+        pending_reply["result"]["classification_pending"]=true;
+        pending_reply["result"]["observed_player_source"]="authored pinned roster";
+        franchise::validate_result(pending_reply,player_request);
+        for (int scenario=0;scenario<4;++scenario) {
+            auto bad=pending_reply;
+            if (scenario==0) bad["result"]["classification_pending"]=false;
+            if (scenario==1) bad["result"].erase("classification_pending");
+            if (scenario==2) bad["result"]["observed_player_source"]=" ";
+            if (scenario==3) bad["result"]["contract_accounting"]=player_reply["result"]["contract_accounting"];
+            bool rejected=false;
+            try { franchise::validate_result(bad,player_request); } catch(const std::exception&) { rejected=true; }
+            if (!rejected) throw std::runtime_error("Invalid pending classification accepted");
+        }
         std::cout << "Protocol envelope and contract validation passed" << std::endl;
         return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << std::endl; return 1; }

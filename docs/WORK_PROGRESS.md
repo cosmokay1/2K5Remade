@@ -4496,3 +4496,32 @@ Deck process73738 still runs the installed observer, so staged calendar probe
 installation remains pending normal exit. No game inputs, executable replacement,
 save writes or remote-control changes. This validates a real saved-context/native
 serialization path, not the live root hook or Windows pipe/game transaction.
+
+## October14,2026 — All observed free agents initialized with unknown floors
+
+Added immutable observed identity registry/source to Ledger bootstrap/replay.
+Declared identities join initialization and read context but do not qualify as
+classified modern owners or acquire a fabricated minimum. Pending context is
+explicit and source-labeled; native validation rejects missing/contradictory
+pending metadata. New owned modern books still require a real classification.
+
+The boundary test exposed Negotiation invoking a provider for a declared player
+with unknown salary rules before eventual signing validation. Added pending
+classification rejection before inference. Test verifies provider never called,
+manual rejection and unchanged financial snapshot/personality across restart.
+Full offline suite outside sandbox passed652 tests in46.035s. Portable native
+protocol compiled/passed with valid pending context and four invalid variants.
+
+Private complete-personality-import-check.sqlite was created from actual AIGILDON
+legacy exports and240 pinned FA IDs, preserving the original seed. All32 clubs
+reopened; all1937 unique players have exact expected fictional initial traits,
+and current legacy payroll matches each saved total. Trotter1910 now has a
+persisted readable personality with classification pending. Its actual private
+Bridge read, with AI denied, passed the compiled C++ response validator.
+The checker's fixed success label says legacy context; this run's input is the
+pending Trotter record, not a legacy owned contract.
+
+No inferred credited seasons, missing floors, cash or rookie inputs were supplied.
+Reserve0 remains provisional; the private database has no guest signing authority
+or runtime configuration. Active calendar/live-save binding, sourced FA minimums
+and actual root signing integration remain required. No game/control change.
