@@ -2566,3 +2566,33 @@ target; local configure/build/CTest passes. Full Linux runtime was not reached.
 Separate local pushbuffer inspection found a Windows-only include, missing barrier
 and three SEH guards; its experimental include/atomic publication changes remain
 uncommitted pending a genuine POSIX fault-handling solution and full validation.
+
+### Pushbuffer fault-boundary review (2026-10-13)
+
+Independent review identified three SEH guards in nv2a_pb_exec.c: rendering
+(vertex/texture reads, output writes and GPU calls), attribute carryover reads,
+and guest texture-header diagnostics interleaved with fprintf. Broad signal/jump
+replacement could abandon renderer/CRT locks; main.c already owns SIGSEGV for
+APU MMIO and chains its prior handler. Do not substitute no-op SEH macros.
+The compatibility VirtualQuery mapping registry does not establish actual page
+protection. A Linux solution needs bounded guest-memory leaf access and audited
+render writes/staged inputs, preserving Windows SEH; it is not a syntax-only fix.
+Experimental portable include and atomic environment-cache publication remain
+uncommitted. The actual extracted cache function, linked against the real platform
+library, passed eight threads with 100,000 present/absent lookups each. Full source
+syntax still fails on the SEH guards and an inconsistent volatile extern. This
+limited check does not validate rendering. Build38509009926 and franchise38509009927
+were confirmed live on 0dd21e9; no jobs restarted on an observation timeout.
+
+### Confirmed Linux lock regression and bridge compilation (2026-10-13)
+
+Completed Linux job115672968433 on run38509009926 passed the real POSIX lock
+regression after libm linkage. Full runtime then failed in nv2a_pb_exec.c's
+Windows include, xbox_memory_layout.c's AC97 Windows exception context, and
+kernel_bridge.c's Windows timer constant. Published dependency215f8f8 keeps
+Windows high-resolution creation intact and uses the existing real POSIX timer
+on other hosts, without claiming equivalent wake accuracy. Portable explicit
+ASCII .uh suffix matching removes a Windows CRT comparison dependency.
+The complete bridge source now passes local Clang syntax with official pinned
+SDL headers. Remaining runtime faults are not masked or disabled. Windows job
+was still live at observation; franchise checks were also still live.
