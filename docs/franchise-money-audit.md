@@ -1,5 +1,41 @@
 # Franchise money audit — October 13, 2026
 
+**Current verdict:** the durable engine enforces its supported sourced acquisition,
+release, assignment and first-restructure rules, with exact cap obligations,
+separate nominal cash/payments, persistent stories and exclusive ownership.
+It is still not a complete modern NFL franchise money system or an audit of the
+original game's financial code. Actual guest transactions and save/load remain
+unverified.
+
+Re-ran `python -m tools.audit_money` against the current source on October 13.
+F01/F02/F03/F07 reject the original invalid inputs; F04 now charges the same
+exact 5/4 to cap and rookie pool; F08 replaces the tender once. Durable F05
+retries preserve the receipt and revision; durable F06 prevents competing
+ownership without changing finances. The recreated standalone-ledger examples
+remain historical demonstrations of why production must use FranchiseStore.
+
+Current supported lifecycle includes retained bonus/guarantee debt on sourced
+healthy preseason releases, paired preseason assignments, separate returning
+agreement generations and the first sourced guaranteed-base conversion. Cash
+records preserve nominal owed/paid amounts and payment-component allocations;
+cap present-value calculations do not erase nominal unpaid cash. Read-only
+Top-51/regular-season projections do not change signing authority or advance
+calendar state.
+
+Remaining requirements include full guarantee protections/vesting and cash
+settlement, broader releases/trades, extensions/repeated restructures, complete
+Team Salary and phase transitions, incentive settlement, carryover/year rollover,
+rookie options/escalators and verified official posting/import. Exact internal
+arithmetic does not resolve NFL posting conventions; see
+[posting policy](cap-posting-policy.md). Unsupported liabilities must reject,
+not disappear from the ledger.
+
+The original findings and early repair notes below are retained as historical
+evidence. Their line references and descriptions reflect the earlier prototype.
+The executable audit and [worklist](../WORKLIST.md) describe current coverage.
+
+## Historical prototype snapshot
+
 **Verdict: the prototype protects a supplied current-year cap balance during a
 simple signing. It is not yet an authoritative franchise money system.**
 
@@ -202,7 +238,7 @@ Until those inputs are available, this report is a complete audit of the
 available prototype and integration evidence, not a completed reverse-engineering
 audit of NFL 2K5's original franchise finances.
 
-## Current durable-path reassessment — October 13, 2026
+## Earlier durable-path reassessment — historical snapshot
 
 The original findings above remain historical evidence. The supported bridge path
 now uses `FranchiseStore`, not a freshly reconstructed in-memory Ledger.

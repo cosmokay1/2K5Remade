@@ -2340,3 +2340,11 @@ configuration starts the child, a second start refuses replacement, repeated
 stop is safe, and a later start/stop succeeds. This performs no handshake,
 model request, game memory access or paid inference. Portable protocol checks
 pass; the new Windows lifecycle execution is pending CI.
+
+### Money audit report freshness (2026-10-13)
+
+Re-ran tools.audit_money successfully. Updated the main money report's lead
+with current supported durable cap/cash/ownership/lifecycle evidence and explicit
+remaining season/guarantee/posting/game gaps. Preserved early findings under
+historical headings so obsolete persistence/cash/assignment descriptions cannot
+be mistaken for current coverage. No financial behavior changed.
