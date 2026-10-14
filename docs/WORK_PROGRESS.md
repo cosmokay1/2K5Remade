@@ -2494,3 +2494,14 @@ AI-off wire test preserves DBbytes and rejects unknown/legacy advanced-calendar
 formats. All472 offline tests and portable CTest pass. Added Windows pipe
 fixture for two agreement contexts across two process restarts; execution pending.
 Actual game UI/save integration and postroll contract mutation remain unfinished.
+
+### SDL3 provisioning succeeded; recompiler compile repairs (2026-10-13)
+
+Run38507040131 now builds/installs SDL3 on both platforms. Runtime compilation
+then exposed Windows kernel SDL3 include propagation and Linux GNU register,
+Windows include and mapping-registry prototype errors. Created an attributed
+GitHub fork cosmokay1/xboxrecomp and preserved all upstream notices/ancestry.
+Published c2bd146 on codex/platform-build-fixes with narrow source/CMake fixes,
+including removal of an include-only renderer from standalone translation units.
+Updated root submodule URL/branch and revision pin consistently. Actual platform
+compile verification is pending CI; no game build or render behavior is claimed.

@@ -25,6 +25,17 @@ The fork development branch starts from current upstream commit
 `b9131cd2b78973dc06cddd327f0d70943ba8565c`; the audit retains its original
 revision labels rather than presenting an earlier inspection as a new one.
 
+## Recompiler dependency fork
+
+The recompiler submodule now uses the GitHub-recognized independent fork
+[cosmokay1/xboxrecomp](https://github.com/cosmokay1/xboxrecomp) of
+[BeyondTomrrow/xboxrecomp](https://github.com/BeyondTomrrow/xboxrecomp).
+Its codex/platform-build-fixes branch preserves upstream ancestry and notices.
+Our initial compile fixes propagate SDL3 to kernel targets, keep an included
+renderer out of standalone compilation, expose GNU context registers and correct
+POSIX includes/forward declarations. Existing component licenses, including
+LGPL notices, remain intact. This adds no endorsement or binary release rights.
+
 ## Research and third-party credit
 
 - BAD-AL's [nfl2k5tool_dart](https://github.com/BAD-AL/nfl2k5tool_dart), revision
