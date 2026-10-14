@@ -3505,6 +3505,49 @@ checks only, not game execution.
 
 The fork and pinned xboxrecomp submodule were cloned privately onto the Deck.
 SDL 3.2.20 source matches the CI pin
-96292a5b464258a2b926e0a3d72f8b98c2a81aa6; its Windows dependency build is
-in progress. Full game compilation, boot, franchise signing and save/reload
-remain unverified. Financial guest-memory hooks remain disabled.
+96292a5b464258a2b926e0a3d72f8b98c2a81aa6; its Windows build and installation
+completed successfully. WebView2 SDK 1.0.3124.44 retains its package license and
+notices, and the miniz source/license are pinned to xemu commit
+36334d95b86f9c3c6ae34efb9af06785273f8e1a. The full Windows game configured
+successfully with the franchise transport enabled and completed all 120 build
+steps, including the final NFL2K5.exe link. Executable SHA256:
+9ba7e45c5bd1a1f7806f3e739a81a54d26ca3b115f7acc96afd6cd595cb9fa48.
+Actual PE imports include SDL3, the MSVC runtime and Windows graphics/media
+components; the static WebView2 loader introduces no loader-DLL dependency.
+The supplied executable/data are being staged privately for an isolated Proton
+run. Boot, franchise signing and save/reload remain unverified.
+Financial guest-memory hooks remain disabled.
+
+
+## October 14, 2026 — Real Proton validation and first game execution
+
+All 17 required supplied executable/data files were transferred privately to the
+Deck and verified against local sizes and SHA256 hashes. The actual full game
+initially crashed during memory initialization: its POSIX slice-reservation
+strategy used nonzero-size MEM_RELEASE, which Windows does not support.
+Dependency commit 61ad649 restricts that strategy to the POSIX shim, retaining
+Windows fixed-base views, and rejects a missing contiguous window before the
+tiled-alias probe can dereference it.
+
+A second observed failure occurred after validation shutdown: the untracked
+kernel timer thread continued reading guest memory after it had been unmapped.
+The same commit retains the thread handle, signals it to stop and joins before
+memory release. It releases the caller's guest lock and rechecks stop after the
+timer acquires that lock. Four complete real-asset Proton --validate runs then
+returned zero. This verifies executable intake, initialization, the existing
+memmove validation and this shutdown path; it does not verify gameplay or saves.
+An already-running guest ISR/DPC may still delay shutdown; broader runtime
+reinitialization/resource cleanup has not been validated.
+
+Corrected executable SHA256:
+97dd413c936060c8828fb13b25808c35f39ff1b84d6e05de97e5b154a808d29b.
+Private controlled --run execution opened the actual ESPN NFL 2K5 window and
+submitted audio, but the captured screen was black. Proton's built-in HLSL
+compiler rejected the renderer shader. An app-local x64 d3dcompiler_47.dll from
+the user-authorized Windows SDK, with a process-only native override, removed
+that error: Direct3D11 now reports ready at feature level B000. A second captured
+screen remains black; frontend rendering/progression needs further investigation.
+The log also reports an unavailable tiled aperture, which remains unresolved.
+No real franchise transaction, game completion or save/reload is claimed.
+All assets, Microsoft binaries, screenshots and raw analysis remain private and
+ignored; no binary release, paid inference or new cloud infrastructure was used.
