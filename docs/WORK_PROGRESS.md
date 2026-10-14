@@ -4424,3 +4424,25 @@ Installed observer remains0783c6e91751e8989d1b6c33720db27df5b6cf93cb72f999c39abc
 game73738 is still running. Requested normal exit before installation; no running
 executable/prefix/save was replaced. Published4e57db8 passed both workflows
 38615267863/38615265206;02aa02f CI is still in progress at this check.
+
+## October14,2026 — Typed preserved legacy schedules from actual saves
+
+Moved the existing original annual calculator into franchise.legacy_contracts;
+the inspector retains its public function import and unchanged arithmetic.
+Added immutable LegacyContract with original raw terms, stable player ID and
+source; serialization preserves the original8-year fixture and Gildon's1000
+rounding loss without manufacturing nominal paid cash or guarantees. This type
+is deliberately distinct from modern ActiveContract; no five-year rewriting.
+
+The export helper requires pinned identity/calendar validation and independently
+reconciled saved cap/payroll, then validates each team's sum of legacy current
+charges. Inactive or unsupported roster contracts fail instead of becoming zero
+obligations. Actual baseline/control/signing produce1696/1696/1697 records;
+all32 team totals match, Giants72272000/72272000/77038000. Existing IDs retained.
+
+Fourteen focused legacy/contract/payroll tests passed, including serialization,
+immutable terms, long bonus horizon, rounding loss, source identity, malformed
+records and payroll mismatch. No database/game/save writes or model requests.
+Opening-book ownership/generation integration, unknown legacy liability handling
+and actual lifecycle/season validation remain required. Staged calendar observer
+installation still awaits normal game exit; this source work does not replace it.

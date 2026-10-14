@@ -58,6 +58,8 @@ Approved import policy: preserve existing deals as legacy schedules, use modern
 rules for new deals, and retain2004 dollars with proportional modern amounts.
 Legacy guarantees/cash/termination obligations must remain explicit or reject
 unsupported operations; do not impose new bonus horizons on opening contracts.
+Typed preserved legacy exports now match all32 current payroll totals across
+the three private saves (1696/1696/1697 contracts); durable book integration remains.
 
 The user identified cost-control expansion as a distraction. Stop adding spending
 policies, quota layers or supporting infrastructure. Keep the existing request/

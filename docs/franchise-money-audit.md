@@ -139,6 +139,21 @@ treatment; preservation is not permission to zero them or claim a full modern
 conversion. Releases/trades/restructures must reject unsupported legacy cases
 until their original obligations and transition are verified.
 
+`franchise.legacy_contracts.LegacyContract` now preserves raw amount/bonus/style
+and original/remaining term fields with stable player ID and snapshot source.
+Its immutable records serialize without adding paid cash or guarantee defaults.
+The existing static original calculator is shared with the read-only inspector;
+long terms and original rounding loss are retained, rather than converted through
+modern `Offer.charges()`.
+
+`tools.export_legacy_contracts.legacy_contracts` requires pinned same-season
+identity resolution, valid saved cap context and all-team payroll reconciliation.
+It rejects inactive/unsupported roster contracts and returns typed active records
+only after their current totals match each club. Private baseline/control/signing
+exports contain1696/1696/1697 records and match all32 totals. These are opening
+inputs; they are not yet loaded into FranchiseStore, nor is future season aging
+or legacy cash/termination treatment authorized by this export.
+
 `tools.inspect_franchise_cap` now derives the franchise tail from the validated
 saved scheduler boundary and reads the league-cap field at tail+15D0. Original
 save/load routines2D0790/2D0CE0 transfer this field to/from globalE3C278. Team
