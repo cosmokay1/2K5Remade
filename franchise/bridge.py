@@ -216,8 +216,11 @@ class Bridge:
                     return self._reply(request_id,error='context_too_large',detail='Contract context exceeds pipe frame capacity')
                 return reply
             if operation == 'player_context':
-                if set(request) != {'protocol','request_id','operation','team_id','player_id','timeout_ms'}:
+                fields = {'protocol','request_id','operation','team_id','player_id','timeout_ms'}
+                if set(request) not in (fields,fields | {'context_format'}):
                     raise ValueError('Unexpected player context fields')
+                if 'context_format' in request and request['context_format'] != 'calendar_v1':
+                    raise ValueError('Unsupported player context format')
                 if type(request['team_id']) is not str or not request['team_id'].strip():
                     raise ValueError('Stable team required')
                 timeout = request['timeout_ms']
@@ -225,7 +228,8 @@ class Bridge:
                     raise ValueError('Timeout must be 1-60000 milliseconds')
                 deadline = time.monotonic() + timeout / 1000
                 self.connection_check()
-                result = self.store.player_context(request['team_id'],request['player_id'])
+                result = self.store.player_context(request['team_id'],request['player_id'],
+                    context_format=request.get('context_format'))
                 self.connection_check()
                 if time.monotonic() >= deadline:
                     raise TimeoutError('Player context request expired')

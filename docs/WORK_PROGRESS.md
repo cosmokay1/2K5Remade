@@ -2634,3 +2634,18 @@ receive null contract context. A shared single-snapshot helper also serves the
 existing calendar contract endpoint. Focused two-team rollover tests and all479
 offline tests pass. Bridge request handling and strict native validation are not
 yet wired for this player format; actual game UI/save capture remain pending.
+
+### Calendar player bridge/native boundary (2026-10-13)
+
+Explicit player_context context_format calendar_v1 now selects the store's single
+snapshot, remains readable with AI disabled and never invokes inference. Unknown,
+null/bool format markers reject; legacy callers retain prior behavior and the
+64KiB response gate remains. Native validation reuses the full calendar contract
+validator and binds nested team/player/revision to the outer request/snapshot;
+legacy requests reject unrequested calendar markers. Corrupt format, identity,
+revision, ownership, missing nested context and invalid years reject in portable
+C++ fixtures. Actual Python-generated survivor, expired and never-held snapshots
+also passed the C++ validator. All480 offline tests and portable native CTest pass.
+Windows pipe execution of this format and actual game UI/save integration remain
+unverified. Delivery estimate remains approximately25–30percent by scope judgment,
+not completed-test counts; verified playable-game acceptance remains unproven.

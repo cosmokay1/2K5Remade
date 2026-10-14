@@ -10,6 +10,8 @@ from franchise.cap import Ledger,Offer,Rejected
 from franchise.cash import CashObligation
 from franchise.salary_rules import VeteranMinimumProfile
 from franchise.store import FranchiseStore
+from franchise.bridge import Bridge
+from franchise.control import AccessDisabled
 
 
 class StoredYearTransitionTests(unittest.TestCase):
@@ -59,6 +61,23 @@ class StoredYearTransitionTests(unittest.TestCase):
         for value in (True,False,1,{},'unknown',''):
             with self.assertRaises(ValueError):
                 self.store.player_context('a','a',context_format=value)
+
+    def test_calendar_player_bridge_is_read_only_with_ai_disabled(self):
+        self.store.advance_league_year(**self.inputs)
+        def disabled(): raise AccessDisabled('synthetic shutdown')
+        def unexpected(_): raise AssertionError('Read-only context invoked inference')
+        bridge=Bridge(self.store,provider=unexpected,access_check=disabled)
+        request=dict(protocol=1,request_id='calendar-player',operation='player_context',
+            team_id='a',player_id='a',timeout_ms=1000,context_format='calendar_v1')
+        before=self.path.read_bytes()
+        result=bridge.handle(request)
+        self.assertIsNone(result['error'])
+        self.assertEqual(result['result'],self.store.player_context('a','a',context_format='calendar_v1'))
+        self.assertEqual(bridge.handle({key:value for key,value in request.items() if key!='context_format'})['error'],
+            'state_rejected')
+        for value in (None,True,False,{},'unknown'):
+            self.assertEqual(bridge.handle({**request,'context_format':value})['error'],'invalid_request')
+        self.assertEqual(self.path.read_bytes(),before)
 
     def test_atomic_two_seasons_preserve_cash_archives_expiry_and_retries(self):
         before={team:self.store.load_team(team).cash_snapshot() for team in ('a','b')}

@@ -431,6 +431,35 @@ int main() {
                 {"current_contract",current_contract},{"annual_charges",{37}},
                 {"ownership_current",true},{"expiry_source",nullptr},{"anchor_year",2026}}}}}};
         franchise::validate_result(calendar_reply,calendar_request);
+        auto calendar_player_request=player_request;
+        calendar_player_request["context_format"]="calendar_v1";
+        calendar_player_request["team_id"]="a";
+        auto calendar_player_reply=player_reply;
+        auto& profile=calendar_player_reply["result"];
+        profile["context_format"]="calendar_v1";
+        profile["contract_accounting"]=nullptr;
+        profile["financial_revision"]=calendar_reply["result"]["financial_revision"];
+        profile["calendar_contract_context"]=calendar_reply["result"];
+        franchise::validate_result(calendar_player_reply,calendar_player_request);
+        for (int scenario=0;scenario<8;++scenario) {
+            auto bad=calendar_player_reply;
+            if (scenario==0) bad["result"]["context_format"]="unknown";
+            if (scenario==1) bad["result"]["contract_accounting"]=accounting;
+            if (scenario==2) bad["result"]["calendar_contract_context"]["team_id"]="other";
+            if (scenario==3) bad["result"]["financial_revision"]=99;
+            if (scenario==4) bad["result"]["player_id"]="other";
+            if (scenario==5) bad["result"]["calendar_contract_context"]["calendar_accounting"]["ownership_current"]=false;
+            if (scenario==6) bad["result"].erase("calendar_contract_context");
+            if (scenario==7) bad["result"]["calendar_contract_context"]["league_year"]=2031;
+            bool rejected=false;
+            try {franchise::validate_result(bad,calendar_player_request);}catch(const std::exception&){rejected=true;}
+            if (!rejected) throw std::runtime_error("Corrupt calendar player context accepted");
+        }
+        profile["calendar_contract_context"]=nullptr;
+        franchise::validate_result(calendar_player_reply,calendar_player_request);
+        bool unrequested=false;
+        try {franchise::validate_result(calendar_player_reply,player_request);}catch(const std::exception&){unrequested=true;}
+        if (!unrequested) throw std::runtime_error("Unrequested calendar player format accepted");
         for (int scenario=0;scenario<15;++scenario) {
             auto bad=calendar_reply; auto req=calendar_request;auto& view=bad["result"]["calendar_accounting"];
             if (scenario==0) bad["result"]["format"]=true;

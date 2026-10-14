@@ -640,6 +640,23 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         if (result.at("player_id") != request.at("player_id") || !result.at("player_id").is_string())
             throw std::runtime_error("Player context identity mismatch");
         integer_money(result.at("financial_revision"));
+        if (request.contains("context_format")) {
+            if (!request.at("context_format").is_string() || request.at("context_format")!="calendar_v1" ||
+                result.at("context_format")!=request.at("context_format") ||
+                !result.at("contract_accounting").is_null())
+                throw std::runtime_error("Invalid calendar player context format");
+            const auto& calendar=result.at("calendar_contract_context");
+            if (!calendar.is_null()) {
+                auto expected=nlohmann::json{{"context_format","calendar_v1"},
+                    {"team_id",request.at("team_id")},{"generation_id",calendar.at("generation_id")}};
+                validate_calendar_contract_context(calendar,expected);
+                if (calendar.at("financial_revision")!=result.at("financial_revision") ||
+                    calendar.at("economic_archive").at("contract").at("offer").at("player_id")!=request.at("player_id"))
+                    throw std::runtime_error("Calendar player snapshot identity mismatch");
+            }
+        } else if (result.contains("context_format") || result.contains("calendar_contract_context")) {
+            throw std::runtime_error("Unrequested calendar player context");
+        }
         if (result.contains("contract_accounting"))
             validate_contract_accounting(result.at("contract_accounting"),request.at("player_id").get<std::string>());
         if (!result.at("initialized").is_boolean() || !result.at("agreed_promises").is_array() ||
