@@ -2596,3 +2596,17 @@ ASCII .uh suffix matching removes a Windows CRT comparison dependency.
 The complete bridge source now passes local Clang syntax with official pinned
 SDL headers. Remaining runtime faults are not masked or disabled. Windows job
 was still live at observation; franchise checks were also still live.
+
+### Windows inheritance sentinel identity correction (2026-10-13)
+
+Runtime build38509009926 Windows job passed (runtime/tools only). Franchise
+run38509009927 failed stalled_peer_shutdown immediately with Sidecar disconnected;
+protocol and host-lifecycle checks passed. Review found the fixture rejected any
+valid child handle with the parent's numeric value, which can be reused by child
+startup and does not establish inherited object identity. The fixture now attempts
+SetEvent on that candidate and the parent retains its original nonsignaled event
+through acknowledgement/stall establishment, rejecting actual signaling of that
+object. Scoped RAII closes the sentinel on success or failure. Production handle
+allow-list and owned-job shutdown behavior are unchanged. Local portable protocol
+CTest passes; Windows-only fixture compilation/execution needs new-revision CI.
+No game/runtime playability claim follows from these source checks.

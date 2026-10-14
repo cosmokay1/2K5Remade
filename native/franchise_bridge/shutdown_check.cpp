@@ -7,11 +7,11 @@ int wmain(int argc, wchar_t** argv) {
     if (argc != 2) return 1;
     try {
         SECURITY_ATTRIBUTES attributes{sizeof(SECURITY_ATTRIBUTES), nullptr, TRUE};
-        HANDLE unrelated = CreateEventW(&attributes, TRUE, FALSE, nullptr);
+        std::unique_ptr<void, decltype(&CloseHandle)> unrelated(
+            CreateEventW(&attributes, TRUE, FALSE, nullptr), &CloseHandle);
         if (!unrelated) throw std::runtime_error("Cannot create inheritance sentinel");
         auto client = std::make_unique<franchise::PipeClient>(argv[1],
-            std::to_wstring(reinterpret_cast<uintptr_t>(unrelated)), franchise::ServiceMode::OfflineFixture);
-        CloseHandle(unrelated);
+            std::to_wstring(reinterpret_cast<uintptr_t>(unrelated.get())), franchise::ServiceMode::OfflineFixture);
         HANDLE child = OpenProcess(SYNCHRONIZE, FALSE, client->process_id());
         if (!child) throw std::runtime_error("Cannot observe owned child");
         std::string request = R"({"protocol":1,"request_id":"stall","operation":"hello"})";
@@ -31,8 +31,12 @@ int wmain(int argc, wchar_t** argv) {
                 if (!client->ready()) { stalled = true; break; }
             }
             client->take();
+            if (WaitForSingleObject(unrelated.get(), 0) != WAIT_TIMEOUT)
+                throw std::runtime_error("Unrelated event inherited by sidecar");
         }
         if (!stalled) throw std::runtime_error("Failed to establish a blocked pipe write");
+        if (WaitForSingleObject(unrelated.get(), 0) != WAIT_TIMEOUT)
+            throw std::runtime_error("Unrelated event inherited by sidecar");
         client.reset();
         DWORD stopped = WaitForSingleObject(child, 5000);
         CloseHandle(child);
