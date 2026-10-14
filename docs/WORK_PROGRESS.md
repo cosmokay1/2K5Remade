@@ -2535,3 +2535,16 @@ fork; its actual SRW condition-variable wait remains to implement. Preserve real
 lock behavior and avoid synchronization stubs or disabling the guest lock.
 
 All 478 offline tests pass for postroll signing and payment compatibility.
+
+### POSIX guest-lock condition waits (2026-10-13)
+
+Published dependency fork revision 830df0a with real pthread condition waits for
+shared/exclusive SRW locks, atomic release/wait coordination, original-mode
+reacquisition and Windows timeout errors. Guest-lock source now uses portable
+thread-local/platform includes and guards Windows-only diagnostics. Local source
+syntax and the standalone regression passed: 500 immediate wake cycles, eight
+concurrent shared waiters, broadcast, timeout and invalid-flag lock retention.
+SwitchToThread performs sched_yield and conservatively returns false because
+POSIX does not report an actual thread handoff. Linux CI now runs this regression
+before the full runtime build. New pinned-revision CI remains pending; these checks
+do not establish game execution, Windows/Deck playability or franchise save/load.
