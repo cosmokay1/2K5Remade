@@ -5,6 +5,48 @@ from franchise.vertex_provider import VertexProvider
 
 
 class VertexTests(unittest.TestCase):
+    def test_pending_sdk_attempt_reserves_rate_slot_for_other_threads(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Event
+        entered, release = Event(), Event()
+        def generate(**kwargs):
+            entered.set()
+            if not release.wait(2): raise RuntimeError('test wait expired')
+            return SimpleNamespace(candidates=[SimpleNamespace(finish_reason='STOP')], text='{}')
+        client = SimpleNamespace(models=SimpleNamespace(generate_content=Mock(side_effect=generate)))
+        provider = VertexProvider(project='p', location='global', model='m', client=client,
+                                  max_requests_per_minute=1)
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(provider, {})
+            try:
+                self.assertTrue(entered.wait(2))
+                with self.assertRaisesRegex(ValueError, 'rate exceeded'): provider({})
+                self.assertEqual(client.models.generate_content.call_count, 1)
+                self.assertFalse(provider.last_usage['sdk_invoked'])
+            finally: release.set()
+            self.assertEqual(future.result(timeout=2), '{}')
+        self.assertTrue(provider.last_usage['sdk_invoked'])
+
+    def test_rate_denial_leaves_finances_unchanged_and_manual_sign_available(self):
+        from franchise.cap import Ledger, Offer
+        from franchise.negotiation import Negotiation
+        ledger = Ledger(cap=100, existing_charges=(0,), roster_reserve=0,
+                        max_bonus_years=5, veteran_minimums={'p':(1,)})
+        session = Negotiation(ledger, player_id='p', personality={},
+                              performance={'source':'synthetic'}, relationships={}, access_check=lambda:None)
+        client = SimpleNamespace(models=SimpleNamespace(generate_content=Mock(return_value=
+            SimpleNamespace(candidates=[SimpleNamespace(finish_reason='STOP')], text='{}'))))
+        provider = VertexProvider(project='p', location='global', model='m', client=client,
+                                  max_requests_per_minute=1)
+        provider({})
+        before = ledger.financial_snapshot()
+        with self.assertRaisesRegex(ValueError, 'rate exceeded'):
+            session.respond('rate-denied', Offer('p',(10,),0), provider, expected_revision=0)
+        self.assertEqual(ledger.financial_snapshot(), before)
+        self.assertEqual(client.models.generate_content.call_count, 1)
+        ledger.sign('manual', Offer('p',(10,),0), 0)
+        self.assertEqual(ledger.charges, (10,))
+
     def test_rate_window_blocks_sdk_and_preserves_failed_attempts(self):
         client = SimpleNamespace(models=SimpleNamespace(generate_content=Mock(side_effect=RuntimeError('private'))))
         provider = VertexProvider(project='p', location='global', model='m', client=client,

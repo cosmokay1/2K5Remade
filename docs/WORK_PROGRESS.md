@@ -2360,3 +2360,15 @@ Boundary tests cover failed-attempt retention, rejection at 59.999 seconds,
 expiry at exactly 60 and invalid configuration. All 444 offline tests pass.
 This remains process/provider-local, not durable spend/account enforcement;
 restarts and separate draft providers have separate windows.
+
+### Concurrent rate admission and host restart evidence (2026-10-13)
+
+Run 38504383690 passed the positive Windows host lifecycle CTest for
+2ed242a: actual shared C startup source can start an inert peer, refuse live
+replacement, stop twice and restart without any model request. Root game
+execution remains unverified.
+
+Added meaningful rate regression checks: an in-flight SDK call reserves the
+only slot across threads; rejected admission reaches no second SDK call,
+leaves negotiation finances unchanged and preserves legal manual signing.
+All 14 focused provider tests and all 446 offline tests pass.
