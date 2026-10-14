@@ -5263,3 +5263,42 @@ minimum/credit policy, cloud control/IAM, financial state or guest memory change
 no paid inference was attempted. Actual root proposal submission/presentation,
 active save selection, persistent runtime auth, classification policy, guest
 commit/recovery and save/load remain unverified or blocked on their inputs.
+
+## October14,2026 — Native read-only signing panel candidate
+
+Connected the current signing context to the existing native Direct2D HUD
+compositor through bounded owned display buffers. Renderer threads only copy an
+SRW-locked snapshot; they do not parse JSON, use transport or read guest memory.
+Owner publication requires the current screen epoch/observation. Changed terms,
+closed screens, failed sampling, obsolete replies, transport failures and
+shutdown invalidate the display. Successful sampling does not transiently hide
+it; actual failed reads invalidate before collecting a pending reply.
+
+The card shows player name, the two highest saved fictional contract priorities,
+supported offer-preview status and history availability with season uncertainty.
+It exposes no numerical personality weights, hidden ratings or invented current
+performance. The footer explicitly says signing still uses the original game.
+This candidate is informational; it does not add a negotiation action or write
+guest terms, and source-format rejection is not game enforcement.
+
+Portable protocol/display checks, strict C11 and full offline702 tests pass
+in20.784s. Actual private MSVC game/native builds and Windows scheduler/owned-copy
+fixture execution pass, including foreign-reader access, hidden failed samples,
+restored matching observations and cleared changed offers. Final game hash
+2ca0064219f10be5f01c5624f789f2f54db9610017064451dbad56423ba98318.
+
+Built a private fixture by extracting the actual Direct2D renderer, using the
+captured Trotter service reply. Initial headless execution returned3; reading only
+the game's DISPLAY/XDG_RUNTIME_DIR values and running in that graphics session
+produced actual Windows/Proton panels for1280x800 and1600x900. Private PNGs are in
+.local-runtime/signing-card-proof. A bounded Impeccable component review returned
+ship with no material findings; documentation records its limited scope. The
+existing game screenshot is black and cannot prove placement or readability over
+the actual offer screen. No screenshot or component verdict proves game delivery.
+
+Priorcb41cbc CI38647049179/38647049334 is successful. Fresh game80919 remains
+active, so no game/package installation occurred. Frozen performance artifact
+556016fa...1c537 remains preserved. No paid inference, cloud/control/IAM update,
+classification policy, ledger transaction or guest write occurred. Actual-game
+panel placement/controller checks, proposal action, legal commit/recovery and
+save/load remain unfinished.

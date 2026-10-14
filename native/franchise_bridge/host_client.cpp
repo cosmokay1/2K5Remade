@@ -1,5 +1,6 @@
 #include "host_client.h"
 #include "pipe_client.h"
+#include "signing_display.h"
 #include <cstring>
 #include <memory>
 #include <string>
@@ -12,6 +13,21 @@ struct FranchiseHostClient {
     bool ai_granted = false;
     std::string operation;
 };
+extern "C" FranchiseHostStatus franchise_host_signing_display(const char* response,FranchiseSigningDisplay* out) {
+    if(!response || !out) return FRANCHISE_HOST_INVALID_ARGUMENT;
+    *out={};
+    try {
+        auto text=franchise::signing_display(franchise::parse_frame(response));
+        auto copy=[](char* target,size_t capacity,const std::string& source) {
+            if(source.size()>=capacity) throw std::runtime_error("Display text exceeds capacity");
+            std::memcpy(target,source.c_str(),source.size()+1);
+        };
+        copy(out->priorities,sizeof(out->priorities),text.priorities);
+        copy(out->offer,sizeof(out->offer),text.offer);
+        copy(out->history,sizeof(out->history),text.history);
+        return FRANCHISE_HOST_OK;
+    } catch(...) { *out={}; return FRANCHISE_HOST_INVALID_ARGUMENT; }
+}
 
 extern "C" FranchiseHostStatus franchise_host_create(const wchar_t* python, const wchar_t* database,
     FranchiseHostMode mode, FranchiseHostClient** out_client) {

@@ -22,6 +22,11 @@ typedef enum FranchiseHostStatus {
     FRANCHISE_HOST_INVALID_ARGUMENT,
     FRANCHISE_HOST_SERVICE_FAILURE
 } FranchiseHostStatus;
+typedef struct FranchiseSigningDisplay {
+    char title[310], priorities[160], offer[256], history[160];
+} FranchiseSigningDisplay;
+/* Format an already transport-validated read-only context; no I/O or grant. */
+FranchiseHostStatus franchise_host_signing_display(const char *response, FranchiseSigningDisplay *out);
 
 FranchiseHostStatus franchise_host_create(const wchar_t* python, const wchar_t* database,
     FranchiseHostMode mode, FranchiseHostClient** out_client);

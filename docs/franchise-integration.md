@@ -806,3 +806,40 @@ periods1..5 to1999..2003. Trotter games8/16/16/16/12/16 match the
 These examples support career-relative interpretation, not a universal global
 period-year table. Candidates do not establish full pay, roster category,
 coverage, salary credits or future calendar aging.
+
+## Read-only signing card implementation and evidence, October 14, 2026
+
+`franchise_hud` in `src/nfl2k5_presentation.cpp` renders a native Direct2D HUD
+card using the existing compositor and Bahnschrift. Its dark panel has a
+520×230 logical layout, scales with the game viewport and anchors at its upper
+right with a 16-unit inset. It shows the observed player name, the two highest
+saved fictional priorities, supported offer-preview status and performance-history
+availability. Available saved records explicitly retain unverified season
+attribution. The footer states: “Preview only. Signing still uses the original
+game.” This is informational UI with no negotiation or signing action.
+
+`native/franchise_bridge/signing_display.h` formats only successful read-only
+context with `write_authorized=false` and `ai_authorized=false`; unavailable,
+unsupported and accounting-rejected previews remain distinct. The C adapter
+rejects oversized text and copies it into fixed owned buffers. The host publishes
+that copy under an SRW lock only while the signing screen, observation and request
+epoch still match. Screen changes, changed observations and shutdown clear it;
+failed sampling hides it and obsolete replies cannot publish it. Changed terms
+use the existing 300ms request debounce. The renderer acquires an owned snapshot
+under the shared lock, caches pixels by content/size, and performs no IPC, JSON
+parsing or guest-memory access.
+
+The actual extracted Direct2D function was rendered through Windows/Proton at
+1280×800 and 1600×900. Private evidence is retained in
+`.local-runtime/signing-card-proof/signing-card-deck.png` and
+`signing-card-desktop.png`. Component review returned a ship verdict with no
+material findings. That verdict covers the rendered component only: it does not
+approve actual-game placement or overlap. The earlier black game screenshot
+provides no visual evidence.
+
+Installation of this panel build, readable capture on the actual signing screen,
+controller interaction/overlap checks and display invalidation in the running
+game remain gates. Authenticated AI negotiation, legal guest contract commits,
+ledger/readback reconciliation and save/exit/reload agreement also remain open.
+This evidence does not complete the real negotiation UI or playable-delivery
+requirements in `WORKLIST.md`.

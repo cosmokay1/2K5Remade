@@ -19,6 +19,23 @@ static unsigned context_sequence, context_logged;
 static FranchiseSigningObservation observed, requested;
 static int observation_valid, observation_fresh;
 static unsigned long long changed_tick, screen_epoch, requested_epoch;
+static SRWLOCK display_lock=SRWLOCK_INIT;
+static FranchiseSigningDisplay display;
+static int display_valid;
+static void clear_display(void) {
+    AcquireSRWLockExclusive(&display_lock);
+    memset(&display,0,sizeof(display));
+    display_valid=0;
+    ReleaseSRWLockExclusive(&display_lock);
+}
+int nfl2k5_franchise_display(FranchiseSigningDisplay *out) {
+    if(!out) return 0;
+    AcquireSRWLockShared(&display_lock);
+    *out=display;
+    if(!display_valid) memset(out,0,sizeof(*out));
+    ReleaseSRWLockShared(&display_lock);
+    return out->title[0]!=0;
+}
 static int same_observation(const FranchiseSigningObservation *a,const FranchiseSigningObservation *b)
 {
     return a->slot==b->slot && a->team_index==b->team_index && a->payroll==b->payroll && a->cap==b->cap &&
@@ -42,6 +59,7 @@ static int positive_limit(const wchar_t *text, unsigned long long *value)
 }
 void nfl2k5_franchise_stop(void)
 {
+    clear_display();
     InterlockedExchange(&franchise_owner_thread, 0);
     InterlockedExchange(&franchise_foreign_sign_logged, 0);
     hello_pending = hello_failed = 0;
@@ -70,6 +88,7 @@ void nfl2k5_franchise_on_fsm(uint32_t descriptor, int push)
     if (!franchise_client || hello_failed) return;
     int active=push && descriptor==0x00557B2Cu;
     if (active || active!=signing_active) {
+        clear_display();
         ++screen_epoch;
         context_sent=observation_valid=observation_fresh=0;
     }
@@ -85,6 +104,7 @@ void nfl2k5_franchise_on_fsm(uint32_t descriptor, int push)
     return;
 failed:
     hello_failed = 1;
+    clear_display();
     fprintf(stderr, "[FRANCHISE] Control handshake transport unavailable; no AI request submitted.\n");
 }
 void nfl2k5_franchise_poll(void)
@@ -104,6 +124,13 @@ void nfl2k5_franchise_poll(void)
             context_pending = 0;
             int current=signing_active && observation_valid && observation_fresh &&
                 screen_epoch==requested_epoch && same_observation(&observed,&requested);
+            if(current) {
+                FranchiseSigningDisplay next={0};
+                if(franchise_host_signing_display(response,&next)==FRANCHISE_HOST_OK) {
+                    snprintf(next.title,sizeof(next.title),"%s %s",observed.first_name,observed.last_name);
+                    AcquireSRWLockExclusive(&display_lock); display=next; display_valid=1; ReleaseSRWLockExclusive(&display_lock);
+                } else clear_display();
+            } else clear_display();
             /* Changed terms retain the debounce; unreadable or new-screen
              * samples may retry once a valid observation becomes available. */
             if (!observation_valid || !observation_fresh || screen_epoch!=requested_epoch)
@@ -124,6 +151,7 @@ void nfl2k5_franchise_poll(void)
     return;
 failed:
     hello_failed = 1;
+    clear_display();
     fprintf(stderr,"[FRANCHISE] Control handshake transport unavailable; no AI request submitted.\n");
 }
 int nfl2k5_franchise_context_enabled(void)
@@ -150,13 +178,19 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
 {
     if (!nfl2k5_franchise_context_enabled() || !franchise_client) return;
     observation_fresh=0; /* NULL or failed sampling invalidates reply freshness. */
-    if (!o || o->team_index >= 32 || o->calendar[5] > 255 ||
+    if (!o) {
+        AcquireSRWLockExclusive(&display_lock); display_valid=0; ReleaseSRWLockExclusive(&display_lock);
+        return;
+    }
+    if (o->team_index >= 32 || o->calendar[5] > 255 ||
         !safe_name(o->first_name,sizeof(o->first_name)) || !safe_name(o->last_name,sizeof(o->last_name)) ||
-        !safe_hex(o->photo,8) || !safe_hex(o->dob,6)) return;
+        !safe_hex(o->photo,8) || !safe_hex(o->dob,6)) { clear_display(); return; }
     if (!observation_valid || !same_observation(&observed,o)) {
+        clear_display();
         observed=*o; observation_valid=1; changed_tick=GetTickCount64();
     }
     observation_fresh=1;
+    AcquireSRWLockExclusive(&display_lock); display_valid=display.title[0]!=0; ReleaseSRWLockExclusive(&display_lock);
     if (context_pending || (context_sent && (same_observation(&requested,&observed) ||
         GetTickCount64()-changed_tick<300))) return;
     char request[4096];
@@ -182,6 +216,7 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
     if (length <= 0 || (size_t)length >= sizeof(request) ||
         franchise_host_submit(franchise_client,request,(size_t)length) != FRANCHISE_HOST_OK) {
         hello_failed = 1;
+        clear_display();
         fprintf(stderr,"[FRANCHISE] Signing context transport unavailable; no transaction submitted.\n");
         return;
     }

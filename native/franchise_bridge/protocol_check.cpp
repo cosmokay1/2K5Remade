@@ -1,5 +1,6 @@
 #include "contract_response.h"
 #include "launch_options.h"
+#include "signing_display.h"
 #include <iostream>
 
 int main(int argc,char** argv) {
@@ -802,6 +803,17 @@ int main(int argc,char** argv) {
         captured_event["evidence"]={{"financial_revision",0},{"personality",checkpoint["player_context"]["personality"]},
             {"relationships",checkpoint["player_context"]["relationships"]},{"performance",checkpoint["performance_context"]}};
         franchise::validate_result(captured_reply,captured_request);
+        nlohmann::json display_reply={{"error",nullptr},{"result",checkpoint}};
+        display_reply["result"]["player_context"]["personality"]={{"money",0.5},{"security",0.2},
+            {"playing_time",0.9},{"winning",0.8},{"loyalty",0.1}};
+        const auto display_text=franchise::signing_display(display_reply);
+        if(display_text.priorities!="Priorities: playing time and winning" ||
+            display_text.offer!="Offer fits the supported cap and contract rules.")
+            throw std::runtime_error("Signing display priorities or eligibility mismatch");
+        display_reply["result"]["player_context"]["personality"]["money"]=2;
+        bool bad_display=false;
+        try{franchise::signing_display(display_reply);}catch(const std::exception&){bad_display=true;}
+        if(!bad_display) throw std::runtime_error("Invalid display priority accepted");
         for(int scenario=0;scenario<6;++scenario) {
             auto bad=captured_reply;
             if(scenario==0) bad["result"]["evidence"]["personality"]={{"money",0.99}};

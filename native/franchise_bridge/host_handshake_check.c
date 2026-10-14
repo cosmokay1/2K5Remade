@@ -12,6 +12,10 @@ static int ready_value;
 static DWORD owner;
 static char last_request[4096];
 static FranchiseHostStatus take_status = FRANCHISE_HOST_OK;
+FranchiseHostStatus franchise_host_signing_display(const char *response,FranchiseSigningDisplay *out) {
+    assert(response && out); memset(out,0,sizeof(*out));
+    strcpy(out->priorities,"Authored priorities");return FRANCHISE_HOST_OK;
+}
 FranchiseHostStatus franchise_host_create(const wchar_t *python, const wchar_t *database,
     FranchiseHostMode mode, FranchiseHostClient **out)
 {
@@ -66,6 +70,8 @@ static DWORD WINAPI foreign_callback(void *unused)
     (void)unused;
     nfl2k5_franchise_on_fsm(0x557B2C, 1);
     nfl2k5_franchise_poll();
+    FranchiseSigningDisplay view={0};
+    nfl2k5_franchise_display(&view); /* Renderer copy does not access transport. */
     return 0;
 }
 int main(void)
@@ -141,9 +147,15 @@ int main(void)
     assert(strstr(last_request,"\"display_year\":2004"));
     nfl2k5_franchise_signing_context(&observation); assert(submissions==5);
     nfl2k5_franchise_poll(); /* Context collected on the same screen. */
+    FranchiseSigningDisplay view={0};
+    assert(nfl2k5_franchise_display(&view) && !strcmp(view.title,"Authored Player"));
     nfl2k5_franchise_signing_context(&observation); assert(submissions==5); /* Unchanged sample. */
+    assert(nfl2k5_franchise_display(&view));
+    nfl2k5_franchise_signing_context(NULL); assert(!nfl2k5_franchise_display(&view));
+    nfl2k5_franchise_signing_context(&observation); assert(nfl2k5_franchise_display(&view));
     observation.offer_amount=1950;
     nfl2k5_franchise_signing_context(&observation); assert(submissions==5); /* Debounce edits. */
+    assert(!nfl2k5_franchise_display(&view));
     Sleep(350);
     nfl2k5_franchise_signing_context(&observation); assert(submissions==6);
     ready_value=0;
@@ -156,6 +168,7 @@ int main(void)
     nfl2k5_franchise_signing_context(&observation); assert(submissions==7);
     assert(strstr(last_request,"\"amount_word\":1951"));
     nfl2k5_franchise_signing_context(NULL);
+    assert(!nfl2k5_franchise_display(&view));
     nfl2k5_franchise_poll(); /* Unreadable sample cannot consume a current receipt. */
     nfl2k5_franchise_signing_context(&observation); assert(submissions==8);
     nfl2k5_franchise_on_fsm(0,0); /* Pending response belongs to the closed screen. */

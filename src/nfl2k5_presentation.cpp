@@ -29,6 +29,9 @@
 #include <wincodec.h>
 #include "nfl2k5_broadcast.h"
 #include "nfl2k5_presentation.h"
+#ifdef NFL2K5_FRANCHISE_CLIENT
+#include "nfl2k5_franchise_host.h"
+#endif
 #include "presentation/presentation_host.h"
 #include <mfapi.h>
 #include <mfidl.h>
@@ -3390,8 +3393,64 @@ static int html_hud(const XboxHudFrame *f, XboxHudImage *img, const GameState &g
     return 1;
 }
 
+#ifdef NFL2K5_FRANCHISE_CLIENT
+static int franchise_hud(const XboxHudFrame *f,XboxHudImage *img)
+{
+    FranchiseSigningDisplay display={};
+    if(!nfl2k5_franchise_display(&display) || f->game_w<=0 || f->game_h<=0 || !renderer_init()) return 0;
+    const float u=std::min(f->game_w/1100.0f,f->game_h/700.0f);
+    const int W=(int)ceilf(520*u),H=(int)ceilf(230*u);
+    if(W<8 || H<8 || W>16384 || H>4096) return 0;
+    const std::string sig="franchise:"+std::to_string(W)+":"+std::to_string(H)+":"+
+        display.title+"|"+display.priorities+"|"+display.offer+"|"+display.history;
+    const bool changed=sig!=s_last_sig || R.w!=W || R.h!=H;
+    if(changed) {
+        renderer_resize(W,H);
+        if(!R.rt) return 0;
+        R.rt->BeginDraw();
+        R.rt->SetTransform(D2D1::Matrix3x2F::Scale(u,u));
+        R.rt->Clear(D2D1::ColorF(0.035f,0.055f,0.09f,0.97f));
+        ID2D1SolidColorBrush *white=nullptr,*secondary=nullptr;
+        R.rt->CreateSolidColorBrush(D2D1::ColorF(1,1,1,1),&white);
+        R.rt->CreateSolidColorBrush(D2D1::ColorF(0.78f,0.86f,0.96f,1),&secondary);
+        auto line=[&](const std::string& text,float top,float height,float size,int weight,ID2D1Brush *brush) {
+            if(!brush) return;
+            IDWriteTextFormat *format=nullptr;
+            if(FAILED(R.dw->CreateTextFormat(L"Bahnschrift",nullptr,(DWRITE_FONT_WEIGHT)weight,
+                DWRITE_FONT_STYLE_NORMAL,DWRITE_FONT_STRETCH_NORMAL,size,L"en-us",&format))) return;
+            format->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            format->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+            format->SetWordWrapping(DWRITE_WORD_WRAPPING_WRAP);
+            const auto wide=widen(text);
+            R.rt->DrawText(wide.c_str(),(UINT32)wide.size(),format,D2D1::RectF(18,top,502,top+height),brush,D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            format->Release();
+        };
+        line(display.title,12,32,26,700,white);
+        line(display.priorities,50,28,20,600,white);
+        line(display.offer,87,60,20,400,white);
+        line(display.history,153,38,17,400,secondary);
+        line("Preview only. Signing still uses the original game.",200,24,16,400,secondary);
+        if(white) white->Release(); if(secondary) secondary->Release();
+        R.rt->SetTransform(D2D1::Matrix3x2F::Identity());
+        if(FAILED(R.rt->EndDraw())) { renderer_resize(0,0); return 0; }
+        IWICBitmapLock *lock=nullptr; WICRect rc={0,0,W,H};
+        if(FAILED(R.bmp->Lock(&rc,WICBitmapLockRead,&lock))) return 0;
+        UINT stride=0,size=0; BYTE *data=nullptr;
+        lock->GetStride(&stride);lock->GetDataPointer(&size,&data);
+        for(int row=0;row<H;++row) memcpy(&R.pixels[(size_t)row*W*4],data+(size_t)row*stride,(size_t)W*4);
+        lock->Release();s_last_sig=sig;
+    }
+    img->pixels=R.pixels.data();img->w=W;img->h=H;img->stride=W*4;
+    img->x=(int)(f->game_x+f->game_w-W-16*u);img->y=(int)(f->game_y+16*u);
+    img->changed=changed;
+    return 1;
+}
+#endif
 static int hud_callback(const XboxHudFrame *f, XboxHudImage *img)
 {
+#ifdef NFL2K5_FRANCHISE_CLIENT
+    if(franchise_hud(f,img)) return 1;
+#endif
     double t = now_s();
     float dt = (float)std::min(0.1, s_last_t ? t - s_last_t : 0.0);
     s_last_t = t;

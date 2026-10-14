@@ -1,6 +1,10 @@
 #ifndef NFL2K5_FRANCHISE_HOST_H
 #define NFL2K5_FRANCHISE_HOST_H
 #include <stdint.h>
+#include "host_client.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* Host entry thread only; no guest state access or automatic AI grant. */
 int nfl2k5_franchise_start(void);
 void nfl2k5_franchise_stop(void);
@@ -20,4 +24,9 @@ typedef struct {
 int nfl2k5_franchise_context_enabled(void);
 /* NULL invalidates sample freshness without submitting or resetting debounce. */
 void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *observation);
+/* Renderer-safe owned copy; never touches transport or guest memory. */
+int nfl2k5_franchise_display(FranchiseSigningDisplay *out);
+#ifdef __cplusplus
+}
+#endif
 #endif

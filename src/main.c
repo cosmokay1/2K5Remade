@@ -631,10 +631,9 @@ static bool signing_screen_name(uint32_t address, char out[151])
 }
 
 #ifdef NFL2K5_FRANCHISE_CLIENT
-static void signing_screen_context(void)
+static bool signing_screen_context(void)
 {
-    if (!nfl2k5_franchise_context_enabled()) return;
-    nfl2k5_franchise_signing_context(NULL); /* A failed read cannot reuse the last sample. */
+    if (!nfl2k5_franchise_context_enabled()) return false;
     FranchiseSigningObservation observation = {0};
     uint32_t context, player, team, mode, first, last;
     uint8_t record[0x28];
@@ -646,7 +645,7 @@ static void signing_screen_context(void)
         !signing_screen_read(player,record,sizeof(record)) ||
         !signing_screen_slot(player,&observation.slot) ||
         !signing_screen_team(team,&observation.team_index,&mode) || mode!=2u || observation.team_index>=32u ||
-        team > UINT32_MAX-0x19Cu) return;
+        team > UINT32_MAX-0x19Cu) return false;
     memcpy(&first,record+0x10,sizeof(first)); memcpy(&last,record+0x14,sizeof(last));
     if (!signing_screen_name(first,observation.first_name) || !signing_screen_name(last,observation.last_name) ||
         !signing_screen_read(team+0x124u,&observation.payroll,sizeof(observation.payroll)) ||
@@ -656,7 +655,7 @@ static void signing_screen_context(void)
         !signing_screen_read(0x00E5775Cu+observation.team_index*4u,&observation.team_flag,sizeof(observation.team_flag)) ||
         !signing_screen_read(team+0x19Cu,&accumulator,sizeof(accumulator)) ||
         !signing_screen_read(context+0x0Cu,&offer_amount,sizeof(offer_amount)) ||
-        !signing_screen_read(context+8u,&observation.offer_flags,sizeof(observation.offer_flags))) return;
+        !signing_screen_read(context+8u,&observation.offer_flags,sizeof(observation.offer_flags))) return false;
     observation.accumulator=accumulator;
     observation.offer_amount=offer_amount;
     snprintf(observation.photo,sizeof(observation.photo),"%02x%02x%02x%02x",
@@ -664,19 +663,20 @@ static void signing_screen_context(void)
     snprintf(observation.dob,sizeof(observation.dob),"%02x%02x%02x",
         (unsigned)record[0x19],(unsigned)record[0x1A],(unsigned)record[0x1B]);
     nfl2k5_franchise_signing_context(&observation);
+    return true;
 }
 void nfl2k5_franchise_guest_poll(void)
 {
-    signing_screen_context(); /* Refresh before deciding whether a reply is obsolete. */
+    if (!signing_screen_context()) nfl2k5_franchise_signing_context(NULL);
     nfl2k5_franchise_poll();
-    signing_screen_context();
+    if (!signing_screen_context()) nfl2k5_franchise_signing_context(NULL);
 }
 #endif
 void nfl2k5_diag_fsm(uint32_t obj, uint32_t desc, int push)
 {
 #ifdef NFL2K5_FRANCHISE_CLIENT
     nfl2k5_franchise_on_fsm(desc, push);
-    if (push && desc == 0x00557B2Cu) signing_screen_context();
+    if (push && desc == 0x00557B2Cu && !signing_screen_context()) nfl2k5_franchise_signing_context(NULL);
 #endif
     static unsigned int recorded;
     const char *enabled = getenv("NFL2K5_TRACE_FRANCHISE");
