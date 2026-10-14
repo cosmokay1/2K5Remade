@@ -480,3 +480,24 @@ reload AIBASELIN before one documented Gildon signing; save its result separatel
 as AIGILDON and reload for contract readback. Record visible terms/cap before
 and after, and compare with tools.save_diff --control-after. Original-game
 signing is still vanilla; this experiment verifies mapping, not AI integration.
+
+
+The controlled AIGILDON signing moves slot1792 from free agents to Giants.
+Salary word+0x0A becomes829 and packed+0x24 becomes0x02410BA2, matching the
+observed offer's2years/40%/Descending fields. Only this player's candidate
+financial fields change. There are22 transaction-only bytes versus14405 bytes
+shared with the no-signing control. The Giants' stored+0x124 total changes
+72272→77038; its+0x19C accumulator stays0.
+
+User-visible cap limit$80.50M, team totals$72.27M→$77.03M and room$8.22M→$3.46M
+match native-thousand totals$72.272M→$77.038M and exact room$8.228M→$3.462M.
+The display truncates to two decimal places; never derive spendable dollars by
+subtracting the displayed rounded/truncated numbers. This establishes the
+original first-year charge delta$4.766M, not modern proration/guarantee correctness.
+
+`python3 -m tools.inspect_player_contract /path/to/SAVEGAME.DAT 1792` independently
+reads supported named active contract records without writing or reading ratings.
+It exposes calibrated game total/style/bonus and both raw term nibbles, refusing
+unsupported codes or missing terms. Only observed Descending/Balanced styles are
+interpreted. It provides no modern cap allocations, guarantees, annual salaries
+or persistent IDs. Original-field aging still needs controlled season evidence.

@@ -64,6 +64,29 @@ player binding, UI amount/unit agreement, salary-only and term-only controlled
 saves, unchanged-save control and reload verification. The16-bit accumulator's
 UI meaning, persistence and overflow intent remain unresolved.
 
+## October 14 — Controlled Gildon signing and UI cap reconciliation
+
+AIBASELIN, unchanged AICNTRL and signed AIGILDON now establish one actual original
+game transaction. Jason Gildon moves from free agents to Giants; saved salary
+word829 and packed word0x02410BA2 retain the observed$8.29M/2year/Descending/40%
+terms. Both signature companions match the runtime implementation and the signed
+payload matches its UDATA mirror. User reported completion of the instructed
+save/reload sequence; individual post-reload contract UI terms are not yet
+independently read. No AI interception or modern financial posting occurred.
+
+The control changes14405 bytes but no candidate contract fields across2479
+records or1937 memberships. The signed result adds22 transaction-only bytes.
+Giants salary total+0x124 goes72272→77038, an increase of$4.766M under the
+verified thousand-dollar scale. User's$80.50M cap and displayed team/room values
+match exact saved totals$72.272M→$77.038M and room$8.228M→$3.462M. Display
+truncation explains why subtracting displayed cap and team numbers differs by
+$10000 from displayed room. Use underlying monetary quantities for accounting.
+
+This validates the original first-year posting only. Subsequent annual charges,
+term aging, long-contract bonus limits, releases, retained debt, guarantees and
+modern-rule/game posting consistency remain unverified. No completed modern
+franchise money system is claimed.
+
 ## Historical prototype snapshot
 
 **Verdict: the prototype protects a supplied current-year cap balance during a

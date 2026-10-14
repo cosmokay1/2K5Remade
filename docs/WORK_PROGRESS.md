@@ -3908,3 +3908,34 @@ $8.29M/2year/Descending/40% offer and cap room, perform one original-game signin
 save separately as AIGILDON if accepted, and verify reload/terms/cap readback.
 If rejected, capture the result rather than silently changing terms. AI signing
 remains unconnected; the experiment establishes actual save/financial mapping.
+
+
+## October 14, 2026 — Actual Gildon signing/save and cap reconciliation
+
+User completed the instructed signing/save/reload sequence as AIGILDON. Captured
+stable private payload and all companions; logical save, snapshot and UDATA
+container10A484FEF273 agree on SHA256
+ac16245c5fcd743f3cc9e6aa37d76de72424238782de353765c758d242c6bc7d.
+TYPE/Name metadata and runtime-key HMACSHA1 validate. AIBASELIN stays unchanged.
+Actual result moves only Gildon slot1792 from free agents to Giants. Candidate
+salary word changes0→829; packed contract word00100BA0→02410BA2 preserves
+2/2 term nibbles, allocation4 and shape1. Original-game cap total changes
+72272→77038; accumulator+0x19C stays0. Control-aware diff preserves14405 overlapping
+bytes and identifies22 transaction-only bytes; only Gildon's candidate financial
+fields change. Private reports are in analysis/AIBASELIN.
+
+User supplied before/after UI: cap80.50M both; team72.27M→77.03M; room8.22M→3.46M.
+These match exact stored totals72.272M→77.038M and remaining8.228M→3.462M, with
+first-year delta4.766M. UI truncation must not become ledger rounding. A bounded
+read-only /proc/68889/mem check was refused by OS permissions; no debugger attach,
+sudo, elevation or bypass was attempted. Direct live cap-global read is not claimed.
+Individual contract terms after reload await explicit UI readback; saved terms
+and user-reported completion are the evidence available.
+
+Implemented small read-only tools.inspect_player_contract for supported observed
+styles and active records, with named-membership validation and no cap/guarantee
+inference or ratings exposure. Three authored tests cover calibrated values,
+malformed/unknown contracts and slots, and CLI byte preservation. Full612-test
+offline suite passed. Actual AIGILDON readback matches the documented deal.
+No AI/game financial write integration is present, and modern lifecycle/posting
+correctness remains open.

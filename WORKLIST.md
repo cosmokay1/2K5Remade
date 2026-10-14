@@ -29,20 +29,22 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.
-- Current delivered local suite: **609 tests passed**. Actual AIBASELIN parsing
+- Current delivered local suite: **612 tests passed**. Actual AIBASELIN parsing
   resolves 1937 roster/free-agent members. This does not prove contract/save
   round-trip integration. The read-only signing observer includes bounded bank-slot/name reads and is compiled and installed after confirmed exit;
   actual readback identifies Jeremiah Trotter at bank slot1910, matching AIBASELIN.
   Gildon offer amount/term/style/bonus readback is calibrated against the UI;
-  annual cap charges, team identity and controlled transaction/save readback remain pending. The Windows harness portability
+  Gildon signing moves him to the Giants with persisted terms and a$4.766M
+  first-year charge matching displayed cap balances. AI/modern accounting
+  integration and broader lifecycle/save verification remain pending. The Windows harness portability
   repair passed replacement CI and private MSVC/Wine fixture execution.
 - Request/token ceilings and remote shutdown are sufficient for current work.
   Additional dollar-policy machinery is deferred at the user's direction.
 - Xbox asset intake and Steam Deck SSH are now verified. Static analysis located
   the actual Sign Contract FSM descriptor0x00557B2C and message11 callback,
   and that descriptor has now been observed during a user signing attempt. Current
-  bank/name readback is verified for Trotter; units, durable identity and
-  transaction readback remain unverified.
+  bank/name readback is verified for Trotter; Gildon terms, saved ownership and first-year cap readback are verified; durable
+  identity across rebuilds and AI/modern transaction integration remain unverified.
 - Actual AI/game/save integration, telemetry capture and final playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 
@@ -65,8 +67,8 @@ steps, rather than expand the already substantial standalone engine.
 | ID | Input / status | What it blocks | Independent work that continues |
 |---|---|---|---|
 | B01 | User-supplied Xbox executable/disc now extracted; title/hash checked | Static intake resolved; runtime field/call verification remains | Private executable analysis and native build |
-| B02 | AIBASELIN baseline and AICNTRL unchanged control captured/validated; documented signing result and reload pending | Contract decoding, reconciliation and save round trips | Synthetic import fixtures, read-only diff tooling, state schema |
-| B03 | Deck access restored; corrected observer identifies Trotter at bank slot1910. Gildon UI calibrates total-offer units; annual cap charges and controlled transaction/save readback pending. Standard Windows build renders franchise UI in Deck Gaming Mode; actual transaction/save accounting pending | Actual franchise execution, save/reload and delivery acceptance | Private local build environment and read-only signing-path analysis |
+| B02 | AIBASELIN baseline, AICNTRL control and AIGILDON signing captured; original-game Gildon contract/roster/cap readback verified; broader pairs and lifecycle reload pending | Contract decoding, reconciliation and save round trips | Synthetic import fixtures, read-only diff tooling, state schema |
+| B03 | Deck access restored; corrected observer identifies Trotter at bank slot1910. AIGILDON persists observed Gildon terms and Giants ownership; saved salary totals match user-reported cap UI. AI transaction integration remains pending. Standard Windows build renders franchise UI in Deck Gaming Mode; actual transaction/save accounting pending | Actual franchise execution, save/reload and delivery acceptance | Private local build environment and read-only signing-path analysis |
 | B04 | Written upstream/third-party permission or suitable licenses | Redistribution of modified binaries and affected bundled components | Original source development, attribution, permission-request drafts |
 | B05 | Explicit approval for scoped runtime impersonation delegation | Live runtime-identity read/inference verification | Offline/native recovery and financial implementation |
 
@@ -291,6 +293,8 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
 - [ ] Trace CPU-controlled paths as well as user menu paths; avoid double decisions. Existing FSM push/pop probes have an opt-in 256-event trace; actual Sign Contract descriptor 00557B2C was observed during the user test. CPU paths and callback/transaction readback remain pending.
 - [ ] Intercept a single verified free-agent signing through existing patch conventions.
 - [ ] Commit legal terms to the actual game and verify readback/save/reload.
+      Original-game controlled Gildon signing now has saved contract/ownership
+      and first-year cap readback; AI/modern terms are not yet committed to the game.
 - [ ] Integrate all supported roster transactions and season advancement.
 - [ ] Reconcile the external ledger and guest state before every financial write.
 - [ ] Add real franchise negotiation UI with cap/cash/guarantee effects and reasons.
