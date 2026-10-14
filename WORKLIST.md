@@ -65,7 +65,7 @@ steps, rather than expand the already substantial standalone engine.
 | ID | Input / status | What it blocks | Independent work that continues |
 |---|---|---|---|
 | B01 | User-supplied Xbox executable/disc now extracted; title/hash checked | Static intake resolved; runtime field/call verification remains | Private executable analysis and native build |
-| B02 | AIBASELIN FXG baseline and companion files captured; controlled transaction pairs pending | Contract decoding, reconciliation and save round trips | Synthetic import fixtures, read-only diff tooling, state schema |
+| B02 | AIBASELIN baseline and AICNTRL unchanged control captured/validated; documented signing result and reload pending | Contract decoding, reconciliation and save round trips | Synthetic import fixtures, read-only diff tooling, state schema |
 | B03 | Deck access restored; corrected observer identifies Trotter at bank slot1910. Gildon UI calibrates total-offer units; annual cap charges and controlled transaction/save readback pending. Standard Windows build renders franchise UI in Deck Gaming Mode; actual transaction/save accounting pending | Actual franchise execution, save/reload and delivery acceptance | Private local build environment and read-only signing-path analysis |
 | B04 | Written upstream/third-party permission or suitable licenses | Redistribution of modified binaries and affected bundled components | Original source development, attribution, permission-request drafts |
 | B05 | Explicit approval for scoped runtime impersonation delegation | Live runtime-identity read/inference verification | Offline/native recovery and financial implementation |

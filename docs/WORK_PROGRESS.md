@@ -3880,3 +3880,31 @@ posting or save persistence. AIBASELIN hash is still
 The next required input is a separate unchanged AICNTRL save before a documented
 vanilla signing/result AIGILDON save and reload. No offer submission, guest write,
 model request or save mutation was performed by the agent.
+
+
+## October 14, 2026 — Actual unchanged-save control captured
+
+User saved AICNTRL without signing. Stable payload size/mtime check passed during
+private snapshot, and logical save, snapshot and UDATA container11270FC6861F
+payloads share SHA256
+be60a034c3bb0ecbf273ae4891a2aeecca613f5f074672ff049a358ba5bc8ec3.
+Captured all companions privately in original/saves/AICNTRL-control and wrote
+intake.json. TYPE is FXG, SaveMeta.xbx is BOM-prefixed UTF16 Name=AICNTRL with
+CRLF, and EXTRA matches the runtime's zero16-byte-key HMACSHA1. An initial
+analysis assertion incorrectly expected a bare SaveMeta name; corrected the
+read-only check to its actual metadata format. No save bytes were edited.
+
+The control has the same year2004 and1937 player memberships as AIBASELIN;
+roster list order changed, so comparison uses memberships as sets. Neither
+salary word+0x0A nor candidate packed contract bits (mask0x0FFF000F at+0x24)
+changed across all2479 bank records. This verifies only candidate fields, not
+all financial state. Payload differs in14405bytes across1724spans; preserved
+all changes in private analysis/AIBASELIN/control-diff.json instead of assuming
+all differences are harmless bookkeeping. AIBASELIN itself still hashes
+2f82cfd9c608411c40b006db10f1e6dc6dfe46b187dd50c1ae94dd6341fd3dd2.
+
+Next controlled transaction: reload AIBASELIN, document Gildon's visible
+$8.29M/2year/Descending/40% offer and cap room, perform one original-game signing,
+save separately as AIGILDON if accepted, and verify reload/terms/cap readback.
+If rejected, capture the result rather than silently changing terms. AI signing
+remains unconnected; the experiment establishes actual save/financial mapping.
