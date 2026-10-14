@@ -174,6 +174,15 @@ the outgoing plan records the advanced original salary-year cursor and sourced
 trade year. Earned prior base remains in seller cash ceilings, transferred future
 base does not, and retained bonus charges start at the actual trade year. This
 path validates before mutation and preserves legacy postroll guards. It is not
-an atomic paired Store trade: receiving calendar bookkeeping, paired replay and
-rollback, native versioned accounting/receipts and guest wiring remain open.
+an atomic paired Store trade: paired replay and rollback, native versioned
+accounting/receipts and guest wiring remain open.
 Store inspection rejects these outgoing archives until that protocol exists.
+
+The receiving Ledger explicitly recalculates the original plan, binds canonical
+source and destination generation identities, and enforces current cap and salary
+floors before mutation. Its new agreement anchors at the actual trade year, with
+independent buyer base indices; later rollover ages it once. Prior released or
+assigned agreements remain separate. An expired prior agreement is eligible only
+through the saved view's authoritative exhausted-term/fully allocated settlement
+facts, never merely because its schedule ended. Prior debt/cash is preserved.
+Legacy assignment paths still reject after rollover.

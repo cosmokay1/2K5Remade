@@ -733,6 +733,18 @@ class Ledger:
 
     def apply_preseason_trade_in(self, plan, *, expected_revision,assignment_request_id=None,
                                  assigned_from_team=None,assigned_from_generation_id=None):
+        return self._apply_preseason_trade_in(plan,expected_revision=expected_revision,
+            assignment_request_id=assignment_request_id,assigned_from_team=assigned_from_team,
+            assigned_from_generation_id=assigned_from_generation_id,calendar_assignment=False)
+
+    def apply_calendar_preseason_trade_in(self,plan,*,expected_revision,assignment_request_id,
+                                         assigned_from_team,assigned_from_generation_id):
+        return self._apply_preseason_trade_in(plan,expected_revision=expected_revision,
+            assignment_request_id=assignment_request_id,assigned_from_team=assigned_from_team,
+            assigned_from_generation_id=assigned_from_generation_id,calendar_assignment=True)
+
+    def _apply_preseason_trade_in(self,plan,*,expected_revision,assignment_request_id,
+                                assigned_from_team,assigned_from_generation_id,calendar_assignment):
         from franchise.trades import TradePlan, calculate_preseason_trade
         from franchise.books import ChargeRecord, ActiveContract
         with self._lock:
@@ -748,6 +760,8 @@ class Ledger:
             from franchise.generations import legacy_identity,assignment_identity,GenerationAgreement
             metadata=(assignment_request_id,assigned_from_team,assigned_from_generation_id)
             versioned=any(value is not None for value in metadata)
+            if calendar_assignment and (not versioned or self._generation_calendar_anchor is None):
+                raise Rejected('Advanced buyer calendar and explicit assignment identities required')
             identity=None
             if versioned:
                 if self._team_identity is None or any(type(value) is not str or not value.strip() for value in metadata):
@@ -773,7 +787,7 @@ class Ledger:
                 expected_cash_id=plan.original_cash.obligation_id,buyer_cash_id=expected_buyer_cash)
             if recalculated != plan:
                 raise ValueError('Trade plan disagrees with original obligations')
-            self._check_transaction_date(plan.scope.league_year,plan.scope.traded_on)
+            self._check_transaction_date(plan.scope.league_year,plan.scope.traded_on,calendar_trade=calendar_assignment)
             if plan.buyer_cash.obligation_id != expected_buyer_cash:
                 raise Rejected('Incoming contract cash identity disagrees with receiving team')
             if player in self._rookies or player not in self._veteran_minimums:
@@ -782,7 +796,8 @@ class Ledger:
                 if not versioned:
                     raise Rejected('Trade return requires separate contract generation IDs')
                 previous=self.generation_accounting(self.contract_identity(player).generation_id)
-                if previous.status not in ('released','assigned') or player in self._players:
+                expired=(calendar_assignment and self.generation_calendar_view(previous.identity.generation_id).authoritative_expired)
+                if (previous.status not in ('released','assigned') and not expired) or player in self._players:
                     raise Rejected('Closed prior agreement required for assignment return')
                 if self.generation_cash(previous.identity.generation_id) is None:
                     raise Rejected('Known prior agreement cash required for assignment return')
@@ -793,12 +808,17 @@ class Ledger:
             if (self._veteran_minimum_profile is not None
                     and self._veteran_minimum_profile.start_year != plan.scope.league_year):
                 raise Rejected('Trade year disagrees with salary profile')
-            _, _, charges, scale = self._validate_offer(plan.buyer_contract.offer, expected_revision,returning=versioned)
+            _, _, charges, scale = self._validate_offer(plan.buyer_contract.offer, expected_revision,
+                returning=versioned,calendar_assignment=calendar_assignment)
             if scale is not None:
                 raise Rejected('Rookie assignment is unsupported')
             agreement=GenerationAgreement(identity,plan.buyer_contract,plan.buyer_contract,incoming_trade=plan,
                 assignment_request_id=assignment_request_id,assigned_from_team=assigned_from_team,
                 assigned_from_generation_id=assigned_from_generation_id) if versioned else None
+            calendar_view=None
+            if calendar_assignment:
+                from franchise.generations import GenerationCalendarView
+                calendar_view=GenerationCalendarView(agreement,plan.scope.league_year,plan.scope.league_year)
             if not versioned:
                 self._register_contract_identity(player)
             else:
@@ -817,7 +837,10 @@ class Ledger:
             self._cash.records[plan.buyer_cash.obligation_id] = plan.buyer_cash
             self._cash.revision += 1
             self.revision += 1
-            self._refresh_generation_agreement(player)
+            if calendar_view is not None:
+                self._generation_calendar_views[identity.generation_id]=calendar_view
+            else:
+                self._refresh_generation_agreement(player)
             return plan
 
     @staticmethod
@@ -1131,8 +1154,11 @@ class Ledger:
             del self._draft_reservations[player_id]
             self.revision += 1
 
-    def _validate_offer(self, offer: Offer, expected_revision: int, *, returning=False):
-        if self._generation_calendar_anchor is not None and (returning
+    def _validate_offer(self, offer: Offer, expected_revision: int, *, returning=False,calendar_assignment=False):
+        if calendar_assignment and (self._generation_calendar_anchor is None or not returning
+                or offer.player_id in self._rookies or offer.player_id not in self._veteran_minimums):
+            raise Rejected('Calendar assignment requires a registered veteran and explicit receiving generation')
+        if not calendar_assignment and self._generation_calendar_anchor is not None and (returning
                 or offer.player_id in self._contracts or offer.player_id in self._rookies
                 or offer.player_id not in self._veteran_minimums):
             raise Rejected('Post-transition signing requires a never-held registered veteran')

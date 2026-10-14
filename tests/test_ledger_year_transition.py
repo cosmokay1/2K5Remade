@@ -11,6 +11,105 @@ from franchise.guarantees import DiscountProfile
 
 
 class LedgerYearTransitionTests(unittest.TestCase):
+    def incoming_plan(self):
+        from franchise.generations import assignment_identity
+        seller=self.ledger();source=seller.contract_identity('v').generation_id
+        self.transition(seller)
+        destination=assignment_identity('b','v','incoming-current')
+        plan=seller.apply_calendar_preseason_trade_out('v',**self.calendar_trade_inputs(seller,
+            buyer_cash_id=destination.cash_obligation_id))
+        return plan,source,destination
+
+    def calendar_buyer(self,*,prior_released=False):
+        contract=ActiveContract(Offer('v',(2000000,)*3,3000000),'synthetic prior buyer agreement')
+        buyer=Ledger.from_opening(OpeningBooks(contracts=(contract,) if prior_released else (),
+            retained=(ChargeRecord('buyer-debt',(7,11,13),'synthetic prior debt'),)),
+            cap=10000000,roster_reserve=0,max_bonus_years=5,veteran_minimums={'v':(1000000,)*3})
+        records=(CashObligation('contract:v','v',9000000,3000000,'synthetic settled prior bonus',
+            (('signing_bonus',3000000),)),) if prior_released else ()
+        buyer._cash=CashBook(records,'synthetic buyer cash');buyer.bind_team_identity('b');buyer._league_year=2026
+        if prior_released:
+            buyer.apply_preseason_release('v',scope=PreseasonReleaseScope(2026,date(2026,6,1),date(2026,9,10),
+                EXCLUDED_LIABILITIES,True,True,0,'synthetic prior healthy release'),
+                discount=DiscountProfile(2026,Fraction(0),'synthetic rate'),payment_year_offsets=(0,1,2),
+                record_id='prior-release',expected_revision=0)
+        self.transition(buyer,expected_revision=buyer.revision)
+        return buyer
+
+    def receive(self,buyer,plan,source,**changes):
+        inputs=dict(expected_revision=buyer.revision,assignment_request_id='incoming-current',
+            assigned_from_team='a',assigned_from_generation_id=source)
+        inputs.update(changes)
+        return buyer.apply_calendar_preseason_trade_in(plan,**inputs)
+
+    def test_calendar_buyer_anchors_incoming_agreement_at_actual_trade_year(self):
+        plan,source,destination=self.incoming_plan();buyer=self.calendar_buyer()
+        self.receive(buyer,plan,source)
+        self.assertEqual(buyer.charges,(2000011,2000013))
+        self.assertEqual(buyer.contract_identity('v'),destination)
+        agreement=buyer.generation_accounting(destination.generation_id)
+        self.assertEqual(agreement.incoming_trade,plan)
+        view=buyer.generation_calendar_view(destination.generation_id)
+        self.assertEqual((view.anchor_year,view.current_year,view.current_contract.elapsed_years),(2027,2027,0))
+        buyer._cash.pay(destination.cash_obligation_id,2000000,buyer._cash.revision,component='base:0')
+        self.transition(buyer,from_year=2027,to_year=2028,expected_revision=buyer.revision,
+            next_minimum_profile=VeteranMinimumProfile(2028,(('v',(7,7),('active_inactive',)*2),)))
+        self.assertEqual(buyer.active_contract('v').elapsed_years,1)
+        self.assertEqual(buyer.charges,(2000013,))
+        self.assertIs(buyer.generation_accounting(destination.generation_id),agreement)
+        self.assertEqual(buyer.cash_snapshot()['unpaid_total'],2000000)
+
+    def test_calendar_buyer_keeps_former_closed_agreement_cash_and_debt(self):
+        plan,source,destination=self.incoming_plan();buyer=self.calendar_buyer(prior_released=True)
+        old_id=buyer.contract_identity('v').generation_id
+        old=buyer.generation_accounting(old_id);old_cash=buyer.generation_cash(old_id)
+        self.receive(buyer,plan,source)
+        self.assertIs(buyer.generation_accounting(old_id),old)
+        self.assertEqual(buyer.generation_cash(old_id),old_cash)
+        self.assertEqual(buyer.contract_identity('v'),destination)
+        self.assertEqual(buyer.cash_snapshot()['nominal_total'],7000000)
+        self.assertEqual(buyer.cash_snapshot()['paid_total'],3000000)
+        self.assertEqual(buyer.charges,(2000011,2000013))
+
+    def test_calendar_buyer_preserves_authoritatively_expired_paid_agreement(self):
+        plan,source,destination=self.incoming_plan()
+        contract=ActiveContract(Offer('v',(2000000,),3000000),'synthetic exhausted original term')
+        buyer=Ledger.from_opening(OpeningBooks(contracts=(contract,)),cap=10000000,roster_reserve=0,
+            max_bonus_years=5,veteran_minimums={'v':(1000000,)*3})
+        buyer._cash=CashBook((CashObligation('contract:v','v',5000000,5000000,'synthetic fully settled',
+            (('signing_bonus',3000000),('base:0',2000000))),),'synthetic coverage')
+        buyer.bind_team_identity('b');buyer._league_year=2026
+        old_id=buyer.contract_identity('v').generation_id;old=buyer.generation_accounting(old_id)
+        self.transition(buyer,expired_generation_ids=(old_id,))
+        old_view=buyer.generation_calendar_view(old_id)
+        self.assertTrue(old_view.authoritative_expired)
+        self.receive(buyer,plan,source)
+        self.assertIs(buyer.generation_accounting(old_id),old)
+        self.assertIs(buyer.generation_calendar_view(old_id),old_view)
+        self.assertEqual(buyer.contract_identity('v'),destination)
+        self.assertEqual(buyer.cash_snapshot()['nominal_total'],9000000)
+        self.assertEqual(buyer.cash_snapshot()['paid_total'],5000000)
+
+    def test_calendar_buyer_rejections_preserve_all_books(self):
+        plan,source,_=self.incoming_plan()
+        for changes in ({'expected_revision':True},{'expected_revision':0},{'assignment_request_id':''},
+                        {'assigned_from_team':'b'},{'assigned_from_generation_id':'foreign'}):
+            buyer=self.calendar_buyer();before=(buyer.generation_snapshot(),buyer.generation_calendar_snapshot(),buyer.cash_snapshot())
+            with self.subTest(changes=changes),self.assertRaises((ValueError,Rejected)):
+                self.receive(buyer,plan,source,**changes)
+            self.assertEqual((buyer.generation_snapshot(),buyer.generation_calendar_snapshot(),buyer.cash_snapshot()),before)
+        for kind in ('cap','floor'):
+            buyer=self.calendar_buyer()
+            if kind=='cap':buyer._cap=Fraction(1)
+            else:buyer._veteran_minimums['v']=(3000000,3000000)
+            before=(buyer.generation_snapshot(),buyer.generation_calendar_snapshot(),buyer.cash_snapshot())
+            with self.subTest(kind=kind),self.assertRaises(Rejected):self.receive(buyer,plan,source)
+            self.assertEqual((buyer.generation_snapshot(),buyer.generation_calendar_snapshot(),buyer.cash_snapshot()),before)
+        buyer=self.calendar_buyer()
+        with self.assertRaises(Rejected):
+            buyer.apply_preseason_trade_in(plan,expected_revision=buyer.revision,assignment_request_id='incoming-current',
+                assigned_from_team='a',assigned_from_generation_id=source)
+
     def calendar_trade_inputs(self,ledger,**changes):
         from franchise.trades import PreseasonTradeScope,EXCLUDED_TRADE_LIABILITIES
         inputs=dict(generation_id=ledger.contract_identity('v').generation_id,

@@ -2901,3 +2901,19 @@ each passed 493 offline tests. Both platform runtime builds passed run 385150518
 These are synthetic histories and owned transport/restart evidence, not actual
 guest execution. Revision 665757d adds seller calendar assignment accounting with
 497 locally passed offline tests; its new CI is separate and not yet verified.
+
+Receiving Ledger calendar assignments now require explicit canonical source and
+destination identities, advanced buyer calendar and typed source plan. Recalculated
+plan, current-year/date/classification/floor/cap checks and new immutable agreement/
+view construction finish before mutation. The buyer agreement anchors at actual
+trade year and uses its independent transferred base indices. Returning acquisitions
+preserve prior released/assigned generations and their cash/debt. Proven expired
+prior agreements also qualify only through existing authoritative expiry facts,
+no active ownership and known fully settled allocated cash; scheduled exhaustion
+alone grants no eligibility. Legacy postroll assignment/signing paths remain guarded.
+All 501 offline tests passed, including current-year acquisition then later rollover,
+closed prior-generation preservation, settled expired prior history, and stale/
+foreign identity, cap and floor rejection without mutations. Independent review
+found no concrete defect in the buyer path or incremental expiry guard. Atomic
+paired Store calendar events/replay/rollback, native accounting/receipts and actual
+guest trades remain required; no postroll service transaction was opened.
