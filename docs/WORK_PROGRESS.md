@@ -5057,3 +5057,9 @@ isolated service/database/auth denial remain unchanged. Earlier CI check timed
 out in automatic approval review; one permitted read-only retry succeeded.
 Published87450b3 Build38636188349 and AI38636188333 passed; 8167bde checks are
 still in progress. Current polling source requires its subsequent hosted CI.
+
+User confirmed closed. Fresh process check found no game or pythonw.exe child;
+guarded installation passed with staged root SHA256 a47435e9...a7bd28, backup
+e18edc0d...bd1c4 and unchanged launcher1f2771c2...7acce. Requested normal launch,
+AIGILDON load and Trotter offer left open without submission. Actual same-screen
+reply collection remains pending; source committed/pushed asfbde4cc.
