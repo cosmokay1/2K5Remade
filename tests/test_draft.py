@@ -30,6 +30,9 @@ class DraftComparisonTests(unittest.TestCase):
         self.assertEqual([p['contract_validation']['status'] for p in context['prospects']], ['eligible', 'ineligible'])
         evidence = context['prospects'][0]['performance'][0]
         self.assertIsNone(evidence['observations']['targets']['value'])
+        efficiency=context['prospects'][0]['observed_efficiency'][0]['efficiencies']['reception_per_target']
+        self.assertIsNone(efficiency['value'])
+        self.assertIsNone(efficiency['sample_count'])
         self.assertIn('snaps', evidence['missing_counters'])
         self.assertEqual(ledger.financial_snapshot(), before)
 
@@ -346,3 +349,22 @@ class DraftComparisonTests(unittest.TestCase):
                     self.assertIsNone(reopened.recalled_scouting('a','advice'))
                 else:
                     self.assertEqual(reopened.recalled_scouting('a','advice'),expected)
+
+    def test_recorded_scouting_efficiency_cannot_turn_unknown_targets_into_zero(self):
+        import json,sqlite3,tempfile
+        from contextlib import closing
+        from franchise.draft import DraftScouting
+        with tempfile.TemporaryDirectory() as directory:
+            store,ledger,inputs=self.durable_scouting(directory)
+            advice=DraftScouting(ledger,access_check=lambda:None).recommend('efficiency',
+                lambda _:json.dumps({'action':'recommend','player_id':'a','reason':'Observed production',
+                    'uncertainty':'Targets unavailable'}),**inputs)
+            derived=advice['evidence']['prospects'][0]['observed_efficiency'][0]
+            self.assertIsNone(derived['efficiencies']['reception_per_target']['value'])
+            with closing(sqlite3.connect(store.path)) as db:
+                event_id,serialized=db.execute("SELECT id,payload FROM events WHERE kind='draft_scouting'").fetchone()
+                payload=json.loads(serialized)
+                payload['event']['evidence']['prospects'][0]['observed_efficiency'][0]['efficiencies']['reception_per_target']['value']=0
+                db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(payload),event_id))
+                db.commit()
+            with self.assertRaisesRegex(ValueError,'Scouting efficiency'):store.load_team('a')

@@ -1,5 +1,6 @@
 """Observed production with explicit coverage; no hidden-rating estimates."""
 from dataclasses import dataclass
+from fractions import Fraction
 
 # Supported counters only: additions require an actual observation definition.
 COUNTERS = frozenset({"games", "games_started", "snaps", "targets", "receptions", "receiving_yards",
@@ -7,6 +8,13 @@ COUNTERS = frozenset({"games", "games_started", "snaps", "targets", "receptions"
                       "passing_yards", "interceptions", "sacks", "pressures",
                       "rush_attempts", "rushing_yards", "touchdowns"})
 MODES = frozenset({"played", "cpu_played", "fast_sim"})
+EFFICIENCIES = (
+    ('reception_per_target', 'receptions', 'targets'),
+    ('receiving_yards_per_target', 'receiving_yards', 'targets'),
+    ('completions_per_pass_attempt', 'completions', 'pass_attempts'),
+    ('passing_yards_per_pass_attempt', 'passing_yards', 'pass_attempts'),
+    ('rushing_yards_per_rush_attempt', 'rushing_yards', 'rush_attempts'),
+)
 
 
 @dataclass(frozen=True)
@@ -74,3 +82,51 @@ class PerformanceEvidence:
                                                 "unavailable_reason": item.unavailable_reason}
                                  for item in self.observations},
                 "missing_counters": sorted(COUNTERS - {item.counter for item in self.observations})}
+
+    @classmethod
+    def from_context(cls, data):
+        """Reconstruct only the complete canonical observed-evidence schema."""
+        required = {'player_id','window','mode','coverage','observations','missing_counters'}
+        if (type(data) is not dict or not required <= set(data)
+                or set(data) - required - {'team_id','complete_window'}
+                or type(data['mode']) is not str or type(data['observations']) is not dict
+                or type(data['missing_counters']) is not list):
+            raise ValueError('Complete canonical performance context required')
+        observations = []
+        for counter, record in data['observations'].items():
+            if type(counter) is not str or type(record) is not dict or set(record) != {'value','source','unavailable_reason'}:
+                raise ValueError('Complete sourced observed counter required')
+            observations.append(Observation(counter, **record))
+        evidence = cls(data['player_id'], data['window'], data['mode'], tuple(observations), data['coverage'],
+                       team_id=data.get('team_id'), complete_window=data.get('complete_window'))
+        if evidence.to_context() != data:
+            raise ValueError('Performance context disagrees with canonical source metadata')
+        return evidence
+
+    def efficiency_context(self):
+        """Exact same-window ratios; zero or unknown opportunities stay unknown."""
+        records = {item.counter:item for item in self.observations}
+        def component(counter):
+            record = records.get(counter)
+            return {'counter':counter, 'value':record.value if record is not None else None,
+                'source':record.source if record is not None else None,
+                'unavailable_reason':record.unavailable_reason if record is not None
+                    else 'Counter not supplied for this observation window'}
+        efficiencies = {}
+        for name, numerator_counter, denominator_counter in EFFICIENCIES:
+            numerator, denominator = component(numerator_counter), component(denominator_counter)
+            reasons = [counter + ': ' + record['unavailable_reason'] for counter, record in
+                       ((numerator_counter,numerator),(denominator_counter,denominator)) if record['value'] is None]
+            if denominator['value'] == 0:
+                reasons.append(denominator_counter + ': zero observed opportunities')
+            value = None
+            if not reasons:
+                ratio = Fraction(numerator['value'], denominator['value'])
+                value = ratio.numerator if ratio.denominator == 1 else str(ratio)
+            efficiencies[name] = {'value':value, 'sample_count':denominator['value'],
+                'numerator':numerator, 'denominator':denominator,
+                'unavailable_reason':'; '.join(reasons) if reasons else None}
+        return {'player_id':self.player_id,'window':self.window,'mode':self.mode,'coverage':self.coverage,
+                **({'team_id':self.team_id} if self.team_id is not None else {}),
+                **({'complete_window':self.complete_window} if self.complete_window is not None else {}),
+                'efficiencies':efficiencies}

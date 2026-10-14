@@ -61,10 +61,15 @@ class Negotiation:
         self._access_check = access_check
         self._access_check()
         from franchise.performance import PerformanceEvidence
-        if isinstance(performance, PerformanceEvidence):
-            if performance.player_id != player_id:
+        observed = performance if isinstance(performance, PerformanceEvidence) else None
+        if type(performance) is dict and 'observations' in performance:
+            observed = PerformanceEvidence.from_context(performance)
+        self._efficiency = None
+        if observed is not None:
+            if observed.player_id != player_id:
                 raise ValueError("Performance evidence belongs to another player")
-            performance = performance.to_context()
+            self._efficiency = json.dumps(observed.efficiency_context(), allow_nan=False)
+            performance = observed.to_context()
         if any(type(value) is not dict for value in (personality, performance, relationships)):
             raise ValueError("Actor context fields must be JSON objects")
         # Other actor fields must not provide a back door for hidden ratings.
@@ -128,7 +133,8 @@ class Negotiation:
             raise Rejected("Offer was based on stale client franchise state")
         context = {"player_id": self.player_id, **json.loads(self._actor),
                    "offer": offer.to_dict(), "accounting": snapshot,
-                   "history": self.events, "promise_goals": proposed}
+                   "history": self.events, "promise_goals": proposed,
+                   **({'observed_efficiency': json.loads(self._efficiency)} if self._efficiency is not None else {})}
         response = provider(json.loads(json.dumps(context, allow_nan=False)))
         decision = Decision.parse(response, self.player_id)
         if proposed and decision.action == "counter" and "promise_goals" not in json.loads(response):
@@ -138,7 +144,8 @@ class Negotiation:
                  "action": decision.action, "reason": decision.reason,
                  "counter": decision.counter.to_dict() if decision.counter else None,
                  "outcome": "pending",
-                 "evidence": {**json.loads(self._actor), "financial_revision": snapshot["revision"]},
+                 "evidence": {**json.loads(self._actor), "financial_revision": snapshot["revision"],
+                     **({'observed_efficiency': json.loads(self._efficiency)} if self._efficiency is not None else {})},
                  "history_request_ids": [entry["request_id"] for entry in context["history"]]}
         if proposed or decision.counter_promises:
             event["promise_goals"] = proposed

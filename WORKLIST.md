@@ -116,6 +116,9 @@ invent future published NFL values: separate verified inputs from simulation pol
 - [ ] Feed actual statistics, roles and relationship history; label missing evidence.
 - [ ] Evaluate production with opportunities/context: targets/snaps, efficiency,
       drops, opponents/scheme, health, recency and sample size where available.
+      Five exact sourced opportunity/yardage ratios now feed negotiation and draft
+      contexts with sample counts, unknown coverage and durable recomputation.
+      Actual capture, broader context and live-model weighting remain unverified.
 - [ ] Verify whether intended-receiver targets exist in guest state or saved
       counters; otherwise instrument pass release/outcome events. Handle throws
       away, interceptions, spikes and nullified plays without inferring targets

@@ -1050,13 +1050,25 @@ class FranchiseStore:
             return  # Existing/manual records carry no model evidence claim.
         from franchise.negotiation import validate_performance
         evidence = story["evidence"]
-        if type(evidence) is not dict or set(evidence) != {"personality", "performance", "relationships", "financial_revision"}:
+        fields = {"personality", "performance", "relationships", "financial_revision"}
+        if type(evidence) is not dict or set(evidence) not in (fields, fields | {"observed_efficiency"}):
             raise ValueError("Complete model evidence snapshot required")
         if type(evidence["financial_revision"]) is not int or evidence["financial_revision"] < 0:
             raise ValueError("Evidence requires its observed financial revision")
         if any(type(evidence[field]) is not dict for field in ("personality", "performance", "relationships")):
             raise ValueError("Evidence context fields must be JSON objects")
         validate_performance(evidence)
+        if "observed_efficiency" in evidence:
+            from franchise.performance import PerformanceEvidence
+            performance = PerformanceEvidence.from_context(evidence["performance"])
+            if performance.player_id != Offer.from_dict(story["offer"]).player_id:
+                raise ValueError("Observed efficiency belongs to another player")
+            # Canonical JSON also rejects bool/int substitutions that Python
+            # object equality would otherwise consider equal.
+            expected = json.dumps(performance.efficiency_context(), sort_keys=True, allow_nan=False)
+            actual = json.dumps(evidence["observed_efficiency"], sort_keys=True, allow_nan=False)
+            if actual != expected:
+                raise ValueError("Observed efficiency disagrees with source counters")
         json.dumps(evidence, allow_nan=False)
 
     @staticmethod

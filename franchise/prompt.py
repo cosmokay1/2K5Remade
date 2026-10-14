@@ -51,3 +51,13 @@ or unfinished windows do not establish a broken promise. Retain reported health,
 coaching and opportunity context; do not invent fault or treat team wins as wholly
 within one player's or coach's control. Scores create no automatic salary/cap effect.
 """
+
+INSTRUCTIONS += """
+When observed_efficiency is supplied, it contains exact ratios calculated only
+from the same sourced window and simulation mode. Read numerator, denominator
+and sample_count together. Ratio fractions are production units, not dollars.
+These are descriptive production rates, not ability
+ratings or proof of future performance. Null rates remain unavailable; zero
+opportunities never establish poor efficiency. Do not compare different coverage
+as if it were equivalent or turn these rates into an omniscient composite score.
+"""

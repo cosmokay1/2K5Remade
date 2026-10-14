@@ -1658,3 +1658,16 @@ behavior. Raw mismatch/ZIP/empty control reject. No actual save is present; B01/
 field decoding and real round trips remain gated. Prior3cd6a5f passed Franchise AI
 38486893108 and Build38486893119; player-accounting26ead88 also passed38486762451/
 38486762354. No gameplay or save/load integration claim is made.
+
+## October 13, 2026 — Sourced production efficiency in negotiation and draft
+
+Added five exact same-window opportunity/yardage ratios retaining both counters,
+sources and sample sizes. Missing/null/zero opportunities remain unavailable;
+zero observed production and signed yardage stay valid. Negotiation and draft
+contexts use derived views without changing historical raw observation shape.
+Canonical wire reconstruction and durable derivation checks reject altered
+ratios/samples/provenance/window/boolean substitutions, including draft attempts
+to replace unavailable targets with zero rates. Legacy records remain compatible.
+323 full tests, syntax/diff and executable money audit pass. No paid inference,
+actual guest counters or live weighting verification occurred.1ad48e8 passed
+Franchise AI38487147877 and Build38487147775. Actual game integration remains gated.
