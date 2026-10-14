@@ -31,7 +31,8 @@ it from the franchise application. Keep domain rules out of the reusable core.
 - [x] Make the franchise pipe client a consumer retaining application validators, budgets and control policy.
 - [x] Add standalone asset-free protocol/echo checks and independent CI.
 - [ ] Verify Windows transport and franchise regression CI after extraction.
-- [ ] Publish a private standalone source repository with provenance; select a public reuse license before public distribution.
+- [x] Publish private standalone source with provenance: https://github.com/cosmokay1/engine-sidecar (export bdaa2df). Standalone Windows/Linux CI 38655732233 passed.
+- [ ] Select a public reuse license before public distribution.
 
 ## Active base decision — October 14, 2026
 

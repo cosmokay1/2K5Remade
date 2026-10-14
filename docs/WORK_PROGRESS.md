@@ -5325,3 +5325,10 @@ Windows/Linux CI are included. Portable addon and franchise native checks pass,
 including 2,886 native/Python guest contract cases. Windows process execution and
 regression CI remain pending. No game deployment or paid inference performed.
 Standalone source starts private; original-code licensing has not been selected.
+
+Standalone addon export bdaa2df is published privately at
+https://github.com/cosmokay1/engine-sidecar. Independent CI 38655732233 passed on
+Windows and Ubuntu, including actual Windows process/echo round trip. Consumer
+source ba8a4f5 Build check 38655649764 passed; Franchise AI 38655649598 Ubuntu
+passed and Windows was still running at this evidence update. Local 702 tests
+passed. No Windows consumer result is inferred from the standalone echo check.
