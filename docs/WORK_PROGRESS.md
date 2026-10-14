@@ -3741,3 +3741,24 @@ for the valid fixture and identity unknown for the misaligned record. This is
 Windows compilation/execution of the fixture, not a real guest signing. Private
 log: observer-check-windows.log. Replacement checks0ba8cfe Build38554154874 and
 Franchise AI38554155010 were confirmed in progress; watching the latter exact run.
+
+
+## October 14, 2026 — Observer CI verified; actual-runtime integration gate
+
+Replacement source0ba8cfe completed both workflows successfully:
+Build38554154874 and Franchise AI38554155010. The Windows test suite, protocol
+boundaries and native pipe restart fixture passed. Updated the worklist from
+stale4c7da04/pending-harness status to this exact evidence.
+
+The same actual-game gate persisted across consecutive goal turns: the user's
+PID65155 remains active on the old executable. Staged observer activation needs
+a normal exit; the user has already been asked to report closed. Independent
+work completed the bounded bank/name observer, full private Windows compile,
+Windows fixture execution, CI portability repair and signing/accounting audit.
+The next required evidence is actual selected-player readback and UI/unit agreement
+with controlled signing/save/reload pairs. Do not invent financial mappings or
+replace the original transaction while that evidence is missing. Goal remains
+unachieved: no AI/game transaction, durable story/save integration, supported
+modern accounting in the game or live required-control acceptance is verified.
+Further standalone layers do not resolve this runtime gate. No force-close,
+restart, guest/save writes or live executable replacement occurred.
