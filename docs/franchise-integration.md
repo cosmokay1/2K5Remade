@@ -540,3 +540,24 @@ remain unchanged. Extra mode-specific obligations from246F20 are not decoded;
 if they cause a difference the report refuses a match. An eventual game/modern
 ledger importer must consume reconciliation evidence and supported obligation
 data before authorizing writes; this tool itself imports or mutates nothing.
+
+
+## Packed original player history boundary
+
+Player+0x2C is the relocated history pointer (E5E70). E8A0 in the14xxxx
+region reads it and tail-calls14E800. That iterator filters bits16..22 for
+a statistic code, bits23..27 for a period code and bit29 for a selected mode;
+bit28 marks deleted entries and bit31 ends the list. A terminal entry can still
+contain a value and must not be discarded.14EE40 sign-extends the low16-bit
+value after lookup. Mode selection is external state atBD7F98, so the inspector
+retains both modes and deleted entries rather than guessing a combined total.
+
+The bank header has count at360 and relative pointer at364 (runtime bank+40/+44).
+AIBASELIN declares36866 four-byte records at41D54..65D5C.
+`python3 -m tools.inspect_player_history /path/to/SAVEGAME.DAT SOURCE_SLOT`
+checks selected named membership, declared bank extent, aligned relative player
+pointer and a terminator inside that bank. Null pointers report missing evidence;
+they are not zero performance. Output retains raw statistic/period/mode codes
+and flags with explicit unverified metric/calendar/units scope. No hidden
+ratings or model inputs are produced. Verified names/units and controlled
+played/CPU/fast-sim changes are still required before negotiation consumption.

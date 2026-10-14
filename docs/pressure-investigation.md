@@ -51,3 +51,16 @@ independently checked expected attribution/counts; and a save/load round trip
 showing no duplicates or loss. Legally obtained game assets and runtime access
 are required for that evidence. This document introduces no guessed memory
 offsets or synthetic production counters.
+
+
+## October14 — Saved history bank located
+
+Actual retail/save analysis now locates the player+0x2C history bank and its
+14E800 iterator: four-byte packed records contain signed low16-bit values,
+statistic codes in bits16..22, period codes in23..27, deletion in28, mode in29
+and termination in31. The read-only history inspector preserves raw codes and
+flags. This proves a structured saved-history source, but does not establish
+which codes represent targets, pressures or quarterback hits, their units or
+coverage. Null history is unknown. Continue with UI/accessor code mapping and
+controlled play/simulation save pairs; do not treat an unidentified code as a
+pressure or hit count.

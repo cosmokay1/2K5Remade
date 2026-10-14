@@ -24,8 +24,8 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 ## Latest verified state — October 14, 2026
 
-- Latest published verified source: `d61427b`. Build `38600646883` and Franchise AI
-  `38600646884` passed. CI checks asset-free runtime and bridge components;
+- Latest published verified source: `839b986`. Build `38601670012` and Franchise AI
+  `38601670196` passed. CI checks asset-free runtime and bridge components;
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.
@@ -220,7 +220,7 @@ invent future published NFL values: separate verified inputs from simulation pol
 - [x] Add offer previews using the same financial validation as final commits.
       Durable previews also check league ownership; previews do not reserve room.
 - [ ] Add player/agent and team/GM priorities with persistence and bounded updates. Source-backed immutable GM profiles now persist with original team configuration and feed private draft context; player priorities and bounded relationship updates already persist. GM evolution and actual CPU team strategy remain.
-- [ ] Feed actual statistics, roles and relationship history; label missing evidence.
+- [ ] Feed actual statistics, roles and relationship history; label missing evidence. Actual AIBASELIN history bank now has bounded raw-code extraction: 1325 player lists partition36866 entries without gaps/overlaps;612 members have no history pointer and remain unknown. Metric names/units, period calendars and actual model consumption remain pending.
 - [ ] Evaluate production with opportunities/context: targets/snaps, efficiency,
       drops, opponents/scheme, health, recency and sample size where available.
       Five exact sourced opportunity/yardage ratios now feed negotiation and draft

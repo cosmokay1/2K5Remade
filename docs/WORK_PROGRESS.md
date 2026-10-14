@@ -4021,3 +4021,30 @@ AI38600646884, including Windows native callback and lifecycle checks. Annual
 revision283b0e9 Build38601087383 passed; Franchise AI38601087366 was still in
 progress at inspection. Actual configured hello execution and AI signing remain
 unverified.
+
+
+## October14,2026 — Actual packed history bank extracted
+
+Mapped player+2C to14E8A0/14E800 traversal and14EE40 signed low-word values.
+Static filters establish statistic bits16..22, period23..27, deleted28, mode29
+and terminal31; bit30 is retained as unknown. Added a small read-only selected
+player history inspector with roster validation, aligned declared bank bounds
+and mandatory terminator. It retains deleted/mode records and terminal values;
+missing pointers remain unknown instead of zero. No metric labels, calendar
+years or units are guessed, and no history is yet submitted to the model.
+
+Actual AIBASELIN header360/364 declares36866 four-byte entries at41D54..65D5C.
+All1937 supported members inspected:1325 present lists,612 null pointers,36866
+entries, zero deleted entries and zero parse failures. Independently scanning
+terminal flags and comparing segment starts to all player pointers verifies
+exact bank partition with no gaps or overlap. Payload SHA256 remains
+2f82cfd9c608411c40b006db10f1e6dc6dfe46b187dd50c1ae94dd6341fd3dd2.
+Summary and Gildon/Trotter raw histories retained privately in analysis/AIBASELIN.
+
+Four authored tests passed for signed values, mode/deleted/unknown flags,
+terminal-value retention, missing-history semantics, malformed/unaligned/outside
+bank pointers, missing terminator and unsupported slots. No retail fixtures,
+ratings, save edits, game inputs or model requests were added. Targets, pressures
+and QB-hit names/coverage remain unresolved; this bank is a source to investigate,
+not permission to invent those counters. Prior839b986 passed Build38601670012
+and Franchise AI38601670196;283b0e9 also completed both workflows successfully.
