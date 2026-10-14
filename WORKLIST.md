@@ -24,9 +24,10 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 ## Latest verified state — October 14, 2026
 
-- Latest published verified source: `cb278b9`. Build `38530887689` and Franchise AI
-  `38530887732` passed. The Windows log confirms request-only launches deny AI
-  while manual reads work, and explicit token policy persists across restart.
+- Latest published verified source: `38fcc2d`. Build `38532242341` and Franchise AI
+  `38532242330` passed. These checks compile/test asset-free runtime and bridge
+  components; the actual game target is excluded. The opt-in FSM logger body also
+  passed its portable C checks. No franchise screen/signing hook is verified.
 - Current delivered local suite: **603 tests passed**. All bridge fixtures remain
   asset-free; they do not prove guest/gameplay integration.
 - Request/token ceilings and remote shutdown are sufficient for current work.

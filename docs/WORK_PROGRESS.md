@@ -3441,3 +3441,20 @@ User received the local original/disc intake path. Analysis accepts its XBE
 through explicit -Xbe; its historical default original/default.xbe remains.
 Next actual experiment is franchise navigation and selected-player readback,
 then controlled signing/save/load. Cost-policy expansion stays deferred.
+
+
+## October14,2026 — Menu-trace source checks complete; runtime input gate
+
+38fcc2d Build38532242341 passed Windows/Linux, and
+FranchiseAI38532242330 completed successfully on both platforms after observing
+its actual running Windows compile/pipe fixture job. These are asset-free checks
+and exclude the actual game target; they do not prove a franchise screen or
+signing callback. Working tree was clean before this evidence update.
+
+Checked original/ with ignored files included: onlyREADME is present. No raw
+franchise saves or available wine/wine64/PowerShell/QEMU runtime were found in
+the task's intake/tool locations. The next selected integration experiment needs
+legal Xbox assets, controlled franchise saves and Windows gameplay access.
+Source audit and the bounded existing FSM probe are ready. No guessed contract
+write or additional quota/infrastructure work will substitute for that evidence.
+User has the local intake instructions; no repeated asset request is needed.
