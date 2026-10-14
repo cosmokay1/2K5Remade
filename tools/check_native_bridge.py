@@ -752,7 +752,7 @@ def main():
                 assert replies[4]['error'] is None
                 current=c_store.load_team('a')
                 assert current.charges==(10,) and current.revision==1 and current._players=={'v'}
-                assert replies[3]['result']==c_store.player_context('a','v')
+                assert replies[4]['result']==c_store.player_context('a','v')
             print("Native Windows plain-C host adapter, bounded response retrieval and restart verified (synthetic).")
             from franchise.inference_budget import InferenceBudget
             budget_path=Path(directory)/'C budget with spaces.sqlite'

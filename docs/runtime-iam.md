@@ -207,3 +207,33 @@ launches the actual C ABI twice with missing ADC, then verifies exact SQLite
 request/token policy and zero attempts across restart while manual reads work.
 That new Windows execution is pending publication/CI; no game hooks or real
 franchise save verification is established by these synthetic fixtures.
+
+
+## Actual Windows control read on Steam Deck — October 14, 2026
+
+Under the explicitly approved temporary delegation, minted one900-second runtime
+service-account access token using explicit CLI impersonation. No owner credential
+or service-account key was exported. A conservative local expiry was890seconds
+from mint start, within the already approved fixed delegation window. This was a
+single read-only verification, not a refresh mechanism or authorization for AI.
+
+Transferred that token over authorized SSH into an owner-only700 directory with
+file mode600 and ran the existing GoogleControl with explicit nonrefreshable
+credentials under Windows CPython3.13.16/Proton. The actual authenticated object
+read/validation succeeded. Forcing the credential expiry into the past then
+refused before another object request, with no ADC/owner fallback. This tests the
+expiry boundary; it does not claim we waited900seconds for server-side expiry.
+The production control.py source hash matched exactly on Mac/Deck:
+`4565c16030075eec76cc8aec591ae4d7bccb367f9dbaa66b6bc8eb30f02ea10d`.
+
+The checker removed the Deck token in finally; the Mac copy was also removed,
+and both absences independently verified. No token was printed or committed,
+model/count request made, control object changed, key created or IAM expiry
+extended. Safe result reports win32, successful control read, expiry denial,
+no owner fallback and token removal. Test ran in the separate Python fixture
+prefix and did not configure or execute the game's sidecar.
+
+This proves the Windows control component can read with a delegated runtime token.
+Persistent keyless sidecar/Deck authentication, actual native/game hello and
+inference remain unverified; local source ADC is still unavailable. Do not turn
+this one-time token exercise into automatic renewal or credential distribution.

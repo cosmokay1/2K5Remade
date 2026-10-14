@@ -4757,3 +4757,53 @@ Latest completed published33db7a3 Build38624020793/AI38624020917 are successful;
 logs verify660 tests on both Windows/Ubuntu.482c364's failed Windows fixture is
 addressed separately by42d02fb; replacement CI has not yet run for these local
 commits. No claim of actual AI signing, new-build execution or save/load delivery.
+
+
+## October14,2026 — Deck Windows runtime control read verified
+
+Used the approved conditional runtime delegation to mint one900-second service-
+account token with explicit impersonation. Local metadata conservatively expires
+890seconds after mint start, within the existing fixed grant expiry. Owner ADC,
+refresh credentials and service-account keys were not copied. No paid generation
+or token-count request. SSH transferred the token into a700 test directory with
+mode600, and the Mac copy was removed after transfer.
+
+Actual Windows CPython3.13.16/Proton called production GoogleControl with explicit
+nonrefreshable credentials. Authenticated control object read/validation succeeded.
+Forced credential expiry then denied before another object request; no owner/ADC
+fallback. Production control.py SHA256 matched on both hosts:
+4565c16030075eec76cc8aec591ae4d7bccb367f9dbaa66b6bc8eb30f02ea10d.
+The checker deleted the Deck token in finally. Independently verified absence of
+both temporary files. Safe win32 result reports handshake=true, expiry denial=true,
+model_called=false,control_changed=false. This was one isolated component check,
+not a game hello, persistent auth setup, token renewal or control/IAM extension.
+B05 remains persistent authentication/game execution, not inability to perform
+any delegated Windows control read.
+
+## October14,2026 — Native fixture context-index failure repaired
+
+Replacement684168e Build38626325409 passed. AI38626325397 reached/passed Python,
+audit/examples, Windows native compilation and protocol checks, then failed at
+check_native_bridge.py755: an unchanged replies[3] assertion compared the manual
+signing receipt to player_context after adding the proposal at index2. Corrected
+that one assertion to replies[4]; no production behavior or expected state changed.
+
+Privately compiled the current C host/client/protocol fixtures with MSVC, then
+executed the actual C ABI/Windows sidecar with packaged CPython under isolated
+Proton. Both runs verify5 replies, hello, preview, explicit proposal rejection,
+manual signing, full player_context comparison and durable restart. Process exited0;
+retrieved win32 artifact confirms charge10 and room90. No game EXE installed or
+asset/save/model/control mutation. The broader hosted replacement run remains
+required; the previous run's native failure is not reported as success.
+
+## October14,2026 — Defensive history unit investigation
+
+Read descriptor field0x32→history18/current getterC9C40 at+184, and field0x2F→
+history19/current getterC9C80 at+17C. Named presentation API fields alone do not
+prove these guest labels. Raw18 totals differ from modern NFL tackle totals;
+no tackles mapping was guessed or normalized. Gildon's ten pre-2004 raw19 values,
+divided by2, match [NFL's sacks column](https://www.nfl.com/players/jason-gildon/stats/career).
+Trotter's final candidate differs from [NFL's table](https://www.nfl.com/players/jeremiah-trotter/stats/career).
+This supports a half-unit sack candidate, not universal live/coverage verification.
+No defensive code was added to named exports yet. Raw histories remain private,
+with no ratings or invented targets/pressures/QB hits introduced.
