@@ -2,7 +2,7 @@
 
 ## Delivery target
 
-Tested Windows and Steam Deck (Proton) packages of the independent Remade fork in which actual franchise
+Tested Windows and Steam Deck packages using **SOFTDRINK 2K28 on Remade as the preferred game base**, subject to compatibility verification, in which actual franchise
 negotiations and draft decisions use persistent personalities, performance, relationships, and
 history; all financial transactions obey the supported modern NFL cap/rookie
 rules; saves preserve contracts and stories; and remote shutdown stops AI
@@ -21,6 +21,38 @@ are required.** No completion date is promised before the runtime inputs exist.
 Repository: https://github.com/cosmokay1/2K5Remade
 Branch: `codex/franchise-negotiation`. Progress evidence: [WORK_PROGRESS.md](docs/WORK_PROGRESS.md).
 Resume from the earliest unblocked unchecked item, respecting dependencies.
+
+## Current priority — standalone connection addon
+
+The user requested extracting connection tooling into its own addon, then consuming
+it from the franchise application. Keep domain rules out of the reusable core.
+
+- [x] Extract original Windows process/pipe ownership, launch quoting and JSON envelope validation into addons/engine-sidecar.
+- [x] Make the franchise pipe client a consumer retaining application validators, budgets and control policy.
+- [x] Add standalone asset-free protocol/echo checks and independent CI.
+- [ ] Verify Windows transport and franchise regression CI after extraction.
+- [ ] Publish a private standalone source repository with provenance; select a public reuse license before public distribution.
+
+## Active base decision — October 14, 2026
+
+The user selected SOFTDRINK if compatible. Prioritize the Xbox Remade pack path;
+NFL 2K27/PCSX2 migration is deferred. Preserve prior PS2 research as reference.
+The existing AI engine is reusable; no pack/game AI signing is verified yet.
+Do not deploy superseded staged diagnostics blindly or overwrite existing saves.
+
+- [ ] Pin SOFTDRINK v0.6 patch/checksum, retail input and Remade runtime; verify
+      installation/reconstruction and applicable attribution/distribution terms.
+- [ ] Verify the interpreter pack path on Windows/Deck: boot, fresh franchise,
+      played/simulated transitions and clean shutdown, including known freeze cases.
+- [ ] Capture controlled pack signing/save/reload evidence; verify player identity,
+      history, experience, calendar, salaries/payroll/cap and effective money scale.
+- [ ] Revalidate existing Xbox observer and bridge against pack code and saves;
+      implement held negotiation, proposal presentation and legal commit/recovery.
+- [ ] Verify modern accounting, rookie/draft rules, promises, remote shutdown and
+      final Windows/Deck acceptance against the pinned pack.
+
+See [SOFTDRINK_AI_BASE.md](docs/SOFTDRINK_AI_BASE.md). Old native/PS2 evidence does
+not establish v0.6 compatibility or a new completion percentage.
 
 ## Latest verified state — October 14, 2026
 

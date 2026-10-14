@@ -5302,3 +5302,26 @@ active, so no game/package installation occurred. Frozen performance artifact
 classification policy, ledger transaction or guest write occurred. Actual-game
 panel placement/controller checks, proposal action, legal commit/recovery and
 save/load remain unfinished.
+
+
+## October 14, 2026 — SOFTDRINK preferred base
+
+User selected SOFTDRINK if compatible, superseding PS2-first migration. Inspected
+current v0.6 public release and local main/mod-pack interpreter startup; identified
+newer shared-executable support versus historical separate-build notes. Worklist
+now prioritizes pinned pack execution and controlled franchise save pairs before
+AI writes. No v0.6 execution, paid inference, game deployment or save mutation
+performed. Compatibility and playable AI remain unverified.
+
+
+## October 14, 2026 — standalone connection addon extraction
+
+Extracted original C++17 Windows owned-process pipe transport, launch quoting and
+strict JSON envelope validator to addons/engine-sidecar. Core has no franchise
+imports, AI provider, cloud control, game assets or guest-memory access. Franchise
+PipeClient now consumes it and retains result/contract validation; launch arguments
+retain explicit provider/budget policy. Standalone Python echo and independent
+Windows/Linux CI are included. Portable addon and franchise native checks pass,
+including 2,886 native/Python guest contract cases. Windows process execution and
+regression CI remain pending. No game deployment or paid inference performed.
+Standalone source starts private; original-code licensing has not been selected.

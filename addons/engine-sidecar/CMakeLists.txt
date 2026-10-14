@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.20)
+project(EngineSidecar LANGUAGES CXX)
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/include/nlohmann")
+file(DOWNLOAD "https://github.com/nlohmann/json/releases/download/v3.12.0/json.hpp"
+  "${CMAKE_BINARY_DIR}/include/nlohmann/json.hpp"
+  EXPECTED_HASH SHA256=aaf127c04cb31c406e5b04a63f1ae89369fccde6d8fa7cdda1ed4f32dfc5de63
+  TLS_VERIFY ON TIMEOUT 45)
+add_library(engine_sidecar INTERFACE)
+target_include_directories(engine_sidecar INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_BINARY_DIR}/include")
+target_compile_features(engine_sidecar INTERFACE cxx_std_17)
+enable_testing()
+add_executable(sidecar_protocol_check tests/protocol_check.cpp)
+target_link_libraries(sidecar_protocol_check PRIVATE engine_sidecar)
+add_test(NAME protocol COMMAND sidecar_protocol_check)
+if(WIN32)
+  find_package(Python3 REQUIRED COMPONENTS Interpreter)
+  add_executable(sidecar_echo_check tests/echo_check.cpp)
+  target_link_libraries(sidecar_echo_check PRIVATE engine_sidecar)
+  target_compile_definitions(sidecar_echo_check PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+  add_test(NAME echo COMMAND sidecar_echo_check "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/examples/echo.py")
+  set_tests_properties(echo PROPERTIES TIMEOUT 20)
+endif()

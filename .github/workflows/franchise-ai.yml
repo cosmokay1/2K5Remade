@@ -32,6 +32,11 @@ jobs:
           python -m examples.story_negotiation --provider scripted
           python -m examples.persistent_negotiation
           python -m examples.personality_continuity
+      - name: Build standalone engine sidecar addon
+        run: |
+          cmake -S addons/engine-sidecar -B build-engine-sidecar
+          cmake --build build-engine-sidecar --config Release
+          ctest --test-dir build-engine-sidecar -C Release --output-on-failure
       - name: Compile asset-free native protocol and Windows pipe client
         run: |
           cmake -S native/franchise_bridge -B build-franchise-bridge

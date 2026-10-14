@@ -24,16 +24,16 @@ int main(int argc,char** argv) {
         if(argc!=1) throw std::runtime_error("Unsupported protocol-check arguments");
         const franchise::BudgetLaunch launch_budget{LR"(C:\budget path\ledger.sqlite)",L"scope \"quoted\" --provider offline-fixture",17};
         const auto budget_command=franchise::launch_command(L"python path",L"database path",franchise::ServiceMode::VertexRuntime,launch_budget);
-        const auto expected_budget=franchise::quote(L"python path")+L" -m franchise.sidecar --database "+franchise::quote(L"database path")+
-            L" --provider vertex --impersonate-runtime --ai-budget-database "+franchise::quote(launch_budget.database)+
-            L" --ai-budget-scope "+franchise::quote(launch_budget.scope)+L" --ai-request-limit 17";
+        const auto expected_budget=franchise::quote(L"python path")+L" \"-m\" \"franchise.sidecar\" \"--database\" "+franchise::quote(L"database path")+
+            L" \"--provider\" \"vertex\" \"--impersonate-runtime\" \"--ai-budget-database\" "+franchise::quote(launch_budget.database)+
+            L" \"--ai-budget-scope\" "+franchise::quote(launch_budget.scope)+L" \"--ai-request-limit\" \"17\"";
         if(budget_command!=expected_budget || franchise::quote(L"a\"b\\")!=L"\"a\\\"b\\\\\"") throw std::runtime_error("Launch quoting changed");
         for(auto mode:{franchise::ServiceMode::OfflineFixture,franchise::ServiceMode::VertexRuntime})
             if(franchise::launch_command(L"python",L"db",mode).find(L"--ai-budget")!=std::wstring::npos)
                 throw std::runtime_error("Implicit launch budget added");
         auto token_budget=launch_budget;token_budget.token_limit=110;
         if(franchise::launch_command(L"python path",L"database path",franchise::ServiceMode::VertexRuntime,token_budget)!=
-            expected_budget+L" --ai-token-limit 110" || budget_command.find(L"--ai-token-limit")!=std::wstring::npos)
+            expected_budget+L" \"--ai-token-limit\" \"110\"" || budget_command.find(L"--ai-token-limit")!=std::wstring::npos)
             throw std::runtime_error("Token policy launch forwarding changed");
         for(auto value:{0ULL,~0ULL}) {
             token_budget.token_limit=value;bool rejected=false;
@@ -43,7 +43,7 @@ int main(int argc,char** argv) {
         }
         token_budget.token_limit=static_cast<unsigned long long>(std::numeric_limits<long long>::max());
         if(franchise::launch_command(L"python",L"db",franchise::ServiceMode::VertexRuntime,token_budget).find(
-            L" --ai-token-limit 9223372036854775807")==std::wstring::npos)
+            L" \"--ai-token-limit\" \"9223372036854775807\"")==std::wstring::npos)
             throw std::runtime_error("Maximum token policy was truncated");
         for(int scenario=0;scenario<7;++scenario) {
             auto budget=launch_budget;auto mode=franchise::ServiceMode::VertexRuntime;

@@ -1,3 +1,7 @@
+> Connection core extracted to [Engine Sidecar](../addons/engine-sidecar/README.md).
+> The franchise wrapper retains launch policy, grants and contract/result validation.
+> Historical pending notes below must be read with WORK_PROGRESS.md runtime evidence.
+
 # Franchise sidecar protocol 1
 
 `franchise.bridge.Bridge` is the injectable request handler.

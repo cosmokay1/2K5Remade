@@ -1,9 +1,15 @@
 > **Independent development fork:** [cosmokay1/2K5Remade](https://github.com/cosmokay1/2K5Remade)
 > derives from [BeyondTomrrow/2K5Remade](https://github.com/BeyondTomrrow/2K5Remade).
 > Credit for the native port belongs to its upstream maintainers and contributors.
+> Original companion connection tooling is extracted in [Engine Sidecar](addons/engine-sidecar/README.md).
 > Our franchise AI prototype is described in [FRANCHISE-AI.md](docs/FRANCHISE-AI.md).
 > It is not integrated into the game, and this fork is not an upstream-endorsed release.
 > See [fork attribution and permission status](FORK_NOTICE.md) before redistribution.
+>
+> **Franchise AI target update:** SOFTDRINK 2K28 on the native Xbox Remade
+> runtime is now the preferred base, subject to verified pack compatibility.
+> NFL 2K27/PCSX2 migration is deferred. See [compatibility gates](docs/SOFTDRINK_AI_BASE.md)
+> and [worklist](WORKLIST.md).
 
 [![Upstream build check](https://github.com/BeyondTomrrow/2K5Remade/actions/workflows/build-check.yml/badge.svg?branch=master)](https://github.com/BeyondTomrrow/2K5Remade/actions/workflows/build-check.yml)
 ---

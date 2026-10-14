@@ -13,7 +13,10 @@ of upstream work is claimed.
 The `codex/franchise-negotiation` branch adds the original Python franchise AI
 prototype (`franchise/`), its tests/examples, Google configuration and remote
 control, save-diff/audit utilities, original native pipe transport/checks
-(`native/franchise_bridge/`), and associated documentation. Developed for
+(`native/franchise_bridge/`), and associated documentation. The original transport core is now extracted to
+`addons/engine-sidecar/`; the franchise pipe client consumes that core while
+retaining domain validation. No inherited game runtime is included in the addon.
+Developed for
 cosmokay1 with Codex assistance. These additions have not been connected to
 Remade's franchise functions. See [prototype documentation](docs/FRANCHISE-AI.md)
 and [money audit](docs/franchise-money-audit.md).
