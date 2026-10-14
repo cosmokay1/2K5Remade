@@ -746,7 +746,8 @@ class FranchiseStore:
         if ledger._cash is None:
             return
         for agreement in ledger.generation_agreements():
-            record=ledger.generation_cash(agreement.identity.generation_id)
+            # The archive view validates canonical identities and archive-map coverage.
+            record=ledger._cash.records.get(agreement.identity.cash_obligation_id)
             if record is None:
                 raise ValueError('Known cash coverage lacks contract generation obligation')
             if record.paid_components is None:

@@ -2110,3 +2110,25 @@ independent comparisons against the old dataclass serializer produced identical
 JSON and verified output component mutation cannot alter immutable records.
 All429 Python tests and money audit pass. These are local synthetic measurements
 with profiler overhead, not game-frame, Windows or Deck acceptance.
+
+### Reuse validated agreement identities in component checks (2026-10-13)
+
+Profiling showed _check_cash_components called generation_agreements, which
+validates complete archive-map coverage and canonical identities, then revalidated
+each same identity through generation_cash before the same cash-record lookup.
+Component checks now use the already-validated immutable agreement cash ID.
+Each Store call operates on a fresh local replay/write ledger; no cross-read
+cache, shared mutable ledger or skipped component ceiling check is introduced.
+Missing cash still rejects, and checkpoint/source replay remains unchanged.
+
+Independent read-only review and37 focused corruption/archive/cash tests passed.
+All429 tests and money audit pass. Fixed profiled workload retains1364 component
+checks while canonical identity checks drop147108 to74816; component cumulative
+time1.625s to0.925s and total profiled workload3.871s to3.330s. Unprofiled
+format4 readmedian96.81ms/max110.51ms and compactretrymedian110.57ms; replies
+still71346/3043bytes and exact database state is preserved. Timing is local
+synthetic evidence, not game-frame/Windows/Deck acceptance.
+
+Cash-binding commit fbe9e80 passed Windows/Ubuntu429tests and native compact
+long-franchise reconciliation/restart fixture in CI38499239068. Later source
+changes still need their own CI; actual game/save gates remain unresolved.
