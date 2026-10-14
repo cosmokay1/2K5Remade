@@ -3191,3 +3191,26 @@ Added an actual Windows owned-pipe release smoke with restarts, later rollover a
 retained payroll. Its execution awaits this commit's CI. History-aware assignments,
 full-history inspection and actual guest/save integration remain open. No playable
 game delivery is claimed.
+
+
+## October 13, 2026 — History-aware paired assignments ready for Windows CI
+
+f7d9ad9 Build 38522825831 and Franchise AI 38522825921 passed. The Windows log
+confirms layered release full/compact history, retained payroll and rollover
+restart execution. New calendar_layered_trade_out/in Store events bind both
+clubs' format2 generation histories, exact paired postings/roles, identity,
+ownership and rollback. Seller retains immutable amendment history and bonus
+debt; buyer receives remaining salary/guarantees with fresh cash indices and no
+inherited bonus layers. A return assignment through 2030 preserves the buyer's
+older layered archives alongside the fresh agreement. Old routes remain guarded.
+Explicit manual_trade calendar_v2 now returns bound format3 full/compact seller
+history receipts. Native checks validate exact year/cursor and source/cash/payment
+continuity, complete settled bonuses, retained record identity, actual chronology,
+separate buyer compensation and paired financial/cash postings. All 558 offline
+tests passed. Rebuilt portable protocol checks passed with 26 new corruption
+cases, and four actual sidecar full/compact fresh/historical replies validate.
+Golden JSON chunks are limited to 4096 characters for MSVC portability.
+Added actual Windows owned-pipe layered assignment smoke across restart, buyer
+payroll, rollover and buyer release. That execution awaits this commit's CI.
+Full-history inspection and actual game/save integration remain outstanding;
+no playable delivery is claimed.

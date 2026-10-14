@@ -55,17 +55,21 @@ def _identity_cash(generation,player):
         raise ValueError('Canonical agreement identity required')
     return generation if prefix=='contract-gen:' else 'contract:'+player
 
-def _receipt_amendment_history(receipt):
-    history=receipt.get('amendment_history')
+def _amendment_history(history):
     fields={'original_contract','original_cash','scope','annual_minimums','converted_base','bonus_layer','contract','cash_obligation'}
-    if (set(receipt)!={'format','generation_id','league_year','financial','cash','amendment_history'}
-            or type(history) is not dict or set(history)!={'format','prior_restructures','latest_restructure'}
+    if (type(history) is not dict or set(history)!={'format','prior_restructures','latest_restructure'}
             or type(history['format']) is not int or history['format']!=1
             or type(history['prior_restructures']) is not list or not history['prior_restructures']
             or any(type(plan) is not dict or set(plan)!=fields
                 for plan in [*history['prior_restructures'],history['latest_restructure']])):
         raise ValueError('Invalid layered amendment history receipt')
     return history
+
+
+def _receipt_amendment_history(receipt):
+    if set(receipt)!={'format','generation_id','league_year','financial','cash','amendment_history'}:
+        raise ValueError('Invalid layered amendment history receipt')
+    return _amendment_history(receipt.get('amendment_history'))
 
 
 def compact_lifecycle_result(result,operation):
@@ -127,6 +131,20 @@ def compact_lifecycle_result(result,operation):
         incoming=projected['trade'][buyer]['financial']['incoming_trades'][player]
         if _canonical(outgoing)!=_canonical(incoming):
             raise ValueError('Paired lifecycle archives disagree')
+        if 'amendment_history' in result or result.get('calendar_format')=='calendar_v2' or result.get('format')==3:
+            if (type(result.get('format')) is not int or result['format']!=3
+                    or result.get('calendar_format')!='calendar_v2' or type(result.get('league_year')) is not int):
+                raise ValueError('Explicit history-aware assignment receipt required')
+            history=_amendment_history(result.get('amendment_history'))
+            latest=history['latest_restructure']
+            original=dict(latest['contract'])
+            delta=result['league_year']-latest['scope']['league_year']
+            original['elapsed_years']+=delta
+            if (delta<0 or _canonical(original)!=_canonical(outgoing['original_contract'])
+                    or latest['cash_obligation']['obligation_id']!=source
+                    or _canonical(latest['cash_obligation']['amount'])!=_canonical(outgoing['original_cash']['amount'])
+                    or latest['cash_obligation']['source']!=outgoing['original_cash']['source']):
+                raise ValueError('Assignment changed amendment history or original cash')
     else:
         raise ValueError('Compact receipt unsupported for this operation')
     return projected

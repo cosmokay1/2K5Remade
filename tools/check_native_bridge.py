@@ -649,6 +649,50 @@ def main():
         finally:release_fixture.doCleanups()
         print("Native Windows layered release full/compact history, retained payroll and rollover restart verified (synthetic).")
 
+        from tests import test_layered_trade_bridge
+        trade_history_fixture=test_layered_trade_bridge.LayeredTradeBridgeTests()
+        trade_history_fixture.setUp()
+        try:
+            requests=[trade_history_fixture.request,{**trade_history_fixture.request,'receipt_format':'target_v1'}]
+            payload=''.join(json.dumps(item,separators=(',',':'))+'\n' for item in requests)
+            historical=None
+            for phase in ('assignment','next_year','buyer_release'):
+                fixture=trade_history_fixture.fixture
+                if phase=='next_year':
+                    fixture.fixture.pay('b','base:0',1800000);fixture.fixture.roll(('a','b'),2028)
+                if phase=='buyer_release':
+                    from datetime import date
+                    from fractions import Fraction
+                    from franchise.releases import PreseasonReleaseScope,EXCLUDED_LIABILITIES
+                    from franchise.guarantees import DiscountProfile
+                    ledger=fixture.store.load_team('b')
+                    fixture.store.release_calendar_preseason_veteran('b','native-history-buyer-release','v',
+                        generation_id=ledger.contract_identity('v').generation_id,
+                        scope=PreseasonReleaseScope(2029,date(2029,6,1),date(2029,9,10),EXCLUDED_LIABILITIES,
+                            True,True,0,'synthetic buyer release'),discount=DiscountProfile(2029,Fraction(0),'synthetic zero'),
+                        payment_year_offsets=(0,),expected_revision=ledger.revision,access_check=lambda:None)
+                previous=None
+                for attempt in range(2):
+                    result=subprocess.run([sys.argv[1],sys.executable,str(fixture.path),'--calendar-history'],
+                        input=payload,text=True,capture_output=True,timeout=30,check=True)
+                    replies=[json.loads(line) for line in result.stdout.splitlines()]
+                    assert len(replies)==2 and all(reply['error'] is None for reply in replies)
+                    assert replies==[trade_history_fixture.bridge.handle(item) for item in requests]
+                    assert replies[0]['result']['format']==3
+                    assert replies[0]['result']['amendment_history']==replies[1]['result']['amendment_history']
+                    if attempt:assert replies==previous and fixture.path.read_bytes()==unchanged
+                    else:unchanged=fixture.path.read_bytes()
+                    if historical is not None:assert replies==historical
+                    previous=replies
+                historical=previous
+            seller=FranchiseStore(fixture.path).load_team('a');buyer=fixture.store.load_team('b')
+            assert len(seller.generation_accounting(fixture.gid).prior_restructures)==1
+            incoming=buyer.generation_accounting(historical[0]['result']['buyer_generation_id'])
+            assert incoming.contract.bonus_layers==() and incoming.prior_restructures==()
+            assert incoming.status=='released' and buyer.cash_snapshot()['nominal_total']==1800000
+        finally:trade_history_fixture.doCleanups()
+        print("Native Windows layered assignment full/compact history, separate buyer payroll/release and rollover restart verified (synthetic).")
+
         if len(sys.argv)>2:
             c_path=Path(directory)/'C host ownership.sqlite'
             c_store=FranchiseStore(c_path)

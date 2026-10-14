@@ -118,7 +118,7 @@ class Bridge:
                 allowed=(base|{'seller_generation_id','buyer_previous_generation_id','calendar_format'},) if calendar else (base,base|{'seller_generation_id','buyer_previous_generation_id'})
                 if request_fields not in allowed or request['decision_mode']!='manual':
                     raise ValueError('Explicit complete manual assignment required')
-                if calendar and request['calendar_format']!='calendar_v1':
+                if calendar and request['calendar_format'] not in ('calendar_v1','calendar_v2'):
                     raise ValueError('Unsupported calendar assignment format')
                 seller_generation=request.get('seller_generation_id')
                 buyer_previous=request.get('buyer_previous_generation_id')
@@ -158,8 +158,10 @@ class Bridge:
                     return receipt_result({'decision_mode':'manual','player_id':request['player_id'],
                         'seller':request['seller'],'buyer':request['buyer'],
                         'trade':receipt['participants'] if identity else receipt,**identity,
-                        **({'calendar_format':'calendar_v1','format':receipt['format'],'league_year':receipt['league_year']} if calendar else {})})
-                trade=self.store.trade_calendar_preseason_veteran if calendar else self.store.trade_preseason_veteran
+                        **({'calendar_format':request['calendar_format'],'format':receipt['format'],'league_year':receipt['league_year'],
+                            **({'amendment_history':receipt['amendment_history']} if request['calendar_format']=='calendar_v2' else {})} if calendar else {})})
+                trade=(self.store.trade_calendar_layered_preseason_veteran if calendar and request['calendar_format']=='calendar_v2'
+                       else self.store.trade_calendar_preseason_veteran if calendar else self.store.trade_preseason_veteran)
                 receipt=trade(request_id,request['seller'],request['buyer'],request['player_id'],
                     scope=PreseasonTradeScope(**scope),seller_revision=request['seller_revision'],buyer_revision=request['buyer_revision'],
                     access_check=trade_access,seller_generation_id=seller_generation,

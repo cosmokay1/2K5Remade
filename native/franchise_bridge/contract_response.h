@@ -861,10 +861,11 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         const bool compact=target_receipt_mode(result,request);
         const auto seller=request.at("seller").get<std::string>(), buyer=request.at("buyer").get<std::string>();
         const bool calendar=request.contains("calendar_format");
+        const bool layered=calendar && request.at("calendar_format")=="calendar_v2";
         if(calendar) {
-            if(request.at("calendar_format")!="calendar_v1" || !request.contains("seller_generation_id") ||
-                !request.contains("buyer_previous_generation_id") || !result.is_object() || result.size()!=(compact ? 12 : 11) ||
-                result.at("calendar_format")!=request.at("calendar_format") || !result.at("format").is_number_integer() || result.at("format")!=2)
+            if((!layered && request.at("calendar_format")!="calendar_v1") || !request.contains("seller_generation_id") ||
+                !request.contains("buyer_previous_generation_id") || !result.is_object() || result.size()!=(layered ? (compact ? 13 : 12) : (compact ? 12 : 11)) ||
+                result.at("calendar_format")!=request.at("calendar_format") || !result.at("format").is_number_integer() || result.at("format")!=(layered?3:2))
                 throw std::runtime_error("Invalid calendar assignment receipt format");
             integer_money(result.at("league_year"));integer_money(request.at("scope").at("league_year"));
             if(result.at("league_year")!=request.at("scope").at("league_year") || result.at("league_year")<2020 || result.at("league_year")>2030)
@@ -902,6 +903,7 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         for (const auto& team : {seller,buyer}) {
             const auto& financial=postings.at(team).at("financial");
             const auto& cash=postings.at(team).at("cash");
+            if(layered && financial.at("charges").empty()) throw std::runtime_error("Layered assignment omitted current cap obligations");
             const auto& expected_json=request.at(team==seller ? "seller_revision" : "buyer_revision");
             integer_money(expected_json); integer_money(financial.at("revision"));
             const auto expected=expected_json.get<int64_t>();
@@ -958,6 +960,32 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         if(calendar) {
             const auto& archive=postings.at(seller).at("financial").at("outgoing_trades").at(player);
             const auto& original=archive.at("original_contract");
+            if(layered) {
+                const auto cash_id=generation_cash_identity(request.at("seller_generation_id"),player);
+                const auto& latest=validate_amendment_history(result.at("amendment_history"),player,cash_id);
+                const auto delta=result.at("league_year").get<int64_t>()-latest.at("scope").at("league_year").get<int64_t>();
+                auto expected=latest.at("contract");
+                expected["elapsed_years"]=expected.at("elapsed_years").get<int64_t>()+delta;
+                if(delta<0 || expected.dump()!=original.dump()) throw std::runtime_error("Layered assignment changed source economic terms or cursor");
+                if(!scope.at("traded_on").is_string() || (delta==0 && scope.at("traded_on").get<std::string>()<
+                    latest.at("scope").at("amended_on").get<std::string>())) throw std::runtime_error("Layered assignment precedes latest amendment");
+                const auto& previous_cash=latest.at("cash_obligation");const auto& current_cash=archive.at("original_cash");
+                if(current_cash.at("player_id")!=player || current_cash.at("obligation_id")!=cash_id ||
+                    current_cash.at("amount")!=previous_cash.at("amount") || current_cash.at("source")!=previous_cash.at("source"))
+                    throw std::runtime_error("Layered assignment changed original nominal cash/source");
+                std::map<std::string,int64_t> paid;
+                for(const auto& row:current_cash.at("paid_components")) paid[row[0].get<std::string>()]=row[1].get<int64_t>();
+                for(const auto& row:previous_cash.at("paid_components"))
+                    if(paid[row[0].get<std::string>()]<row[1].get<int64_t>()) throw std::runtime_error("Layered assignment dropped prior payments");
+                const auto& retained=archive.at("retained_bonus");
+                const auto id="calendar-layered-trade:"+request.at("request_id").get<std::string>()+":seller-bonus";
+                if(!retained.is_object() || retained.size()!=3 || retained.at("record_id")!=id ||
+                    !retained.at("source").is_string() || retained.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
+                    throw std::runtime_error("Layered assignment retained identity differs from request");
+                if(request.at("request_id").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos ||
+                    player.find_first_not_of(" \t\r\n")==std::string::npos)
+                    throw std::runtime_error("Missing layered assignment identity");
+            }
             auto offer=canonical_offer(original.at("offer"));
             integer_money(original.at("elapsed_years"));
             const auto cursor=original.at("elapsed_years").get<int64_t>();

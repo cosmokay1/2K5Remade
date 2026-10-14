@@ -352,3 +352,11 @@ exact year/cursor/payment continuity, preserved release/trade history and explic
 later-year Ledger mutation now pass within 528 offline tests. Legacy generation
 snapshots reject history-bearing state. Versioned Store replay/snapshots and
 native repeated-conversion routing remain next; no guest integration is implied.
+
+
+History-aware assignments now have atomic paired format2 Store replay with both
+teams' complete generation snapshots, format3 seller-history receipts, explicit
+calendar_v2 sidecar/native routing and full/compact cash validation. 558 offline
+tests and rebuilt native checks pass; actual Windows layered trade execution is
+pending CI. The prior history-aware release was verified on Windows run38522825921.
+Full-history inspection and actual guest transactions remain open.

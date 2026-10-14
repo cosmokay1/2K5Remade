@@ -280,3 +280,14 @@ out, and later payroll preserves original component indices. Historical full and
 compact receipts remain unchanged after rollover and payment. Other history-aware
 assignment paths remain guarded pending their corresponding event/receipt support.
 Actual Windows release pipe execution awaits CI; guest save/load remains unverified.
+
+
+History-aware assignments now use distinct calendar_layered_trade_out/in events
+with a shared format2 source and complete before/after generation snapshots for
+both teams. The explicit manual_trade calendar_format=calendar_v2 path returns
+format3 receipts containing the seller's full amendment history. The seller keeps
+original bonus/payment indices; the buyer starts a separate salary-only agreement.
+Full/compact native validation and replay bind this history to the actual trade
+year, terms, source cash and paired ownership/postings. Existing buyer histories
+remain archived independently. Actual Windows layered assignment pipe execution
+awaits CI; real guest transactions and save/load evidence remain absent.
