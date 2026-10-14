@@ -67,6 +67,11 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   after verified normal game/service exit. Actual Trotter same-screen execution
   now verifies one context reply without an intervening FSM transition, unchanged
   finances and zero model attempts. It does not enable AI or contract writes.
+- Saved historical performance is now an opt-in signing-context format with
+  native identity/unit/source checks and explicit unknown coverage. Actual Trotter
+  service checks return six game entries/four sack entries; Windows build/runtime
+  checks pass. The new game/service package is staged for actual game validation,
+  and is not yet installed. Targets, pressures and QB hits remain unmapped.
 - Actual AI/game/save integration, telemetry capture and final playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 

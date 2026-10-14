@@ -49,6 +49,20 @@ class SigningContextBridgeTests(unittest.TestCase):
         self.assertEqual(self.bridge.handle(self.request)['error'], 'ai_disabled')
         self.provider.assert_not_called()
 
+    def test_saved_performance_keeps_identity_and_missing_metrics_unknown(self):
+        request={**self.request,'performance_format':'saved_history_v1'}
+        reply=self.bridge.handle(request)
+        self.assertIsNone(reply['error'])
+        evidence=reply['result']['performance_context']
+        self.assertEqual(evidence['player_id'],reply['result']['player_id'])
+        self.assertFalse(evidence['history_present'])
+        self.assertEqual(evidence['saved_history'],[])
+        self.assertEqual(len(evidence['missing_named_metrics']),10)
+        self.assertEqual(evidence['unmapped_requested_metrics'],['tackles','targets','pressures','qb_hits'])
+        self.assertNotIn('performance_context',self.bridge.handle(self.request)['result'])
+        self.assertEqual(self.bridge.handle({**request,'performance_format':'live'})['error'],'invalid_request')
+        self.provider.assert_not_called(); self.access.assert_not_called()
+
     def test_actual_process_uses_server_pinned_snapshot_despite_missing_adc(self):
         root = Path(self.fixture.temporary.name)
         save, bindings = root / 'authored.dat', root / 'bindings.json'

@@ -192,7 +192,7 @@ snapshot and preserved ledger; a new year/bank or changed modern book does not
 automatically rebind. The result identifies the saved player/context and revision
 but explicitly grants neither AI nor write permission. Cash/rookie reconciliation,
 active franchise selection and atomic precommit checks remain required. This tool
-is not yet called automatically by the native game bridge.
+has no guest-memory access; the game invokes the equivalent service operation below.
 
 The sidecar exposes the same read as `signing_context`, with protocol/request_id,
 operation, observation, expected_revision and timeout_ms. Configure both
@@ -201,6 +201,18 @@ NFL2K5_FRANCHISE_GUEST_BINDINGS) before startup. The service validates and pins
 these files; callers cannot submit replacement file paths. No source configured
 means state_rejected. Complete source validation fails startup instead of creating
 new bindings. This read works with AI disabled and performs no model call.
+Optional performance_format=saved_history_v1 returns performance_context using
+the same pinned player/snapshot. It retains sparse historical values, raw period/
+mode codes, candidate years, entry sources, exclusion counts and missing metrics.
+It neither aggregates seasons nor assigns live/CPU/fast-sim coverage, salary
+credits or promise outcomes. Inferred half-unit sacks retain raw units and scope;
+tackles/targets/pressures/QB hits stay explicitly unmapped. Native validation
+rejects foreign identity/source, unsupported metrics/ratings, invalid units,
+duplicate entry sources and contradictions in missing/present evidence. Base
+requests keep their previous response shape. NFL2K5_FRANCHISE_SAVED_PERFORMANCE=1
+opts the root inspector into this format, requiring pinned source configuration;
+unset/0 leaves it off and other values reject startup. This new format is staged,
+not yet verified through the actual game.
 Native validation correlates the returned team, bank slot, revision and nested
 persisted player context, requiring canonical UUID/source hashes and explicitly
 false AI/write-authority flags. A matching reply is a read checkpoint, never an

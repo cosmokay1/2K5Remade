@@ -53,8 +53,11 @@ class Bridge:
                     operations.append('signing_context')
                 return self._reply(request_id, result={"ai_enabled": True, "operations": operations})
             if operation == 'signing_context':
-                if set(request) != {'protocol', 'request_id', 'operation', 'observation', 'expected_revision', 'timeout_ms'}:
+                fields = {'protocol', 'request_id', 'operation', 'observation', 'expected_revision', 'timeout_ms'}
+                if set(request) not in (fields, fields | {'performance_format'}):
                     raise ValueError('Complete signing checkpoint request required')
+                if 'performance_format' in request and request['performance_format'] != 'saved_history_v1':
+                    raise ValueError('Unsupported saved performance format')
                 timeout = request['timeout_ms']
                 if type(timeout) is not int or not 1 <= timeout <= 60000:
                     raise ValueError('Bounded signing checkpoint timeout required')
@@ -66,6 +69,12 @@ class Bridge:
                 try:
                     result = reconcile_signing_context(*self.guest_snapshot, request['observation'],
                         self.store, expected_revision=request['expected_revision'])
+                    if 'performance_format' in request:
+                        from tools.export_player_performance import saved_player_performance
+                        performance = saved_player_performance(*self.guest_snapshot, result['source_slot'])
+                        if performance['player_id'] != result['player_id']:
+                            raise ValueError('Saved performance identity differs from signing checkpoint')
+                        result['performance_context'] = performance
                 except ValueError as error:
                     raise Rejected(str(error)) from error
                 self.connection_check()

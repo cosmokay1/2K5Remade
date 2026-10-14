@@ -12,6 +12,7 @@ static volatile LONG franchise_foreign_sign_logged;
 static int hello_pending, hello_failed;
 static int context_enabled, hello_consumed, context_pending;
 static int signing_active, context_sent;
+static int saved_performance;
 static unsigned long long context_revision;
 static unsigned context_sequence, context_logged;
 static int positive_limit(const wchar_t *text, unsigned long long *value)
@@ -32,6 +33,7 @@ void nfl2k5_franchise_stop(void)
     InterlockedExchange(&franchise_foreign_sign_logged, 0);
     hello_pending = hello_failed = 0;
     context_enabled = hello_consumed = context_pending = 0;
+    saved_performance = 0;
     context_sequence = context_logged = 0;
     signing_active = context_sent = 0;
     franchise_host_destroy(franchise_client);
@@ -126,14 +128,15 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
     char request[4096];
     int length = snprintf(request,sizeof(request),
         "{\"protocol\":1,\"request_id\":\"game-sign-context-%u\",\"operation\":\"signing_context\","
-        "\"expected_revision\":%llu,\"timeout_ms\":10000,\"observation\":{"
+        "%s\"expected_revision\":%llu,\"timeout_ms\":10000,\"observation\":{"
         "\"biography\":{\"source_slot\":%u,\"first_name\":\"%s\",\"last_name\":\"%s\","
         "\"pbp_photo_raw\":\"%s\",\"dob_region_raw\":\"%s\"},"
         "\"team\":{\"table_index\":%u,\"table_mode\":2,\"payroll_raw\":%u,\"league_cap_raw\":%u,"
         "\"team_flag_raw\":%u,\"first_year_accumulator_raw\":%u},"
         "\"calendar\":{\"season_index\":%u,\"display_year\":%u,\"phase_01_raw\":%u,\"phase_02_raw\":%u,"
         "\"step_04_raw\":%u,\"step_05_raw\":%u,\"counter_08_raw\":%u}}}",
-        ++context_sequence,context_revision,o->slot,o->first_name,o->last_name,o->photo,o->dob,
+        ++context_sequence,saved_performance ? "\"performance_format\":\"saved_history_v1\"," : "",
+        context_revision,o->slot,o->first_name,o->last_name,o->photo,o->dob,
         o->team_index,o->payroll,o->cap,o->team_flag,o->accumulator,o->calendar[5],2004u+o->calendar[5],
         o->calendar[0],o->calendar[1],o->calendar[3],o->calendar[4],o->calendar[6]);
     if (length <= 0 || (size_t)length >= sizeof(request) ||
@@ -165,6 +168,10 @@ int nfl2k5_franchise_start(void)
     if (inspect_context && (!guest_save || !*guest_save || !guest_bindings || !*guest_bindings ||
         !guest_revision || !*guest_revision ||
         (wcscmp(guest_revision,L"0") && !positive_limit(guest_revision,&revision)))) return 0;
+    const wchar_t *performance = _wgetenv(L"NFL2K5_FRANCHISE_SAVED_PERFORMANCE");
+    if (performance && *performance && wcscmp(performance,L"0") && wcscmp(performance,L"1")) return 0;
+    int inspect_performance = performance && !wcscmp(performance,L"1");
+    if (inspect_performance && !inspect_context) return 0;
     const wchar_t *budget_database = _wgetenv(L"NFL2K5_FRANCHISE_AI_BUDGET_DATABASE");
     const wchar_t *budget_scope = _wgetenv(L"NFL2K5_FRANCHISE_AI_BUDGET_SCOPE");
     const wchar_t *budget_limit = _wgetenv(L"NFL2K5_FRANCHISE_AI_REQUEST_LIMIT");
@@ -199,6 +206,7 @@ int nfl2k5_franchise_start(void)
     hello_pending = hello_failed = 0;
     hello_consumed = context_pending = 0;
     context_enabled = inspect_context;
+    saved_performance = inspect_performance;
     context_revision = revision;
     context_sequence = context_logged = 0;
     signing_active = context_sent = 0;

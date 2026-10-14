@@ -5082,3 +5082,36 @@ screen; no contract submitted, model/control/IAM request or salary credit assign
 Polling build installation is recorded in a102d38; actual execution closes this
 polling verification gap, not AI/financial/save integration or active-franchise
 selection. Same-screen UI rendering and accepted/counteroffer transactions remain.
+
+## October14,2026 — Saved performance added to signing-context format
+
+Added optional performance_format=saved_history_v1 to signing_context. It uses
+the existing pinned exporter, verifies the same player ID and retains raw history
+filters, sparse observations, source indices, inferred half-sack units, candidate
+years and explicit unknown metrics/coverage. Default requests retain their old
+response shape. Native validation rejects foreign ID/source, ratings/unsupported
+fields, invalid units/counts/calendar candidates, duplicate sources and missing/
+present contradictions. Root env flag NFL2K5_FRANCHISE_SAVED_PERFORMANCE=1 is an
+explicit opt-in; invalid flag/source configuration rejects startup.
+
+Five focused bridge tests and full offline687 tests pass in23.045s. Portable
+native protocol/strict C11 checks pass. Actual Trotter local service response has
+six game entries/four sacks; that exact saved-performance response passes native
+validation. Actual private MSVC game/host/protocol builds and Windows native
+fixtures pass. Staged game SHA256
+556016fa375d3e8b3f676cd6e3bbc3a879498c2d834709a28391ffec7fa1c537.
+
+Prepared isolated saved-performance-stage source/licensed interpreter with no
+overwrite of the running game's package. Windows actual service subprocess first
+checked an explicit staged source bootstrap, then the staged interpreter's normal
+-m franchise.sidecar launch. Both return the actual ten Trotter history entries,
+zero attempts and unchanged Giants financial snapshot. Private Windows result is
+saved-performance-stage/windows-result.json; local result is
+.local-runtime/root-transport-diagnostic/service-signing-performance.json.
+This is saved history, not live stats or new root-game execution. No ratings,
+invented pressures/QB hits, model/control/IAM calls or salary credits introduced.
+
+Prepared hash-guarded backup/install script and requested normal exit before
+replacing game/launcher. Fresh process check found game80919 running. Actual
+installation and game receipt of this new format remain pending user exit/launch;
+the currently installed same-screen personality path remains intact.

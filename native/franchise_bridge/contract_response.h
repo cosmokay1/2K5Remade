@@ -6,6 +6,7 @@
 #include <set>
 #include <algorithm>
 #include <map>
+#include <cmath>
 
 namespace franchise {
 inline const nlohmann::json& validate_amendment_history(const nlohmann::json&,const std::string&,const std::string&,bool allow_empty_prior=false);
@@ -1241,7 +1242,10 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         return;
     }
     if (operation == "signing_context") {
-        if (!result.is_object() || result.size()!=9 || result.at("write_authorized")!=false ||
+        const bool performance=request.contains("performance_format");
+        if (performance && request.at("performance_format")!="saved_history_v1")
+            throw std::runtime_error("Unsupported saved performance format");
+        if (!result.is_object() || result.size()!=(performance?10:9) || result.at("write_authorized")!=false ||
             result.at("ai_authorized")!=false ||
             result.at("scope")!="matching saved legacy checkpoint; active franchise selection, cash/rookie obligations and write authorization remain unverified")
             throw std::runtime_error("Invalid signing checkpoint scope or authority");
@@ -1274,6 +1278,68 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         nlohmann::json nested_request={{"operation","player_context"},{"player_id",result.at("player_id")},
                                       {"team_id",result.at("team_id")}};
         validate_result(nested_reply,nested_request);
+        if (performance) {
+            const auto& evidence=result.at("performance_context");
+            integer_money(evidence.at("saved_display_year"));
+            const std::string source="original-fxg:"+result.at("saved_payload_sha256").get<std::string>()+
+                ":slot:"+std::to_string(result.at("source_slot").get<int64_t>());
+            if (!evidence.is_object() || evidence.size()!=9 || evidence.at("player_id")!=result.at("player_id") ||
+                evidence.at("source")!=source || evidence.at("saved_display_year")!=request.at("observation").at("calendar").at("display_year") ||
+                evidence.at("scope")!="Saved historical counters only; calendar years are candidates. Raw modes are not played/CPU/fast-sim coverage. Entries are not summed and missing metrics are not zero. No current-week, salary-credit or promise-goal attribution." ||
+                !evidence.at("history_present").is_boolean() ||
+                evidence.at("unmapped_requested_metrics")!=nlohmann::json::array({"tackles","targets","pressures","qb_hits"}))
+                throw std::runtime_error("Saved performance identity, source or scope mismatch");
+            const std::map<std::string,std::string> units={{"games","count"},{"rush_attempts","count"},
+                {"rushing_yards","yards"},{"rushing_touchdowns","count"},{"pass_attempts","count"},
+                {"completions","count"},{"passing_yards","yards"},{"passing_touchdowns","count"},
+                {"interceptions_thrown","count"},{"sacks","sacks"}};
+            const auto& rows=evidence.at("saved_history");
+            if (!rows.is_array() || (!evidence.at("history_present").get<bool>() && !rows.empty()))
+                throw std::runtime_error("Invalid saved history presence");
+            std::set<std::string> present,sources,missing;
+            for (const auto& row:rows) {
+                const auto metric=row.at("metric").get<std::string>();
+                const auto unit=units.find(metric);
+                if (unit==units.end() || !row.is_object() || row.size()!=(metric=="sacks"?9:7) || row.at("unit")!=unit->second)
+                    throw std::runtime_error("Unsupported saved performance metric or fields");
+                integer_money(row.at("period_code_raw")); integer_money(row.at("mode_code_raw"));
+                if (row.at("period_code_raw")>31 || row.at("mode_code_raw")>1)
+                    throw std::runtime_error("Invalid raw history filter");
+                const auto& year=row.at("candidate_calendar_year");
+                if (!year.is_null()) {
+                    integer_money(year);
+                    const auto saved=evidence.at("saved_display_year").get<int64_t>();
+                    if (year.get<int64_t>()>saved || year.get<int64_t>()<saved-31 || row.at("period_code_raw")==0)
+                        throw std::runtime_error("Invalid historical calendar candidate");
+                }
+                const auto entry_source=row.at("source").get<std::string>(), prefix=source+":entry:";
+                const auto suffix=entry_source.size()>prefix.size()?entry_source.substr(prefix.size()):"";
+                if (entry_source.compare(0,prefix.size(),prefix) || suffix.empty() ||
+                    suffix.find_first_not_of("0123456789")!=std::string::npos || !sources.insert(entry_source).second)
+                    throw std::runtime_error("Invalid or duplicated saved history source");
+                const auto& value=row.at("value");
+                if (metric=="sacks") {
+                    integer_money(row.at("raw_half_sack_units"));
+                    if (row.at("raw_half_sack_units")>32767 || !value.is_number() ||
+                        !std::isfinite(value.get<double>()) || value.get<double>()!=row.at("raw_half_sack_units").get<double>()/2 ||
+                        row.at("mapping_scope")!="historical sack mapping inferred from descriptor and Gildon NFL corroboration; live updates/coverage unverified")
+                        throw std::runtime_error("Invalid inferred half-sack history");
+                } else {
+                    if (!value.is_number_integer() || value < (unit->second=="yards"?-32768:0) || value>32767)
+                        throw std::runtime_error("Invalid historical counter value");
+                }
+                present.insert(metric);
+            }
+            if (!evidence.at("missing_named_metrics").is_array()) throw std::runtime_error("Missing historical coverage metadata");
+            for (const auto& metric:evidence.at("missing_named_metrics"))
+                if (!metric.is_string() || !units.count(metric.get<std::string>()) || !missing.insert(metric.get<std::string>()).second)
+                    throw std::runtime_error("Invalid missing history metric");
+            for (const auto& metric:units)
+                if (missing.count(metric.first)==present.count(metric.first)) throw std::runtime_error("Historical missing/present contradiction");
+            const auto& excluded=evidence.at("excluded_entries");
+            if (!excluded.is_object() || excluded.size()!=4) throw std::runtime_error("Invalid excluded history metadata");
+            for (const auto* field:{"deleted","unknown_bit30","unmapped_code","negative_count"}) integer_money(excluded.at(field));
+        } else if (result.contains("performance_context")) throw std::runtime_error("Unrequested saved performance");
         return;
     }
     if (operation == "player_context") {

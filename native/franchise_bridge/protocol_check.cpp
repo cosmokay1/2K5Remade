@@ -673,6 +673,45 @@ int main() {
             try {franchise::validate_result(bad,signing_request);}catch(const std::exception&){rejected=true;}
             if(!rejected) throw std::runtime_error("Corrupt signing checkpoint accepted");
         }
+        auto performance_request=signing_request;
+        performance_request["performance_format"]="saved_history_v1";
+        performance_request["observation"]["calendar"]["display_year"]=2004;
+        auto performance_reply=signing_reply;
+        const auto history_source="original-fxg:"+std::string(64,'b')+":slot:1";
+        auto history=franchise::parse_frame(R"({"metric":"completions","unit":"count","value":478,"period_code_raw":1,"mode_code_raw":0,"candidate_calendar_year":2003})");
+        history["source"]=history_source+":entry:0";
+        auto sacks=history;
+        sacks["metric"]="sacks"; sacks["unit"]="sacks"; sacks["value"]=2.5;
+        sacks["raw_half_sack_units"]=5; sacks["source"]=history_source+":entry:1";
+        sacks["mapping_scope"]="historical sack mapping inferred from descriptor and Gildon NFL corroboration; live updates/coverage unverified";
+        performance_reply["result"]["performance_context"]={{"player_id",std::string(32,'a')},{"source",history_source},
+            {"saved_display_year",2004},{"history_present",true},{"saved_history",{history,sacks}},
+            {"excluded_entries",{{"deleted",0},{"unknown_bit30",0},{"unmapped_code",0},{"negative_count",0}}},
+            {"missing_named_metrics",{"games","rush_attempts","rushing_yards","rushing_touchdowns","pass_attempts","passing_yards","passing_touchdowns","interceptions_thrown"}},
+            {"unmapped_requested_metrics",{"tackles","targets","pressures","qb_hits"}},
+            {"scope","Saved historical counters only; calendar years are candidates. Raw modes are not played/CPU/fast-sim coverage. Entries are not summed and missing metrics are not zero. No current-week, salary-credit or promise-goal attribution."}};
+        franchise::validate_result(performance_reply,performance_request);
+        for(int scenario=0;scenario<11;++scenario) {
+            auto bad=performance_reply;
+            auto& evidence=bad["result"]["performance_context"];
+            if(scenario==0) evidence["player_id"]=std::string(32,'c');
+            if(scenario==1) evidence["source"]="another snapshot";
+            if(scenario==2) evidence["saved_history"][0]["metric"]="overall_rating";
+            if(scenario==3) evidence["saved_history"][0]["value"]=1.5;
+            if(scenario==4) evidence["saved_history"][1]["raw_half_sack_units"]=4;
+            if(scenario==5) evidence["missing_named_metrics"].push_back("completions");
+            if(scenario==6) evidence["history_present"]=false;
+            if(scenario==7) evidence["saved_history"][0]["candidate_calendar_year"]=2005;
+            if(scenario==8) evidence["saved_history"][0]["source"]="unbound record";
+            if(scenario==9) evidence["unmapped_requested_metrics"]=nlohmann::json::array();
+            if(scenario==10) evidence["ratings"]={{"catching",90}};
+            bool rejected=false;
+            try{franchise::validate_result(bad,performance_request);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Corrupt saved performance accepted");
+        }
+        bool unsolicited_performance=false;
+        try{franchise::validate_result(performance_reply,signing_request);}catch(const std::exception&){unsolicited_performance=true;}
+        if(!unsolicited_performance) throw std::runtime_error("Unrequested performance accepted");
         auto circumstance_request=player_request; circumstance_request["team_id"]="a";
         auto circumstance_reply=player_reply;
         auto circumstances=franchise::parse_frame(R"({"player_id":"v","team_id":"a","window":"season","mode":"cpu_played","total_games":16,"available_games":12,"injury_unavailable_games":4,"coaching_dnp_games":2,"source":"synthetic report","coverage":"full season","complete_window":true,"unavailable_reason":null})");

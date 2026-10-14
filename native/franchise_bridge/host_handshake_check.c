@@ -79,6 +79,7 @@ int main(void)
     _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SAVE", L"");
     _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_BINDINGS", L"");
     _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_REVISION", L"");
+    _wputenv_s(L"NFL2K5_FRANCHISE_SAVED_PERFORMANCE", L"");
     assert(nfl2k5_franchise_start());
     nfl2k5_franchise_on_fsm(0x557B2C, 1); assert(!submissions);
     _wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER", L"vertex");
@@ -110,6 +111,9 @@ int main(void)
     _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_REVISION", L"-1");
     assert(!nfl2k5_franchise_start());
     _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_REVISION", L"0");
+    _wputenv_s(L"NFL2K5_FRANCHISE_SAVED_PERFORMANCE", L"unknown");
+    assert(!nfl2k5_franchise_start());
+    _wputenv_s(L"NFL2K5_FRANCHISE_SAVED_PERFORMANCE", L"1");
     assert(nfl2k5_franchise_start());
     FranchiseSigningObservation observation={0};
     strcpy(observation.first_name,"Authored"); strcpy(observation.last_name,"Player");
@@ -126,6 +130,7 @@ int main(void)
     nfl2k5_franchise_poll(); /* Hello collected without leaving the screen. */
     nfl2k5_franchise_signing_context(&observation); assert(submissions==5);
     assert(strstr(last_request,"\"operation\":\"signing_context\""));
+    assert(strstr(last_request,"\"performance_format\":\"saved_history_v1\""));
     assert(strstr(last_request,"\"expected_revision\":0"));
     assert(strstr(last_request,"\"display_year\":2004"));
     nfl2k5_franchise_signing_context(&observation); assert(submissions==5);
