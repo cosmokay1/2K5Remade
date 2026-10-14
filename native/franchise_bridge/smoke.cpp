@@ -8,13 +8,28 @@ int wmain(int argc, wchar_t** argv) {
     const bool release = argc == 4 && std::wstring(argv[3]) == L"--release";
     const bool assignment = argc == 4 && std::wstring(argv[3]) == L"--trade";
     const bool restructure = argc == 4 && std::wstring(argv[3]) == L"--restructure";
-    if (argc == 4 && !replay && !abrupt && !release && !assignment && !restructure) return 2;
+    const bool returning = argc == 4 && (std::wstring(argv[3]) == L"--return" || std::wstring(argv[3]) == L"--return-replay");
+    const bool return_replay = argc == 4 && std::wstring(argv[3]) == L"--return-replay";
+    if (argc == 4 && !replay && !abrupt && !release && !assignment && !restructure && !returning) return 2;
     try {
         franchise::PipeClient client(argv[1], argv[2], franchise::ServiceMode::OfflineFixture);
         if (abrupt) {
             std::cout << client.process_id() << std::endl;
             std::cin.get();
             ExitProcess(0);  // Deliberately bypass all client destructors.
+        }
+        if (returning) {
+            const char* requests[] = {
+                R"({"protocol":1,"team_id":"a","offer":{"player_id":"v","salaries":[5,5,5],"signing_bonus":3,"guaranteed_salaries":[5,0,0]},"expected_revision":2,"timeout_ms":5000,"return_scope":{"league_year":2026,"signed_on":"2026-06-01","first_regular_season_game":"2026-09-10","healthy":true,"exclusions":["extensions","guarantee_offsets","league_year_rollover","rookie_contracts"],"source":"synthetic Windows return"},"request_id":"return-preview","operation":"preview"})",
+                R"({"protocol":1,"team_id":"a","offer":{"player_id":"v","salaries":[5,5,5],"signing_bonus":3,"guaranteed_salaries":[5,0,0]},"expected_revision":2,"timeout_ms":5000,"return_scope":{"league_year":2026,"signed_on":"2026-06-01","first_regular_season_game":"2026-09-10","healthy":true,"exclusions":["extensions","guarantee_offsets","league_year_rollover","rookie_contracts"],"source":"synthetic Windows return"},"request_id":"return-agreement","operation":"manual_sign","decision_mode":"manual"})",
+                R"({"protocol":1,"request_id":"returned-player","operation":"player_context","team_id":"a","player_id":"v","timeout_ms":5000})"
+            };
+            for (size_t i=return_replay ? 1 : 0;i<3;++i) {
+                client.submit(requests[i]);
+                while (!client.ready()) std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                std::cout << client.take() << std::endl;
+            }
+            return 0;
         }
         if (restructure) {
             const char* requests[] = {

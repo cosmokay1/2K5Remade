@@ -27,8 +27,15 @@ events and validates complete archived obligations for these new operations.
 Transaction failures, including failure after ownership insertion, roll back.
 Native inspection accepts the new ID and requires its matching cash obligation.
 
-This is an explicit engine operation. AI negotiation and the native pipe do not
-yet initiate return signing. Returned-player trade/restructure paths reject until
-versioned support exists. New promises/story decisions, season progression,
-guarantee offsets, real guest hooks and game save/load remain unfinished. Tests
+The native preview, negotiate and manual_sign operations accept optional
+return_scope with the exact sourced fields above. AI return decisions use the
+existing personality/performance/history mechanism. Acceptances save the story
+and agreed promises with the new agreement; rejects and counters remain saved
+dialogue. Manual return signing works with AI disabled. Changed scope or normal/
+return mode on retry rejects. The final AI access, connection, revision, ownership
+and cap checks run before acceptance commits.
+
+Returned-player trade/restructure paths reject until
+versioned support exists. Season progression, guarantee offsets, real guest hooks and game save/load remain
+unfinished. Tests
 use synthetic accounting sources and do not prove actual game integration.

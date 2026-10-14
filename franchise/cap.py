@@ -961,6 +961,29 @@ class Ledger:
                     "rookie_year_one_after": json_amount(self._rookie_year_one - scale.pool_charges(offer)[0]) if scale else None,
                     "rookie_total_after": self._rookie_total - int(sum(scale.pool_charges(offer))) if scale else None}
 
+    def preview_return(self,offer,expected_revision,*,scope):
+        from franchise.returns import PreseasonReturnScope
+        with self._lock:
+            if not isinstance(scope,PreseasonReturnScope) or not isinstance(offer,Offer):
+                raise ValueError('Typed veteran offer and return scope required')
+            if self._team_identity is None:
+                raise Rejected('Bound team identity required for return signing')
+            if offer.player_id in self._rookies or offer.player_id not in self._veteran_minimums:
+                raise Rejected('Supported veteran classification required for return signing')
+            previous=self.generation_accounting(self.contract_identity(offer.player_id).generation_id)
+            if previous.status not in ('released','assigned') or offer.player_id in self._players:
+                raise Rejected('Closed prior agreement required; extensions are unsupported')
+            if self._cash is None or self.generation_cash(previous.identity.generation_id) is None:
+                raise Rejected('Known cash obligations required for return signing')
+            self._check_transaction_date(scope.league_year,scope.signed_on)
+            charges,tender,updated,scale=self._validate_offer(offer,expected_revision,returning=True)
+            return {'revision':self.revision,'contract_charges':[json_amount(v) for v in charges],
+                'replaced_tender':tender,'annual_team_charges_after':[json_amount(v) for v in updated],
+                'room_after':json_amount(self.cap-updated[0]-self.roster_reserve-self._draft_reserved(except_player=offer.player_id)[0]),
+                'contract_cash':sum(offer.salaries)+offer.signing_bonus,
+                'fully_guaranteed_base':sum(offer.guaranteed_salaries),
+                'rookie_year_one_after':None,'rookie_total_after':None}
+
     def return_sign(self, request_id, offer, expected_revision, *, scope):
         from franchise.returns import PreseasonReturnScope
         from franchise.generations import generation_identity, GenerationAgreement

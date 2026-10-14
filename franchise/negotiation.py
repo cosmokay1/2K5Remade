@@ -105,9 +105,11 @@ class Negotiation:
             raise ValueError("Offer belongs to another player")
         if type(request_id) is not str or not request_id.strip():
             raise ValueError("A negotiation request ID is required")
+        return_scope=self.ledger.return_scope_context() if hasattr(self.ledger,'return_scope_context') else None
         prior = self._replies.get(request_id)
         if prior is not None:
-            if prior[0] != offer or prior[1].get("promise_goals", []) != proposed:
+            if (prior[0] != offer or prior[1].get("promise_goals", []) != proposed
+                    or prior[1].get("return_scope") != return_scope):
                 raise ValueError("Negotiation request ID reused with different terms")
             return json.loads(json.dumps(prior[1]))
         recorded = self.ledger.recalled_negotiation(request_id, offer)
@@ -129,9 +131,11 @@ class Negotiation:
         self._actor = json.dumps({**refreshed, "performance": actor["performance"]}, allow_nan=False)
         if expected_revision is not None and (type(expected_revision) is not int or expected_revision != snapshot["revision"]):
             raise Rejected("Offer was based on stale client franchise state")
+        return_scope=self.ledger.return_scope_context() if hasattr(self.ledger,'return_scope_context') else None
         context = {"player_id": self.player_id, **json.loads(self._actor),
                    "offer": offer.to_dict(), "accounting": snapshot,
                    "history": self.events, "promise_goals": proposed,
+                   **({'return_scope':return_scope} if return_scope is not None else {}),
                    **({'observed_efficiency': json.loads(self._efficiency)} if self._efficiency is not None else {})}
         response = provider(json.loads(json.dumps(context, allow_nan=False)))
         decision = Decision.parse(response, self.player_id)
@@ -142,7 +146,9 @@ class Negotiation:
                  "action": decision.action, "reason": decision.reason,
                  "counter": decision.counter.to_dict() if decision.counter else None,
                  "outcome": "pending",
+                 **({'return_scope':return_scope} if return_scope is not None else {}),
                  "evidence": {**json.loads(self._actor), "financial_revision": snapshot["revision"],
+                     **({'return_scope':return_scope} if return_scope is not None else {}),
                      **({'observed_efficiency': json.loads(self._efficiency)} if self._efficiency is not None else {})},
                  "history_request_ids": [entry["request_id"] for entry in context["history"]]}
         if proposed or decision.counter_promises:

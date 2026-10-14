@@ -85,8 +85,10 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       typed generation archives now drive payment ceilings and native inspection;
       backed-up format4 checkpoint migration is implemented. Versioned new-generation
       events and superseded lookup now support explicit healthy same-year veteran
-      return signing and subsequent release/payment. Normal AI/native return entry
-      points, returned-player trades/amendments and season rollover remain pending.
+      return signing and subsequent release/payment. Native service preview, AI
+      negotiation and manual signing accept explicit return_scope with stories
+      and promises. Actual guest entry, returned-player trades/amendments and
+      season rollover remain pending.
       See docs/contract-generations.md; current ownership now controls free-agent
       negotiation availability without deleting historical receipts.
 

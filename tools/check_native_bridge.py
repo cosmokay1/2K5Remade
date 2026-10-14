@@ -159,6 +159,45 @@ def main():
             assert current.guarantee_cash('v')['unpaid_signing_bonus']==8
             assert responses[1]['result']==amendments.player_context('a','v')
         print("Native Windows restructure, original/new bonus schedules, unpaid cash and restart retry verified (synthetic).")
+        from datetime import date
+        from fractions import Fraction
+        from franchise.releases import PreseasonReleaseScope,EXCLUDED_LIABILITIES
+        from franchise.guarantees import DiscountProfile
+        return_path=Path(directory)/'return fixture.sqlite'
+        returns=FranchiseStore(return_path)
+        return_contract=ActiveContract(Offer('v',(10,20,30),9,(0,20,10)),'synthetic Windows prior agreement')
+        returns.create_team('a',Ledger.from_opening(OpeningBooks(contracts=(return_contract,)),cap=200,
+            roster_reserve=0,max_bonus_years=5,veteran_minimums={'v':(1,)*3}))
+        returns.initialize_cash('a',(CashObligation('contract:v','v',69,9,'synthetic bank',(('signing_bonus',9),)),),
+            source='synthetic complete return cash')
+        returns.release_preseason_veteran('a','prior-release','v',scope=PreseasonReleaseScope(2026,
+            date(2026,6,1),date(2026,9,10),EXCLUDED_LIABILITIES,True,True,0,'synthetic prior removal'),
+            discount=DiscountProfile(2026,Fraction(0),'synthetic zero rate'),payment_year_offsets=(0,1,2),
+            expected_revision=1,access_check=lambda:None)
+        old_id=returns.contract_generations('a')['generations'][0]['generation_id']
+        FranchiseStore.migrate_generations(return_path)
+        committed=None
+        for attempt in range(2):
+            result=subprocess.run([sys.argv[1],sys.executable,str(return_path),
+                '--return-replay' if attempt else '--return'],text=True,capture_output=True,timeout=20,check=True)
+            responses=[json.loads(line) for line in result.stdout.splitlines()]
+            assert len(responses)==(2 if attempt else 3) and all(r['error'] is None for r in responses)
+            if not attempt:
+                assert responses[0]['result']['annual_team_charges_after']==[45,6,6]
+                committed=responses[1:]
+            else:
+                assert responses==committed
+            ledger=returns.load_team('a')
+            gid=ledger.contract_identity('v').generation_id
+            assert gid!=old_id and gid.startswith('contract-gen:')
+            assert ledger.charges==(45,6,6) and ledger.revision==3
+            assert ledger.generation_cash(old_id).amount==39 and ledger.generation_cash(old_id).paid==9
+            assert ledger.generation_cash(gid).amount==18 and ledger.generation_cash(gid).paid==0
+            assert responses[-1]['result']==returns.player_context('a','v')
+            assert responses[-2]['result']['outcome']=='signed'
+            assert responses[-2]['result']['return_scope']['source']=='synthetic Windows return'
+        print("Native Windows return preview, agreement, old debt and restart retry verified (synthetic).")
+
 
 
 if __name__ == "__main__":

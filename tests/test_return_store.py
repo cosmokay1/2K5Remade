@@ -105,6 +105,7 @@ class ReturnStoreTests(unittest.TestCase):
 
     def test_manual_return_request_cannot_be_reused_as_normal_signing_or_story(self):
         self.migrate();self.sign()
+        self.assertEqual(self.store.stories('a'),[])
         with self.assertRaises(Rejected):self.store.sign('a','return',self.offer,4)
         with self.assertRaises(Rejected):self.store.recalled_negotiation('a','return',self.offer)
 

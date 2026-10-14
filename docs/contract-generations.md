@@ -154,4 +154,6 @@ healthy same-year preseason veteran return agreements after format4 migration.
 See [preseason-return.md](preseason-return.md) for scope and remaining boundaries.
 Versioned return/release/payment records validate full generational postings.
 Old agreements remain accessible by their own identity after a later return.
-Normal signing and AI negotiation do not select this operation automatically.
+The native service selects this operation only when preview/negotiate/manual_sign
+requests include an explicit sourced return_scope. Old requests keep their usual
+behavior; actual guest transaction entry remains unverified.

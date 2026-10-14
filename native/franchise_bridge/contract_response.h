@@ -462,6 +462,19 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         for (const auto& item : result["operations"]) if (!item.is_string()) throw std::runtime_error("Invalid operation list");
         return;
     }
+    if (operation == "preview" || operation == "negotiate" || operation == "manual_sign") {
+        if (request.contains("return_scope")) {
+            const auto& scope=request.at("return_scope");
+            if (!scope.is_object() || scope.size()!=6 || !scope.at("league_year").is_number_integer() ||
+                scope.at("league_year")<2020 || scope.at("league_year")>2030 ||
+                !scope.at("healthy").is_boolean() || scope.at("healthy")!=true ||
+                !scope.at("signed_on").is_string() || !scope.at("first_regular_season_game").is_string() ||
+                !scope.at("source").is_string() || scope.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos ||
+                scope.at("exclusions")!=nlohmann::json::array({"extensions","guarantee_offsets","league_year_rollover","rookie_contracts"}) ||
+                !result.contains("return_scope") || result.at("return_scope").dump()!=scope.dump())
+                throw std::runtime_error("Response changed sourced return scope");
+        } else if (result.contains("return_scope")) throw std::runtime_error("Unexpected return signing mode");
+    }
     if (operation == "preview") {
         if (!result.contains("revision") || !result["revision"].is_number_integer() || result["revision"] != request.at("expected_revision"))
             throw std::runtime_error("Preview revision mismatch");

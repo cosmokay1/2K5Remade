@@ -362,12 +362,23 @@ class FranchiseStore:
                     raise ValueError("Recorded contract charges disagree with replay")
             elif kind == 'return_sign':
                 if (db.execute('PRAGMA user_version').fetchone()[0]!=4 or
-                        set(payload)!={'format','request_id','offer','scope','expected_revision','generation_id',
-                            'posting','cash_posting','contract_charges','generation_posting'} or
+                        set(payload) not in ({'format','request_id','offer','scope','expected_revision','generation_id',
+                            'posting','cash_posting','contract_charges','generation_posting'},
+                            {'format','request_id','offer','scope','expected_revision','generation_id',
+                            'posting','cash_posting','contract_charges','generation_posting','story'}) or
                         type(payload['format']) is not int or payload['format']!=1):
                     raise ValueError('Versioned return signing required')
+                if 'story' in payload:
+                    self._validate_story_evidence(payload['story'],efficiency_cache=efficiency_cache)
+                    if (payload['story'].get('return_scope')!=payload['scope']
+                            or payload['story'].get('request_id')!=payload['request_id']
+                            or payload['story'].get('offer')!=payload['offer']
+                            or payload['story'].get('action')!='accept' or payload['story'].get('outcome')!='signed'):
+                        raise ValueError('Return story disagrees with sourced agreement')
                 receipt=ledger.return_sign(payload['request_id'],Offer.from_dict(payload['offer']),
                     payload['expected_revision'],scope=self._return_scope(payload['scope']))
+                if 'story' in payload:
+                    self._remember_promises(ledger,payload)
                 if (ledger.contract_identity(receipt.offer.player_id).generation_id!=payload['generation_id'] or
                         self._checkpoint_hash(payload['cash_posting'])!=self._checkpoint_hash(ledger.cash_snapshot()) or
                         self._checkpoint_hash(payload['contract_charges'])!=self._checkpoint_hash([json_amount(v) for v in receipt.charges])):
@@ -536,7 +547,7 @@ class FranchiseStore:
             rows=db.execute("""SELECT id,kind,payload FROM events WHERE team_id=?
                 AND (? IS NULL OR id < ?) AND
                 ((kind='dialogue' AND json_extract(payload,'$.event.offer.player_id')=?) OR
-                 (kind='sign' AND json_extract(payload,'$.story.offer.player_id')=?))
+                 (kind IN ('sign','return_sign') AND json_extract(payload,'$.story.offer.player_id')=?))
                 ORDER BY id DESC LIMIT ?""",(team_id,before_event_id,before_event_id,player_id,player_id,limit+1)).fetchall()
             page=rows[:limit]
             events=[]
@@ -1041,9 +1052,11 @@ class FranchiseStore:
             ledger = self._load(db, team_id)
             if db.execute("SELECT 1 FROM events WHERE team_id=? AND request_key=?", (team_id, "dialogue:" + request_id)).fetchone():
                 raise Rejected("Request already belongs to a recorded negotiation")
-            prior = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, "sign:" + request_id)).fetchone()
+            prior = db.execute("SELECT kind,payload FROM events WHERE team_id=? AND request_key=?", (team_id, "sign:" + request_id)).fetchone()
             if prior:
-                previous = json.loads(prior[0])
+                if prior[0] != 'sign':
+                    raise Rejected("Request belongs to an explicit return signing")
+                previous = json.loads(prior[1])
                 if "story" not in previous:
                     raise Rejected("Request belongs to an explicit return signing")
                 normalized = json.loads(serialized)
@@ -1089,17 +1102,35 @@ class FranchiseStore:
             values[name]=parsed
         return PreseasonReturnScope(**values)
 
-    def return_sign(self,team_id,request_id,offer,expected_revision,*,scope,access_check):
+    def preview_return(self,team_id,offer,expected_revision,*,scope):
+        with self._connection() as db:
+            if db.execute('PRAGMA user_version').fetchone()[0]!=4:
+                raise Rejected('Return signing requires explicit format4 migration')
+            ledger=self._load(db,team_id)
+            if db.execute('SELECT 1 FROM ownership WHERE player_id=?',(offer.player_id,)).fetchone():
+                raise Rejected('Player already belongs to a team')
+            return ledger.preview_return(offer,expected_revision,scope=scope)
+
+    def return_sign(self,team_id,request_id,offer,expected_revision,*,scope,access_check,story=None):
         from franchise.returns import PreseasonReturnScope
         if (type(request_id) is not str or not request_id.strip() or not isinstance(offer,Offer)
                 or not isinstance(scope,PreseasonReturnScope) or not callable(access_check)
                 or type(expected_revision) is not int or expected_revision<0):
             raise ValueError('Typed sourced return signing required')
+        self._validate_story_evidence(story)
+        if story is not None:
+            if (story.get('request_id')!=request_id or story.get('offer')!=offer.to_dict()
+                    or story.get('action')!='accept' or story.get('outcome')!='signed'):
+                raise ValueError('Return story must describe the sourced signed agreement')
         scope_data=asdict(scope)
         scope_data.update(signed_on=scope.signed_on.isoformat(),
             first_regular_season_game=scope.first_regular_season_game.isoformat(),exclusions=sorted(scope.exclusions))
         requested={'format':1,'request_id':request_id,'offer':offer.to_dict(),
             'scope':scope_data,'expected_revision':expected_revision}
+        if story is not None:
+            if story.get('return_scope') != scope_data:
+                raise ValueError('Return story scope disagrees with sourced agreement')
+            requested['story']=json.loads(json.dumps(story,allow_nan=False))
         with self._connection(write=True) as db:
             if db.execute('PRAGMA user_version').fetchone()[0]!=4:
                 raise Rejected('Return signing requires explicit format4 migration')
@@ -1108,6 +1139,8 @@ class FranchiseStore:
             row=db.execute('SELECT kind,payload FROM events WHERE team_id=? AND request_key=?',(team_id,key)).fetchone()
             if row:
                 previous=json.loads(row[1])
+                if ('story' in previous)!=('story' in requested):
+                    raise Rejected('Return signing request mode already recorded differently')
                 if row[0]!='return_sign' or any(self._checkpoint_hash(previous[field])!=self._checkpoint_hash(value)
                         for field,value in requested.items() if field!='expected_revision'):
                     raise Rejected('Return signing request already recorded differently')
@@ -1117,7 +1150,11 @@ class FranchiseStore:
                 raise Rejected('Request already belongs to a recorded negotiation')
             if db.execute('SELECT 1 FROM ownership WHERE player_id=?',(offer.player_id,)).fetchone():
                 raise Rejected('Player already belongs to a team')
+            if story is not None:
+                self._check_history(db,team_id,offer.player_id,story)
             receipt=ledger.return_sign(request_id,offer,expected_revision,scope=scope)
+            if story is not None:
+                self._remember_promises(ledger,requested)
             self._check_cash_components(ledger)
             payload={**requested,'generation_id':ledger.contract_identity(offer.player_id).generation_id,
                 'posting':ledger.financial_snapshot(),'cash_posting':ledger.cash_snapshot(),
@@ -1141,8 +1178,8 @@ class FranchiseStore:
     def stories(self, team_id: str) -> list[dict]:
         with self._connection() as db:
             self._load(db, team_id)  # Validate financial reconstruction first.
-            return [payload["story"] for (text,) in db.execute("SELECT payload FROM events WHERE team_id=? AND kind='sign' ORDER BY id", (team_id,))
-                    if (payload := json.loads(text))["story"] is not None]
+            return [payload.get("story") for (text,) in db.execute("SELECT payload FROM events WHERE team_id=? AND kind IN ('sign','return_sign') ORDER BY id", (team_id,))
+                    if (payload := json.loads(text)).get("story") is not None]
 
     @staticmethod
     def _validate_actor(actor):
@@ -1204,9 +1241,7 @@ class FranchiseStore:
                         and data['posting']['revision'] <= before_revision):
                     return
                 continue
-            if kind == "return_sign":
-                continue
-            event = data["story"] if kind == "sign" else data["event"]
+            event = data.get("story") if kind in ("sign","return_sign") else data["event"]
             if event is not None and event["offer"]["player_id"] == player and data["posting"]["revision"] <= before_revision:
                 return
         raise Rejected("Recorded negotiation consequence required")
@@ -1325,6 +1360,8 @@ class FranchiseStore:
 
     @staticmethod
     def _validate_story_evidence(story, *, efficiency_cache=None):
+        if story is not None and 'return_scope' in story:
+            FranchiseStore._return_scope(story['return_scope'])
         if story is not None and "promise_goals" in story:
             from franchise.promises import goals_from_list
             goals_from_list(story["promise_goals"])
@@ -1335,8 +1372,14 @@ class FranchiseStore:
         from franchise.negotiation import validate_performance
         evidence = story["evidence"]
         fields = {"personality", "performance", "relationships", "financial_revision"}
-        if type(evidence) is not dict or set(evidence) not in (fields, fields | {"observed_efficiency"}):
+        if type(evidence) is not dict or set(evidence) not in (fields, fields | {"observed_efficiency"},fields | {"return_scope"},fields | {"observed_efficiency","return_scope"}):
             raise ValueError("Complete model evidence snapshot required")
+        if 'return_scope' in evidence:
+            FranchiseStore._return_scope(evidence['return_scope'])
+            if FranchiseStore._checkpoint_hash(evidence['return_scope']) != FranchiseStore._checkpoint_hash(story.get('return_scope')):
+                raise ValueError('Return evidence scope disagrees with request')
+        elif 'return_scope' in story:
+            raise ValueError('Return model evidence requires sourced scope')
         if type(evidence["financial_revision"]) is not int or evidence["financial_revision"] < 0:
             raise ValueError("Evidence requires its observed financial revision")
         if any(type(evidence[field]) is not dict for field in ("personality", "performance", "relationships")):
@@ -1391,9 +1434,9 @@ class FranchiseStore:
         if type(expected) is not list or any(type(key) is not str for key in expected):
             raise ValueError("Invalid negotiation history revision")
         actual = []
-        for kind, serialized in db.execute("SELECT kind, payload FROM events WHERE team_id=? AND kind IN ('sign', 'dialogue') ORDER BY id", (team_id,)):
+        for kind, serialized in db.execute("SELECT kind, payload FROM events WHERE team_id=? AND kind IN ('sign', 'return_sign', 'dialogue') ORDER BY id", (team_id,)):
             payload = json.loads(serialized)
-            previous = payload["event"] if kind == "dialogue" else payload["story"]
+            previous = payload["event"] if kind == "dialogue" else payload.get("story")
             if previous is not None and previous["offer"]["player_id"] == player_id:
                 actual.append(previous["request_id"])
         if actual != expected:
@@ -1420,6 +1463,8 @@ class FranchiseStore:
                     raise Rejected("Response was based on stale franchise context")
             self._check_history(db, team_id, event["offer"]["player_id"], event)
             payload = {"event": event, "posting": ledger.financial_snapshot()}
+            if 'return_scope' in event:
+                access_check()
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'dialogue', ?)",
                        (team_id, key, json.dumps(payload, allow_nan=False)))
             return event
@@ -1646,11 +1691,11 @@ class FranchiseStore:
     @staticmethod
     def _negotiation_history(db,team_id,player_id):
         history=[]
-        for kind,serialized in db.execute("SELECT kind,payload FROM events WHERE team_id=? AND kind IN ('dialogue','sign') ORDER BY id",(team_id,)):
+        for kind,serialized in db.execute("SELECT kind,payload FROM events WHERE team_id=? AND kind IN ('dialogue','sign','return_sign') ORDER BY id",(team_id,)):
             payload=json.loads(serialized)
             if kind == 'dialogue':
                 event=payload['event']
-            elif payload['story'] is not None:
+            elif payload.get('story') is not None:
                 event={**payload['story'],'charges':payload['contract_charges']}
             else:
                 continue
@@ -1681,14 +1726,18 @@ class FranchiseStore:
                 raise Rejected("Negotiation request already committed with different terms")
             if payload.get("story") is None:
                 raise Rejected("Request belongs to a signing without negotiation history")
-            receipt = ledger.sign(request_id, offer, ledger.revision)
-            return {**payload["story"], "charges": [json_amount(value) for value in receipt.charges]}
+            return {**payload["story"], "charges": payload["contract_charges"]}
 
 
 class StoredLedger:
     """Negotiation-facing view; every operation reads current durable state."""
-    def __init__(self, store: FranchiseStore, team_id: str):
+    def __init__(self, store: FranchiseStore, team_id: str, *, return_scope=None):
         self.store, self.team_id = store, team_id
+        if return_scope is not None:
+            from franchise.returns import PreseasonReturnScope
+            if not isinstance(return_scope,PreseasonReturnScope):
+                raise ValueError('Typed return scope required')
+        self.return_scope=return_scope
         store.load_team(team_id)
 
     def scouting_history(self):
@@ -1706,6 +1755,14 @@ class StoredLedger:
     def management_context(self):
         return self.store.load_team(self.team_id).management_context()
 
+    def return_scope_context(self):
+        if self.return_scope is None:
+            return None
+        scope=self.return_scope
+        return {'league_year':scope.league_year,'signed_on':scope.signed_on.isoformat(),
+            'first_regular_season_game':scope.first_regular_season_game.isoformat(),
+            'healthy':scope.healthy,'exclusions':sorted(scope.exclusions),'source':scope.source}
+
     def negotiation_context(self, player_id):
         return self.store.load_team(self.team_id).negotiation_context(player_id)
 
@@ -1713,9 +1770,14 @@ class StoredLedger:
         return self.store.preview_draft_offer(self.team_id, offer, expected_revision)
 
     def preview_offer(self, offer, expected_revision):
+        if self.return_scope is not None:
+            return self.store.preview_return(self.team_id,offer,expected_revision,scope=self.return_scope)
         return self.store.preview_offer(self.team_id, offer, expected_revision)
 
     def commit_negotiation(self, request_id, offer, expected_revision, *, access_check, story):
+        if self.return_scope is not None:
+            return self.store.return_sign(self.team_id,request_id,offer,expected_revision,scope=self.return_scope,
+                access_check=access_check,story=story)
         return self.store.sign(self.team_id, request_id, offer, expected_revision,
                                access_check=access_check, story=story)
 
@@ -1733,7 +1795,12 @@ class StoredLedger:
         return self.store.negotiation_history(self.team_id, player_id)
 
     def recalled_negotiation(self, request_id, offer):
-        return self.store.recalled_negotiation(self.team_id, request_id, offer)
+        result=self.store.recalled_negotiation(self.team_id,request_id,offer)
+        if self.return_scope is not None and result is not None and result.get('decision_mode') == 'manual':
+            raise Rejected('Return negotiation request already recorded in manual mode')
+        if result is not None and self.store._checkpoint_hash(result.get('return_scope'))!=self.store._checkpoint_hash(self.return_scope_context()):
+            raise Rejected('Negotiation request already recorded with different return scope or mode')
+        return result
 
     @property
     def room(self):

@@ -192,8 +192,11 @@ class Bridge:
                 raise ValueError("Unsupported operation")
             if operation == "negotiate" and "promise_goals" in request:
                 fields |= {"promise_goals"}
+            if "return_scope" in request:
+                fields |= {"return_scope"}
             if set(request) != fields:
                 raise ValueError("Unexpected request fields")
+            return_scope=self.store._return_scope(request["return_scope"]) if "return_scope" in request else None
             if type(request["team_id"]) is not str or not request["team_id"].strip():
                 raise ValueError("Stable team ID required")
             timeout = request["timeout_ms"]
@@ -213,19 +216,24 @@ class Bridge:
             if type(data) is not dict or set(data) not in ({"player_id", "salaries", "signing_bonus"}, {"player_id", "salaries", "signing_bonus", "guaranteed_salaries"}) or type(data["salaries"]) is not list:
                 raise ValueError("Complete offer required")
             offer = Offer.from_dict(data)
-            ledger = StoredLedger(self.store, request["team_id"])
+            ledger = StoredLedger(self.store, request["team_id"],return_scope=return_scope)
             if operation == "preview":
                 # AI-off clients retain cap enforcement and manual previews.
+                local_access()
                 result = ledger.preview_offer(offer, request["expected_revision"])
+                local_access()
+                if return_scope is not None:
+                    result["return_scope"]=ledger.return_scope_context()
             elif operation == "manual_sign":
                 if request["decision_mode"] != "manual":
                     raise ValueError("Explicit manual decision required")
                 local_access()
                 story = {"request_id": request_id, "offer": offer.to_dict(),
                          "action": "accept", "reason": "Explicit manual agreement",
-                         "counter": None, "outcome": "signed", "decision_mode": "manual"}
-                receipt = self.store.sign(request["team_id"], request_id, offer,
-                    request["expected_revision"], access_check=local_access, story=story)
+                         "counter": None, "outcome": "signed", "decision_mode": "manual",
+                         **({"return_scope":ledger.return_scope_context()} if return_scope is not None else {})}
+                receipt = ledger.commit_negotiation(request_id,offer,request["expected_revision"],
+                    access_check=local_access,story=story)
                 result = {**story, "charges": [json_amount(value) for value in receipt.charges]}
             else:
                 guarded_access()

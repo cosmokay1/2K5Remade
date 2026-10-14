@@ -21,6 +21,23 @@ int main() {
         auto request = franchise::parse_frame(R"({"operation":"manual_sign","request_id":"one","offer":{"player_id":"v","salaries":[10],"signing_bonus":0,"guaranteed_salaries":[8]}})");
         auto reply = franchise::parse_frame(R"({"error":null,"result":{"request_id":"one","offer":{"player_id":"v","salaries":[10],"signing_bonus":0,"guaranteed_salaries":[8]},"action":"accept","outcome":"signed","counter":null,"decision_mode":"manual","charges":[10]}})");
         franchise::validate_result(reply, request);
+        auto return_scope=franchise::parse_frame(R"({"league_year":2026,"signed_on":"2026-06-01","first_regular_season_game":"2026-09-10","healthy":true,"exclusions":["extensions","guarantee_offsets","league_year_rollover","rookie_contracts"],"source":"synthetic return"})");
+        auto return_request=request;
+        return_request["return_scope"]=return_scope;
+        auto return_reply=reply;
+        return_reply["result"]["return_scope"]=return_scope;
+        franchise::validate_result(return_reply,return_request);
+        for (int scenario=0;scenario<6;++scenario) {
+            auto bad=return_reply;
+            if (scenario==0) bad["result"].erase("return_scope");
+            if (scenario==1) bad["result"]["return_scope"]["healthy"]=1;
+            if (scenario==2) bad["result"]["return_scope"]["source"]="changed";
+            if (scenario==3) bad["result"]["return_scope"]["signed_on"]="2026-06-02";
+            if (scenario==4) bad["result"]["return_scope"]["league_year"]=2026.0;
+            bool rejected=false;
+            try { franchise::validate_result(bad,scenario==5 ? request : return_request); } catch (const std::exception&) { rejected=true; }
+            if (!rejected) throw std::runtime_error("Return mode/source substitution accepted");
+        }
         auto restructure_request=franchise::parse_frame(R"({"operation":"manual_restructure","request_id":"conversion","team_id":"a","player_id":"v","expected_revision":1,"converted_base":8,"decision_mode":"manual","scope":{"source":"synthetic amendment","exclusions":["void_years","extension"]}})");
         auto restructure_reply=franchise::parse_frame(R"({"error":null,"result":{"decision_mode":"manual","team_id":"a","player_id":"v","restructure":{"financial":{"revision":2,"charges":[19,37],"signed_players":["v"],"restructures":{"v":{"original_contract":{"offer":{"player_id":"v","salaries":[10,20,30],"signing_bonus":9,"guaranteed_salaries":[10,20,10]},"source":"synthetic original","elapsed_years":1,"bonus_years":5},"original_cash":{"obligation_id":"contract:v","player_id":"v","amount":69,"paid":19,"source":"synthetic paid history","paid_components":[["signing_bonus",9],["base:0",10]]},"scope":{"source":"synthetic amendment","exclusions":["extension","void_years"]},"annual_minimums":[1,1],"converted_base":8,"bonus_layer":{"record_id":"restructure:conversion","amount":8,"original_start_index":1,"allocation_years":2,"source":"synthetic amendment"},"contract":{"offer":{"player_id":"v","salaries":[10,12,30],"signing_bonus":9,"guaranteed_salaries":[10,12,10]},"source":"synthetic original; base conversion: synthetic amendment","elapsed_years":1,"bonus_years":5,"bonus_layers":[{"record_id":"restructure:conversion","amount":8,"original_start_index":1,"allocation_years":2,"source":"synthetic amendment"}]},"cash_obligation":{"obligation_id":"contract:v","player_id":"v","amount":69,"paid":19,"source":"synthetic paid history; base conversion: synthetic amendment","paid_components":[["signing_bonus",9],["base:0",10]]}}}},"cash":{"revision":2,"nominal_total":69,"paid_total":19,"unpaid_total":50,"obligations":[]}}}})");
         auto& restructure_archive=restructure_reply["result"]["restructure"]["financial"]["restructures"]["v"];

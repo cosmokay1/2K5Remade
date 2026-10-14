@@ -1879,3 +1879,31 @@ Return signing is currently an explicit engine API. Normal AI negotiation and
 native pipe entry still need scope/preview/decision wiring; returned-player trades
 and restructures reject. Game hooks/screens, real saves/assets and playability
 remain unverified. See docs/preseason-return.md.
+
+## October 13, 2026 — Native return negotiation, stories and promises
+
+Existing pipe preview/negotiate/manual_sign requests now accept optional sourced
+return_scope. Read-only preview validates return eligibility and existing debt;
+AI decisions use existing observed performance, personality, relationships and
+lifetime history. Scope is frozen in provider context/evidence/receipts. Accepted
+stories and promises commit with the new agreement. Rejected/counter dialogue
+persists and cannot switch scope or normal/return mode on retry. Story/history
+readers now include negotiated returns while safely skipping older manual
+agreements without narration.
+
+Final remote access, connection/deadline, revision/ownership and cap checks remain
+enforced after provider response. Tests cover accept+promise restart/retry, reject,
+counter, readonly preview, kill-after-provider, stale-budget race, disconnect,
+manual AI-off and changed scope/mode rejection. All 397 Python tests pass; portable
+C++ protocol build/CTest pass. C++ rejects changed return scope, numeric type
+substitution and unexpected return mode.
+
+Added asset-free Windows native fixture: return preview/manual agreement/player
+context and process restart retry, verifying oldcash/debt39 remains while new
+nominalcash18 and addedcharges6/6/6 commit. Exact raw requests and fixture bootstrap
+passed in-process against Python with AI disabled; actual Windows execution
+awaits CI. Fixed its exact Fraction(0) discount input before push. Exact prior
+1a81217 passed both remote workflows. No paid model inference performed.
+
+Actual game hook/screens and guest save/load remain unverified. Returned-player
+trade/restructure and season progression remain unsupported.
