@@ -2189,6 +2189,25 @@ class FranchiseStore:
     @staticmethod
     def _validate_dialogue(event, *, efficiency_cache=None):
         FranchiseStore._validate_story_evidence(event, efficiency_cache=efficiency_cache)
+        if 'contract_format' in event:
+            from franchise.guest_contracts import GUEST_CONTRACT_FORMAT, guest_offer_encoding
+            if event['contract_format'] != GUEST_CONTRACT_FORMAT or event.get('decision_mode') != 'proposal':
+                raise ValueError('Invalid guest proposal contract format')
+            if FranchiseStore._checkpoint_hash(event.get('guest_offer')) != FranchiseStore._checkpoint_hash(
+                    guest_offer_encoding(Offer.from_dict(event['offer']))):
+                raise ValueError('Guest offer encoding disagrees with proposal')
+            counter = event.get('counter')
+            expected_encoding = None
+            if counter is not None:
+                try:
+                    expected_encoding = guest_offer_encoding(Offer.from_dict(counter))
+                except ValueError:
+                    if event.get('counter_validation', {}).get('status') != 'ineligible':
+                        raise ValueError('Unrepresentable guest counter cannot be eligible')
+            if 'guest_counter' not in event or FranchiseStore._checkpoint_hash(event['guest_counter']) != FranchiseStore._checkpoint_hash(expected_encoding):
+                raise ValueError('Guest counter encoding disagrees with proposal')
+        elif 'guest_offer' in event or 'guest_counter' in event:
+            raise ValueError('Guest encoding requires explicit contract format')
         if type(event) is not dict or event.get("outcome") not in {
                 "counteroffer", "player_rejected", "accounting_rejected", "accepted_proposal"}:
             raise ValueError("Noncommitted negotiation event required")

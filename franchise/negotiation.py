@@ -55,10 +55,14 @@ class Decision:
 
 class Negotiation:
     def __init__(self, ledger: Ledger, *, player_id: str, personality: dict,
-                 performance: dict, relationships: dict, access_check, proposal_only=False):
+                 performance: dict, relationships: dict, access_check, proposal_only=False, contract_format=None):
         if type(proposal_only) is not bool:
             raise ValueError('Explicit proposal-only mode required')
         self._proposal_only = proposal_only
+        from franchise.guest_contracts import GUEST_CONTRACT_FORMAT
+        if contract_format is not None and (not proposal_only or contract_format != GUEST_CONTRACT_FORMAT):
+            raise ValueError('Supported guest proposal contract format required')
+        self._contract_format = contract_format
         if not callable(access_check):
             raise ValueError("An access handshake is required")
         self._access_check = access_check
@@ -110,6 +114,10 @@ class Negotiation:
         goals_from_list(proposed)
         if offer.player_id != self.player_id:
             raise ValueError("Offer belongs to another player")
+        guest_offer = None
+        if self._contract_format is not None:
+            from franchise.guest_contracts import guest_offer_encoding
+            guest_offer = guest_offer_encoding(offer)  # Reject before inference/history writes.
         if type(request_id) is not str or not request_id.strip():
             raise ValueError("A negotiation request ID is required")
         return_scope=self.ledger.return_scope_context() if hasattr(self.ledger,'return_scope_context') else None
@@ -152,6 +160,13 @@ class Negotiation:
                    **({'observed_efficiency': json.loads(self._efficiency)} if self._efficiency is not None else {})}
         if self._proposal_only:
             context['decision_mode'] = 'proposal'
+        if self._contract_format is not None:
+            context['contract_format'] = self._contract_format
+            context['guest_offer'] = guest_offer
+            context['contract_format_constraints'] = {
+                'annual_salary_unit': 1000, 'base_guarantees_supported': False,
+                'bonus_allocation_max_years': 5,
+                'annual_schedule': 'Must exactly encode an original game schedule; no rounding or truncating a demand'}
         from franchise.vertex_provider import VertexProvider
         frozen_context=json.loads(json.dumps(context, allow_nan=False))
         response = (provider(frozen_context,before_generate=self._access_check)
@@ -174,6 +189,8 @@ class Negotiation:
             event["counter_promises"] = [asdict(goal) for goal in decision.counter_promises] if decision.action == "counter" else None
         if self._proposal_only:
             event['decision_mode'] = 'proposal'
+        if self._contract_format is not None:
+            event.update(contract_format=self._contract_format, guest_offer=guest_offer, guest_counter=None)
         if decision.action == 'accept' and self._proposal_only:
             try:
                 preview = self.ledger.preview_offer(offer, snapshot['revision'])
@@ -197,6 +214,12 @@ class Negotiation:
         elif decision.action == "counter":
             event["outcome"] = "counteroffer"
             try:
+                if self._contract_format is not None:
+                    from franchise.guest_contracts import guest_offer_encoding
+                    try:
+                        event['guest_counter'] = guest_offer_encoding(decision.counter)
+                    except ValueError as exc:
+                        raise Rejected(str(exc)) from exc
                 preview = self.ledger.preview_offer(decision.counter, snapshot["revision"])
             except Rejected as exc:
                 event["counter_validation"] = {"status": "ineligible", "reason": str(exc),
@@ -213,6 +236,8 @@ class Negotiation:
         return json.loads(json.dumps(event))
 
     def _check_recalled_mode(self, event, offer, expected_revision):
+        if event.get('contract_format') != self._contract_format:
+            raise Rejected('Negotiation request already used with a different contract format')
         if (event.get('decision_mode') == 'proposal') != self._proposal_only:
             raise Rejected('Negotiation request already used in a different commit mode')
         if self._proposal_only and event['outcome'] == 'accepted_proposal':

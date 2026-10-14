@@ -58,6 +58,18 @@ confirm guest effects and reconcile/save/reload before recording a signing.
 Do not use the existing auto-committing `negotiate` operation at the guest judgment
 boundary: it is an independent-engine operation and can commit before the game.
 The native validator rejects signed/charge-bearing proposal replies and checks
+the proposal mode. An optional `contract_format: "original_fxg_v1"` is supported
+only for `negotiate_proposal`. It requires submitted salaries/bonus to encode
+exactly in the observed game format before inference. Replies retain canonical
+mapped `guest_offer` words and `guest_counter` words (or null). An unrepresentable
+counter remains the player's original demand with ineligible validation; it is
+never rounded into different terms. Financial checks still apply to encodable
+counters. The format and encodings persist in dialogue and are checked on replay;
+the same request ID cannot switch formats. Native validation reconstructs the
+exact salaries and annual charges. These mapped words do not authorize guest
+writes or preserve unrelated bits in a live offer context.
+
+The native validator also checks
 acceptance preview/evidence revisions. Guest commit/recovery remains unfinished.
 
 ## Native candidate

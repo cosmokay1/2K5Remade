@@ -5196,3 +5196,34 @@ Updated the worklist's published baseline to successful dd13542 CI runs
 38643561542/38643561629. No running game/package was replaced, financial state
 written, cloud setting changed or model request submitted. Actual execution of
 this new safeguard and the frozen saved-performance install remain pending.
+
+## October14,2026 — Exact game-format negotiation proposals
+
+Added optional original_fxg_v1 contract format to the existing proposal-only
+operation. Submitted terms must encode exactly before inference. Accepted offers
+retain canonical mapped amount/flag words; counters that cannot encode preserve
+the original demand and get ineligible status rather than silently changing
+salary/bonus/guarantees. Encodable demands still pass the authoritative cap and
+minimum preview. Format and encodings persist in dialogue, reject tampering on
+load, and cannot change under a reused request ID. No signing is recorded.
+
+Native validation independently reconstructs offers/counters and annual charges,
+rejecting substituted mapped words, unrelated flag bits, altered charges and
+unencoded counters advertised as eligible. Model context describes the format
+restriction without adding ratings or fabricated player evidence.
+
+Five focused tests cover accepted/restarted dialogue, mode/format replay,
+unrepresentable input before inference, unchanged unusable demands, representable
+and overcap counters, and corrupted encoding recovery. Full offline697 tests
+pass in22.038s. Portable native fixtures and2886 decoder differential cases pass;
+an actual asset-free Python Bridge proposal receipt passes the native validator.
+Private MSVC game and native compilation plus actual Windows protocol fixture
+execution pass. Private game hash
+59cdf999829f79d411ce0e524dbdc7a817279e930831d1942a552dd05a8911d1.
+
+The previous safeguard64ef086 now has successful CI38645309410/38645309320.
+Game80919 remains running the earlier installed personality diagnostic; no live
+package or launcher was replaced. No cloud/model/control/IAM request, salary
+classification, guest write or financial transaction occurred. Actual root
+proposal submission, UI presentation, precommit/guest recovery and save/load
+remain required; this closes proposal representation only.

@@ -317,6 +317,11 @@ class Bridge:
                 raise ValueError("Unsupported operation")
             if operation in ("negotiate", "negotiate_proposal") and "promise_goals" in request:
                 fields |= {"promise_goals"}
+            if 'contract_format' in request:
+                from franchise.guest_contracts import GUEST_CONTRACT_FORMAT
+                if operation != 'negotiate_proposal' or request['contract_format'] != GUEST_CONTRACT_FORMAT:
+                    raise ValueError('Supported guest proposal contract format required')
+                fields |= {'contract_format'}
             if "return_scope" in request:
                 fields |= {"return_scope"}
                 if operation == 'negotiate_proposal':
@@ -369,7 +374,8 @@ class Bridge:
                 session = Negotiation(ledger, player_id=offer.player_id,
                     personality=request["personality"], performance=request["performance"],
                     relationships=request["relationships"], access_check=guarded_access,
-                    proposal_only=operation == 'negotiate_proposal')
+                    proposal_only=operation == 'negotiate_proposal',
+                    contract_format=request.get('contract_format'))
                 from franchise.promises import goals_from_list
                 result = session.respond(request_id, offer, self.provider,
                                          expected_revision=request["expected_revision"],

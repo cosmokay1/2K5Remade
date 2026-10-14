@@ -1539,6 +1539,44 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         throw std::runtime_error("Unsupported result operation");
     if (canonical_offer(result.at("offer")) != canonical_offer(request.at("offer")) || result.at("request_id") != request.at("request_id"))
         throw std::runtime_error("Response changed submitted contract");
+    if(request.contains("contract_format")) {
+        if(operation!="negotiate_proposal" || request.at("contract_format")!="original_fxg_v1" ||
+            result.at("contract_format")!=request.at("contract_format"))
+            throw std::runtime_error("Guest proposal contract format mismatch");
+        auto check_encoding=[](const nlohmann::json& raw,const nlohmann::json& offer) {
+            if(!raw.is_object() || raw.size()!=2 ||
+                exact_guest_offer(raw,offer.at("player_id").get<std::string>())!=canonical_offer(offer) ||
+                (raw.at("flags_word").get<uint32_t>() & ~0xE00F000Fu))
+                throw std::runtime_error("Guest proposal encoding differs from exact offer");
+        };
+        auto check_preview=[&request](const nlohmann::json& preview,const nlohmann::json& offer) {
+            const auto exact=canonical_offer(offer);
+            const auto& salaries=exact.at("salaries");
+            const auto& charges=preview.at("contract_charges");
+            if(preview.at("revision")!=request.at("expected_revision") || !charges.is_array() || charges.size()!=salaries.size())
+                throw std::runtime_error("Guest proposal preview revision or term mismatch");
+            for(size_t i=0;i<charges.size();++i) {
+                integer_money(charges.at(i));
+                if(charges.at(i).get<int64_t>()!=salaries.at(i).get<int64_t>()+exact.at("signing_bonus").get<int64_t>()/salaries.size())
+                    throw std::runtime_error("Guest proposal preview charge mismatch");
+            }
+        };
+        check_encoding(result.at("guest_offer"),request.at("offer"));
+        if(result.at("outcome")=="accepted_proposal") check_preview(result.at("proposal_preview"),request.at("offer"));
+        if(result.at("counter").is_null()) {
+            if(!result.at("guest_counter").is_null()) throw std::runtime_error("Unexpected guest counter encoding");
+        } else if(result.at("guest_counter").is_null()) {
+            if(result.at("counter_validation").at("status")!="ineligible")
+                throw std::runtime_error("Unencoded guest counter cannot be eligible");
+        } else {
+            check_encoding(result.at("guest_counter"),result.at("counter"));
+            if(result.at("counter_validation").at("status")=="eligible")
+                check_preview(result.at("counter_validation").at("preview"),result.at("counter"));
+            else if(result.at("counter_validation").at("status")!="ineligible")
+                throw std::runtime_error("Invalid guest counter eligibility");
+        }
+    } else if(result.contains("contract_format") || result.contains("guest_offer") || result.contains("guest_counter"))
+        throw std::runtime_error("Unexpected guest proposal contract format");
     auto outcome = result.at("outcome").get<std::string>();
     auto action = result.at("action").get<std::string>();
     if (operation == "negotiate" || operation == "negotiate_proposal") {

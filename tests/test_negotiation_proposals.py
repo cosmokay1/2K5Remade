@@ -119,3 +119,82 @@ class NegotiationProposalTests(unittest.TestCase):
     def test_stale_initial_revision_cannot_invoke_model(self):
         self.assertEqual(self.bridge.handle(self.request(expected_revision=1))['error'], 'state_rejected')
         self.assertEqual(self.calls, 0)
+
+
+    def game_request(self, **changes):
+        from franchise.guest_contracts import GuestContractTerms
+        self.store.create_team('game', Ledger.from_opening(OpeningBooks(), cap=100_000_000,
+            roster_reserve=0, max_bonus_years=5, veteran_minimums={'v': (1000,)*15}))
+        return self.request(team_id='game', contract_format='original_fxg_v1',
+            offer=GuestContractTerms(829, 4, 1, 2).to_offer('v').to_dict(), **changes)
+
+    def test_game_proposal_encoding_restart_and_format_replay_guard(self):
+        request = self.game_request()
+        before = self.store.load_team('game').financial_snapshot()
+        event = self.bridge.handle(request)['result']
+        self.assertEqual(event['outcome'], 'accepted_proposal')
+        from franchise.guest_contracts import GuestContractTerms
+        raw = event['guest_offer']
+        self.assertEqual(GuestContractTerms.from_context(**raw).to_offer('v').to_dict(), request['offer'])
+        self.assertIsNone(event['guest_counter'])
+        reopened = Bridge(FranchiseStore(self.path), provider=lambda _: self.fail('Repeated inference'), access_check=self.access)
+        self.assertEqual(reopened.handle(request)['result'], event)
+        changed = dict(request); changed.pop('contract_format')
+        self.assertEqual(reopened.handle(changed)['error'], 'state_rejected')
+        self.assertEqual(self.store.load_team('game').financial_snapshot(), before)
+
+    def test_game_proposal_refuses_unrepresentable_input_before_inference(self):
+        request = self.game_request()
+        request['offer']['salaries'][0] += 1
+        self.assertEqual(self.bridge.handle(request)['error'], 'invalid_request')
+        self.assertEqual(self.calls, 0)
+        self.assertEqual(self.store.negotiation_history('game', 'v'), [])
+        request['operation'] = 'negotiate'
+        self.assertEqual(self.bridge.handle(request)['error'], 'invalid_request')
+
+    def test_game_counter_preserves_demand_without_rounding_or_eligibility(self):
+        request = self.game_request()
+        before = self.store.load_team('game').financial_snapshot()
+        def provider(context):
+            self.assertEqual(context['contract_format'], 'original_fxg_v1')
+            self.assertFalse(context['contract_format_constraints']['base_guarantees_supported'])
+            return json.dumps(dict(action='counter', reason='My demand', salaries=[3_100_001, 1_860_000], signing_bonus=3_316_000))
+        bridge = Bridge(self.store, provider=provider, access_check=self.access)
+        event = bridge.handle(request)['result']
+        self.assertEqual(event['counter']['salaries'][0], 3_100_001)
+        self.assertEqual(event['counter_validation']['status'], 'ineligible')
+        self.assertIsNone(event['guest_counter'])
+        self.assertEqual(self.store.load_team('game').financial_snapshot(), before)
+        self.assertEqual(Bridge(FranchiseStore(self.path), provider=lambda _: self.fail('Repeated inference'),
+            access_check=self.access).handle(request)['result'], event)
+
+    def test_game_compatible_counter_keeps_cap_validation(self):
+        from franchise.guest_contracts import GuestContractTerms
+        request = self.game_request()
+        counter = GuestContractTerms(1000, 4, 2, 2).to_offer('v')
+        bridge = Bridge(self.store, provider=lambda _: json.dumps(dict(action='counter', reason='Counter',
+            salaries=list(counter.salaries), signing_bonus=counter.signing_bonus)), access_check=self.access)
+        event = bridge.handle(request)['result']
+        self.assertEqual(event['counter_validation']['status'], 'eligible')
+        raw = event['guest_counter']
+        self.assertEqual(GuestContractTerms.from_context(**raw).to_offer('v').to_dict(), counter.to_dict())
+        self.assertEqual(self.store.load_team('game').revision, 0)
+        huge = GuestContractTerms(20000, 0, 2, 1).to_offer('v')
+        bridge.provider = lambda _: json.dumps(dict(action='counter', reason='Too much',
+            salaries=list(huge.salaries), signing_bonus=0))
+        request['request_id'] = 'overcap-counter'
+        event = bridge.handle(request)['result']
+        self.assertIsNotNone(event['guest_counter'])
+        self.assertEqual(event['counter_validation']['status'], 'ineligible')
+        self.assertIn('cap room', event['counter_validation']['reason'])
+        self.assertEqual(self.store.load_team('game').revision, 0)
+
+    def test_tampered_game_encoding_fails_durable_replay(self):
+        request = self.game_request()
+        self.bridge.handle(request)
+        with closing(sqlite3.connect(self.path)) as db, db:
+            payload = json.loads(db.execute("SELECT payload FROM events WHERE request_key='dialogue:proposal'").fetchone()[0])
+            payload['event']['guest_offer']['amount_word'] += 1
+            db.execute("UPDATE events SET payload=? WHERE request_key='dialogue:proposal'", (json.dumps(payload),))
+        with self.assertRaisesRegex(ValueError, 'encoding'):
+            self.store.load_team('game')

@@ -10,6 +10,15 @@ from dataclasses import dataclass
 from franchise.cap import Offer, Rejected
 from franchise.legacy_contracts import original_annual_rows
 
+GUEST_CONTRACT_FORMAT = 'original_fxg_v1'
+
+
+def guest_offer_encoding(offer: Offer):
+    """Return only the mapped offer bits; applying guest memory is separate."""
+    terms = guest_terms_for_offer(offer)
+    return {'amount_word': terms.amount_word,
+            'flags_word': (terms.shape_code << 29) | (terms.years << 16) | terms.bonus_code}
+
 
 @dataclass(frozen=True)
 class GuestContractTerms:

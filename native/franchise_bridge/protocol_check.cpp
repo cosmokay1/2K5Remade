@@ -84,6 +84,45 @@ int main(int argc,char** argv) {
         proposal_reply["result"]["evidence"]={{"financial_revision",0}};
         proposal_reply["result"]["proposal_preview"]={{"revision",0},{"contract_charges",{10}},{"room_after",90}};
         franchise::validate_result(proposal_reply,proposal_request);
+        {
+        auto guest_request=proposal_request,guest_reply=proposal_reply;
+        guest_request["contract_format"]="original_fxg_v1";
+        auto encoding=nlohmann::json{{"amount_word",829},{"flags_word",(1u<<29)|(2u<<16)|4u}};
+        guest_request["offer"]=franchise::exact_guest_offer(encoding,"v");
+        guest_reply["result"]["offer"]=guest_request["offer"];
+        guest_reply["result"]["contract_format"]="original_fxg_v1";
+        guest_reply["result"]["guest_offer"]=encoding;
+        guest_reply["result"]["guest_counter"]=nullptr;
+        guest_reply["result"]["proposal_preview"]["contract_charges"]={4766000,3523000};
+        franchise::validate_result(guest_reply,guest_request);
+        auto counter_reply=guest_reply;
+        counter_reply["result"]["action"]="counter";
+        counter_reply["result"]["outcome"]="counteroffer";
+        counter_reply["result"]["counter"]=guest_request["offer"];
+        counter_reply["result"]["guest_counter"]=encoding;
+        counter_reply["result"]["counter_validation"]={{"status","eligible"},{"preview",guest_reply["result"]["proposal_preview"]}};
+        counter_reply["result"].erase("proposal_preview");
+        franchise::validate_result(counter_reply,guest_request);
+        auto unencoded=counter_reply;
+        unencoded["result"]["guest_counter"]=nullptr;
+        bool unencoded_rejected=false;
+        try{franchise::validate_result(unencoded,guest_request);}catch(const std::exception&){unencoded_rejected=true;}
+        if(!unencoded_rejected) throw std::runtime_error("Unencoded eligible guest counter accepted");
+        unencoded["result"]["counter_validation"]={{"status","ineligible"},{"reason","Demand cannot encode"},{"revision",0}};
+        franchise::validate_result(unencoded,guest_request);
+        for(int scenario=0;scenario<6;++scenario) {
+            auto bad=guest_reply;auto bad_request=guest_request;
+            if(scenario==0) bad["result"]["guest_offer"]["amount_word"]=830;
+            if(scenario==1) bad["result"]["guest_offer"]["flags_word"]=encoding["flags_word"].get<uint32_t>()|0x10u;
+            if(scenario==2) bad["result"]["contract_format"]="other";
+            if(scenario==3) bad["result"]["guest_counter"]=encoding;
+            if(scenario==4) bad_request.erase("contract_format");
+            if(scenario==5) bad["result"]["proposal_preview"]["contract_charges"]={4766001,3523000};
+            bool rejected=false;
+            try{franchise::validate_result(bad,bad_request);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Guest proposal encoding substitution accepted");
+        }
+        }
         for(int scenario=0;scenario<7;++scenario) {
             auto bad=proposal_reply;auto bad_request=proposal_request;
             if(scenario==0) bad["result"]["outcome"]="signed";

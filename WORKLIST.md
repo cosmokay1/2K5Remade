@@ -24,8 +24,8 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 ## Latest verified state — October 14, 2026
 
-- Latest published verified source: `dd13542`. Build `38643561542` and Franchise AI
-  `38643561629` passed. CI checks asset-free runtime and bridge components;
+- Latest published verified source: `64ef086`. Build `38645309410` and Franchise AI
+  `38645309320` passed. CI checks asset-free runtime and bridge components;
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.
@@ -80,6 +80,11 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   Native validation now also reconstructs every guest salary and requires exact
   modern charges; 2,886 native/Python cases match on portable and actual Windows
   execution. This is decoding/preview validation, not a guest signing commit.
+- Game-facing proposals now optionally require exact original-game encoding.
+  Acceptance and representable counters retain mapped amount/flag words;
+  unrepresentable demands stay unchanged and ineligible, with no rounding or
+  signing. Durable replay checks format/encodings and native validation checks
+  exact salaries/charges. Actual root negotiation requests, UI and commit remain.
 - Actual AI/game/save integration, telemetry capture and final playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 
