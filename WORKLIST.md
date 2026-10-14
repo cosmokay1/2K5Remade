@@ -54,6 +54,11 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 ## Current priority — a usable franchise negotiation in the game
 
+Approved import policy: preserve existing deals as legacy schedules, use modern
+rules for new deals, and retain2004 dollars with proportional modern amounts.
+Legacy guarantees/cash/termination obligations must remain explicit or reject
+unsupported operations; do not impose new bonus horizons on opening contracts.
+
 The user identified cost-control expansion as a distraction. Stop adding spending
 policies, quota layers or supporting infrastructure. Keep the existing request/
 token bounds and remote killswitch; defer the unpublished dollar-policy experiment.

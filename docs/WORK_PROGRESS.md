@@ -4396,3 +4396,31 @@ errors in the sandbox; no financial regression failure. After the rollover guard
 and its boundary test, full offline suite outside sandbox passed644 tests in
 21.422s. No cloud/model request or game/save write was performed. This validates
 durable engine policy, not guest calendar/contract import or AI signing.
+
+## October14,2026 — Legacy opening policy and live calendar probe
+
+Read-only AIGILDON audit counts1697 active contracts;195 bonus-bearing contracts
+have original term above5 years across31 clubs. User explicitly approved keeping
+existing deals as legacy schedules while modern rules govern new agreements.
+Recorded preservation/unknown-liability boundaries in the money audit. No
+retroactive five-year proration or original term/cap rewrite was performed.
+
+Extended opt-in signing observer, only for verified mode2 club indices below32,
+to read serialized-calendar globalsE576A4..E576BC, team flagE5775C[index] and
+uint16team+19C accumulator. It displays2004+bounded season index and leaves all
+phase/step/counter/adjustment meanings raw. Unsupported index values/read faults
+remain unverified; no signing authority or guess about the caller's adjustment
+argument is produced. Uses the same fault-safe original-pointer reads.
+
+Five focused observer/calendar/cap tests passed. Actual observer source compiles
+with-Wall/-Wextra/-Werror and preserves low/high memory bytes, including authored
+mode2/nonzero accumulator and invalid-season checks. Source staged for a private
+Windows build; installation and actual live calendar read remain pending.
+The currently running game is not interrupted.
+
+Incremental private Windows build completed compilation/linking successfully.
+Staged executableSHA256dd2a51bfa1022e9a723b227117d335985957f3bf2c968cdcc2ee48d4563e9df4.
+Installed observer remains0783c6e91751e8989d1b6c33720db27df5b6cf93cb72f999c39abcebf1053760;
+game73738 is still running. Requested normal exit before installation; no running
+executable/prefix/save was replaced. Published4e57db8 passed both workflows
+38615267863/38615265206;02aa02f CI is still in progress at this check.

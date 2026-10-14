@@ -137,6 +137,20 @@ int main(void) {
     assert(!signing_screen_range(XBOX_CONTIG_BASE, UINT64_MAX));
     nfl2k5_diag_fsm(1, 0x557B2C, 1);
     assert(!memcmp(before, ram, sizeof ram)); assert(!memcmp(contig_before, contig, sizeof contig));
+    /* Actual franchise uses mode2 pointers. Calendar fields remain raw,
+     * including nonzero retained accumulator; they do not grant a signing. */
+    put32(0xE576A0, 2); put32(0xE576AC, 2);
+    put32(0xE57870, XBOX_CONTIG_BASE + 0x31F4);
+    put32(0xE576A4, 7); put32(0xE576B0, 5);
+    put32(0xE576B8, 2); put32(0xE576BC, 99); put32(0xE57760, 1);
+    const uint16_t accumulator = 500;
+    memcpy(contig + 0x31F4 + 0x19C, &accumulator, sizeof accumulator);
+    memcpy(before, ram, sizeof ram); memcpy(contig_before, contig, sizeof contig);
+    nfl2k5_diag_fsm(1, 0x557B2C, 1);
+    assert(!memcmp(before, ram, sizeof ram)); assert(!memcmp(contig_before, contig, sizeof contig));
+    put32(0xE576B8, 256); memcpy(before, ram, sizeof ram);
+    nfl2k5_diag_fsm(1, 0x557B2C, 1);
+    assert(!memcmp(before, ram, sizeof ram)); assert(!memcmp(contig_before, contig, sizeof contig));
     return 0;
 }
 '''
@@ -147,12 +161,15 @@ int main(void) {
                             str(path / 'observer.c'), '-o', str(path / 'observer.exe')], check=True)
             result = subprocess.run([str(path / 'observer.exe')], capture_output=True, text=True, check=True)
         self.assertIn('bank_slot=1 first_name="Test" last_name="Player"', result.stderr)
-        self.assertEqual(result.stderr.count('bank_slot=1 first_name="Test" last_name="Player"'), 2)
+        self.assertEqual(result.stderr.count('bank_slot=1 first_name="Test" last_name="Player"'), 4)
         self.assertIn('identity_scope=current_bank_locator', result.stderr)
         self.assertIn('sign_player identity=unverified', result.stderr)
         self.assertIn('context_0C_word_raw=4660', result.stderr)
         self.assertIn('sign_player_guard bank_slot=1 pbp_photo_raw=1234abcd dob_region_raw=5678ef', result.stderr)
-        self.assertEqual(result.stderr.count('sign_player_guard bank_slot=1'), 2)
+        self.assertEqual(result.stderr.count('sign_player_guard bank_slot=1'), 4)
         self.assertIn('sign_team table_index=15 table_mode=0 payroll_124_raw=77038 league_cap_raw=80500', result.stderr)
         self.assertIn('accounting_scope=original_unreconciled', result.stderr)
         self.assertIn('sign_team table_index=1 table_mode=0 payroll_124_raw=72272 league_cap_raw=80500', result.stderr)
+        self.assertIn('sign_calendar season_index_raw=2 display_year=2006 phase_01_raw=7', result.stderr)
+        self.assertIn('counter_08_raw=99 team_flag_raw=1 first_year_accumulator_raw=500', result.stderr)
+        self.assertIn('sign_calendar state=unverified', result.stderr)

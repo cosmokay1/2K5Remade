@@ -123,6 +123,22 @@ adaptation before mutation. This covers durable engine rule inputs; it does not
 prove real-game calendar mapping, legacy contract conversion or rookie allotment
 provenance. Existing unscaled profile records retain their prior serialization.
 
+## Existing contract preservation policy
+
+User explicitly chose to preserve all existing deals as legacy schedules and
+apply modern rules to new deals. AIGILDON has1697 active contracts;195 with
+nonzero bonus codes have original terms over five years, spread across31 clubs.
+Their original-term histogram is1:137,2:208,3:443,4:375,5:332,6:125,7:68,
+8:6,10:3. Applying a five-year bonus horizon retroactively would change these
+opening schedules and is outside the approved import policy.
+
+Legacy import must preserve independently reconstructed charges and original
+identity/terms, separately from new modern contracts. Unknown legacy guarantee
+protections, unpaid cash and termination obligations require explicit supported
+treatment; preservation is not permission to zero them or claim a full modern
+conversion. Releases/trades/restructures must reject unsupported legacy cases
+until their original obligations and transition are verified.
+
 `tools.inspect_franchise_cap` now derives the franchise tail from the validated
 saved scheduler boundary and reads the league-cap field at tail+15D0. Original
 save/load routines2D0790/2D0CE0 transfer this field to/from globalE3C278. Team

@@ -685,6 +685,24 @@ void nfl2k5_diag_fsm(uint32_t obj, uint32_t desc, int push)
             fprintf(stderr, "[FRANCHISE-TRACE] sign_team table_index=%u table_mode=%u payroll_124_raw=%u league_cap_raw=%u identity_scope=current_table_locator accounting_scope=original_unreconciled\n",
                 (unsigned int)team_index, (unsigned int)team_mode,
                 (unsigned int)payroll_raw, (unsigned int)cap_raw);
+            if (team_mode == 2u && team_index < 32u) {
+                uint32_t calendar[7], team_flag;
+                uint16_t accumulator;
+                if (signing_screen_read(0x00E576A4u, calendar, sizeof(calendar)) &&
+                    calendar[5] <= 255u &&
+                    signing_screen_read(0x00E5775Cu + team_index * 4u, &team_flag, sizeof(team_flag)) &&
+                    other <= UINT32_MAX - 0x19Cu &&
+                    signing_screen_read(other + 0x19Cu, &accumulator, sizeof(accumulator))) {
+                    fprintf(stderr, "[FRANCHISE-TRACE] sign_calendar season_index_raw=%u display_year=%u phase_01_raw=%u phase_02_raw=%u step_04_raw=%u step_05_raw=%u counter_08_raw=%u team_flag_raw=%u first_year_accumulator_raw=%u scope=original_calendar_adjustment_unreconciled\n",
+                        (unsigned int)calendar[5], (unsigned int)(2004u + calendar[5]),
+                        (unsigned int)calendar[0], (unsigned int)calendar[1],
+                        (unsigned int)calendar[3], (unsigned int)calendar[4],
+                        (unsigned int)calendar[6], (unsigned int)team_flag,
+                        (unsigned int)accumulator);
+                } else {
+                    fprintf(stderr, "[FRANCHISE-TRACE] sign_calendar state=unverified\n");
+                }
+            }
         } else {
             fprintf(stderr, "[FRANCHISE-TRACE] sign_team identity=unverified\n");
         }
