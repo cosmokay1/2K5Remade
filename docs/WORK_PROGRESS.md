@@ -2372,3 +2372,13 @@ Added meaningful rate regression checks: an in-flight SDK call reserves the
 only slot across threads; rejected admission reaches no second SDK call,
 leaves negotiation finances unchanged and preserves legal manual signing.
 All 14 focused provider tests and all 446 offline tests pass.
+
+### Durable rollover source review (2026-10-13)
+
+Reviewed current replay, chronology, ActiveContract, GenerationAgreement and
+cohort assumptions with a parallel agent. Recorded concrete blockers and ordered
+implementation in docs/season-rollover.md. Budget replacement alone cannot
+advance the year; original payment indices and prior transaction plans must
+remain immutable. Calendar/projection anchors and an atomic common league event
+are required before changing financial state. Rollover remains unimplemented;
+no new season, game transaction or future cap value is claimed.
