@@ -5,6 +5,18 @@ from franchise.vertex_provider import VertexProvider
 
 
 class VertexTests(unittest.TestCase):
+    def test_owned_sdk_closes_once_and_injected_client_is_not_closed(self):
+        owned = Mock()
+        sdk = SimpleNamespace(Client=Mock(return_value=owned))
+        with patch.dict('sys.modules', {'google': SimpleNamespace(genai=sdk)}):
+            provider = VertexProvider(project='p', location='global', model='m')
+        provider.close(); provider.close()
+        owned.close.assert_called_once_with()
+        external = Mock()
+        provider = VertexProvider(project='p', location='global', model='m', client=external)
+        provider.close()
+        external.close.assert_not_called()
+
     def test_pending_sdk_attempt_reserves_rate_slot_for_other_threads(self):
         from concurrent.futures import ThreadPoolExecutor
         from threading import Event

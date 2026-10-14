@@ -66,6 +66,7 @@ class VertexProvider:
         self.response_schema = json.loads(json.dumps(schema, allow_nan=False))
         self.model = model
         self._last_usage = None
+        self._owns_client = client is None
         if client is None:
             try:
                 from google import genai
@@ -88,6 +89,12 @@ class VertexProvider:
             except Exception:
                 raise RuntimeError("Could not initialize Vertex AI; check Google credentials") from None
         self._client = client
+
+    def close(self):
+        """Release the SDK client created here; injected clients stay caller-owned."""
+        if self._owns_client:
+            self._client.close()
+            self._owns_client = False
 
     @property
     def last_usage(self):

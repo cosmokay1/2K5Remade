@@ -1,6 +1,6 @@
 import json
 import io
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from pathlib import Path
 import subprocess
 import sys
@@ -113,6 +113,28 @@ class SidecarTests(unittest.TestCase):
             self.assertEqual(responses[1]["result"]["decision_mode"], "manual")
             self.assertEqual(store.load_team("a").charges, (10,))
             self.assertNotIn("SECRET", stdout.getvalue() + stderr.getvalue())
+
+    def test_owned_sdk_cleanup_on_eof_and_transport_failure(self):
+        from franchise.sidecar import main
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'state.sqlite'
+            FranchiseStore(path)
+            for failed_transport in (False, True):
+                provider = Mock()
+                stderr = io.StringIO()
+                # Cleanup failure must not replace the transport error or leak
+                # details to the protocol/error stream.
+                if failed_transport: provider.close.side_effect = RuntimeError('SECRET')
+                with patch.object(sys, 'argv', ['sidecar', '--database', str(path), '--provider', 'vertex']), \
+                     patch.object(sys, 'stderr', stderr), \
+                     patch('franchise.runtime_budget.runtime_request_budget', return_value=Mock()), \
+                     patch('franchise.vertex_provider.VertexProvider', return_value=provider), \
+                     patch('franchise.sidecar.serve', side_effect=BrokenPipeError('transport') if failed_transport else None):
+                    if failed_transport:
+                        with self.assertRaisesRegex(BrokenPipeError, 'transport'): main()
+                    else: main()
+                provider.close.assert_called_once_with()
+                self.assertNotIn('SECRET', stderr.getvalue())
 
     def test_denied_runtime_impersonation_never_initializes_owner_sdk_fallback(self):
         from franchise.sidecar import main

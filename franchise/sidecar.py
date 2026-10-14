@@ -89,6 +89,7 @@ def main():
         parser.error("Runtime impersonation applies only to Vertex mode")
     if not Path(args.database).is_file():
         parser.error("An existing verified franchise database is required")
+    sdk_provider = None
     if args.provider == "offline-fixture":
         def provider(_):
             return json.dumps(dict(action="reject", reason="Offline transport fixture",
@@ -107,6 +108,7 @@ def main():
                 credentials = runtime_credentials(config["project"], config["runtime_service_account"])
                 control_credentials = runtime_credentials(config["project"], config["runtime_service_account"])
             provider = VertexProvider(project=config["project"], location=config["location"], model=config["model"], credentials=credentials,request_budget=budget,max_input_tokens=16384)
+            sdk_provider = provider
             access_check = GoogleControl(project=config["project"], bucket=config["control_bucket"], object_name=config["control_object"], credentials=control_credentials)
         except Exception:
             # Financial/manual operations stay authoritative. Never substitute
@@ -115,7 +117,14 @@ def main():
                 raise AccessDisabled("AI initialization unavailable")
             provider = access_check = unavailable
             print("AI unavailable: check persistent budget configuration, runtime authentication and optional dependencies.", file=sys.stderr)
-    serve(Bridge(FranchiseStore(args.database), provider=provider, access_check=access_check), sys.stdin, sys.stdout)
+    try:
+        serve(Bridge(FranchiseStore(args.database), provider=provider, access_check=access_check), sys.stdin, sys.stdout)
+    finally:
+        if sdk_provider is not None:
+            try:
+                sdk_provider.close()
+            except Exception:
+                print('AI client cleanup unavailable.', file=sys.stderr)
 
 
 if __name__ == "__main__":

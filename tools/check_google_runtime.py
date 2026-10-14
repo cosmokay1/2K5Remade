@@ -28,7 +28,7 @@ def check():
     credentials = AnonymousCredentials()
     provider = VertexProvider(project='offline-packaging-fixture', location='global',
                               model='offline-packaging-fixture', credentials=credentials)
-    provider._client.close()
+    provider.close()
     Request().session.close()
     control = GoogleControl(project='offline-packaging-fixture', bucket='unused',
                             object_name='unused', credentials=credentials)

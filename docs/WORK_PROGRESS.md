@@ -4306,3 +4306,25 @@ verified. The same session67313 is retained for lifecycle inspection rather
 than restarted. Actual game73738 remains running in its separate prefix.
 Scoped runtime authentication/B05, live control/model checks and real-franchise
 import remain required; SDK packaging alone does not satisfy them.
+
+## October14,2026 — Explicit SDK cleanup and clean Windows check exit
+
+Inspection of the same SDK test handle confirmed only Steam shim73975 and
+test-prefix Wine services/explorers remain; no Python worker. Prefix matching
+accounts for Proton's trailing slash. This is a launch-shim wait, not evidence
+of a stuck SDK call. No process was restarted on observation timeout.
+
+Added VertexProvider.close for the SDK client created by that provider; injected
+clients remain caller-owned. Sidecar releases that owned provider on EOF or
+transport failure, including initialized-client cleanup if later setup fails.
+Cleanup errors produce only a generic stderr message and cannot replace a
+transport error or leak SDK details into protocol responses. The offline SDK
+check uses the same explicit close method.
+
+Twenty focused provider/sidecar tests passed, covering owned/external clients,
+repeated close, EOF, broken transport and cleanup failure. Staged only authored
+source updates privately. The revised actual Windows SDK check through Proton's
+own Wine executable exited0 and its google-direct-wine-result.json repeats all
+five offline packaging passes. The separate original Proton Steam shim was
+identified for targeted cleanup; game73738 and game prefix remain untouched.
+No cloud call, credentials, grant or real-franchise transaction is involved.
