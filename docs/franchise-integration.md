@@ -202,4 +202,4 @@ snapshot and validates the complete calendar agreement. Portable C++ checks have
 accepted actual Python-generated active, expired and never-held snapshots. The
 extended Windows pipe scenario adds saved personality and compares complete
 snapshots across two sidecar launches without changing the database; execution
-for that extension is still pending on revision 11cac7d.
+for that extension passed in Windows run 38509950333 on revision 11cac7d.

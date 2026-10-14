@@ -2705,3 +2705,48 @@ before the full Linux runtime. These Linux tests cannot run on the local macOS
 host and await CI; local existing POSIX lock CTest still passes. Renderer access
 staging is unfinished and its experimental changes remain uncommitted. This pin
 is prerequisite source validation, not a passing full Linux build or game proof.
+
+### Calendar player pipe verified; vertex conversion underway (2026-10-13)
+
+Run38509950333 completed successfully at11cac7d, including Windows actual native
+pipe checks for calendar player snapshots/personality and byte-identical database
+restarts. This is synthetic engine transport evidence, not game integration.
+Pending pushbuffer edits now use checked Linux attribute copies before decoding
+and bound full inline float/short payloads rather than only four bytes. A temporary
+fixture compiled the actual fetch_attr source and passed complete float4 decoding,
+truncated float4/short4 rejection and maximal offset/index bounds on macOS. Linux
+copy-path execution, texture/palette/framebuffer staging and full source compilation
+remain unfinished; no renderer patch published yet. Runtime prerequisite CI
+38510676691 was confirmed live building SDL at the latest observation.
+
+### Linux prerequisite execution and renderer staging integration (2026-10-13)
+
+Run38510676691 at12ddc36: Windows runtime/tools passed; Linux job115678212845
+passed POSIX condition waits, actual AC97 fault/reset/single-step cycles and checked
+memory-copy protected-page tests. Full runtime then failed only on the still
+published Windows include in nv2a_pb_exec.c. Unpublished renderer work now stages
+four texture layouts/palettes, preserves original pitch/swizzle/DXT offsets, uses
+host framebuffer rows with dirty-span flush, and stages SDL presentation input.
+Checked vertex reads and full inline attribute bounds are retained. Rendering
+rejects an unreadable enabled texture batch instead of silently claiming textured
+output. Windows SEH remains; Linux draw scopes use the checked leaves/staging.
+Diagnostic raw-memory conversions and positive CPU rendering fixtures are still
+in progress. This source is not yet committed or claimed compiled/render-tested.
+
+### Linux renderer port published for x86-64 CI (2026-10-13)
+
+Dependency889cbbb replaces Linux raw guest accesses with checked attribute copies,
+four texture/palette snapshots, framebuffer staging/dirty row flush, staged SDL
+presentation rows and bounded diagnostic copies. Windows SEH/direct-render paths
+remain. Failed enabled texture copies skip that batch; partial output failures are
+reported without claiming atomicity. Fixed the Linux DWORD/%lu diagnostic parse
+mismatch found by review. Actual production CPU renderer fixture passed repeatedly
+in an existing offline Linux ARM64 node20 container with read-only mounts, including
+textured alpha blending, stage restoration, DXT1, indexed palette, protected/missing
+pages, read-only outputs, deferred flush and inline/stride bounds. This validates
+CPU staging on that host, not x86-64 SDL GPU presentation or game execution.
+Independent review found no remaining Linux raw guest reads in the converted path.
+CI now runs the renderer fixture against the pinned official SDL SDK before full
+runtime compilation; exact-revision Windows/Linux x86-64 results remain pending.
+Framebuffer staging currently has an explicit64MiB host allocation policy, not a
+claimed NV2A hardware limit; real game workload/performance remains unmeasured.
