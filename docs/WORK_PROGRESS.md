@@ -4090,3 +4090,37 @@ Private named readback retained without save edits. Six focused tests passed,
 including signed rushing yards, separate passing/rushing TDs and no invented
 target/pressure/QB-hit values. No model request, runtime control renewal or
 guest financial mutation occurred.
+
+
+## October14,2026 — Issued real-roster IDs and stable initialization seed
+
+Added tools.franchise_snapshot_bindings with explicit create-once companion
+files. UUIDs belong to a new local franchise namespace; slots and name/raw
+biography guards constrain lookup. Exclusive create refuses overwrite; malformed
+or missing bindings fail validation. Guard changes, duplicate IDs/slots, roster
+intake/removal and calendar advancement reject automatic remapping. Financial
+changes and supported same-year transfers do not regenerate identities.
+
+Initial profile previews reuse existing initial_actor with persisted seed/UUIDs.
+They are bootstrap input, not a mutable parallel actor store. Future financial
+bootstrap must use the same IDs/seed before actual game negotiation consumes them.
+No engine ledger is fabricated from incomplete modern contract sources.
+
+Private actual baseline companion contains1937 IDs. Baseline, unchanged control
+and Gildon signing all validate with1937 members and identical profile digest
+631e23605125af89e211e7f4072f3a140ea5da68bebfd8d361d90043d172df02.
+Gildon's ID persists from FA to Giants. Profile styles span all five authored
+styles; these are fictional preferences, not assertions about actual people.
+All three save hashes remain unchanged. Companion and evidence retained in
+analysis/AIBASELIN.
+
+Five focused tests passed for signing/financial change plus JSON restart,
+biography/slot reuse rejection, membership/year migration gates, malformed
+bindings and explicit create refusing overwrite. Cross-franchise selection,
+bank rebuilds, drafting/year advancement and live guest binding remain unverified.
+Published bd180f8 passed Build38603293266 and Franchise AI38603293274.
+697c587 Build38604337494 passed; Franchise AI38604337319 was still in progress.
+
+Successful bd180f8 job logs independently confirm625 full-suite tests passed
+on both Ubuntu and Windows. New binding tests are focused local validation;
+the new revision's full CI is not yet claimed.

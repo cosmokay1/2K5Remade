@@ -593,3 +593,30 @@ Zero rushing touchdowns are absent in the earliest row, illustrating why sparse
 missing data must not automatically become an observed zero. Rushing touchdowns
 remain distinct from passing touchdowns; no total-touchdown counter is invented.
 This mapping still does not classify binary modes into played/CPU/fast-sim.
+
+
+## Pinned player bindings for real-roster bootstrap
+
+`python3 -m tools.franchise_snapshot_bindings SAVEGAME.DAT bindings.json --create`
+explicitly issues one local franchise namespace, seed and opaque UUID per supported
+member. Exclusive file creation refuses overwrite. Omit --create to validate an
+existing companion; absent or malformed companions fail instead of rerolling.
+Names plus raw player04..07 and19..1B bytes form a biography guard; packed
+values are not interpreted as birthdays or proof of real-world uniqueness.
+Slots are constrained lookup locations. Changed guards, duplicate UUIDs/slots,
+new/missing members or a changed year reject automatic remapping. Same-year
+roster transfers and financial changes preserve the issued identities.
+
+`initial_profiles` uses the existing fictional initial_actor and persisted seed/IDs
+to preview bootstrap profiles; it is not a second store for evolving actors.
+A future FranchiseStore bootstrap must use these same IDs/seed, after financial
+source import and reconciliation. The initial companion is not updated during
+negotiation and never resets existing Store relationship/story history.
+
+Actual AIBASELIN bindings recognize1937 members in AICNTRL and AIGILDON with
+identical initial profile digest. Gildon's issued ID follows his FA→Giants move.
+Registry and evidence remain private under analysis/AIBASELIN. This proves these
+controlled same-year snapshots, not bank rebuilds, draft intake, season advancement
+or live memory binding. Pair each franchise with its own companion: an otherwise
+identical copied roster does not prove that two saves are the same franchise.
+No modern ledger, live contract decision or game mutation is performed by this tool.
