@@ -44,3 +44,19 @@ league pass in the same transaction, without persistent caching. Benchmark outpu
 also measures five identical paired retries and verifies their original receipt.
 With32 teams/640 recorded-evidence events, a local follow-up measured readmedian
 22.21ms and paired-retrymedian22.48ms. These figures are not a Windows/game deadline.
+
+## Expanded efficiency evidence
+
+The same32-team/640-record fixture now persists derived efficiency provenance as
+well as raw observations. On this Mac, fresh validated reads measured median
+69.90/max70.91ms and paired retry70.82ms before derivation reuse. Reusing only
+the last identical sourced derivation inside each chronological team read measured
+59.11/max60.73ms and paired retry60.74ms afterward. Every stored actual result,
+offer, source identity and financial event still validates. New reads recompute
+from scratch; write validation is uncached. The local entry is replaced rather
+than growing with history. Changed sources miss it; interleaved unique evidence
+will not gain the repeated-source benefit. No persistent ledger cache was added.
+
+These workloads differ from the older22ms evidence fixture above. Results are
+synthetic Mac measurements, not Windows/Deck/game responsiveness or a universal
+latency guarantee. No timing thresholds enter correctness tests.

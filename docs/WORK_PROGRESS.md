@@ -1683,3 +1683,16 @@ identity/window/mode/coverage claims still require complete canonical evidence.
 324 full tests, diff and synthetic money audit pass.50f37c8 Build38490369723
 passed; Franchise AI38490369770 remained running. No real game/save evidence
 was added; full delivery goal remains active.
+
+## October 13, 2026 — Bounded read-local efficiency derivation reuse
+
+Expanded evidence benchmark measured32-team640-record readmedian69.90ms and
+paired70.82ms. Reusing only the last successfully checked identical source
+derivation within each team replay reduced follow-up medians to59.11/60.74ms
+on this Mac. Cache key includes canonical full raw evidence and freshly parsed
+offer identity; every actual derived result/common evidence/financial event is
+still checked. Fresh reads and writes recompute; one entry prevents history-sized
+cache growth.328 full tests cover later corrupted results, changed source/identity/
+boolean/offer claims, new-read freshness and bounded retention. Independent review
+found no skipped financial authority. No game/Windows/Deck latency claim or paid
+inference.50f37c8 passed CI38490369770/38490369723; b4e0d77 CI remained running.

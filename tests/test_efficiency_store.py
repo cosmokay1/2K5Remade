@@ -5,6 +5,7 @@ import json
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from franchise.books import OpeningBooks
 from franchise.cap import Ledger, Offer
@@ -111,3 +112,77 @@ class EfficiencyStoreTests(unittest.TestCase):
         saved = FranchiseStore(self.store.path).stories('a')[0]['evidence']
         self.assertNotIn('observed_efficiency', saved)
         self.assertEqual(saved, legacy['evidence'])
+
+    def repeated_dialogues(self):
+        for request in ('first','second'):
+            event=self.story(request=request)
+            event.update(action='reject',outcome='player_rejected')
+            self.store.record_negotiation('a',event,access_check=lambda:None)
+
+    def test_replay_reuses_derivation_for_identical_source_but_validates_every_actual_record(self):
+        self.repeated_dialogues()
+        reconstruct=PerformanceEvidence.from_context
+        with patch.object(PerformanceEvidence,'from_context',wraps=reconstruct) as derived:
+            self.store.load_team('a')
+            self.assertEqual(derived.call_count,1)
+        with closing(sqlite3.connect(self.store.path)) as db:
+            row=db.execute("SELECT id,payload FROM events WHERE request_key='dialogue:second'").fetchone()
+            changed=json.loads(row[1])
+            changed['event']['evidence']['observed_efficiency']['efficiencies']['reception_per_target']['value']='3/4'
+            db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(changed),row[0]))
+            db.commit()
+        with patch.object(PerformanceEvidence,'from_context',wraps=reconstruct) as derived:
+            with self.assertRaisesRegex(ValueError,'source counters'):
+                self.store.load_team('a')
+            self.assertEqual(derived.call_count,1)
+
+    def test_cache_key_covers_source_metadata_and_player_and_base_validation_always_runs(self):
+        cache={}
+        original=self.story()
+        FranchiseStore._validate_story_evidence(original,efficiency_cache=cache)
+        changed=copy.deepcopy(original)
+        changed['evidence']['performance']['observations']['receptions']['source']='different source'
+        with self.assertRaisesRegex(ValueError,'source counters'):
+            FranchiseStore._validate_story_evidence(changed,efficiency_cache=cache)
+        changed=copy.deepcopy(original)
+        changed['offer']['player_id']='different-player'
+        with self.assertRaisesRegex(ValueError,'another player'):
+            FranchiseStore._validate_story_evidence(changed,efficiency_cache=cache)
+        changed=copy.deepcopy(original)
+        changed['offer']['salaries']=[False]
+        with self.assertRaises(ValueError):
+            FranchiseStore._validate_story_evidence(changed,efficiency_cache=cache)
+        changed=copy.deepcopy(original)
+        changed['evidence']['financial_revision']=True
+        with self.assertRaisesRegex(ValueError,'financial revision'):
+            FranchiseStore._validate_story_evidence(changed,efficiency_cache=cache)
+        changed=copy.deepcopy(original)
+        changed['evidence']['personality']['catching']=99
+        with self.assertRaises(ValueError):
+            FranchiseStore._validate_story_evidence(changed,efficiency_cache=cache)
+
+    def test_successive_reads_reconstruct_source_again_and_detect_new_corruption(self):
+        self.repeated_dialogues()
+        reconstruct=PerformanceEvidence.from_context
+        with patch.object(PerformanceEvidence,'from_context',wraps=reconstruct) as derived:
+            self.store.load_team('a')
+            self.store.load_team('a')
+            self.assertEqual(derived.call_count,2)
+        with closing(sqlite3.connect(self.store.path)) as db:
+            row=db.execute("SELECT id,payload FROM events WHERE request_key='dialogue:first'").fetchone()
+            changed=json.loads(row[1])
+            changed['event']['evidence']['performance']['missing_counters'].append('targets')
+            db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(changed),row[0]))
+            db.commit()
+        with self.assertRaises(ValueError):
+            self.store.load_team('a')
+
+    def test_read_local_derivation_retains_only_one_source(self):
+        cache={}
+        for index in range(20):
+            story=self.story()
+            story['evidence']['performance']['window']='synthetic game '+str(index)
+            source=PerformanceEvidence.from_context(story['evidence']['performance'])
+            story['evidence']['observed_efficiency']=source.efficiency_context()
+            FranchiseStore._validate_story_evidence(story,efficiency_cache=cache)
+            self.assertEqual(len(cache),1)

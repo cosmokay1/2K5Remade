@@ -194,10 +194,11 @@ class FranchiseStore:
         origin = self._franchise_origin(db)
         relationship_sources = set()
         payment_references = set()
+        efficiency_cache = {}  # Keep only the last derivation within this chronological read.
         for event_id, kind, serialized in db.execute("SELECT id, kind, payload FROM events WHERE team_id=? ORDER BY id", (team_id,)):
             payload = json.loads(serialized)
             if kind == "sign":
-                self._validate_story_evidence(payload["story"])
+                self._validate_story_evidence(payload["story"], efficiency_cache=efficiency_cache)
                 data = payload["offer"]
                 receipt = ledger.sign(payload["request_id"], Offer.from_dict(data), payload["expected_revision"])
                 self._remember_promises(ledger,payload)
@@ -312,7 +313,7 @@ class FranchiseStore:
                     self._validate_prior_personality(db,prospect['player_id'],prospect['personality'],before_event=event_id)
                 ledger._scouting.append(payload["event"])
             elif kind == "dialogue":
-                self._validate_dialogue(payload["event"])
+                self._validate_dialogue(payload["event"], efficiency_cache=efficiency_cache)
             elif kind == "budget":
                 ledger.update_budget(**{key: payload[key] for key in ("cap", "roster_reserve", "expected_revision")})
             else:
@@ -1040,7 +1041,7 @@ class FranchiseStore:
             return result
 
     @staticmethod
-    def _validate_story_evidence(story):
+    def _validate_story_evidence(story, *, efficiency_cache=None):
         if story is not None and "promise_goals" in story:
             from franchise.promises import goals_from_list
             goals_from_list(story["promise_goals"])
@@ -1060,20 +1061,27 @@ class FranchiseStore:
         validate_performance(evidence)
         if "observed_efficiency" in evidence:
             from franchise.performance import PerformanceEvidence
-            performance = PerformanceEvidence.from_context(evidence["performance"])
-            if performance.player_id != Offer.from_dict(story["offer"]).player_id:
-                raise ValueError("Observed efficiency belongs to another player")
+            player = Offer.from_dict(story['offer']).player_id
+            key = (player, json.dumps(evidence['performance'], sort_keys=True, allow_nan=False)) if efficiency_cache is not None else None
+            expected = efficiency_cache.get(key) if efficiency_cache is not None else None
+            if expected is None:
+                performance = PerformanceEvidence.from_context(evidence["performance"])
+                if performance.player_id != player:
+                    raise ValueError("Observed efficiency belongs to another player")
+                expected = json.dumps(performance.efficiency_context(), sort_keys=True, allow_nan=False)
             # Canonical JSON also rejects bool/int substitutions that Python
             # object equality would otherwise consider equal.
-            expected = json.dumps(performance.efficiency_context(), sort_keys=True, allow_nan=False)
             actual = json.dumps(evidence["observed_efficiency"], sort_keys=True, allow_nan=False)
             if actual != expected:
                 raise ValueError("Observed efficiency disagrees with source counters")
+            if efficiency_cache is not None:
+                efficiency_cache.clear()
+                efficiency_cache[key] = expected
         json.dumps(evidence, allow_nan=False)
 
     @staticmethod
-    def _validate_dialogue(event):
-        FranchiseStore._validate_story_evidence(event)
+    def _validate_dialogue(event, *, efficiency_cache=None):
+        FranchiseStore._validate_story_evidence(event, efficiency_cache=efficiency_cache)
         if type(event) is not dict or event.get("outcome") not in {
                 "counteroffer", "player_rejected", "accounting_rejected"}:
             raise ValueError("Noncommitted negotiation event required")
