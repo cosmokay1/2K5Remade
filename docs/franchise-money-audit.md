@@ -99,7 +99,22 @@ User chose to retain2004 dollar amounts and the original$80.5M league economy,
 scaling modern minimums/rookie amounts proportionally to that cap. Modern rule
 structure remains required. An explicit source reference cap/year and integer
 posting policy must accompany that scaling; do not guess minimums or change
-existing contract totals to finance a signing. No conversion is implemented yet.
+existing contract totals to finance a signing. No conversion is installed in the game yet.
+
+`franchise.historical_economy.HistoricalEconomy` now implements this simulation
+conversion using the [published2026 cap](https://www.nfl.com/news/nfl-announces-2026-salary-cap-set-at-301-2-million-per-team)
+as a fixed301.2M reference. With the verified80.5M target, the exact ratio is
+805/3012. Minimums round up and ceilings down to1000-dollar postings. This is
+an authored adaptation policy, not a historical NFL minimum or NFL posting rule.
+Game2004 maps to published2026 minimums; later game years advance the minimum
+table year while retaining the fixed reference ratio, through its published2030
+limit. No future reference cap is predicted or fetched automatically.
+
+The helper supplies typed drafted/undrafted scale inputs to existing validators;
+drafted allocations still require actual source amounts, and mismatched reference
+minimums reject. It cannot invent pick allotments. Original offer-word encoding,
+legacy guarantees/debt conversion, persistence of adaptation provenance and the
+game calendar/import remain required before actual transactions use these inputs.
 
 `tools.inspect_franchise_cap` now derives the franchise tail from the validated
 saved scheduler boundary and reads the league-cap field at tail+15D0. Original

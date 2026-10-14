@@ -4353,3 +4353,24 @@ sentSIGTERM; original wrapper returned241 after deliberate cleanup. The revised
 direct Proton-Wine SDK check independently exited0; the old wrapper is not
 claimed to have exited naturally. Published409a3ce and3aeb93f passed both CI
 workflows;03dda17 workflows were in progress at this check.
+
+## October14,2026 — Approved historical economy conversion
+
+Verified NFL's official2026 cap publication at301.2M; retained its URL with the
+conversion policy. HistoricalEconomy uses verified target cap and exact ratio,
+ceil minimums/floor ceilings to1000-dollar units, and maps game2004 to published
+2026 CBA minima. Later game years advance the published minimum table with a
+fixed reference ratio, rejecting beyond2030 rather than inventing future rules.
+It never rewrites existing contracts or the league cap and does not alter revenue.
+
+With80.5M target the ratio is805/3012, zero-credit active floor237000 and7+credit
+floor348000. Drafted/undrafted four/three-year minima use237000/249000/261000/
+273000 as applicable. Drafted allotments require supplied typed source inputs
+with reference-year minima; no actual pick/club allocations are guessed.
+
+Thirteen focused conversion/minimum/rookie tests passed. Actual Ledger preview
+rejects347000 against the scaled348000 veteran floor, accepts348000, preserves
+80.5M cap and zero fixture charges. Rookie fixtures reject underpayment and
+insufficient scaled pool; allocation fixtures are authored, not official pick
+values. Actual guest encoding, original obligation/guarantee conversion and
+persisted source policy remain unintegrated. No new Deck build or model request.
