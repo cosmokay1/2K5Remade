@@ -107,6 +107,32 @@ def main():
             assert responses[1]['result']==releases.player_context('a','v')
         print("Native Windows pipe handshake, cap rejection, manual signing, player context and restart verified (synthetic).")
         print("Native Windows supported release, retained debt/cash and restart retry verified (synthetic).")
+
+        capacity_path=Path(directory)/'oversized receipt.sqlite'
+        capacity_store=FranchiseStore(capacity_path)
+        capacity_store.create_team('a',Ledger.from_opening(OpeningBooks(contracts=(contract,)),cap=100,
+            roster_reserve=0,max_bonus_years=5,veteran_minimums={'v':(1,)*3}))
+        capacity_store.initialize_cash('a',(CashObligation('contract:v','v',69,9,'x'*70000,
+            (('signing_bonus',9),)),),source='synthetic oversized source record')
+        unchanged=capacity_path.read_bytes()
+        rejection=None
+        for attempt in range(2):
+            result=subprocess.run([sys.argv[1],sys.executable,str(capacity_path),'--receipt-capacity'],
+                text=True,capture_output=True,timeout=20,check=True)
+            responses=[json.loads(line) for line in result.stdout.splitlines()]
+            assert len(responses)==1
+            response=responses[0]
+            assert response['error']=='response_too_large' and response['result'] is None
+            assert response['request_id']=='release'
+            assert len(result.stdout.encode('utf-8'))<=65536
+            if rejection is None:rejection=response
+            else:assert response==rejection
+            assert capacity_path.read_bytes()==unchanged
+            current=capacity_store.load_team('a')
+            assert current.revision==1 and current.financial_snapshot()['signed_players']==['v']
+            assert current.cash_snapshot()['nominal_total']==69 and current.cash_snapshot()['paid_total']==9
+        print("Native Windows oversized lifecycle receipt rejection and unchanged restart state verified (synthetic).")
+
         trade_path=Path(directory)/'paired assignment.sqlite'
         trades=FranchiseStore(trade_path)
         for team in ('a','b'):

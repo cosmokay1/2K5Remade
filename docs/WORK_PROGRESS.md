@@ -2012,3 +2012,14 @@ portable native C++ protocol checks and the repeatable money audit pass. Compact
 transaction receipts/paged reconciliation remain necessary for long franchises;
 the guard prevents unreadable commits but does not expand protocol capacity.
 No game execution or save/load evidence is implied.
+
+### Windows capacity rejection fixture (2026-10-13)
+
+Added an asset-free native smoke mode for an oversized lifecycle receipt. The
+Windows fixture builds a sourced cash record larger than the pipe capacity and
+runs the release request through two independent native client/sidecar processes.
+It requires a bounded response_too_large reply, stable request identity, identical
+repeated error, byte-identical SQLite file, retained ownership and unchanged
+financial/cash totals. The exact raw C++ request was exercised locally through
+Bridge twice with unchanged database bytes; portable protocol checks pass.
+The new Windows process execution awaits CI and is not yet claimed verified.
