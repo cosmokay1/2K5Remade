@@ -4707,3 +4707,22 @@ execution of those new assertions is pending CI. No actual game/provider auth,
 paid inference, installed executable, control object or save was changed.
 Fresh Deck check still found no game process and only old log evidence; the
 requested installed-observer Trotter screen remains pending without re-prompting.
+
+
+## October14,2026 — Windows proposal fixture connection cleanup repaired
+
+Published482c364 Build38625232889 passed, but AI38625232792 failed in Windows
+Python cleanup of test_tampered_durable_preview_is_rejected_by_financial_replay.
+The new test used sqlite3.Connection as a transaction context manager, which does
+not close the connection; Windows WinError32 prevented temporary database removal.
+Changed the fixture to explicit contextlib.closing plus the transaction context.
+The assertions and production proposal behavior are unchanged; no ignored cleanup
+errors or weakened test. Eight focused proposal tests pass locally.
+
+Ran all eight repaired proposal tests using actual Windows CPython3.13.16 AMD64
+under the existing Deck Proton Wine runtime in the separate python fixture prefix.
+The process exited0; retrieved JSON confirms sys.platform=win32,8 tests and success,
+including cleanup after tampered-preview refusal. No game prefix, save, executable,
+cloud credentials or paid inference was used. Only authored Python files/fixture
+were copied to the private source check tree. Published Windows/native checks
+still need a successful replacement CI run; this focused proof is not gameplay.

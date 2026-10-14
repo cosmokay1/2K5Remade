@@ -1,5 +1,6 @@
 """Game-facing decisions persist without creating a phantom signing."""
 import json
+from contextlib import closing
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -109,7 +110,7 @@ class NegotiationProposalTests(unittest.TestCase):
 
     def test_tampered_durable_preview_is_rejected_by_financial_replay(self):
         self.bridge.handle(self.request())
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             payload = json.loads(db.execute("SELECT payload FROM events WHERE request_key='dialogue:proposal'").fetchone()[0])
             payload['event']['proposal_preview']['contract_charges'] = [9]
             db.execute("UPDATE events SET payload=? WHERE request_key='dialogue:proposal'", (json.dumps(payload),))
