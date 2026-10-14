@@ -17,7 +17,11 @@ NAMED_METRICS = {0: ('games', 'count'), 1: ('rush_attempts', 'count'),
                  2: ('rushing_yards', 'yards'), 3: ('rushing_touchdowns', 'count'),
                  6: ('pass_attempts', 'count'), 7: ('completions', 'count'),
                  8: ('passing_yards', 'yards'), 9: ('passing_touchdowns', 'count'),
-                 10: ('interceptions_thrown', 'count')}
+                 10: ('interceptions_thrown', 'count'),
+                 # Descriptor field2F -> history19; all ten Gildon pre-2004
+                 # seasons corroborate half-sack units against NFL's table.
+                 # This labels saved history, not live telemetry coverage.
+                 19: ('sacks', 'half_sack_units')}
 
 
 def inspect_player_history(payload: bytes, source_slot: int) -> dict:
@@ -63,6 +67,11 @@ def inspect_player_history(payload: bytes, source_slot: int) -> dict:
                  'last_entry': bool(word & 0x80000000)}
         if code in NAMED_METRICS:
             entry['mapped_metric_name'], entry['mapped_unit'] = NAMED_METRICS[code]
+            if code == 19:
+                # Signed int16 divided by2 is exactly representable as a JSON
+                # number; preserve the original integer separately.
+                entry['mapped_value'] = value / 2
+                entry['mapping_scope'] = 'historical sack mapping inferred from descriptor and Gildon NFL corroboration; live updates/coverage unverified'
         report['entries'].append(entry)
         if word & 0x80000000:
             return report

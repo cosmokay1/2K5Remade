@@ -41,7 +41,9 @@ class InspectPlayerHistoryTests(unittest.TestCase):
             {'statistic_code_raw': 18, 'period_code_raw': 1, 'signed_value_raw': 122,
              'deleted': False, 'mode_code_raw': 0, 'bit30_raw': 0, 'last_entry': False},
             {'statistic_code_raw': 19, 'period_code_raw': 2, 'signed_value_raw': -2,
-             'deleted': True, 'mode_code_raw': 1, 'bit30_raw': 1, 'last_entry': True}])
+             'deleted': True, 'mode_code_raw': 1, 'bit30_raw': 1, 'last_entry': True,
+             'mapped_metric_name': 'sacks', 'mapped_unit': 'half_sack_units', 'mapped_value': -1.0,
+             'mapping_scope': 'historical sack mapping inferred from descriptor and Gildon NFL corroboration; live updates/coverage unverified'}])
         self.assertEqual(payload, before)
         self.assertNotIn('tackles', report)
         self.assertNotIn('ratings', report)
@@ -51,6 +53,15 @@ class InspectPlayerHistoryTests(unittest.TestCase):
         self.assertFalse(report['history_present'])
         self.assertEqual(report['entries'], [])
         self.assertIn('do not infer zero', report['missing_evidence'])
+
+    def test_saved_sacks_preserve_raw_half_units_and_exact_values(self):
+        payload = self.fixture()
+        struct.pack_into('<II', payload, 0x41D54, (1<<23) | (19<<16) | 5,
+                         0x80000000 | (2<<23) | (19<<16) | 12)
+        report = inspect_player_history(bytes(payload), 0)
+        self.assertEqual([e['signed_value_raw'] for e in report['entries']], [5, 12])
+        self.assertEqual([e['mapped_value'] for e in report['entries']], [2.5, 6.0])
+        self.assertTrue(all(e['mapped_unit']=='half_sack_units' for e in report['entries']))
 
     def test_passing_mapping_retains_raw_mode_period_and_missing_fields(self):
         payload = self.fixture()

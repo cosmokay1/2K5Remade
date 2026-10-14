@@ -55,14 +55,15 @@ class SavedPerformanceTests(unittest.TestCase):
         performance = saved_player_performance(bindings, payload, 1)
         self.assertFalse(performance['history_present'])
         self.assertEqual(performance['saved_history'], [])
-        self.assertEqual(len(performance['missing_named_metrics']), 9)
+        self.assertEqual(len(performance['missing_named_metrics']), 10)
         self.assertNotEqual(performance['player_id'], saved_player_performance(bindings, payload, 0)['player_id'])
 
     def test_deleted_unmapped_and_unknown_flags_never_become_named_production(self):
         for word, reason in ((0x90000000 | (1<<23) | (6<<16) | 123, 'deleted'),
                              (0xC0000000 | (1<<23) | (6<<16) | 123, 'unknown_bit30'),
                              (0x80000000 | (1<<23) | (18<<16) | 123, 'unmapped_code'),
-                             (0x80000000 | (1<<23) | (6<<16) | 0xFFFF, 'negative_count')):
+                             (0x80000000 | (1<<23) | (6<<16) | 0xFFFF, 'negative_count'),
+                             (0x80000000 | (1<<23) | (19<<16) | 0xFFFF, 'negative_count')):
             payload = self.fixture(); struct.pack_into('<I', payload, 0x41D54, word)
             bindings = create_bindings(bytes(payload))
             performance = saved_player_performance(bindings, bytes(payload), 0)
@@ -79,6 +80,18 @@ class SavedPerformanceTests(unittest.TestCase):
         self.assertEqual(performance['saved_history'][0]['mode_code_raw'], 1)
         self.assertIsNone(performance['saved_history'][0]['candidate_calendar_year'])
         self.assertNotIn('observed_efficiency', performance)
+
+    def test_sacks_are_not_doubled_or_rounded_into_whole_counts(self):
+        payload = self.fixture()
+        struct.pack_into('<I', payload, 0x41D54, 0x80000000 | (1<<23) | (19<<16) | 5)
+        bindings = create_bindings(bytes(payload))
+        performance = saved_player_performance(bindings, bytes(payload), 0)
+        row = performance['saved_history'][0]
+        self.assertEqual((row['metric'], row['unit'], row['value']), ('sacks', 'sacks', 2.5))
+        self.assertEqual(row['raw_half_sack_units'], 5)
+        self.assertIn('inferred', row['mapping_scope'])
+        self.assertNotIn('sacks', performance['missing_named_metrics'])
+        self.assertIn('pressures', performance['unmapped_requested_metrics'])
 
     def test_changed_biography_or_bad_slot_refuses_export(self):
         payload = self.fixture(); bindings = create_bindings(bytes(payload))

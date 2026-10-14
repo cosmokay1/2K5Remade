@@ -291,8 +291,10 @@ It validates biography/calendar bindings first. Records retain source entry,
 raw mode and candidate calendar year; it does not aggregate periods or claim
 played/CPU/fast-sim coverage. Deleted records, unknown bit30, unmapped codes and
 negative counts are excluded with counts; signed yards remain valid. Missing
-history/metrics remain unknown. Tackles, targets, pressures and QB hits are still
-unmapped and are not manufactured.
+history/metrics remain unknown. Historical sacks retain raw half-unit counts and exact half-sack values, with
+the descriptor/NFL corroboration identified as a historical inference. This does
+not establish live sack telemetry. Tackles, targets, pressures and QB hits are
+still unmapped and are not manufactured.
 
 Negotiation rejects a supplied performance player_id belonging to another player.
 Provider instructions exclude these historical records from salary-credit and

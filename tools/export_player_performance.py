@@ -19,13 +19,16 @@ def saved_player_performance(bindings: dict, payload: bytes, source_slot: int) -
             excluded['unknown_bit30'] += 1
         elif 'mapped_metric_name' not in entry:
             excluded['unmapped_code'] += 1
-        elif entry['mapped_unit'] == 'count' and entry['signed_value_raw'] < 0:
+        elif entry['mapped_unit'] in ('count', 'half_sack_units') and entry['signed_value_raw'] < 0:
             excluded['negative_count'] += 1
         else:
-            observations.append({'metric': entry['mapped_metric_name'], 'unit': entry['mapped_unit'],
-                'value': entry['signed_value_raw'], 'period_code_raw': entry['period_code_raw'],
+            observations.append({'metric': entry['mapped_metric_name'],
+                'unit': 'sacks' if entry['mapped_unit'] == 'half_sack_units' else entry['mapped_unit'],
+                'value': entry.get('mapped_value', entry['signed_value_raw']), 'period_code_raw': entry['period_code_raw'],
                 'candidate_calendar_year': entry['candidate_calendar_year'],
-                'mode_code_raw': entry['mode_code_raw'], 'source': source + ':entry:' + str(index)})
+                'mode_code_raw': entry['mode_code_raw'], 'source': source + ':entry:' + str(index),
+                **({'raw_half_sack_units': entry['signed_value_raw'], 'mapping_scope': entry['mapping_scope']}
+                   if entry['mapped_unit'] == 'half_sack_units' else {})})
     present = {row['metric'] for row in observations}
     return {'player_id': player['player_id'], 'source': source,
         'saved_display_year': history['saved_display_year'],

@@ -4807,3 +4807,33 @@ Trotter's final candidate differs from [NFL's table](https://www.nfl.com/players
 This supports a half-unit sack candidate, not universal live/coverage verification.
 No defensive code was added to named exports yet. Raw histories remain private,
 with no ratings or invented targets/pressures/QB hits introduced.
+
+
+## October14,2026 — Corroborated historical half-sack units exported
+
+Mapped saved history19 to sacks in half-unit storage, retaining raw signed values,
+exact scaled halves and an explicit inference scope. Descriptor field2F and the
+previous ten-season Gildon/NFL comparison support this historical interpretation;
+no live-update or coverage proof is claimed. Game values remain authoritative for
+this export: Trotter's final saved value is not rewritten to match a different
+modern NFL table. Deleted/unknown-bit30/negative counts remain excluded. Missing
+sack entries are unknown, not synthesized zero or pressure/QB-hit estimates.
+
+Private actual export retains Gildon's ten sack entries and Trotter's four sparse
+entries. Kept raw/converted readback in .local-runtime/half-sack-history-readback.json;
+no save, game or model changed. Added exact half-unit history/export tests and
+negative-half-counter exclusion; existing raw metadata/missing-metric tests updated
+for the new supported metric. Focused15 tests pass; full offline678 tests passed
+in17.096s. No new minimum classification or credit count supplied.
+
+Asked once for the missing minimum-salary policy: saved historical3+game simulation
+credits, conservative highest-tier floors, or exact credit records. Original game
+pay/list history does not supply the full modern credit inputs. This policy input
+and the already requested actual Trotter screen remain pending; neither silence
+nor a preselected option authorizes assigning new financial classifications.
+
+Replacement1dc42a4 Build38628432683 and AI38628432855 completed successfully.
+Hosted logs verify676 tests on Windows/Ubuntu and repaired native plain-C
+host/context/restart execution. That validates the earlier checker repair;
+new half-sack source678 suite still requires its subsequent published CI.
+Persistent runtime auth, actual guest signing and save/load integration remain open.
