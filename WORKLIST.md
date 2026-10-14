@@ -60,8 +60,9 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   does not authorize AI or writes. A configured service signing_context operation
   and native reply validation now expose that read. Automatic root-game capture
   and scheduling are authored and pass portable/actual Windows checks;
-  the private build is installed after verified game/service exit. Actual execution
-  of the new capture remains pending user launch.
+  the private build is installed after verified game/service exit. Actual game
+  request/reply now resolves Trotter's persisted context automatically; all32
+  ledger financial snapshots remain unchanged and model attempts remain zero.
 - Actual AI/game/save integration, telemetry capture and final playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 
@@ -319,7 +320,7 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
 ## M5 — Verified Remade integration (B01/B02 gate)
 
 - [x] Fix native client shutdown ordering so a sidecar that stops reading cannot leave destruction waiting on a blocked pipe write; add a Windows stalled-peer regression. Shutdown now stops the owned sidecar before joining its worker; the strengthened stalled-write CTest passed Windows run 38503835760. Inherited-handle isolation and stalled-write cleanup passed Windows run 38504026771.
-- [ ] Link the reusable C-compatible franchise client into the actual root game host with explicit opt-in lifecycle ownership; validate host transport separately from guest transactions. OFF-by-default root target linkage and explicit vertex-only startup/cleanup are implemented; the shared lifecycle source and negative configuration cases passed Windows run 38504026771. Actual privately compiled root game starts the packaged Windows service and consumes signing-screen hello on the Deck, with AI disabled and zero model attempts. Normal game exit now also verifies owned child cleanup. Automatic read-only context capture is installed; its actual execution and authenticated game authorization remain pending.
+- [x] Link the reusable C-compatible franchise client into the actual root game host with explicit opt-in lifecycle ownership; validate host transport separately from guest transactions. OFF-by-default root linkage and explicit vertex-only startup/cleanup are implemented. Actual privately compiled game starts the packaged Windows service, consumes hello and automatically requests/receives the pinned Trotter personality/context on the Deck, with AI disabled and zero model attempts. Normal game exit verifies owned child cleanup. This completes transport/lifecycle validation; authenticated AI authorization and guest transactions remain separate open requirements.
 - [x] Establish a baseline game build and franchise behavior with the supplied game. Standard optimized build passes Proton validation and renders Franchise Options; user tested the vanilla Sign Contract path. This is baseline behavior only, not AI integration or full gameplay acceptance.
 - [ ] Map contract records, cap/tender fields, player identity, statistics and save data. Read-only current roster payroll reconstruction now matches all32 saved team totals in AIBASELIN, AICNTRL and AIGILDON (1696/1696/1697 active contracts). The installed bounded probe now matches actual Trotter signing team15/mode2, payroll77038 and league cap80500 to AIGILDON/prior UI evidence. The read-only calendar/cap-adjustment observer is now installed after confirmed normal exit; actual season index and week/phase remain unverified. This covers original contract schedules only; An exact new-deal format adapter now decodes raw offer fields and checks annual modern charges without rounding changes; actual saved Gildon terms round-trip with the same $4.766M/$3.523M charges. It rejects unsupported guest bonus allocation and base guarantees; broader modern obligation storage, tenders, durable identity and statistics remain open.
 - [ ] Trace signing, extension, release, trade, draft and year-transition functions.

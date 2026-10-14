@@ -204,8 +204,11 @@ new bindings. This read works with AI disabled and performs no model call.
 Native validation correlates the returned team, bank slot, revision and nested
 persisted player context, requiring canonical UUID/source hashes and explicitly
 false AI/write-authority flags. A matching reply is a read checkpoint, never an
-AI grant or guest commit receipt. Root-game automatic submission is now authored
-and privately compiled; actual game execution of it remains pending.
+AI grant or guest commit receipt. Root-game automatic submission is now privately
+compiled and executed on the Deck: Trotter's request/reply resolves his pinned
+UUID, persisted personality/relationships and revision0. All32 cloned financial
+snapshots remain unchanged, with zero model attempts. Authenticated AI decisions
+and guest transaction/save integration remain unverified.
 
 Enable the root inspector only with the paired pinned source variables and
 NFL2K5_FRANCHISE_GUEST_REVISION, an explicit nonnegative ledger revision. Partial

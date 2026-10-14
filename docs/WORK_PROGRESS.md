@@ -5004,3 +5004,28 @@ Published743deb6 Build38634852382 and AI38634852421 passed. Retrieved logs
 verify686 tests on Windows/Ubuntu. Updated WORKLIST's latest source/test baseline
 and lifecycle cleanup status; new capture source CI and actual game execution
 remain separate pending evidence.
+
+## October14,2026 — Actual automatic game player-context round trip verified
+
+User backed out of reopened Trotter offer without submitting. Actual root log
+line1138 contains game-sign-context-1, error=null, pinned UUID
+a564eb821c3742929f408fac07929cc5, Giants/revision0/slot1910 and AIGILDON source
+hashac16245c5fcd743f3cc9e6aa37d76de72424238782de353765c758d242c6bc7d.
+The returned actor is initialized with persisted fictional personality and
+relationships, classification_pending=true, AI/write authority=false. This
+request was captured/serialized by the actual game and served by the packaged
+Windows sidecar through the native validator, not injected by a local script.
+
+Read-only remote budget query reports zero attempts. Retrieved private session
+log and clone; all32 financial snapshots match the pre-game clone, and the full
+returned player context exactly matches the existing persisted store context.
+Private evidence is .local-runtime/automatic-context-proof/result.json. No offer
+submission/guest contract write, salary-credit assignment, model/control/IAM
+request or credentials distribution. Receipt is inspected on a later FSM event;
+live same-screen polling/UI still requires integration.
+
+Marked the specifically scoped root transport/lifecycle item complete: actual
+startup, hello/context round trip and earlier normal-exit child cleanup all have
+execution evidence. This does not complete AI negotiation, financial transaction,
+modern calendar, game save/load or broader playable acceptance. Published
+87450b3 Build38636188349 passed; AI38636188333 is still in progress.
