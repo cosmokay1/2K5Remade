@@ -106,6 +106,11 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       Supported sourced healthy preseason veteran releases now commit/replay with
       original archives, retained bonus/guarantee debt, nominal cash and ownership
       removal. Other releases, retirement, offsets, waivers and calendar remedies remain.
+      Calendar continuation must retain original cash/base indices and bonus layers,
+      bind the exact generation/current year, and start retained-charge aging at the
+      actual release year. Preserve supported restructures/assignments and immutable
+      economic archives; the existing post-roll mutation guard remains until that
+      representation and canonical replay/native receipt checks are implemented.
 - [ ] Implement atomic trades with both teams' obligations and ownership.
       Supported sourced preseason veteran contract assignments now commit paired
       cash/cap/ownership events with independent league replay. Consideration, rookies,

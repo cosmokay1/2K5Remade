@@ -184,6 +184,22 @@ settled expiry. Legacy context stays unchanged before rollover and rejects
 afterward rather than displaying archived terms as current. This read is available
 with AI disabled and never invokes the model or changes finances.
 
-The native synthetic fixture now reads a surviving and expired generation twice
-across owned sidecar process restarts. Its first Windows execution is pending.
+The native synthetic fixture reads a surviving and expired generation twice
+across owned sidecar process restarts. Windows run 38507267705 passed at 57c0d4c;
+this is contract-inspection transport evidence.
 This is engine inspection, not verified guest save or in-game interface behavior.
+
+player_context also accepts explicit context_format=calendar_v1. Its personality,
+relationships, promises and negotiation history come from the same store snapshot
+as a nested calendar_contract_context envelope. Legacy contract_accounting is null
+in this format. The nested envelope preserves economic archives separately from
+current calendar status, elapsed years, charges and ownership. Classified players
+with no held agreement receive a null nested context. Legacy requests retain
+their existing pre-rollover behavior and reject stale post-rollover accounting.
+
+The native validator binds nested team/player/revision to the requested player
+snapshot and validates the complete calendar agreement. Portable C++ checks have
+accepted actual Python-generated active, expired and never-held snapshots. The
+extended Windows pipe scenario adds saved personality and compares complete
+snapshots across two sidecar launches without changing the database; execution
+for that extension is still pending on revision 11cac7d.

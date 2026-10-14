@@ -2661,3 +2661,16 @@ requests and saved personality. Both process launches compare replies to exact
 store snapshots and retain identical database bytes. Tool syntax and portable
 native CTest pass locally; this new pipe scenario awaits exact-revision Windows
 execution. No live cloud inference or game assets are used.
+
+### Calendar release dependency audit and documentation refresh (2026-10-13)
+
+Read-only audit confirms the release calculator should consume the advanced
+contract cursor with original full salary/bonus/cash indices. Retained dead-charge
+schedule must start at the actual release year rather than double-age from its old
+anchor. Exact generation/year and financial/cash/generation/calendar postings are
+needed for atomic replay. Existing restructure/assignment archive invariants need
+explicit calendar-release representation; do not globally unlock dated mutations
+or discard supported layers to simplify tests. This remains implementation work.
+Verified historical run38507267705 success live and corrected stale integration
+text saying first calendar contract Windows execution was pending. Documented
+new player-context format and its pending extended pipe verification separately.
