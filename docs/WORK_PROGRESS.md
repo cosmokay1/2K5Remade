@@ -2348,3 +2348,15 @@ with current supported durable cap/cash/ownership/lifecycle evidence and explici
 remaining season/guarantee/posting/game gaps. Preserved early findings under
 historical headings so obsolete persistence/cash/assignment descriptions cannot
 be mistaken for current coverage. No financial behavior changed.
+
+### Local inference-rate admission (2026-10-13)
+
+VertexProvider now defaults to 20 attempted SDK calls per rolling 60 seconds,
+with positive integer constructor configuration, monotonic expiry and locked
+concurrent admission. Failed/blocked attempts consume slots; malformed/oversized
+contexts and rate denials submit nothing. Denials retain existing preflight
+usage semantics, and introduce no waiting, retries or automatic AI re-enable.
+Boundary tests cover failed-attempt retention, rejection at 59.999 seconds,
+expiry at exactly 60 and invalid configuration. All 444 offline tests pass.
+This remains process/provider-local, not durable spend/account enforcement;
+restarts and separate draft providers have separate windows.

@@ -1,10 +1,30 @@
 from types import SimpleNamespace
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from franchise.vertex_provider import VertexProvider
 
 
 class VertexTests(unittest.TestCase):
+    def test_rate_window_blocks_sdk_and_preserves_failed_attempts(self):
+        client = SimpleNamespace(models=SimpleNamespace(generate_content=Mock(side_effect=RuntimeError('private'))))
+        provider = VertexProvider(project='p', location='global', model='m', client=client,
+                                  max_requests_per_minute=1)
+        with patch('franchise.vertex_provider.time.monotonic', return_value=100):
+            with self.assertRaises(RuntimeError): provider({})
+        with patch('franchise.vertex_provider.time.monotonic', return_value=159.999):
+            with self.assertRaisesRegex(ValueError, 'rate exceeded'): provider({})
+        self.assertEqual(client.models.generate_content.call_count, 1)
+        self.assertFalse(provider.last_usage['sdk_invoked'])
+        self.assertEqual(provider.last_usage['outcome'], 'preflight_rejected')
+        with patch('franchise.vertex_provider.time.monotonic', return_value=160):
+            with self.assertRaises(RuntimeError): provider({})
+        self.assertEqual(client.models.generate_content.call_count, 2)
+
+    def test_invalid_rate_limit_rejects_before_client_creation(self):
+        for value in (True, 0, -1, 1.5, None):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                VertexProvider(project='p', location='global', model='m', max_requests_per_minute=value)
+
     def provider(self, response):
         client = SimpleNamespace(models=SimpleNamespace(generate_content=Mock(return_value=response)))
         return VertexProvider(project="test-project", location="global", model="test-model", client=client)

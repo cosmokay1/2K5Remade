@@ -1,6 +1,9 @@
 """Gemini on Google Cloud Vertex AI, using Application Default Credentials."""
 import json
 import subprocess
+import time
+from collections import deque
+from threading import Lock
 from franchise.prompt import INSTRUCTIONS
 from franchise.promises import METRICS
 
@@ -26,7 +29,8 @@ VERTEX_SCHEMA = {
 class VertexProvider:
     def __init__(self, *, project: str, location: str, model: str, client=None,
                  use_gcloud_login: bool = False, credentials=None,
-                 instructions=INSTRUCTIONS, response_schema=None, max_context_bytes=1048576):
+                 instructions=INSTRUCTIONS, response_schema=None, max_context_bytes=1048576,
+                 max_requests_per_minute=20):
         if not all(type(value) is str and value.strip() for value in (project, location, model)):
             raise ValueError("GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION, and GEMINI_MODEL are required")
         if credentials is not None and use_gcloud_login:
@@ -39,6 +43,11 @@ class VertexProvider:
         if type(max_context_bytes) is not int or max_context_bytes <= 0:
             raise ValueError("Positive integer model context byte limit required")
         self.max_context_bytes = max_context_bytes
+        if type(max_requests_per_minute) is not int or max_requests_per_minute <= 0:
+            raise ValueError("Positive integer inference rate limit required")
+        self.max_requests_per_minute = max_requests_per_minute
+        self._request_times = deque()
+        self._rate_lock = Lock()
         self.instructions = instructions
         self.response_schema = json.loads(json.dumps(schema, allow_nan=False))
         self.model = model
@@ -83,6 +92,14 @@ class VertexProvider:
             usage["context_bytes"] = len(contents.encode("utf-8"))
             if usage["context_bytes"] > self.max_context_bytes:
                 raise ValueError("Model context exceeds request size limit; no inference submitted")
+            with self._rate_lock:
+                now = time.monotonic()
+                while self._request_times and self._request_times[0] <= now - 60:
+                    self._request_times.popleft()
+                if len(self._request_times) >= self.max_requests_per_minute:
+                    raise ValueError("Inference request rate exceeded; no inference submitted")
+                # Failed/blocked calls still consume their attempted SDK slot.
+                self._request_times.append(now)
             usage.update(sdk_invoked=True,outcome="request_failed")
             try:
                 result = self._client.models.generate_content(
