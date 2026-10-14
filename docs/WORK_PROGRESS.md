@@ -2791,3 +2791,21 @@ plus reject malformed/stale/foreign inputs without changing snapshots. Independe
 review found no concrete Ledger defect; all485 offline tests pass. Store atomic
 calendar-release events/replay and native receipt formats remain unimplemented;
 this method is not yet exposed through the game/service transaction path.
+
+### Runtime CI green and durable calendar-release Store support (2026-10-13)
+
+Run38512445923 at5b5ade2 completed successfully for both Windows and Linux runtime/
+tools, including Linux condition, AC97, checked-copy and CPU-renderer fixtures.
+This resolves observed source compilation failures; NFL2K5_BUILD_GAME remains OFF,
+so it does not establish game linking/execution, SDL GPU presentation or save/load.
+
+Store.release_calendar_preseason_veteran now commits a distinct versioned event
+with exact current generation and canonical before/after financial, cash,
+generation and calendar snapshots. Strict payload fields, integer formats,
+canonical dates/rates and exact hashes reject tampering/downgrades. Ownership
+removal, final access check and receipt check are in the existing atomic write
+transaction; failure preserves the database. Historical retries remain stable after
+another rollover. Retained cash/charges replay without double aging. Calendar-release
+archive context fails closed until versioned native accounting is implemented;
+no service/game transaction route was opened. Independent review found no concrete
+Store defect; all488 offline tests pass, including rollback and six tamper cases.

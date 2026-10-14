@@ -46,6 +46,8 @@ the required inputs once when an otherwise ready milestone reaches that gate.
 - [x] Add asset-free Windows checks for our bridge/runtime additions; clearly
       distinguish these from a full game build/test. Native pipe compile/execution
       verified at `dd1ed9e`, run `38464795249`; no guest assets or game exercised.
+      Windows and Linux runtime/tool compilation plus Linux fault/copy/CPU-renderer
+      fixtures passed at `5b5ade2`, run `38512445923`; the game executable is excluded.
 - [ ] Keep public configuration free of credentials and retail assets.
 
 Done when a fresh checkout can run the engine tests and CI reports their results.
@@ -106,11 +108,11 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       Supported sourced healthy preseason veteran releases now commit/replay with
       original archives, retained bonus/guarantee debt, nominal cash and ownership
       removal. Other releases, retirement, offsets, waivers and calendar remedies remain.
-      Calendar continuation must retain original cash/base indices and bonus layers,
-      bind the exact generation/current year, and start retained-charge aging at the
-      actual release year. Preserve supported restructures/assignments and immutable
-      economic archives; the existing post-roll mutation guard remains until that
-      representation and canonical replay/native receipt checks are implemented.
+      Calendar-aware Ledger and atomic Store release commit/replay now bind the
+      current generation/year, retain original cash/base indices and bonus layers,
+      and start dead-charge aging at the release year. Immutable restructuring and
+      assignment archives remain. Native calendar-release accounting/receipts and
+      service/game transaction wiring are pending; legacy post-roll APIs remain guarded.
 - [ ] Implement atomic trades with both teams' obligations and ownership.
       Supported sourced preseason veteran contract assignments now commit paired
       cash/cap/ownership events with independent league replay. Consideration, rookies,

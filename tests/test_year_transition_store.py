@@ -12,9 +12,71 @@ from franchise.salary_rules import VeteranMinimumProfile
 from franchise.store import FranchiseStore
 from franchise.bridge import Bridge
 from franchise.control import AccessDisabled
+from datetime import date
+from fractions import Fraction
+from franchise.releases import PreseasonReleaseScope,EXCLUDED_LIABILITIES
+from franchise.guarantees import DiscountProfile
 
 
 class StoredYearTransitionTests(unittest.TestCase):
+    def calendar_release_inputs(self):
+        return dict(generation_id=self.store.load_team('a').contract_identity('a').generation_id,
+            scope=PreseasonReleaseScope(2027,date(2027,7,1),date(2027,9,10),EXCLUDED_LIABILITIES,
+                True,True,0,'synthetic verified healthy release'),
+            discount=DiscountProfile(2027,Fraction(0),'synthetic discount'),payment_year_offsets=(0,1),
+            expected_revision=3,access_check=lambda:None)
+
+    def test_calendar_release_replays_retained_money_and_historical_retry(self):
+        self.store.advance_league_year(**self.inputs)
+        release=self.calendar_release_inputs()
+        receipt=self.store.release_calendar_preseason_veteran('a','later','a',**release)
+        self.assertEqual(receipt['format'],2)
+        self.assertEqual(receipt['league_year'],2027)
+        restarted=FranchiseStore(self.path)
+        self.assertEqual(restarted.load_team('a').charges,(1000011,1000013))
+        self.assertEqual(restarted.load_team('a').cash_snapshot()['unpaid_total'],0)
+        self.assertEqual(restarted.load_team('a').financial_snapshot()['signed_players'],[])
+        self.assertEqual(restarted.release_calendar_preseason_veteran('a','later','a',**release),receipt)
+        inputs=copy.deepcopy(self.inputs);inputs.update(request_id='roll-after-release',from_year=2027,to_year=2028)
+        for team in ('a','b'):
+            inputs['teams'][team].update(expected_revision=restarted.load_team(team).revision,
+                expired_generation_ids=[],next_minimum_profile=self.minimum_profile(2028,team,2).to_dict())
+        restarted.advance_league_year(**inputs)
+        self.assertEqual(FranchiseStore(self.path).load_team('a').charges,(1000013,))
+        self.assertEqual(restarted.release_calendar_preseason_veteran('a','later','a',**release),receipt)
+        with self.assertRaises(Rejected):restarted.calendar_contract_context('a',release['generation_id'])
+
+    def test_calendar_release_access_and_receipt_failures_rollback(self):
+        self.store.advance_league_year(**self.inputs)
+        inputs=self.calendar_release_inputs();before=self.path.read_bytes()
+        def denied():raise AccessDisabled('synthetic shutdown')
+        def reject(_):raise ValueError('synthetic native rejection')
+        for changes in ({'access_check':denied},{'receipt_check':reject},{'generation_id':'foreign'}):
+            with self.assertRaises((AccessDisabled,ValueError,Rejected)):
+                self.store.release_calendar_preseason_veteran('a','fail','a',**{**inputs,**changes})
+            self.assertEqual(self.path.read_bytes(),before)
+            self.assertEqual(self.store.load_team('a').financial_snapshot()['signed_players'],['a'])
+
+    def test_calendar_release_replay_rejects_type_downgrade_and_cursor_tampering(self):
+        self.store.advance_league_year(**self.inputs)
+        self.store.release_calendar_preseason_veteran('a','later','a',**self.calendar_release_inputs())
+        original=self.path.read_bytes()
+        with tempfile.TemporaryDirectory() as directory:
+            for scenario in range(6):
+                path=Path(directory)/('tamper-'+str(scenario)+'.sqlite');path.write_bytes(original)
+                with closing(sqlite3.connect(path)) as db:
+                    row=db.execute("SELECT id,payload FROM events WHERE kind='calendar_release'").fetchone()
+                    payload=json.loads(row[1])
+                    if scenario==0:payload['calendar_format']=True
+                    if scenario==1:payload['before_calendar_posting']['league_year']=2027.0
+                    if scenario==2:payload['generation_posting']['agreements'][0]['release_calendar_year']=2026
+                    if scenario==3:payload['scope']['removed_on']='20270701'
+                    if scenario==4:payload['discount']['annual_rate']='0/1'
+                    if scenario==5:payload['extra']='unsupported'
+                    db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(payload),row[0]));db.commit()
+                with self.subTest(scenario=scenario),self.assertRaises((ValueError,Rejected)):
+                    FranchiseStore(path).load_team('a')
+
     def minimum_profile(self,year,team,term):
         players=(team,'new') if team=='a' else (team,)
         return VeteranMinimumProfile(year,tuple((player,(7,)*term,('active_inactive',)*term) for player in players))
