@@ -2481,7 +2481,7 @@ functions resolved; portable protocol CTest and all471 offline tests pass.
 
 ### Merged CI dependency failures and calendar wire context (2026-10-13)
 
-Build run38506837822 failed: Windows lacked SDL3Config.cmake and Linux
+Build run 38506837822 failed: Windows lacked SDL3Config.cmake and Linux
 Ubuntu24.04 could not find libsdl3-dev. Published c9e5d54 to build official
 SDL3 3.2.20 at exact source96292a5b464258a2b926e0a3d72f8b98c2a81aa6
 for both jobs; retained exact source license/attribution. Verification pending.
@@ -2517,8 +2517,8 @@ No game counter capture or new metric implementation is claimed.
 
 ### Windows verification and never-held postroll veteran signing (2026-10-13)
 
-Windows run38507267705 passed native calendar_v1 current/expired contexts
-across process restart. Build run38507497961 passed the Windows runtime/tools
+Windows run 38507267705 passed native calendar_v1 current/expired contexts
+across process restart. Build run 38507497961 passed the Windows runtime/tools
 build with pinned SDL3 and recompiler repairs; Linux still fails on GGL Windows
 include/dependencies. Actual game execution remains unverified.
 
@@ -2581,12 +2581,12 @@ Experimental portable include and atomic environment-cache publication remain
 uncommitted. The actual extracted cache function, linked against the real platform
 library, passed eight threads with 100,000 present/absent lookups each. Full source
 syntax still fails on the SEH guards and an inconsistent volatile extern. This
-limited check does not validate rendering. Build38509009926 and franchise38509009927
+limited check does not validate rendering. Build 38509009926 and franchise38509009927
 were confirmed live on 0dd21e9; no jobs restarted on an observation timeout.
 
 ### Confirmed Linux lock regression and bridge compilation (2026-10-13)
 
-Completed Linux job115672968433 on run38509009926 passed the real POSIX lock
+Completed Linux job115672968433 on run 38509009926 passed the real POSIX lock
 regression after libm linkage. Full runtime then failed in nv2a_pb_exec.c's
 Windows include, xbox_memory_layout.c's AC97 Windows exception context, and
 kernel_bridge.c's Windows timer constant. Published dependency215f8f8 keeps
@@ -2600,7 +2600,7 @@ was still live at observation; franchise checks were also still live.
 ### Windows inheritance sentinel identity correction (2026-10-13)
 
 Runtime build38509009926 Windows job passed (runtime/tools only). Franchise
-run38509009927 failed stalled_peer_shutdown immediately with Sidecar disconnected;
+run 38509009927 failed stalled_peer_shutdown immediately with Sidecar disconnected;
 protocol and host-lifecycle checks passed. Review found the fixture rejected any
 valid child handle with the parent's numeric value, which can be reused by child
 startup and does not establish inherited object identity. The fixture now attempts
@@ -2652,9 +2652,9 @@ not completed-test counts; verified playable-game acceptance remains unproven.
 
 ### Windows sentinel validation and calendar-player pipe coverage (2026-10-13)
 
-Franchise run38509566991 at7c7f4cd completed successfully on Windows and Ubuntu,
+Franchise run 38509566991 at7c7f4cd completed successfully on Windows and Ubuntu,
 including genuine inheritance positive control and stalled-write child shutdown.
-Prior corrected fixture run38509483351 also succeeded. These validate synthetic
+Prior corrected fixture run 38509483351 also succeeded. These validate synthetic
 native ownership/shutdown behavior, not guest execution. Extended the existing
 Windows calendar pipe scenario with active/expired player_context calendar_v1
 requests and saved personality. Both process launches compare replies to exact
@@ -2671,7 +2671,7 @@ anchor. Exact generation/year and financial/cash/generation/calendar postings ar
 needed for atomic replay. Existing restructure/assignment archive invariants need
 explicit calendar-release representation; do not globally unlock dated mutations
 or discard supported layers to simplify tests. This remains implementation work.
-Verified historical run38507267705 success live and corrected stale integration
+Verified historical run 38507267705 success live and corrected stale integration
 text saying first calendar contract Windows execution was pending. Documented
 new player-context format and its pending extended pipe verification separately.
 
@@ -2753,7 +2753,7 @@ claimed NV2A hardware limit; real game workload/performance remains unmeasured.
 
 ### Linux renderer x86-64 passed; decoder include fix and release representation (2026-10-13)
 
-Build38511707664 at84b9768: Windows runtime/tools passed. Linux condition, AC97,
+Build 38511707664 at84b9768: Windows runtime/tools passed. Linux condition, AC97,
 checked-copy and actual renderer fixture steps passed on x86-64; fullruntime
 advanced to nv2a_mmio_hook.c GNU REG_RAX/... definitions missing because the feature
 macro came after system headers. Dependency26d96ce moves it before all includes;
@@ -2773,7 +2773,7 @@ versioned atomic replay and native receipts are still required before enablement
 
 ### Linux framebuffer type include and calendar-release Ledger transaction (2026-10-13)
 
-User reported newest Linux failure. Verified run38512107234 at889b940: Windows
+User reported newest Linux failure. Verified run 38512107234 at889b940: Windows
 runtime/tools passed; Linux renderer/fault prerequisite step passed, decoder REG
 errors disappeared, full runtime then failed in video/fb_present.c missing ptrdiff_t.
 Dependency1b0f3d6 adds explicit stddef.h. Actual offline Linux ARM64 source syntax
@@ -2836,8 +2836,8 @@ passes malformed write receipt cases. Exact Windows smoke request facts matched
 its actual Python fixture database; full/compact Python receipts passed C++.
 Windows fixture now executes/retries the release before reading contexts and
 saved personality; that execution awaits CI. Actual guest release hooks remain
-open. Prior revision ee92067 Windows/Linux Build38513985206 passed; its Windows
-FranchiseAI38513985171 was still active at last inspection.
+open. Prior revision ee92067 Windows/Linux Build 38513985206 passed; its Windows
+Franchise AI 38513985171 was still active at last inspection.
 
 Added whole-Store calendar release history tests rather than only constructing
 agreement representations. One chain converts guaranteed base into a separately
@@ -2850,13 +2850,13 @@ cap charges from nominal future cash: after explicit current-year payment and
 another rollover, cap charges age to zero while the remaining $1 million future guarantee
 is still unpaid. Actual Python layered/assigned release receipts and later-year
 calendar_v2 contexts passed C++ validation. All 493 offline tests passed.
-Prior ee92067 FranchiseAI38513985171 passed Windows native released/expired
+Prior ee92067 Franchise AI 38513985171 passed Windows native released/expired
 contract/player inspection and restart with saved personality (verified log).
-dcea1b2 Build38514505332 passed both platform runtime builds; its native transaction
-FranchiseAI38514505285 remains active at last inspection. None of this establishes
+dcea1b2 Build 38514505332 passed both platform runtime builds; its native transaction
+Franchise AI 38514505285 remains active at last inspection. None of this establishes
 actual guest save/game execution.
 
-Verified terminal success for dcea1b2 FranchiseAI38514505285. Its Windows log
+Verified terminal success for dcea1b2 Franchise AI 38514505285. Its Windows log
 explicitly confirms the native calendar-release transaction, archive/player reads
 and owned sidecar restart fixture executed successfully; Windows and Ubuntu each
 passed 491 offline tests. Both platform runtime builds also passed run 38514505332.
@@ -2891,10 +2891,10 @@ foreign identity no-mutation and preserved original amendment records. Independe
 review found no concrete defect and passed 31 focused checks. This is seller Ledger
 accounting only: receiving Ledger, atomic paired Store replay/rollback, versioned
 native requests/receipts and actual guest trades remain required. No paired trade
-service route was enabled. Prior 642d533 platform Build38515051821 passed; expanded
-Windows history FranchiseAI38515051781 remained active at last inspection.
+service route was enabled. Prior 642d533 platform Build 38515051821 passed; expanded
+Windows history Franchise AI 38515051781 remained active at last inspection.
 
-Verified terminal success for 642d533 FranchiseAI38515051781. Its Windows log
+Verified terminal success for 642d533 Franchise AI 38515051781. Its Windows log
 confirms the layered/assigned calendar releases, full/compact receipts, personality
 and next rollover fixture executed, rather than only compiled. Ubuntu and Windows
 each passed 493 offline tests. Both platform runtime builds passed run 38515051821.
@@ -2970,7 +2970,7 @@ FranchiseAI 38516814959 log confirms actual v3 seller/buyer inspection, personal
 and rollover restart; both runtime platform builds passed run 38516814955. No actual
 guest trade/write or playable game claim is made.
 
-Verified terminal success for 8ea3682 FranchiseAI38517734890. The Windows log
+Verified terminal success for 8ea3682 Franchise AI 38517734890. The Windows log
 confirms actual calendar trade transaction, full/compact receipts, v3 inspection
 and rollover restart execution. Both Windows and Ubuntu passed 508 offline tests;
 both runtime platform builds passed run 38517734886. This remains synthetic native
@@ -3214,3 +3214,16 @@ Added actual Windows owned-pipe layered assignment smoke across restart, buyer
 payroll, rollover and buyer release. That execution awaits this commit's CI.
 Full-history inspection and actual game/save integration remain outstanding;
 no playable delivery is claimed.
+
+
+## October 13, 2026 — Worklist reconciled with current evidence
+
+Updated the primary worklist entries and added a current verified-state section;
+removed obsolete appended checkpoints that described already-implemented history
+support as pending. 212b037 Build 38523844512 and Franchise AI 38523844441 passed,
+with actual Windows layered assignment full/compact history, separate buyer
+payroll/release and rollover restart confirmed by the log. Calendar-v4 inspection
+is local/unpublished: all 565 offline tests passed, seven new Store/Bridge tests
+cover scoped history reads, and native validation accepted 18 actual responses.
+Publication and actual Windows v4 pipe coverage remain the immediate work.
+Game/save integration and playable acceptance remain unverified.

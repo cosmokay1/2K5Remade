@@ -22,6 +22,21 @@ Repository: https://github.com/cosmokay1/2K5Remade
 Branch: `codex/franchise-negotiation`. Progress evidence: [WORK_PROGRESS.md](docs/WORK_PROGRESS.md).
 Resume from the earliest unblocked unchecked item, respecting dependencies.
 
+## Latest verified state — October 13, 2026
+
+- Published source: `212b037`. Linux/Windows Build `38523844512` and Franchise AI
+  `38523844441` passed. The Windows log confirms actual synthetic owned-pipe
+  history-aware trades, separate buyer payroll/release and rollover retries.
+- History-aware releases passed Windows pipe checks at `f7d9ad9`, run
+  `38522825921`; repeated amendments passed at `048a8e6`, run `38522299444`.
+- Current local suite: **565 tests passed**. Calendar-v4 full-history inspection
+  also passes portable native checks and 18 actual sidecar response validations.
+- In progress: publish calendar-v4 inspection and add/verify its Windows pipe
+  coverage. These read-only changes are currently local and unpublished.
+- Actual game/save integration, telemetry capture, in-game controls and playable
+  Windows/Steam Deck acceptance remain unverified. External gates are listed below.
+
+
 ## Current blockers
 
 | ID | Missing input | What it blocks | Independent work that continues |
@@ -102,7 +117,8 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
 - [ ] Load annual minimums and draft allotments with recorded source/version.
 - [ ] Separate cash owed/paid, cap charges, guarantees, and management reserves.
       Nominal cash/payment ledger and full base-guarantee terms are implemented;
-      paid guarantee allocation and settlement remain. Normal payroll assumes owner funding, not a revenue-dependent cash gate; exceptional severe-mismanagement scenarios are optional future scope. See docs/payroll-funding-policy.md.
+      explicit base/bonus payment allocation and settlement are implemented; conditional
+      guarantee protections, offsets and richer lifecycle rules remain. Normal payroll assumes owner funding, not a revenue-dependent cash gate; exceptional severe-mismanagement scenarios are optional future scope. See docs/payroll-funding-policy.md.
 - [ ] Model guarantee protections/vesting and supported bonus components.
 - [ ] Implement releases/retirement and retained obligations/dead charges.
       Supported sourced healthy preseason veteran releases now commit/replay with
@@ -116,7 +132,9 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       retained cash. Explicit manual calendar-format requests now route to the
       atomic Store release with bound full/compact native receipts; Windows pipe
       transaction/restart execution passed run 38514505285 at dcea1b2. Actual game wiring remains open and legacy
-      post-roll APIs remain guarded.
+      post-roll APIs remain guarded. History-aware releases now retain all amendment
+      plans and unpaid cash through rollover and later payroll; Windows execution
+      passed run 38522825921 at f7d9ad9.
 - [ ] Implement atomic trades with both teams' obligations and ownership.
       Calendar-aware seller Ledger assignments now preserve economic archives,
       earned prior base and actual-year retained charges. Receiving Ledger now
@@ -129,7 +147,10 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       requests now route to the paired Store with bound full/compact native receipts;
       Windows transaction/restart execution passed run 38517734890 at 8ea3682.
       Return-to-former-club and transferred-guarantee histories now preserve old
-      generations, debt and unpaid cash through another rollover. Actual game wiring remains open.
+      generations, debt and unpaid cash through another rollover. Repeated-amendment
+      assignments now persist complete histories on both books, including return to
+      a buyer with older layered archives. Windows pipe execution passed run 38523844441
+      at 212b037. Actual game wiring remains open.
       Supported sourced preseason veteran contract assignments now commit paired
       cash/cap/ownership events with independent league replay. Consideration, rookies,
       unpaid bonus and other trade protections remain; supported assignments now use
@@ -139,20 +160,20 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       terms and paid indices, reanchor the amended schedule and retain both bonus
       schedules through later rollover/release. Store replay, explicit sidecar routing
       and native full/compact calendar amendment receipts are implemented at 2f5ffda;
-      actual Windows pipe verification is pending CI.
+      Windows pipe verification passed run 38519720705 at 2f5ffda.
       Pure sourced preseason guaranteed-base conversion and immutable bonus layers now
       preserve exact old/new schedules. Supported amendment cash, replay and subsequent release/trade commits now retain
       all layers. Strict local protocol/native validation is implemented. Extensions,
       game/UI controls and actual guest transactions remain. Repeated later-year
       guaranteed-base conversions now have immutable history, format2 Store replay,
       history-aware payment/rollover wrappers and explicit calendar_v2 native
-      full/compact receipts. Actual Windows repeated-path CI remains pending;
-      history-aware releases are now implemented with full/compact native receipts,
-      with actual Windows release execution pending CI. Post-repeat assignments
-      and richer terms remain open.
+      full/compact receipts. Windows repeated-path execution passed run 38522299444.
+      History-aware releases and paired assignments preserve full amendment histories
+      and separate buyer obligations; Windows pipe execution passed runs 38522825921
+      and 38523844441 respectively. Extensions and richer terms remain open.
 - [ ] Implement offseason/regular-season accounting and roster-status costs.
 - [ ] Implement dated June-1 treatment, supported tenders/tags and salary benefits.
-- [ ] Implement incentive settlement, cap adjustments, carryover and year rollover. Atomic initial calendar anchoring now validates all teams, revisions, source years and exact postings across restart/migration; typed current contract views and closing settlement inspection preserve original plans/cash without a revenue gate. A scoped veteran-only atomic league transition now advances sourced schedules and eligible settled expiry with exact all-team replay; supported postroll veteran sign/release/trade/first-amendment mutations and native calendar context are implemented; rookie/cohort rules and actual game advancement remain open. Source/schema review identified generation projection, expiry and cohort dependencies; follow docs/season-rollover.md for the durable league-wide transition work.
+- [ ] Implement incentive settlement, cap adjustments, carryover and year rollover. Atomic initial calendar anchoring now validates all teams, revisions, source years and exact postings across restart/migration; typed current contract views and closing settlement inspection preserve original plans/cash without a revenue gate. A scoped veteran-only atomic league transition now advances sourced schedules and eligible settled expiry with exact all-team replay; supported postroll veteran sign/release/trade and first/repeated-amendment mutations, history-aware payroll and native calendar context are implemented; rookie/cohort rules and actual game advancement remain open. Source/schema review identified generation projection, expiry and cohort dependencies; follow docs/season-rollover.md for the durable league-wide transition work.
 - [ ] Complete drafted/undrafted rookie rules, pool accounting, option exercise,
       and performance escalators; never auto-exercise a fifth year.
 - [ ] Re-audit money using independent expected examples from primary rule sources.
@@ -331,32 +352,3 @@ See docs/cloudflare-tunnel.md. Dedicated tunnel/DNS/TLS route is live; in-game i
 See docs/franchise-creation.md and docs/promise-observations.md. Automatic promise
 mapping now protects team scope and complete-window coverage; actual game counter
 capture and multi-window aggregation remain unverified/unimplemented.
-
-
-Calendar amendment follow-through: Store persistence/replay, explicit sidecar
-routing, full/compact native validation and Windows synthetic pipe smoke are
-implemented for the first supported post-rollover guaranteed-base conversion.
-517 offline tests and portable native checks pass; actual Windows smoke awaits CI.
-Repeated conversions and actual guest mutation/save-load verification remain open.
-
-
-At 2f5ffda, Windows calendar amendment full/compact/current-context/later-roll
-owned-pipe execution passed Franchise AI 38519720705; Build 38519720719 passed.
-Repeated conversion pure reconciliation is now implemented and covered within
-520 offline tests; immutable multi-amendment history and versioned durable writes
-remain next. Actual guest execution/save integration remain external gates.
-
-
-Repeated conversion model/Ledger follow-through: immutable prior amendment plans,
-exact year/cursor/payment continuity, preserved release/trade history and explicit
-later-year Ledger mutation now pass within 528 offline tests. Legacy generation
-snapshots reject history-bearing state. Versioned Store replay/snapshots and
-native repeated-conversion routing remain next; no guest integration is implied.
-
-
-History-aware assignments now have atomic paired format2 Store replay with both
-teams' complete generation snapshots, format3 seller-history receipts, explicit
-calendar_v2 sidecar/native routing and full/compact cash validation. 558 offline
-tests and rebuilt native checks pass; actual Windows layered trade execution is
-pending CI. The prior history-aware release was verified on Windows run38522825921.
-Full-history inspection and actual guest transactions remain open.
