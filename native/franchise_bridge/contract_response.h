@@ -1244,6 +1244,25 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         if (result.at("player_id") != request.at("player_id") || !result.at("player_id").is_string())
             throw std::runtime_error("Player context identity mismatch");
         integer_money(result.at("financial_revision"));
+        if (result.contains("legacy_contract") || result.contains("legacy_liability_scope")) {
+            if (!result.contains("legacy_contract") || !result.contains("legacy_liability_scope") ||
+                result.at("legacy_liability_scope")!="original cap schedule; cash/protections/lifecycle unverified" ||
+                !result.at("contract_accounting").is_null())
+                throw std::runtime_error("Invalid legacy liability context");
+            const auto& legacy=result.at("legacy_contract");
+            if (!legacy.is_object() || legacy.size()!=7 || legacy.at("player_id")!=request.at("player_id") ||
+                !legacy.at("source").is_string() ||
+                legacy.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
+                throw std::runtime_error("Invalid legacy identity or source");
+            for (const auto* field:{"amount_word","bonus_code","shape_code","original_years","remaining_years"})
+                integer_money(legacy.at(field));
+            if (legacy.at("amount_word")<1 || legacy.at("amount_word")>65535 ||
+                legacy.at("bonus_code")>10 || legacy.at("shape_code")>7 ||
+                legacy.at("original_years")<1 || legacy.at("original_years")>15 ||
+                legacy.at("remaining_years")<1 || legacy.at("remaining_years")>legacy.at("original_years") ||
+                (result.contains("calendar_contract_context") && !result.at("calendar_contract_context").is_null()))
+                throw std::runtime_error("Unsupported legacy terms or calendar conversion");
+        }
         if (request.contains("context_format")) {
             if (!request.at("context_format").is_string() ||
                 (request.at("context_format")!="calendar_v1" && request.at("context_format")!="calendar_v2" &&

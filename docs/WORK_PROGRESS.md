@@ -4475,3 +4475,24 @@ registered free-agent floor inputs, cash/rookie/calendar import or live game
 configuration and is not signing authority. Game/save/control remain untouched.
 Publishedb6cf85f passed Build38616885315 and AI38616885613; logs confirm647 tests
 on Windows and Ubuntu.334268e also passed both workflows.
+
+## October14,2026 — Native legacy player-context validation
+
+Reviewed manual-sign/preview responses against legacy-backed books: they remain
+bounded offer receipts and do not copy full financial snapshots. Found that
+native player-context validation ignored newly added legacy fields. Added paired
+record/scope validation, exact seven fields, matching player identity/nonblank
+source, integer original term/amount/bonus/style bounds and rejection of modern
+accounting/calendar conflicts. No legacy field grants AI or financial permission.
+
+Portable CMake native protocol check compiled with AppleClang21 and passed
+CTest protocol_boundary, including a valid8-year record and ten corrupted
+identity/bounds/extra-cash/scope cases. Actual private Gildon player context from
+the AIGILDON-derived ledger passed Bridge with explicitly denied AI access, then
+the compiled native decode_response/validate_result path. No model or signing
+was requested. Private context/checker artifacts are ignored, not published.
+
+Deck process73738 still runs the installed observer, so staged calendar probe
+installation remains pending normal exit. No game inputs, executable replacement,
+save writes or remote-control changes. This validates a real saved-context/native
+serialization path, not the live root hook or Windows pipe/game transaction.

@@ -1074,6 +1074,29 @@ int main() {
             try { franchise::validate_result(bad, player_request); } catch (const std::exception&) { rejected = true; }
             if (!rejected) throw std::runtime_error("Invalid player context accepted");
         }
+        auto legacy_reply=player_reply;
+        legacy_reply["result"]["contract_accounting"]=nullptr;
+        legacy_reply["result"]["legacy_contract"]={{"player_id","v"},{"amount_word",900},
+            {"bonus_code",4},{"shape_code",2},{"original_years",8},{"remaining_years",7},{"source","authored original terms"}};
+        legacy_reply["result"]["legacy_liability_scope"]="original cap schedule; cash/protections/lifecycle unverified";
+        franchise::validate_result(legacy_reply,player_request);
+        for (int scenario=0;scenario<10;++scenario) {
+            auto bad=legacy_reply;
+            auto& legacy=bad["result"]["legacy_contract"];
+            if (scenario==0) legacy["player_id"]="other";
+            if (scenario==1) legacy["amount_word"]=true;
+            if (scenario==2) legacy["amount_word"]=65536;
+            if (scenario==3) legacy["bonus_code"]=11;
+            if (scenario==4) legacy["shape_code"]=8;
+            if (scenario==5) legacy["remaining_years"]=9;
+            if (scenario==6) legacy["paid_cash"]=0;
+            if (scenario==7) legacy["source"]=" ";
+            if (scenario==8) bad["result"].erase("legacy_liability_scope");
+            if (scenario==9) bad["result"]["legacy_liability_scope"]="modern guarantees verified";
+            bool rejected=false;
+            try { franchise::validate_result(bad,player_request); } catch(const std::exception&) { rejected=true; }
+            if (!rejected) throw std::runtime_error("Invalid legacy context accepted");
+        }
         std::cout << "Protocol envelope and contract validation passed" << std::endl;
         return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << std::endl; return 1; }

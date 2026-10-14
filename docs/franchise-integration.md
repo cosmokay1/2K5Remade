@@ -695,3 +695,19 @@ pythonw imports the real sidecar/SQLite; an authored no-console C-host fixture
 exits0 after handshake, preview, manual sign, player context and restart assertions.
 The game launcher/provider configuration remains unchanged. This checks packaged
 transport compatibility, not guest transaction integration or Vertex authorization.
+
+## Preserved legacy context at the native boundary
+
+Player-context responses may carry a seven-field `legacy_contract` with the
+matching player ID, raw amount/bonus/style/term fields and nonblank source.
+The native validator enforces the original bounds and requires the explicit
+unverified cash/protection/lifecycle scope. Paid-cash/guarantee additions,
+incomplete scope, a conflicting modern accounting record or nonnull calendar
+conversion reject. The fields are read-only context, not signing permission.
+
+The portable native protocol check passes a valid8-year record and rejects ten
+malformed/misleading variants. An actual Gildon read from the private32-team
+legacy database passed Bridge with AI access denied, then the compiled C++
+response decoder/validator. This verifies the serialized Python/native boundary
+on the build host. It is not a request from the running game or a Windows pipe
+transaction. The staged live-calendar probe still needs normal game exit/install.
