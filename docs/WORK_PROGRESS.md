@@ -4328,3 +4328,28 @@ own Wine executable exited0 and its google-direct-wine-result.json repeats all
 five offline packaging passes. The separate original Proton Steam shim was
 identified for targeted cleanup; game73738 and game prefix remain untouched.
 No cloud call, credentials, grant or real-franchise transaction is involved.
+
+## October14,2026 — Saved cap accessor branches reconciled
+
+Added tools.inspect_franchise_cap using the validated scheduler/section layout,
+original franchise-tail league cap and serialized team flags. Audited13EC30's
+C4D50 delegation and13ECA0's conditional first-year accumulator subtraction;
+reports both adjustment branches, never guesses which runtime caller requests it.
+Requires all32 original roster payroll totals to reconcile before reporting.
+
+Nine focused cap/payroll/calendar tests passed, including nonzero authored
+accumulator with flag on/off, signed-cap rejection and mismatched payroll.
+Actual baseline/control/signing reads confirm cap80500000, Giants flag1,
+zero first-year accumulators across32 teams, room8228000 before/3462000 after.
+No modern liability, cash settlement, guarantee or guest mutation is inferred.
+
+User explicitly selected the2004 dollar economy: retain80.5M cap and scale modern
+minimums/rookie amounts proportionally. Source reference year/cap and precise
+posting still need implementation before a legal import. Existing contracts
+must not be inflated or revenue changed merely to make signings affordable.
+
+The prior SDK test shim cleanup completed: only verified test PID73975 was
+sentSIGTERM; original wrapper returned241 after deliberate cleanup. The revised
+direct Proton-Wine SDK check independently exited0; the old wrapper is not
+claimed to have exited naturally. Published409a3ce and3aeb93f passed both CI
+workflows;03dda17 workflows were in progress at this check.

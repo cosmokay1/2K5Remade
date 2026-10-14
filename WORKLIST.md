@@ -144,6 +144,7 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       negotiation availability without deleting historical receipts.
 
 - [ ] Define verified league-year rules; explicitly choose economic treatment
+      (user chose2004 dollars/$80.5M cap, proportional modern minimum/rookie scaling; reference source cap/year and posting remain required)
       for historical start years rather than silently combining incompatible eras.
 - [ ] Load annual minimums and draft allotments with recorded source/version.
 - [ ] Separate cash owed/paid, cap charges, guarantees, and management reserves.

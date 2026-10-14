@@ -93,6 +93,29 @@ term aging, long-contract bonus limits, releases, retained debt, guarantees and
 modern-rule/game posting consistency remain unverified. No completed modern
 franchise money system is claimed.
 
+## Saved first-year cap branches and economy decision
+
+User chose to retain2004 dollar amounts and the original$80.5M league economy,
+scaling modern minimums/rookie amounts proportionally to that cap. Modern rule
+structure remains required. An explicit source reference cap/year and integer
+posting policy must accompany that scaling; do not guess minimums or change
+existing contract totals to finance a signing. No conversion is implemented yet.
+
+`tools.inspect_franchise_cap` now derives the franchise tail from the validated
+saved scheduler boundary and reads the league-cap field at tail+15D0. Original
+save/load routines2D0790/2D0CE0 transfer this field to/from globalE3C278. Team
+flagE5775C[index] serializes at scheduler+AC+4*index;13EC30 delegates toC4D50.
+First-year accessor13ECA0 subtracts uint16team+19C only when that team flag and
+the caller's adjustment argument are nonzero. The reader reports both branches
+without choosing the runtime caller's branch or declaring modern liability.
+
+All three private saves yield cap$80.5M, Giants flag1, zero first-year
+accumulators across32 clubs and fully reconciled original roster totals.
+Baseline/control Giants room is$8.228M and signed room$3.462M, agreeing with
+prior UI evidence and the live signing probe. An original zero accumulator is
+not proof that modern retained obligations, cash payments or guarantees are zero.
+Unsupported layouts/nonpositive cap/payroll mismatch reject the report.
+
 ## Historical prototype snapshot
 
 **Verdict: the prototype protects a supplied current-year cap balance during a
