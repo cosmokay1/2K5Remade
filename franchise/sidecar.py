@@ -80,6 +80,9 @@ def main():
     parser.add_argument("--provider", required=True, choices=("vertex", "offline-fixture"))
     parser.add_argument("--impersonate-runtime", action="store_true",
                         help="Use the configured keyless runtime service account; requires authorized source ADC")
+    parser.add_argument('--ai-budget-database', help='Separate durable AI usage database')
+    parser.add_argument('--ai-budget-scope', help='Explicit persistent franchise/season budget identity')
+    parser.add_argument('--ai-request-limit', type=int, help='Immutable maximum SDK attempts for this scope')
     args = parser.parse_args()
     if args.impersonate_runtime and args.provider != "vertex":
         parser.error("Runtime impersonation applies only to Vertex mode")
@@ -92,6 +95,8 @@ def main():
         access_check = lambda: None  # Explicit synthetic test mode, no live inference.
     else:
         try:
+            from franchise.runtime_budget import runtime_request_budget
+            budget=runtime_request_budget(args.database,args.ai_budget_database,args.ai_budget_scope,args.ai_request_limit)
             from franchise.vertex_provider import VertexProvider
             config = json.loads((Path(__file__).resolve().parents[1] / "config/google.json").read_text())
             credentials = None
@@ -100,7 +105,7 @@ def main():
                 from franchise.google_credentials import runtime_credentials
                 credentials = runtime_credentials(config["project"], config["runtime_service_account"])
                 control_credentials = runtime_credentials(config["project"], config["runtime_service_account"])
-            provider = VertexProvider(project=config["project"], location=config["location"], model=config["model"], credentials=credentials)
+            provider = VertexProvider(project=config["project"], location=config["location"], model=config["model"], credentials=credentials,request_budget=budget)
             access_check = GoogleControl(project=config["project"], bucket=config["control_bucket"], object_name=config["control_object"], credentials=control_credentials)
         except Exception:
             # Financial/manual operations stay authoritative. Never substitute
@@ -108,7 +113,7 @@ def main():
             def unavailable(*_):
                 raise AccessDisabled("AI initialization unavailable")
             provider = access_check = unavailable
-            print("AI unavailable: check runtime authentication and optional dependencies.", file=sys.stderr)
+            print("AI unavailable: check persistent budget configuration, runtime authentication and optional dependencies.", file=sys.stderr)
     serve(Bridge(FranchiseStore(args.database), provider=provider, access_check=access_check), sys.stdin, sys.stdout)
 
 

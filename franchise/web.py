@@ -201,6 +201,9 @@ def main():
     parser.add_argument('--tls-cert')
     parser.add_argument('--tls-key')
     parser.add_argument('--ai', choices=('disabled', 'vertex-runtime'), default='disabled')
+    parser.add_argument('--ai-budget-database', help='Separate durable AI usage database')
+    parser.add_argument('--ai-budget-scope', help='Explicit persistent franchise/season budget identity')
+    parser.add_argument('--ai-request-limit', type=int, help='Immutable maximum SDK attempts for this scope')
     args = parser.parse_args()
     if bool(args.database) != bool(args.team):
         parser.error('--database and --team must be supplied together')
@@ -212,19 +215,21 @@ def main():
         if store is None:
             parser.error('Live negotiation requires an existing configured franchise')
         try:
+            from franchise.runtime_budget import runtime_request_budget
+            budget=runtime_request_budget(args.database,args.ai_budget_database,args.ai_budget_scope,args.ai_request_limit)
             from franchise.google_credentials import runtime_credentials
             from franchise.vertex_provider import VertexProvider
             from franchise.control import GoogleControl
             config = json.loads((Path(__file__).resolve().parents[1] / 'config/google.json').read_text())
             provider = VertexProvider(project=config['project'], location=config['location'], model=config['model'],
-                credentials=runtime_credentials(config['project'], config['runtime_service_account']))
+                credentials=runtime_credentials(config['project'], config['runtime_service_account']),request_budget=budget)
             access_check = GoogleControl(project=config['project'], bucket=config['control_bucket'],
                 object_name=config['control_object'],
                 credentials=runtime_credentials(config['project'], config['runtime_service_account']))
         except Exception:
             from franchise.control import AccessDisabled
             def unavailable(*_):
-                raise AccessDisabled('Runtime authentication unavailable')
+                raise AccessDisabled('Runtime budget or authentication unavailable')
             provider = access_check = unavailable
     server = make_server(store, args.team, os.environ.get('FRANCHISE_WEB_TOKEN'), port=args.port,
                          tls_cert=args.tls_cert, tls_key=args.tls_key,

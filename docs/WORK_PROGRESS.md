@@ -3269,3 +3269,20 @@ All 575 offline tests passed. The milestone provides explicit configured request
 limits; mandatory sidecar/HTTPS runtime wiring, actual season attribution,
 input/output token and dollar ceilings, compact/batched prompts and measured game
 costs remain next. No paid inference was performed in these fixtures.
+
+
+## October 14, 2026 — Mandatory live-runtime request budgets
+
+Live Vertex sidecar and HTTPS runtime modes now require explicit separate usage
+DB, persistent scope and immutable request ceiling. Budget validation runs before
+credential/SDK initialization; missing/invalid policy disables AI setup while
+manual franchise operations continue. Both transports share attempts when given
+the same usage file/scope/limit. Path/symlink/hard-link aliases of the financial DB
+and in-memory usage storage reject. Offline modes do not create/require budgets.
+Actual runtime-factory tests verify these bindings, restart/policy integrity and
+manual signing recovery without paid calls or network requests. All 580 offline
+tests passed. Published 00b65f2 Build38526105080 and FranchiseAI38526104386 passed;
+3d3534c Build38524980783 and FranchiseAI38524980828 also passed.
+Token/dollar admission, authoritative game-season attribution, native launcher
+options and measured gameplay spending remain next. No spending guarantee or
+actual game integration is claimed.

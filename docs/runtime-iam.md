@@ -51,3 +51,28 @@ approval. The grant was not applied; approval is pending in the chat.
 Do not work around this gate with owner fallback, distributed keys or another
 identity. Offline tests confirm denied runtime impersonation leaves AI disabled
 while explicit manual transactions retain the same cap validator.
+
+
+## Required persistent request budget
+
+Live sidecar `--provider vertex` and HTTPS origin `--ai vertex-runtime` both
+require `--ai-budget-database`, `--ai-budget-scope`, and `--ai-request-limit`.
+The usage database must be separate from the franchise database (path aliases,
+symlinks and hard links to the same file are rejected). Share the same usage file,
+scope and limit between transports to share the ceiling. A missing/invalid budget
+keeps live AI unavailable before credentials/SDK initialization; manual operations
+remain available. Offline fixture/disabled modes require no budget.
+
+Example arguments appended to an existing authorized runtime launch:
+
+```text
+--ai-budget-database .local-runtime/ai-usage.sqlite --ai-budget-scope franchise-a:2026 --ai-request-limit 250
+```
+
+The scope is an explicit operator-selected period identity, not the wall clock.
+Restarting retains spent/pending attempts; changing a recorded limit rejects.
+Neither runtime automatically creates a new period to restore capacity, refunds
+failed calls, or re-enables the remote switch. This is a request ceiling, not a
+$5 spending guarantee. Token/dollar admission limits, authoritative game-season
+attribution and native launcher configuration remain subsequent work. Explicit
+paid demonstration scripts are outside these production runtime launch paths.
