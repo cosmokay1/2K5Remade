@@ -126,3 +126,27 @@ class RuntimeBudgetTests(unittest.TestCase):
              patch('franchise.runtime_budget.runtime_request_budget') as budget:
             web_main()
         self.assertFalse(budget.called);self.assertFalse(self.budget_path.exists())
+
+    def test_explicit_token_policy_is_shared_by_both_live_runtime_factories(self):
+        from franchise.sidecar import main as sidecar_main
+        from franchise.web import main as web_main
+        with ExitStack() as stack:
+            stack.enter_context(patch('franchise.google_credentials.runtime_credentials',return_value='synthetic credentials'))
+            sdk=stack.enter_context(patch('franchise.vertex_provider.VertexProvider',return_value=MagicMock()))
+            stack.enter_context(patch('franchise.sidecar.GoogleControl',return_value=lambda:None))
+            stack.enter_context(patch('franchise.control.GoogleControl',return_value=lambda:None))
+            stack.enter_context(patch('franchise.sidecar.serve'))
+            stack.enter_context(patch('franchise.web.make_server',return_value=MagicMock()))
+            with patch.object(sys,'argv',['sidecar','--database',str(self.path),'--provider','vertex','--impersonate-runtime',*self.budget_args(),'--ai-token-limit','30']):
+                sidecar_main()
+            first=sdk.call_args.kwargs['request_budget']
+            self.assertEqual(sdk.call_args.kwargs['max_input_tokens'],16384)
+            first.reserve(model='synthetic-model',input_tokens=5,output_tokens=10)
+            with patch.object(sys,'argv',['web','--database',str(self.path),'--team','a','--ai','vertex-runtime',*self.budget_args(),'--ai-token-limit','30']):
+                web_main()
+            second=sdk.call_args.kwargs['request_budget']
+            self.assertEqual(second.token_limit,30)
+            self.assertEqual(second.status()['reserved_tokens'],15)
+            second.reserve(model='synthetic-model',input_tokens=5,output_tokens=10)
+            self.assertEqual(first.status()['remaining_tokens'],0)
+            with self.assertRaises(BudgetExceeded):first.reserve(model='synthetic-model',input_tokens=0,output_tokens=1)

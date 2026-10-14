@@ -3331,3 +3331,30 @@ Windows log confirms plain-C explicit budget launch preserves the configured
 scope across restart and manual reads work with zero paid inference. These remain
 asset-free fixtures, not game execution/save verification. Cumulative token
 reservation and spending admission remain the next budget milestone.
+
+
+## October 14, 2026 — Durable cumulative token reservations
+
+InferenceBudget now accepts an explicit optional immutable token_limit. Additive
+SQLite token-policy/reservation tables keep existing request-only policies valid.
+Token admission and generation-attempt reservation commit atomically under
+BEGIN IMMEDIATE; input+maximum-output allowances remain spent after response,
+failure, crash or missing usage. Changed/removed policies, legacy attempted-scope
+upgrades, orphan/missing/malformed reservations and reported usage overruns deny
+future admission. Actual overrun metadata remains persisted before denying a
+decision; unknown usage is never treated as zero or returned credit.
+
+Vertex requires full-request counting when a token policy is active and reserves
+reported input+configured generated ceiling. Both Python live launchers accept
+explicit --ai-token-limit and share the exact configured policy. This option is
+not mandatory yet: native ABI/environment forwarding remains next, alongside
+dollar admission and authoritative game-season attribution. No paid calls or
+counting requests were made; no billing or gameplay guarantee is claimed.
+
+All603 offline tests passed. New tests verify seven-process contention admits
+exactly three of seven token reservations, restart/no-refund behavior, immutable
+policy/type/tamper checks, retained reported overruns, provider failures/missing
+usage, post-reservation shutdown and unchanged negotiation finances. Both live
+factory tests verify the same token ceiling across transports. Prior49366e5
+Build38529452500 and FranchiseAI38529452501 passed. Real asset/save/runtime gates
+remain unchanged.

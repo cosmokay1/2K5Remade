@@ -124,3 +124,26 @@ for validation.
 References: [CountTokens](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/reference/rest/v1/projects.locations.publishers.models/countTokens),
 [schema token accounting](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output),
 [generated and thinking token limit](https://ai.google.dev/gemini-api/docs/generate-content/thinking).
+
+
+## Cumulative token admission
+
+Live Python launchers accept optional `--ai-token-limit POSITIVE_INTEGER` with
+the existing explicit budget database/scope/request limit. The token policy is
+immutable and shares the same SQLite admission transaction as request capacity.
+Every generation reserves the preflight-reported input count plus the configured
+maximum generated tokens; completion never refunds this conservative allowance.
+Failures, pending calls, missing metadata and crashes retain the allowance.
+Status exposes `token_limit`, `reserved_tokens` and `remaining_tokens` separately
+from partial measured usage. No prompt or credentials are saved.
+
+An attempted legacy scope cannot acquire a token policy retroactively; a policy
+cannot be removed or changed to restore capacity. Existing request-only scopes
+remain supported. No automatic new scope or season is selected. Native launch
+forwarding and making cumulative token policy mandatory remain subsequent work.
+
+Known input/output/total usage above its reserved allowance is persisted, rejects
+the returned decision and blocks subsequent admission. Unknown components stay
+unknown; they do not earn refunds. Counts are provider-reported preflight estimates,
+so this is an admission ceiling, not an exact billing guarantee. Dollar pricing
+and spending policy are still unimplemented.

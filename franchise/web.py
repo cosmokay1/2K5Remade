@@ -204,6 +204,7 @@ def main():
     parser.add_argument('--ai-budget-database', help='Separate durable AI usage database')
     parser.add_argument('--ai-budget-scope', help='Explicit persistent franchise/season budget identity')
     parser.add_argument('--ai-request-limit', type=int, help='Immutable maximum SDK attempts for this scope')
+    parser.add_argument('--ai-token-limit', type=int, help='Immutable cumulative reserved input plus generated token ceiling')
     args = parser.parse_args()
     if bool(args.database) != bool(args.team):
         parser.error('--database and --team must be supplied together')
@@ -216,7 +217,7 @@ def main():
             parser.error('Live negotiation requires an existing configured franchise')
         try:
             from franchise.runtime_budget import runtime_request_budget
-            budget=runtime_request_budget(args.database,args.ai_budget_database,args.ai_budget_scope,args.ai_request_limit)
+            budget=runtime_request_budget(args.database,args.ai_budget_database,args.ai_budget_scope,args.ai_request_limit,args.ai_token_limit)
             from franchise.google_credentials import runtime_credentials
             from franchise.vertex_provider import VertexProvider
             from franchise.control import GoogleControl

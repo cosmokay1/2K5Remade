@@ -83,6 +83,7 @@ def main():
     parser.add_argument('--ai-budget-database', help='Separate durable AI usage database')
     parser.add_argument('--ai-budget-scope', help='Explicit persistent franchise/season budget identity')
     parser.add_argument('--ai-request-limit', type=int, help='Immutable maximum SDK attempts for this scope')
+    parser.add_argument('--ai-token-limit', type=int, help='Immutable cumulative reserved input plus generated token ceiling')
     args = parser.parse_args()
     if args.impersonate_runtime and args.provider != "vertex":
         parser.error("Runtime impersonation applies only to Vertex mode")
@@ -96,7 +97,7 @@ def main():
     else:
         try:
             from franchise.runtime_budget import runtime_request_budget
-            budget=runtime_request_budget(args.database,args.ai_budget_database,args.ai_budget_scope,args.ai_request_limit)
+            budget=runtime_request_budget(args.database,args.ai_budget_database,args.ai_budget_scope,args.ai_request_limit,args.ai_token_limit)
             from franchise.vertex_provider import VertexProvider
             config = json.loads((Path(__file__).resolve().parents[1] / "config/google.json").read_text())
             credentials = None

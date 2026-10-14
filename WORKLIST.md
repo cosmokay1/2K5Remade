@@ -226,7 +226,11 @@ invent future published NFL values: separate verified inputs from simulation pol
       unfinished attempts counted and records nullable token usage without prompt
       content. Vertex accepts this explicit budget. Live sidecar/HTTPS runtime budget configuration is now mandatory before SDK
       initialization; missing or invalid policy leaves manual operations available.
-      Token/dollar ceilings, automatic usage attribution to actual seasons,
+      Optional immutable cumulative token reservations now share the same atomic
+      admission transaction, retaining allowances after errors/crashes and stopping
+      on reported usage overruns. Live CLI accepts explicit --ai-token-limit;
+      native forwarding/mandatory token configuration and dollar admission,
+      automatic usage attribution to actual seasons,
       compact prompts/batching and measured gameplay costs remain.
 - [ ] Test different personalities on the same situation and validate multiweek continuity. examples.personality_continuity now verifies seeded priorities, equal observed inputs, different scripted offers/outcomes and two-round restart history without regeneration; live-model variation and actual game-week advancement remain unverified.
 
@@ -365,6 +369,7 @@ and validated host environment fields. Portable launch/quoting checks pass;
 actual Windows configured-budget launch/restart smoke passed in CI38528423925.
 Live runtimes now count the exact contents, instructions and structured response
 schema before generation, rejecting missing/invalid/over-16384 input counts.
-The provider output ceiling is explicitly configurable (runtime4096). Durable
-cumulative token/spending admission, authoritative season scope and measured
+The provider output ceiling is explicitly configurable (runtime4096). Durable cumulative token admission is implemented as an explicit optional
+policy and live CLI option. Native token-policy forwarding/mandatory runtime
+configuration, spending admission, authoritative season scope and measured
 gameplay costs remain.

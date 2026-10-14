@@ -58,6 +58,8 @@ class VertexProvider:
             if not isinstance(request_budget,InferenceBudget):
                 raise ValueError('Typed persistent inference budget required')
         self.request_budget = request_budget
+        if request_budget is not None and request_budget.token_limit is not None and max_input_tokens is None:
+            raise ValueError('Token-limited inference requires input token preflight')
         self._request_times = deque()
         self._rate_lock = Lock()
         self.instructions = instructions
@@ -129,7 +131,9 @@ class VertexProvider:
             if before_generate is not None:
                 before_generate()
             if self.request_budget is not None:
-                reservation = self.request_budget.reserve(model=self.model)
+                allowance=({"input_tokens":total,"output_tokens":self.max_output_tokens}
+                           if self.request_budget.token_limit is not None else {})
+                reservation = self.request_budget.reserve(model=self.model,**allowance)
                 usage['outcome']='request_failed'
                 # SQLite admission may itself wait for another process.
                 if before_generate is not None:
