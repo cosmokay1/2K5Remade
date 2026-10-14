@@ -79,6 +79,8 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       retained cash/debt histories before enabling former-club return signings.
       Read-only legacy identities and explicit unmatched obligations now support
       reconciliation inspection through authenticated /api/contracts.
+      Backup/replay preflight now checks whole-league integrity before migration;
+      tools.prepare_generation_migration does not advance the format.
       See docs/contract-generations.md; current ownership now controls free-agent
       negotiation availability without deleting historical receipts.
 
@@ -242,16 +244,18 @@ verified or the user cancels it.
 
 See packaging/steamdeck/README.md. Candidate packaging is not playable delivery.
 
-## Cloudflare web delivery
+## Cloudflare service delivery
 
 - [x] Inspect cosmokay.com and existing tunnel/DNS resources using Cloudflare plugin.
 - [x] Prepare authenticated loopback HTTP franchise inspection/preview origin.
 - [x] Restore Cloudflare connector write access; dedicated tunnel creation succeeded after reconnect.
 - [x] Create dedicated tunnel and route 2k5.cosmokay.com; verify HTTPS 200, origin certificate validation and scoped HTTP-to-HTTPS 308.
-- [ ] Add authenticated browser franchise UI and project/package section.
+Browser franchise dashboard removed from scope by user direction. Franchise
+management and promise displays belong in the game; retain HTTPS infrastructure
+for service connectivity where needed.
 - [ ] Extend live negotiation/draft API with persistent transactions and existing remote killswitch. HTTP negotiation now shares durable Bridge transactions and fresh access checks; actual restricted-runtime inference and draft transactions remain unverified/unimplemented.
 
-See docs/cloudflare-tunnel.md. Dedicated tunnel/DNS/TLS route is live; full browser franchise delivery remains unfinished.
+See docs/cloudflare-tunnel.md. Dedicated tunnel/DNS/TLS route is live; in-game integration and remote service validation remain unfinished.
 
 ## Negotiated promises and achieved-goal scoring
 
@@ -261,7 +265,7 @@ See docs/cloudflare-tunnel.md. Dedicated tunnel/DNS/TLS route is live; full brow
 - [x] Commit agreed promises atomically with the contract and story; preserve them across restart.
 - [ ] Derive actual touch/start/yard/win evidence from verified game counters; never infer unavailable targets or starts from other stats.
 - [ ] Apply goal consequences to trust, satisfaction and future negotiation with context for injury, availability and coaching choices. Scores now persist and feed player context; only known final scores can source once-only bounded relationship changes. Context-aware consequence policy and in-game story triggers remain.
-- [ ] Display promised vs observed goals and fulfillment score in the game/browser interface.
+- [ ] Display promised vs observed goals and fulfillment score in the game interface.
 
 ## Franchise creation and personality population
 

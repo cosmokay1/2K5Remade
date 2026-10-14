@@ -8,6 +8,7 @@ from contextlib import contextmanager, closing
 from dataclasses import asdict
 import json
 import hashlib
+import os
 import math
 from pathlib import Path
 import sqlite3
@@ -16,6 +17,14 @@ from franchise.cap import Ledger, Offer, Rejected, json_amount, money
 from franchise.rookie import RookieScale, UndraftedScale
 from franchise.books import OpeningBooks, parse_amount
 from franchise.cash import CashBook, CashObligation
+
+
+class GenerationPreflightError(ValueError):
+    """Replay failed after preserving a consistent private source backup."""
+    def __init__(self, backup_path, backup_sha256):
+        self.backup_path = str(backup_path)
+        self.backup_sha256 = backup_sha256
+        super().__init__('Generation preflight validation failed; preserved backup: ' + str(backup_path))
 
 
 def from_config(config: dict) -> Ledger:
@@ -61,6 +70,56 @@ class FranchiseStore:
             db.execute("PRAGMA user_version=3")
 
     @classmethod
+    def prepare_generation_migration(cls, path):
+        """Back up and verify format 3 without migrating or rewriting its data."""
+        path = Path(path).absolute()
+        if not path.is_file():
+            raise ValueError('Generation preflight requires an existing database')
+        instance = cls.__new__(cls)
+        instance.path = str(path)
+        backup = path.with_name(path.stem + '.generation-backup-' + uuid.uuid4().hex + '.sqlite')
+        with instance._connection(write=True, existing=True) as db:
+            if db.execute('PRAGMA user_version').fetchone()[0] != 3:
+                raise ValueError('Generation preflight supports only database format 3')
+            created = False
+            try:
+                with backup.open('xb'):
+                    created = True
+                    os.chmod(backup, 0o600)
+                with closing(sqlite3.connect(path.as_uri() + '?mode=ro', uri=True)) as source, \
+                        closing(sqlite3.connect(backup.as_uri() + '?mode=rw', uri=True)) as target:
+                    source.backup(target)
+            except BaseException:
+                if created:
+                    backup.unlink(missing_ok=True)
+                raise
+            digest = hashlib.sha256()
+            with backup.open('rb') as incoming:
+                while chunk := incoming.read(1024 * 1024):
+                    digest.update(chunk)
+            checksum = digest.hexdigest()
+            try:
+                if db.execute('PRAGMA quick_check').fetchall() != [('ok',)]:
+                    raise ValueError('Database integrity check failed')
+                if db.execute('PRAGMA foreign_key_check').fetchall():
+                    raise ValueError('Database foreign-key integrity check failed')
+                instance._franchise_origin(db)  # Metadata is authoritative even with no teams.
+                from franchise.draft_order import DraftOrder
+                for draft_id, league_year, config in db.execute('SELECT id,league_year,config FROM draft_orders'):
+                    order = DraftOrder.from_dict(json.loads(config))
+                    if (type(draft_id) is not str or type(league_year) is not int
+                            or order.draft_id != draft_id or order.league_year != league_year):
+                        raise ValueError('Draft order identity disagrees with source columns')
+                team_ids = tuple(team for (team,) in db.execute('SELECT id FROM teams ORDER BY id'))
+                ledgers = instance._load_teams(db, team_ids)
+                teams = {team:{'financial':ledger.financial_snapshot(), 'cash':ledger.cash_snapshot(),
+                    'contracts':instance._contract_generations_from_ledger(team,ledger)} for team,ledger in ledgers.items()}
+            except Exception as exc:
+                raise GenerationPreflightError(backup, checksum) from exc
+            return {'format':1, 'status':'preflight_only', 'source_database_version':3,
+                    'backup_path':str(backup), 'backup_sha256':checksum, 'teams':teams}
+
+    @classmethod
     def migrate_v2(cls, path: str | Path, books_by_team: dict[str, OpeningBooks]) -> Path:
         """Attach verified source books without changing recorded financial results.
 
@@ -98,8 +157,9 @@ class FranchiseStore:
         return backup
 
     @contextmanager
-    def _connection(self, *, write=False):
-        db = sqlite3.connect(self.path, timeout=10)
+    def _connection(self, *, write=False, existing=False):
+        database = Path(self.path).absolute().as_uri() + '?mode=rw' if existing else self.path
+        db = sqlite3.connect(database, timeout=10, uri=existing)
         try:
             db.execute("PRAGMA foreign_keys=ON")
             db.execute("PRAGMA synchronous=FULL")
@@ -416,42 +476,45 @@ class FranchiseStore:
         """
         if type(team_id) is not str or not team_id.strip():
             raise ValueError('Stable team identity required')
+        with self._connection() as db:
+            return self._contract_generations_from_ledger(team_id,self._load(db,team_id))
+
+    @staticmethod
+    def _contract_generations_from_ledger(team_id,ledger):
         def charge_record(record):
             return {'record_id':record.record_id, 'annual_charges':[json_amount(value) for value in record.annual_charges],
                     'source':record.source}
-        with self._connection() as db:
-            ledger = self._load(db, team_id)
-            generations = []
-            for player in sorted(ledger._contracts):
-                retained = ()
-                if player in ledger._active_contracts:
-                    contract, status = ledger._active_contracts[player], 'active'
-                elif player in ledger._released:
-                    plan = ledger._released[player]
-                    contract, status, retained = plan.original_contract, 'released', plan.retained
-                elif player in ledger._traded_out:
-                    plan = ledger._traded_out[player]
-                    contract, status, retained = plan.original_contract, 'assigned', (plan.retained_bonus,)
-                else:
-                    raise ValueError('Historical contract has no supported generation status')
-                identity = json.dumps([team_id,player], ensure_ascii=False, separators=(',',':')).encode('utf-8')
-                cash = ledger._cash.records.get('contract:' + player) if ledger._cash is not None else None
-                generations.append({'generation_id':'legacy-contract:' + hashlib.sha256(identity).hexdigest(),
-                    'player_id':player, 'status':status, 'contract':contract.to_dict(),
-                    'cash_obligation':cash.to_dict() if cash is not None else None,
-                    'retained_records':[charge_record(record) for record in retained]})
-            books = ledger._opening_books
-            linked_cash_ids = {'contract:'+player for player in ledger._contracts}
-            return {'format':1, 'team_id':team_id, 'financial_revision':ledger.revision,
-                'cash_revision':ledger._cash.revision if ledger._cash is not None else None,
-                'generations':generations,
-                'unassigned_cash_obligations':[record.to_dict() for key,record in sorted(ledger._cash.records.items())
-                    if key not in linked_cash_ids] if ledger._cash is not None else None,
-                'unsigned_tenders':[{'player_id':player,'amount':amount} for player,amount in sorted(ledger._tenders.items())],
-                'unassigned_prior_cohort_contracts':[contract.to_dict() for contract in ledger._rookie_pool_opening.prior_contracts]
-                    if ledger._rookie_pool_opening is not None else [],
-                'unassigned_opening':{'retained':[charge_record(record) for record in books.retained],
-                                      'adjustments':[charge_record(record) for record in books.adjustments]}}
+        generations = []
+        for player in sorted(ledger._contracts):
+            retained = ()
+            if player in ledger._active_contracts:
+                contract, status = ledger._active_contracts[player], 'active'
+            elif player in ledger._released:
+                plan = ledger._released[player]
+                contract, status, retained = plan.original_contract, 'released', plan.retained
+            elif player in ledger._traded_out:
+                plan = ledger._traded_out[player]
+                contract, status, retained = plan.original_contract, 'assigned', (plan.retained_bonus,)
+            else:
+                raise ValueError('Historical contract has no supported generation status')
+            identity = json.dumps([team_id,player], ensure_ascii=False, separators=(',',':')).encode('utf-8')
+            cash = ledger._cash.records.get('contract:' + player) if ledger._cash is not None else None
+            generations.append({'generation_id':'legacy-contract:' + hashlib.sha256(identity).hexdigest(),
+                'player_id':player, 'status':status, 'contract':contract.to_dict(),
+                'cash_obligation':cash.to_dict() if cash is not None else None,
+                'retained_records':[charge_record(record) for record in retained]})
+        books = ledger._opening_books
+        linked_cash_ids = {'contract:'+player for player in ledger._contracts}
+        return {'format':1, 'team_id':team_id, 'financial_revision':ledger.revision,
+            'cash_revision':ledger._cash.revision if ledger._cash is not None else None,
+            'generations':generations,
+            'unassigned_cash_obligations':[record.to_dict() for key,record in sorted(ledger._cash.records.items())
+                if key not in linked_cash_ids] if ledger._cash is not None else None,
+            'unsigned_tenders':[{'player_id':player,'amount':amount} for player,amount in sorted(ledger._tenders.items())],
+            'unassigned_prior_cohort_contracts':[contract.to_dict() for contract in ledger._rookie_pool_opening.prior_contracts]
+                if ledger._rookie_pool_opening is not None else [],
+            'unassigned_opening':{'retained':[charge_record(record) for record in books.retained],
+                                  'adjustments':[charge_record(record) for record in books.adjustments]}}
 
     def load_team(self, team_id: str) -> Ledger:
         with self._connection() as db:

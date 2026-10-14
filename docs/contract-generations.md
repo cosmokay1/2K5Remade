@@ -63,3 +63,19 @@ This inventory does not rewrite events, change database format3, enable new
 agreements, or replace the full original configuration/history needed for migration.
 Backups and exact old/new replay reconciliation remain required before format
 advancement. Actual guest contract identification remains unverified.
+
+## Backup and reconciliation preflight
+
+Run `python3 -m tools.prepare_generation_migration /path/to/franchise.sqlite`
+against an existing format3 database. The command holds a write reservation,
+creates an exclusive sibling SQLite backup with private file permissions, hashes
+its completed contents, and replays every team from the same reserved snapshot.
+It also checks database integrity, foreign keys, global creation metadata and
+all draft orders, including orders without picks. The JSON report contains the
+backup path/hash and each team's financial, cash and legacy agreement inventory.
+
+Validation failure retains the completed backup and reports its path. A failed
+backup copy removes only its own partial file. Missing databases are not created.
+The source format, configuration, events and ownership are unchanged. This is
+preparation only: it does not migrate to a new format or enable return signings.
+Keep the report and backup private; they contain franchise history.

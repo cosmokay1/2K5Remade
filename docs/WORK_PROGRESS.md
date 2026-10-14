@@ -1736,3 +1736,22 @@ no actor/financial/schema writes.339 full tests and diff checks pass. No format
 migration, new-generation signing or game field mapping claimed. Packagingcf5d6a7
 passed CI38491252585/38491252588; 06ba848 Build38491823246 passed and Franchise
 AI38491823297 remained running. Full goal remains active.
+
+## October 13, 2026 — Private generation migration preflight
+
+Added an explicit existing-format3 preparation command. It reserves the source
+snapshot, creates a private exclusive consistent backup, hashes actual backup
+bytes, then validates all team replay, integrity/foreign keys, creation metadata
+and unused draft-order source identities. Failed validation preserves the backup;
+failed copying cleans only the new partial backup. Source bytes/history/format
+remain unchanged. Inventory now shares its ledger projection with preflight.
+
+All 350 Python tests pass locally, including backup failures, competing writers,
+orphan rows, malformed unused orders, source preservation and the CLI. Exact
+prior head 6fdeacd passed both GitHub workflows. New change remote checks remain
+pending until push. No actual generation migration, return signing, guest save
+roundtrip or playable game demonstrated.
+
+User clarified that franchise management does not need a web surface. Removed
+the browser dashboard from the worklist; in-game management remains required.
+Existing HTTPS/API infrastructure remains available for service connectivity.
