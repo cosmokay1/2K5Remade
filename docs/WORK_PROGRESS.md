@@ -2969,3 +2969,20 @@ orchestration passes, new native Windows execution remains pending. Prior 481027
 FranchiseAI 38516814959 log confirms actual v3 seller/buyer inspection, personality
 and rollover restart; both runtime platform builds passed run 38516814955. No actual
 guest trade/write or playable game claim is made.
+
+Verified terminal success for 8ea3682 FranchiseAI38517734890. The Windows log
+confirms actual calendar trade transaction, full/compact receipts, v3 inspection
+and rollover restart execution. Both Windows and Ubuntu passed 508 offline tests;
+both runtime platform builds passed run 38517734886. This remains synthetic native
+transport, not actual guest game/save evidence.
+
+Added complete Store histories for return to a former club and transferred
+unconditional base guarantees. The return preserves older seller/buyer economic
+and incoming-assignment archives, original bonus debt and allocated cash, creates
+a separate receiving generation and keeps both historical receipts stable after
+another rollover. Personality and per-club relationship records stay unchanged.
+Transferred guarantees remain buyer liabilities through later release, explicit
+payment and rollover; after accelerated cap charges age out, unpaid future
+nominal cash remains recorded. All 510 offline tests passed. Six actual Python
+full/compact return and guaranteed trade receipts passed C++ validation. These
+new histories are durable synthetic financial evidence, not guest capture.

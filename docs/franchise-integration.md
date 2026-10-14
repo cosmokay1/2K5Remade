@@ -267,5 +267,5 @@ work with AI off without inference.
 
 Windows fixtures now execute full/compact calendar trades twice across sidecar
 processes, then inspect both parties through rollover. The new transaction fixture
-awaits Windows execution. Prior inspection passed run 38516814959 at 481027c.
+passed Windows run 38517734890 at 8ea3682. Prior inspection passed run 38516814959 at 481027c.
 Actual guest trade interaction and save writes remain unimplemented.

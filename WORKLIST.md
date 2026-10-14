@@ -127,7 +127,9 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       separates the outgoing trade cursor and retained cash from archived terms;
       Windows inspection passed run 38516814959. Explicit manual calendar trade
       requests now route to the paired Store with bound full/compact native receipts;
-      Windows transaction execution is pending. Actual game wiring remains open.
+      Windows transaction/restart execution passed run 38517734890 at 8ea3682.
+      Return-to-former-club and transferred-guarantee histories now preserve old
+      generations, debt and unpaid cash through another rollover. Actual game wiring remains open.
       Supported sourced preseason veteran contract assignments now commit paired
       cash/cap/ownership events with independent league replay. Consideration, rookies,
       unpaid bonus and other trade protections remain; supported assignments now use

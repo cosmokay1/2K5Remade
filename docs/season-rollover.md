@@ -197,3 +197,10 @@ missing peers, downgraded event types and inconsistent postings reject. Receipt
 and final connection gates precede ownership/event writes; failure of the second
 event rolls the entire transaction back. Legacy routes remain guarded, and this
 Store method is not yet a native or actual guest transaction.
+
+Store history checks now cover a return assignment to a former club, preserving
+both earlier generations and the seller's retained bonus debt while the new
+receiving agreement ages independently. Original and return receipts remain stable
+through later payroll/rollover. A transferred-guarantee chain also covers buyer
+release, explicit payment and future unpaid cash after cap acceleration ages out.
+No archived liability or cash payment is erased because ownership changes.

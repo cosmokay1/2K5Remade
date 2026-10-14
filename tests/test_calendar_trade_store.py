@@ -65,7 +65,8 @@ class CalendarTradeStoreTests(unittest.TestCase):
     def setUp(self):
         directory=tempfile.TemporaryDirectory();self.addCleanup(directory.cleanup)
         self.path=Path(directory.name)/'calendar-trade.sqlite';self.store=FranchiseStore(self.path)
-        contract=ActiveContract(Offer('v',(2000000,)*3,3000000),'synthetic source agreement')
+        contract=ActiveContract(Offer('v',(2000000,)*3,3000000,getattr(self,'opening_guarantees',())),
+            'synthetic source agreement')
         for team in ('a','b'):
             profile=self.profile(2026)
             books=OpeningBooks(contracts=(contract,) if team=='a' else (),
@@ -125,6 +126,76 @@ class CalendarTradeStoreTests(unittest.TestCase):
         self.assertEqual(self.trade(),receipt)
         with closing(sqlite3.connect(self.path)) as db:
             self.assertEqual(db.execute('SELECT team_id FROM ownership WHERE player_id=?',('v',)).fetchone(),('b',))
+
+    def test_calendar_trade_return_preserves_both_prior_generations_and_bonus_debt(self):
+        first=self.trade();self.store=FranchiseStore(self.path)
+        old_a=self.store.load_team('a').generation_accounting(first['seller_generation_id'])
+        old_b=self.store.load_team('b').generation_accounting(first['buyer_generation_id'])
+        prior_a_cash=self.store.load_team('a').generation_cash(first['seller_generation_id'])
+        scope=PreseasonTradeScope(2027,date(2027,6,3),date(2027,9,10),date(2027,9,10),
+            EXCLUDED_TRADE_LIABILITIES,True,0,True,True,'synthetic consenting return assignment')
+        args=dict(scope=scope,seller_revision=self.store.load_team('b').revision,
+            buyer_revision=self.store.load_team('a').revision,seller_generation_id=first['buyer_generation_id'],
+            buyer_previous_generation_id=first['seller_generation_id'],access_check=lambda:None)
+        second=self.store.trade_calendar_preseason_veteran('return','b','a','v',**args)
+        self.store=FranchiseStore(self.path);a,b=self.store.load_team('a'),self.store.load_team('b')
+        self.assertEqual(a.generation_accounting(first['seller_generation_id']),old_a)
+        self.assertEqual(a.generation_cash(first['seller_generation_id']),prior_a_cash)
+        closed_b=b.generation_accounting(first['buyer_generation_id'])
+        self.assertEqual(closed_b.original_contract,old_b.original_contract)
+        self.assertEqual(closed_b.incoming_trade,old_b.incoming_trade)
+        self.assertEqual(closed_b.outgoing_trade_calendar_year,2027)
+        self.assertNotEqual(second['buyer_generation_id'],first['seller_generation_id'])
+        self.assertEqual(a.contract_identity('v').generation_id,second['buyer_generation_id'])
+        self.assertEqual(a.charges,(3000011,3000013));self.assertEqual(b.charges,(11,13))
+        self.assertEqual(a.cash_snapshot()['nominal_total']+b.cash_snapshot()['nominal_total'],9000000)
+        self.assertEqual(a.cash_snapshot()['paid_total']+b.cash_snapshot()['paid_total'],5000000)
+        self.assertEqual(self.store.player_context('a','v',context_format='calendar_v3')['relationships'],{'trust':0.6})
+        self.assertEqual(self.store.trade_calendar_preseason_veteran('return','b','a','v',**args),second)
+        self.assertEqual(self.trade(),first)
+        self.store.record_payment('a','returned-base',second['buyer_generation_id'],2000000,
+            expected_cash_revision=a.cash_snapshot()['revision'],source='synthetic earned returned salary',
+            payment_reference='returned-2027-base',component='base:0')
+        self.roll(2027);self.store=FranchiseStore(self.path)
+        self.assertEqual(self.store.load_team('a').charges,(3000013,))
+        self.assertEqual(self.store.load_team('b').charges,(13,))
+        self.assertEqual(self.store.load_team('a').active_contract('v').elapsed_years,1)
+        self.assertEqual(self.store.trade_calendar_preseason_veteran('return','b','a','v',**args),second)
+        self.assertEqual(self.trade(),first)
+        with closing(sqlite3.connect(self.path)) as db:
+            self.assertEqual(db.execute("SELECT team_id FROM ownership WHERE player_id='v'").fetchone(),('a',))
+
+    def test_transferred_guarantees_survive_release_and_future_unpaid_cash(self):
+        fixture=CalendarTradeStoreTests();fixture.opening_guarantees=(0,2000000,1000000);fixture.setUp()
+        try:
+            first=fixture.trade();source=fixture.store.load_team('a');buyer=fixture.store.load_team('b')
+            self.assertEqual(buyer.active_contract('v').offer.guaranteed_salaries,(2000000,1000000))
+            self.assertEqual(source.generation_guarantee_cash(first['seller_generation_id'])['unpaid_guaranteed_base_by_original_year'],[0,0,0])
+            before=source.generation_snapshot()
+            from fractions import Fraction
+            from franchise.releases import PreseasonReleaseScope,EXCLUDED_LIABILITIES
+            from franchise.guarantees import DiscountProfile
+            fixture.store.release_calendar_preseason_veteran('b','assigned-release','v',generation_id=first['buyer_generation_id'],
+                scope=PreseasonReleaseScope(2027,date(2027,7,1),date(2027,9,10),EXCLUDED_LIABILITIES,
+                    True,True,0,'synthetic healthy assignee release'),
+                discount=DiscountProfile(2027,Fraction(0),'synthetic rate'),payment_year_offsets=(0,1),
+                expected_revision=buyer.revision,access_check=lambda:None)
+            fixture.store=FranchiseStore(fixture.path);released=fixture.store.load_team('b')
+            self.assertEqual(fixture.store.load_team('a').generation_snapshot(),before)
+            self.assertEqual(released.charges,(3000011,13))
+            self.assertEqual(released.cash_snapshot()['nominal_total'],3000000)
+            self.assertEqual(released.cash_snapshot()['paid_total'],0)
+            self.assertEqual(released.generation_accounting(first['buyer_generation_id']).incoming_trade,
+                buyer.generation_accounting(first['buyer_generation_id']).incoming_trade)
+            fixture.store.record_payment('b','guarantee-pay',first['buyer_generation_id'],2000000,
+                expected_cash_revision=released.cash_snapshot()['revision'],source='synthetic guaranteed cash payment',
+                payment_reference='assignee-2027-guarantee',component='base:0')
+            fixture.roll(2027);fixture.store=FranchiseStore(fixture.path)
+            self.assertEqual(fixture.store.load_team('a').charges,(1000013,))
+            self.assertEqual(fixture.store.load_team('b').charges,(13,))
+            self.assertEqual(fixture.store.load_team('b').cash_snapshot()['unpaid_total'],1000000)
+            self.assertEqual(fixture.trade(),first)
+        finally:fixture.doCleanups()
 
     def test_stale_identity_access_and_receipt_failure_roll_back_both_teams(self):
         before=self.path.read_bytes()
