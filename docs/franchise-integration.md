@@ -351,7 +351,32 @@ cap room using0x0013ECA0 minus that value. These establish candidates, not moder
 cap/guarantee rules or a safe write interface. The Counter Offer string belongs
 to message/result construction; it does not itself establish offer submission.
 
-Next: run the existing FSM trace on the Deck and confirm0x00557B2C appears in
-real franchise navigation. Keep context/player/object pointers separate, verify
-UI amounts and controlled save changes, and only then intercept the shared
-signing routine. No memory write or generated-code modification occurred here.
+Actual Deck navigation now records descriptor0x00557B2C during a user Sign
+Contract attempt. The engine remains vanilla at that screen. Keep
+context/player/object pointers separate, verify UI amounts and controlled save
+changes, and only then intercept the shared signing routine. No financial write
+or signing interception has been implemented.
+
+
+## Read-only actual franchise-save inspection
+
+The AIBASELIN user save supplies a verified retail Xbox FXG baseline.
+`python3 -m tools.inspect_franchise_save /path/to/SAVEGAME.DAT` reads the
+observed 720044-byte layout and prints year, named roster/free-agent membership,
+source slots and payload hash. The independent reader attributes format facts to
+[BAD-AL's pinned converter source](https://github.com/BAD-AL/nfl2k5tool_dart/blob/e3afeece61896380a95e506ab43ae1abda0ae8a5/lib/gamesave_tool.dart);
+no converter code or proprietary save fixture is bundled. Its license and
+binary redistribution gate remain unresolved.
+
+AIBASELIN resolves 32 team rosters, 1937 unique members and 241 free agents.
+Player records start at B288 with stride54; relative roster/name pointers are
+checked, including duplicate memberships and bounded UTF16 termination.
+`source_slot` is a location in this snapshot, not a durable player ID. The reader
+exposes no ratings and infers no salary, cap, bonus or contract field. Other
+formats/layouts are rejected rather than guessed.
+
+Next controlled pair: reload the baseline and save with no roster/calendar
+change as a control, then reload it and accept exactly one documented contract.
+Record player/team and visible terms before/after, preserve companion files,
+compare via `tools.save_diff --control-after`, and verify game reload/readback.
+Financial mapping remains incomplete until these observations agree.

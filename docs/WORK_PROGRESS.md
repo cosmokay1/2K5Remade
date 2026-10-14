@@ -3635,3 +3635,26 @@ Steam launch remains confirmed by the user in Gaming Mode, with both triggers
 working. The untimed launcher preserves Steam's game identity. User baseline
 contract acceptance remains original game behavior until the negotiation engine
 is actually connected; do not present this build as completed Franchise AI.
+
+
+## October 14, 2026 — Verified baseline roster reader
+
+Read-only structural analysis confirms the captured FXG signature companion
+matches the runtime's zero-key HMAC implementation. The payload has directly
+readable UTF16 names; no whole-file compression header was identified. Reviewed
+pinned BAD-AL source format facts and independently implemented a small strict
+reader. Actual AIBASELIN resolves all 32 team memberships, 1937 unique player
+slots and 241 free agents; known names match roster membership. Source slots
+remain snapshot locators and no financial interpretation or hidden ratings are
+exposed. No upstream converter source/binary or user save was committed.
+
+Five synthetic adversarial/read-only reader tests pass. The full 608-test offline
+suite passed outside the sandbox, after four existing localhost-server fixtures
+were blocked by sandbox socket permissions. This is synthetic engine/tool
+validation plus actual read-only save parsing, not transaction/save round-trip
+acceptance. Observer commit84faad4 Build38550360931 and
+FranchiseAI38550360928 both completed successfully. The compiled observer is
+staged privately as NFL2K5.next.exe (SHA256
+512b193b2376bffd0056b77be3f0d8db338103434ac4302234eff63d6bf18bcc),
+without replacing the user's running game. Actual observer readback and a
+controlled contract/save pair are the next runtime steps.
