@@ -24,18 +24,28 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 ## Latest verified state — October 14, 2026
 
-- Prior verified source: `212b037`. Linux/Windows Build `38523844512` and Franchise AI
-  `38523844441` passed. The Windows log confirms actual synthetic owned-pipe
-  history-aware trades, separate buyer payroll/release and rollover retries.
-- History-aware releases passed Windows pipe checks at `f7d9ad9`, run
-  `38522825921`; repeated amendments passed at `048a8e6`, run `38522299444`.
-- Current local suite: **580 tests passed**. Calendar-v4 full-history inspection
-  also passes portable native checks and 18 actual sidecar response validations.
-- Calendar-v4 inspection and its Windows pipe smoke are implemented; actual
-  Windows execution awaits this source revision's CI. Continue with the next
-  supported lifecycle/integration work while those checks run.
+- Latest published verified source: `cb278b9`. Build `38530887689` and Franchise AI
+  `38530887732` passed. The Windows log confirms request-only launches deny AI
+  while manual reads work, and explicit token policy persists across restart.
+- Current delivered local suite: **603 tests passed**. All bridge fixtures remain
+  asset-free; they do not prove guest/gameplay integration.
+- Request/token ceilings and remote shutdown are sufficient for current work.
+  Additional dollar-policy machinery is deferred at the user's direction.
 - Actual game/save integration, telemetry capture, in-game controls and playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
+
+## Current priority — a usable franchise negotiation in the game
+
+The user identified cost-control expansion as a distraction. Stop adding spending
+policies, quota layers or supporting infrastructure. Keep the existing request/
+token bounds and remote killswitch; defer the unpublished dollar-policy experiment.
+Prioritize the first real franchise path: identify an existing guest signing
+boundary, establish player/contract readback, present negotiation in the game,
+commit supported legal terms, and verify save/reload. Use source inspection where
+it can advance this path; do not create speculative hooks or claim verified
+addresses without the controlled runtime/save evidence. B01/B02/B03 remain real
+gates for execution. Independent work must directly reduce those integration
+steps, rather than expand the already substantial standalone engine.
 
 
 ## Current blockers
@@ -231,8 +241,8 @@ invent future published NFL values: separate verified inputs from simulation pol
       on reported usage overruns. Live CLI accepts explicit --ai-token-limit;
       native token-policy forwarding is now implemented through explicit ABI and
       environment options; Windows execution awaits CI. Live runtime token policy
-      is mandatory before credentials/SDK initialization. Dollar admission,
-      automatic attribution to actual seasons,
+      is mandatory before credentials/SDK initialization. Further dollar-policy
+      infrastructure is deferred; automatic attribution to actual seasons,
       compact prompts/batching and measured gameplay costs remain.
 - [ ] Test different personalities on the same situation and validate multiweek continuity. examples.personality_continuity now verifies seeded priorities, equal observed inputs, different scripted offers/outcomes and two-round restart history without regeneration; live-model variation and actual game-week advancement remain unverified.
 
@@ -376,5 +386,6 @@ cumulative token admission is implemented as an explicit optional
 policy and live CLI/native launch options, now required for production AI.
 Portable forwarding/parser checks
 pass; actual Windows token launch/restart awaits CI.
-Spending admission, authoritative season scope and measured
-gameplay costs remain.
+Further spending-policy expansion is deferred. Prioritize the actual in-game
+negotiation path and save/load evidence; authoritative season scope and measured
+gameplay costs remain unverified.

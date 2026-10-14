@@ -3401,3 +3401,21 @@ Windows driver source compiles and diffcheck passes. Native actual execution
 awaits current CI:75dbf4a Build38530565397 and FranchiseAI38530565261 are running.
 Prior f5e7965 Build38530074049 and FranchiseAI38530074067 passed. No actual game
 execution/save-load evidence is implied by these asset-free checks.
+
+
+## October 14, 2026 — Return focus to playable integration
+
+User feedback identified the cost-control work as a complicated distraction.
+The existing mandatory request/token limits and remote killswitch are sufficient
+for this stage. The unpublished declared-price spending experiment was shelved
+recoverably in a named local Git stash; it was not pushed or added to delivered
+requirements. No further dollar-policy expansion should precede meaningful game
+integration progress. The worklist now prioritizes one actual franchise signing
+path, in-game negotiation and contract save/reload over standalone infrastructure.
+
+Current delivered source cb278b9 passed Build38530887689 and
+FranchiseAI38530887732, with603 tests and actual synthetic Windows request-only
+AI refusal/manual reads plus token-policy restart. Source inspection confirms the
+root host only owns service startup/stop: no verified guest signing callback or
+financial write exists. Legal Xbox assets, controlled saves and Windows gameplay
+access remain B01/B02/B03; source/fixture checks cannot substitute for them.
