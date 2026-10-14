@@ -5359,6 +5359,6 @@ Windows97.906s). Windows compiled the actual franchise-addon.dll and passed all
 five native tests, including loadable_game_addon (ABI mismatch, absolute-path
 loading, forwarding, disabled service, unload/reload), stalled-peer ownership,
 handshake and lifecycle. Native/Python guest-term comparison and the durable
-pipe/restart fixtures also passed. This is component execution, not game execution: 
+pipe/restart fixtures also passed. This is component execution, not game execution:
 no new game build was deployed, no paid inference or guest write occurred, and
 SOFTDRINK compatibility/legal signing/save-reload remain unverified.
