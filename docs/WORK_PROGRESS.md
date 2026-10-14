@@ -4954,3 +4954,53 @@ Automatic root-game submission remains the next integration step.
 
 Prior72443cd Build38633607007 and AI38633606823 passed. a124246 Build38634283242
 passed while AI38634283048 remains in progress. New source CI remains required.
+
+## October14,2026 — Automatic game signing-context capture built and staged
+
+Added an opt-in root-game read-only inspector using the already bounded live
+bank/name/team/calendar readers. It operates independently of diagnostic trace
+logging, sends fresh observations through signing_context after hello collection,
+and never blocks a callback, moves transport ownership or touches guest memory.
+Explicit paired source paths and nonnegative ledger revision are required; partial
+source/revision configuration rejects startup. With the inspector disabled,
+the prior per-screen hello behavior remains. Pending reads prevent duplicate
+submissions; later FSM events collect validated replies with a16-reply log bound.
+Receipt consumption does not authorize a model request or financial transaction.
+
+Extended the portable actual-reader RAM harness to run this path with trace off,
+verify captured fields and unchanged low/high guest memory, and reject an invalid
+season. Extended Windows scheduling fixture covers partial source configuration,
+invalid revision, pending hello/read, no redundant hello and malformed name
+rejection. Full offline686 tests pass in23.832s; strict C11 syntax and diff checks
+pass. Actual MSVC NFL2K5/handshake/protocol targets compile; Windows fixtures
+execute successfully under isolated Proton. Private staged game SHA256
+e18edc0db40e0b34df2c49a568daeef38d318dbe98c4b6a089337184ec9bd1c4.
+
+Prepared isolated signing-context-stage with copied licensed embedded Python,
+current authored service/tools, pinned private AIGILDON/bindings and cloned books.
+The live game and existing service package were not replaced during staging.
+Windows service preflight returns disabled hello followed by actual Trotter
+context: UUID a564eb821c3742929f408fac07929cc5, initialized/pending classification,
+zero model attempts, unchanged Giants financials, no AI/write authority. Evidence
+is private signing-context-stage/windows-check-result.json. No credentials,
+model/control/IAM request or financial classification was introduced.
+
+Staged launcher and hash-guarded installer preserve both currently installed files
+and refuse a running game. Process check found game78193 and owned sidecar78236,
+so requested normal exit without submitting. User subsequently confirmed closed;
+fresh cleanup check/installation are underway. Automatic root request/reply
+execution remains pending normal user launch; the Windows component preflight
+is not claimed as automatic game execution.
+
+Fresh post-exit process check found neither game nor pythonw.exe child; this
+verifies owned child cleanup after this normal root-game exit. Guarded installation
+passed: root EXE hash e18edc0db40e0b34df2c49a568daeef38d318dbe98c4b6a089337184ec9bd1c4,
+launcher hash 1f2771c2cdf51391b3e2a823922ebd3757e9c8e4d73e17a3646e43f44ff7acce.
+Preserved prior game/launcher as .pre-signing-context files with their verified
+efa3958a/5a0b046c hashes unchanged. Requested normal load/open/back/reopen/back
+without submission to collect the new automatic context reply. No offer changed.
+
+Published743deb6 Build38634852382 and AI38634852421 passed. Retrieved logs
+verify686 tests on Windows/Ubuntu. Updated WORKLIST's latest source/test baseline
+and lifecycle cleanup status; new capture source CI and actual game execution
+remain separate pending evidence.

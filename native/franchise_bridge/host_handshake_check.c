@@ -10,6 +10,7 @@ static char owned;
 static unsigned submissions, takes;
 static int ready_value;
 static DWORD owner;
+static char last_request[4096];
 static FranchiseHostStatus take_status = FRANCHISE_HOST_OK;
 FranchiseHostStatus franchise_host_create(const wchar_t *python, const wchar_t *database,
     FranchiseHostMode mode, FranchiseHostClient **out)
@@ -35,9 +36,11 @@ FranchiseHostStatus franchise_host_create_with_token_budget(const wchar_t *pytho
 FranchiseHostStatus franchise_host_submit(FranchiseHostClient *client, const char *bytes, size_t size)
 {
     assert(client == (FranchiseHostClient *)&owned && GetCurrentThreadId() == owner);
-    assert(size == strlen(bytes) && strstr(bytes, "\"operation\":\"hello\""));
+    assert(size == strlen(bytes) && (strstr(bytes, "\"operation\":\"hello\"") ||
+        strstr(bytes, "\"operation\":\"signing_context\"")));
     assert(!memchr(bytes, '\n', size) && !memchr(bytes, '\r', size));
     ++submissions;
+    assert(size < sizeof(last_request)); memcpy(last_request,bytes,size+1);
     return FRANCHISE_HOST_OK;
 }
 FranchiseHostStatus franchise_host_ready(FranchiseHostClient *client, int *ready)
@@ -72,6 +75,9 @@ int main(void)
     _wputenv_s(L"NFL2K5_FRANCHISE_AI_BUDGET_SCOPE", L"");
     _wputenv_s(L"NFL2K5_FRANCHISE_AI_REQUEST_LIMIT", L"");
     _wputenv_s(L"NFL2K5_FRANCHISE_AI_TOKEN_LIMIT", L"");
+    _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SAVE", L"");
+    _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_BINDINGS", L"");
+    _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_REVISION", L"");
     assert(nfl2k5_franchise_start());
     nfl2k5_franchise_on_fsm(0x557B2C, 1); assert(!submissions);
     _wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER", L"vertex");
@@ -96,6 +102,32 @@ int main(void)
     take_status = FRANCHISE_HOST_OK; ready_value = 0;
     assert(nfl2k5_franchise_start());
     nfl2k5_franchise_on_fsm(0x557B2C, 1); assert(submissions == 3);
+    nfl2k5_franchise_stop();
+    _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SAVE", L"authored-save");
+    assert(!nfl2k5_franchise_start()); /* Partial source configuration fails. */
+    _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_BINDINGS", L"authored-bindings");
+    _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_REVISION", L"-1");
+    assert(!nfl2k5_franchise_start());
+    _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_REVISION", L"0");
+    assert(nfl2k5_franchise_start());
+    FranchiseSigningObservation observation={0};
+    strcpy(observation.first_name,"Authored"); strcpy(observation.last_name,"Player");
+    strcpy(observation.photo,"00000000"); strcpy(observation.dob,"000000");
+    observation.slot=1; observation.payroll=4766; observation.cap=80500;
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==3);
+    nfl2k5_franchise_on_fsm(0x557B2C,1); assert(submissions==4);
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==4);
+    ready_value=1;
+    nfl2k5_franchise_on_fsm(0,0);
+    nfl2k5_franchise_on_fsm(0x557B2C,1); assert(submissions==4); /* No redundant hello. */
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==5);
+    assert(strstr(last_request,"\"operation\":\"signing_context\""));
+    assert(strstr(last_request,"\"expected_revision\":0"));
+    assert(strstr(last_request,"\"display_year\":2004"));
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==5);
+    nfl2k5_franchise_on_fsm(0,0);
+    strcpy(observation.first_name,"Bad\"Name");
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==5);
     nfl2k5_franchise_stop();
     return 0;
 }

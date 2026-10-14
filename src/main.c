@@ -630,10 +630,42 @@ static bool signing_screen_name(uint32_t address, char out[151])
     return false;
 }
 
+#ifdef NFL2K5_FRANCHISE_CLIENT
+static void signing_screen_context(void)
+{
+    if (!nfl2k5_franchise_context_enabled()) return;
+    FranchiseSigningObservation observation = {0};
+    uint32_t context, player, team, mode, first, last;
+    uint8_t record[0x28];
+    uint16_t accumulator;
+    if (!signing_screen_read(0x00CB8C34u,&context,sizeof(context)) ||
+        !signing_screen_read(context,&player,sizeof(player)) || context > UINT32_MAX-4u ||
+        !signing_screen_read(context+4u,&team,sizeof(team)) ||
+        !signing_screen_read(player,record,sizeof(record)) ||
+        !signing_screen_slot(player,&observation.slot) ||
+        !signing_screen_team(team,&observation.team_index,&mode) || mode!=2u || observation.team_index>=32u ||
+        team > UINT32_MAX-0x19Cu) return;
+    memcpy(&first,record+0x10,sizeof(first)); memcpy(&last,record+0x14,sizeof(last));
+    if (!signing_screen_name(first,observation.first_name) || !signing_screen_name(last,observation.last_name) ||
+        !signing_screen_read(team+0x124u,&observation.payroll,sizeof(observation.payroll)) ||
+        !signing_screen_read(0x00E3C278u,&observation.cap,sizeof(observation.cap)) ||
+        !signing_screen_read(0x00E576A4u,observation.calendar,sizeof(observation.calendar)) ||
+        observation.calendar[5]>255u ||
+        !signing_screen_read(0x00E5775Cu+observation.team_index*4u,&observation.team_flag,sizeof(observation.team_flag)) ||
+        !signing_screen_read(team+0x19Cu,&accumulator,sizeof(accumulator))) return;
+    observation.accumulator=accumulator;
+    snprintf(observation.photo,sizeof(observation.photo),"%02x%02x%02x%02x",
+        (unsigned)record[4],(unsigned)record[5],(unsigned)record[6],(unsigned)record[7]);
+    snprintf(observation.dob,sizeof(observation.dob),"%02x%02x%02x",
+        (unsigned)record[0x19],(unsigned)record[0x1A],(unsigned)record[0x1B]);
+    nfl2k5_franchise_signing_context(&observation);
+}
+#endif
 void nfl2k5_diag_fsm(uint32_t obj, uint32_t desc, int push)
 {
 #ifdef NFL2K5_FRANCHISE_CLIENT
     nfl2k5_franchise_on_fsm(desc, push);
+    if (push && desc == 0x00557B2Cu) signing_screen_context();
 #endif
     static unsigned int recorded;
     const char *enabled = getenv("NFL2K5_TRACE_FRANCHISE");

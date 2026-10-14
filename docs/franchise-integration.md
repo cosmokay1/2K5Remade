@@ -204,7 +204,19 @@ new bindings. This read works with AI disabled and performs no model call.
 Native validation correlates the returned team, bank slot, revision and nested
 persisted player context, requiring canonical UUID/source hashes and explicitly
 false AI/write-authority flags. A matching reply is a read checkpoint, never an
-AI grant or guest commit receipt. Root-game automatic submission remains pending.
+AI grant or guest commit receipt. Root-game automatic submission is now authored
+and privately compiled; actual game execution of it remains pending.
+
+Enable the root inspector only with the paired pinned source variables and
+NFL2K5_FRANCHISE_GUEST_REVISION, an explicit nonnegative ledger revision. Partial
+or malformed configuration rejects startup. After collecting hello, subsequent
+Sign Contract pushes capture fresh bounded live fields and submit signing_context
+on the existing transport owner. Busy/foreign-thread callbacks cannot submit.
+Later FSM transitions collect the reply, logged at most16 times without retaining
+a transaction grant. This inspection does not depend on trace logging, change
+guest memory, assign salary floors or call AI. Without inspection configuration,
+the prior signing-screen hello behavior is preserved. New financial state or a
+different loaded save requires verified reconciliation, not a revision fallback.
 
 contract_context accepts explicit context_format=calendar_v1. This requests
 format2 current calendar accounting alongside a separately labeled economic

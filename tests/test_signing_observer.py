@@ -22,6 +22,16 @@ class SigningObserverTests(unittest.TestCase):
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include "nfl2k5_franchise_host.h"
+#define NFL2K5_FRANCHISE_CLIENT 1
+static int context_enabled;
+static unsigned contexts;
+static FranchiseSigningObservation captured;
+int nfl2k5_franchise_context_enabled(void) { return context_enabled; }
+void nfl2k5_franchise_on_fsm(uint32_t descriptor,int push) { (void)descriptor; (void)push; }
+void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *observation) {
+    captured=*observation; ++contexts;
+}
 static unsigned char ram[0x1000000], before[0x1000000];
 static unsigned char contig[0x10000], contig_before[0x10000];
 #define XBOX_CONTIG_BASE 0x80000000u
@@ -146,6 +156,18 @@ int main(void) {
     const uint16_t accumulator = 500;
     memcpy(contig + 0x31F4 + 0x19C, &accumulator, sizeof accumulator);
     memcpy(before, ram, sizeof ram); memcpy(contig_before, contig, sizeof contig);
+    context_enabled=1; trace_env=NULL;
+    nfl2k5_diag_fsm(1,0x557B2C,1);
+    assert(contexts==1 && captured.slot==1 && captured.team_index==1);
+    assert(!strcmp(captured.first_name,"Test") && !strcmp(captured.last_name,"Player"));
+    assert(!strcmp(captured.photo,"00000000") && !strcmp(captured.dob,"000000"));
+    assert(captured.payroll==72272 && captured.cap==80500 && captured.accumulator==500);
+    assert(captured.calendar[5]==2 && captured.calendar[6]==99 && captured.team_flag==1);
+    assert(!memcmp(before,ram,sizeof ram) && !memcmp(contig_before,contig,sizeof contig));
+    put32(0xE576B8,256);
+    nfl2k5_diag_fsm(1,0x557B2C,1); assert(contexts==1);
+    put32(0xE576B8,2);
+    context_enabled=0; trace_env="1";
     nfl2k5_diag_fsm(1, 0x557B2C, 1);
     assert(!memcmp(before, ram, sizeof ram)); assert(!memcmp(contig_before, contig, sizeof contig));
     put32(0xE576B8, 256); memcpy(before, ram, sizeof ram);
@@ -176,8 +198,10 @@ int main(void) {
             path = Path(directory)
             (path / 'observer.c').write_text(harness + observer + cases)
             subprocess.run(['cc', '-std=c11', '-Wall', '-Wextra', '-Werror',
+                            '-I', str(ROOT / 'src'),
                             str(path / 'observer.c'), '-o', str(path / 'observer.exe')], check=True)
-            result = subprocess.run([str(path / 'observer.exe')], capture_output=True, text=True, check=True)
+            result = subprocess.run([str(path / 'observer.exe')], capture_output=True, text=True)
+            self.assertEqual(result.returncode,0,result.stderr)
         self.assertIn('bank_slot=1 first_name="Test" last_name="Player"', result.stderr)
         self.assertEqual(result.stderr.count('bank_slot=1 first_name="Test" last_name="Player"'), 4)
         self.assertIn('identity_scope=current_bank_locator', result.stderr)
