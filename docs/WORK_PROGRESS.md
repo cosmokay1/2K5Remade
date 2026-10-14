@@ -5332,3 +5332,23 @@ Windows and Ubuntu, including actual Windows process/echo round trip. Consumer
 source ba8a4f5 Build check 38655649764 passed; Franchise AI 38655649598 Ubuntu
 passed and Windows was still running at this evidence update. Local 702 tests
 passed. No Windows consumer result is inferred from the standalone echo check.
+
+
+## October 14, 2026 — loadable application addon
+
+Extraction consumer ba8a4f5 CI38655649598 now passed Windows/Ubuntu; standalone
+bdaa2df CI38655732233 also passed. User clarified true addon delivery rather than
+static module separation. The game-specific observer/diagnostics and host service
+now build into franchise-addon.dll, loaded via versioned C API from a small shim.
+Main retains checked read-only memory capabilities and existing lifecycle calls;
+existing input/FSM/signing/render paths forward without new generated-code hooks.
+No guest write API or gameplay hot reload is added. Missing default addon permits
+vanilla execution; explicit bad paths, ABI and startup failures reject. Display
+calls synchronize with unload. Asset-free Windows DLL lifecycle tests are authored;
+portable observation checks pass. Full CI/game execution remain pending.
+
+Local validation: 702 Python tests passed in20.836s, including the authored RAM
+observer exercising the actual host read capability and DLL observation code.
+Portable strict C syntax checks passed for addon adapter and disabled loader.
+Native protocol checks passed. Windows DLL loading/ABI rejection/reload and game
+execution are not inferred from these local results.

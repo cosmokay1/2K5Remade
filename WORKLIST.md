@@ -30,9 +30,10 @@ it from the franchise application. Keep domain rules out of the reusable core.
 - [x] Extract original Windows process/pipe ownership, launch quoting and JSON envelope validation into addons/engine-sidecar.
 - [x] Make the franchise pipe client a consumer retaining application validators, budgets and control policy.
 - [x] Add standalone asset-free protocol/echo checks and independent CI.
-- [ ] Verify Windows transport and franchise regression CI after extraction.
+- [x] Verify Windows transport and franchise regression CI after extraction: consumer ba8a4f5 run 38655649598 passed Windows/Ubuntu.
 - [x] Publish private standalone source with provenance: https://github.com/cosmokay1/engine-sidecar (export bdaa2df). Standalone Windows/Linux CI 38655732233 passed.
 - [ ] Select a public reuse license before public distribution.
+- [ ] Build and validate a separately loadable franchise addon, thin native shim and unchanged read-only callback behavior.
 
 ## Active base decision — October 14, 2026
 

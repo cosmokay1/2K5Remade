@@ -11,7 +11,7 @@
 #include "recomp_funcs.h"
 #include "xinput_xbox.h"
 #ifdef NFL2K5_FRANCHISE_CLIENT
-#include "nfl2k5_franchise_host.h"
+#include "nfl2k5_sidecar_adapter.h"
 #endif
 
 #define NFL2K5_XPP_GAMEPAD_TYPE 0x004DA614u

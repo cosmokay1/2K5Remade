@@ -11,9 +11,12 @@ ROOT = Path(__file__).resolve().parents[1]
 class SigningObserverTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which('cc'), 'Portable C compiler required')
     def test_bank_identity_bounds_names_and_read_only_observation(self):
-        source = (ROOT / 'src/main.c').read_text()
-        observer = source[source.index('static bool signing_screen_range('):
-                          source.index('void nfl2k5_diag_texzero(')]
+        source = (ROOT / 'src/nfl2k5_sidecar_adapter.c').read_text()
+        host = (ROOT / 'src/main.c').read_text()
+        capability = host[host.index('int nfl2k5_addon_guest_range('):]
+        capability = capability[:capability.index('\n#endif')]
+        observer = capability + source[source.index('static NFL2K5AddonHost adapter_host;'):
+                                       source.index('static int addon_start(')]
         harness = r'''
 #include <stdbool.h>
 #include <stdint.h>
@@ -23,6 +26,7 @@ class SigningObserverTests(unittest.TestCase):
 #include <string.h>
 #include <assert.h>
 #include "nfl2k5_franchise_host.h"
+#include "game_addon.h"
 #define NFL2K5_FRANCHISE_CLIENT 1
 static int context_enabled;
 static unsigned contexts;
@@ -67,6 +71,7 @@ static bool xbox_guest_memory_read(uintptr_t base, uint64_t addr, void *out, siz
         cases = r'''
 static void put32(uint32_t address, uint32_t value) { memcpy(ram + address, &value, 4); }
 int main(void) {
+    adapter_host=(NFL2K5AddonHost){sizeof(NFL2K5AddonHost),nfl2k5_addon_guest_range,nfl2k5_addon_guest_read};
     uint32_t slot = 99;
     uint32_t team_index = 99, team_mode = 99;
     char name[151];
