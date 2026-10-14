@@ -63,6 +63,9 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   the private build is installed after verified game/service exit. Actual game
   request/reply now resolves Trotter's persisted context automatically; all32
   ledger financial snapshots remain unchanged and model attempts remain zero.
+  Owner-thread input polling is now authored and privately compiled to collect
+  replies while the screen stays open; its staged build awaits normal game exit
+  and actual execution. It does not enable AI or contract writes.
 - Actual AI/game/save integration, telemetry capture and final playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 

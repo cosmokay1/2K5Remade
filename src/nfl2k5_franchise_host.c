@@ -11,6 +11,7 @@ static volatile LONG franchise_owner_thread;
 static volatile LONG franchise_foreign_sign_logged;
 static int hello_pending, hello_failed;
 static int context_enabled, hello_consumed, context_pending;
+static int signing_active, context_sent;
 static unsigned long long context_revision;
 static unsigned context_sequence, context_logged;
 static int positive_limit(const wchar_t *text, unsigned long long *value)
@@ -32,6 +33,7 @@ void nfl2k5_franchise_stop(void)
     hello_pending = hello_failed = 0;
     context_enabled = hello_consumed = context_pending = 0;
     context_sequence = context_logged = 0;
+    signing_active = context_sent = 0;
     franchise_host_destroy(franchise_client);
     franchise_client = NULL;
 }
@@ -49,6 +51,25 @@ void nfl2k5_franchise_on_fsm(uint32_t descriptor, int push)
         return;
     }
     if (!franchise_client || hello_failed) return;
+    signing_active = push && descriptor == 0x00557B2Cu;
+    if (signing_active) context_sent = 0;
+    nfl2k5_franchise_poll();
+    if (hello_failed || hello_pending || context_pending) return;
+    if (push && descriptor == 0x00557B2Cu && (!context_enabled || !hello_consumed)) {
+        static const char request[] = "{\"protocol\":1,\"request_id\":\"game-sign-hello\",\"operation\":\"hello\"}";
+        if (franchise_host_submit(franchise_client, request, sizeof(request) - 1) != FRANCHISE_HOST_OK)
+            goto failed;
+        hello_pending = 1;
+    }
+    return;
+failed:
+    hello_failed = 1;
+    fprintf(stderr, "[FRANCHISE] Control handshake transport unavailable; no AI request submitted.\n");
+}
+void nfl2k5_franchise_poll(void)
+{
+    if ((DWORD)InterlockedCompareExchange(&franchise_owner_thread,0,0) != GetCurrentThreadId() ||
+        !franchise_client || hello_failed) return;
     if (hello_pending || context_pending) {
         int ready = 0;
         static char response[65536];
@@ -65,26 +86,21 @@ void nfl2k5_franchise_on_fsm(uint32_t descriptor, int push)
         } else {
             hello_pending = 0;
             hello_consumed = 1;
-        /* Receipt is not authorization. Native submit still rejects AI without
-         * a validated hello grant; the service rechecks remote control per call. */
-        fprintf(stderr, "[FRANCHISE] Control handshake reply consumed.\n");
+            /* Receipt is not authorization. Native submit still rejects AI without
+             * a validated hello grant; the service rechecks remote control per call. */
+            fprintf(stderr, "[FRANCHISE] Control handshake reply consumed.\n");
         }
-    }
-    if (push && descriptor == 0x00557B2Cu && (!context_enabled || !hello_consumed)) {
-        static const char request[] = "{\"protocol\":1,\"request_id\":\"game-sign-hello\",\"operation\":\"hello\"}";
-        if (franchise_host_submit(franchise_client, request, sizeof(request) - 1) != FRANCHISE_HOST_OK)
-            goto failed;
-        hello_pending = 1;
     }
     return;
 failed:
     hello_failed = 1;
-    fprintf(stderr, "[FRANCHISE] Control handshake transport unavailable; no AI request submitted.\n");
+    fprintf(stderr,"[FRANCHISE] Control handshake transport unavailable; no AI request submitted.\n");
 }
 int nfl2k5_franchise_context_enabled(void)
 {
     return (DWORD)InterlockedCompareExchange(&franchise_owner_thread, 0, 0) == GetCurrentThreadId()
-        && context_enabled && !hello_failed;
+        && context_enabled && signing_active && !context_sent && hello_consumed
+        && !hello_pending && !context_pending && !hello_failed;
 }
 static int safe_name(const char *text, size_t capacity)
 {
@@ -127,6 +143,7 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
         return;
     }
     context_pending = 1;
+    context_sent = 1;
 }
 int nfl2k5_franchise_start(void)
 {
@@ -184,6 +201,7 @@ int nfl2k5_franchise_start(void)
     context_enabled = inspect_context;
     context_revision = revision;
     context_sequence = context_logged = 0;
+    signing_active = context_sent = 0;
     InterlockedExchange(&franchise_foreign_sign_logged, 0);
     InterlockedExchange(&franchise_owner_thread, (LONG)GetCurrentThreadId());
     fprintf(stderr, "[FRANCHISE] Transport launched on owner thread=%lu; signing-screen control handshake available; guest transaction hooks remain unavailable.\n",

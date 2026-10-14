@@ -65,6 +65,7 @@ static DWORD WINAPI foreign_callback(void *unused)
 {
     (void)unused;
     nfl2k5_franchise_on_fsm(0x557B2C, 1);
+    nfl2k5_franchise_poll();
     return 0;
 }
 int main(void)
@@ -118,14 +119,22 @@ int main(void)
     nfl2k5_franchise_on_fsm(0x557B2C,1); assert(submissions==4);
     nfl2k5_franchise_signing_context(&observation); assert(submissions==4);
     ready_value=1;
-    nfl2k5_franchise_on_fsm(0,0);
-    nfl2k5_franchise_on_fsm(0x557B2C,1); assert(submissions==4); /* No redundant hello. */
+    unsigned before_takes=takes;
+    thread=CreateThread(NULL,0,foreign_callback,NULL,0,NULL);
+    assert(thread && WaitForSingleObject(thread,3000)==WAIT_OBJECT_0);
+    CloseHandle(thread); assert(takes==before_takes && submissions==4);
+    nfl2k5_franchise_poll(); /* Hello collected without leaving the screen. */
     nfl2k5_franchise_signing_context(&observation); assert(submissions==5);
     assert(strstr(last_request,"\"operation\":\"signing_context\""));
     assert(strstr(last_request,"\"expected_revision\":0"));
     assert(strstr(last_request,"\"display_year\":2004"));
     nfl2k5_franchise_signing_context(&observation); assert(submissions==5);
+    nfl2k5_franchise_poll(); /* Context collected on the same screen. */
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==5); /* Once per entry. */
     nfl2k5_franchise_on_fsm(0,0);
+    assert(!nfl2k5_franchise_context_enabled());
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==5); /* Stale closed-screen observation. */
+    nfl2k5_franchise_on_fsm(0x557B2C,1); assert(submissions==5); /* No redundant hello. */
     strcpy(observation.first_name,"Bad\"Name");
     nfl2k5_franchise_signing_context(&observation); assert(submissions==5);
     nfl2k5_franchise_stop();

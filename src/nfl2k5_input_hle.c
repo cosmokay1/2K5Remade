@@ -10,6 +10,9 @@
 #include "xbox_memory_layout.h"
 #include "recomp_funcs.h"
 #include "xinput_xbox.h"
+#ifdef NFL2K5_FRANCHISE_CLIENT
+#include "nfl2k5_franchise_host.h"
+#endif
 
 #define NFL2K5_XPP_GAMEPAD_TYPE 0x004DA614u
 #define NFL2K5_XINPUT_HANDLE    0x7FFE0000u  /* | port */
@@ -381,6 +384,9 @@ int nfl2k5_hle_XInputGetState(void)
     if (!is_our_handle(MEM32(g_esp + 4u)))
         return 0;
     nfl2k5_live_qb_guest_tick();
+#ifdef NFL2K5_FRANCHISE_CLIENT
+    nfl2k5_franchise_guest_poll();
+#endif
     {
         extern volatile DWORD g_xbox_game_tid;
         g_xbox_game_tid = (DWORD)SDL_GetCurrentThreadID();

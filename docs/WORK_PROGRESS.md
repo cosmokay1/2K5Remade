@@ -5029,3 +5029,31 @@ startup, hello/context round trip and earlier normal-exit child cleanup all have
 execution evidence. This does not complete AI negotiation, financial transaction,
 modern calendar, game save/load or broader playable acceptance. Published
 87450b3 Build38636188349 passed; AI38636188333 is still in progress.
+
+## October14,2026 — Owner-thread input polling built and staged
+
+Moved ready-reply collection into a reusable owner-only poll and invoked it from
+the existing HLE XInputGetState callback through the actual bounded reader.
+Hello can finish on the same screen; fresh context is captured when ready, once
+per Sign Contract entry. Busy/foreign-thread callbacks cannot take or submit.
+Leaving/changing the screen clears the active locator, rejecting stale observation
+submission. Context replies still grant neither AI nor financial authority.
+No network wait, model request or new guest patch/address was introduced.
+
+Portable actual-reader harness now executes the polling wrapper with trace off,
+validates captured fields, unchanged low/high RAM and invalid-season rejection.
+Windows scheduling fixture validates same-screen hello/context collection,
+foreign polling rejection, once-per-entry dispatch and closed-screen rejection.
+Full offline686 tests passed in26.547s; updated portable fixture also passed;
+strict C11 syntax/diff checks pass. Actual private MSVC game/fixture builds and
+Windows fixture execution under isolated Proton pass. Staged root SHA256
+a47435e9d0c5bf9a7fa652a853722484a84d9282a15f5f28c34be40934a7bd28.
+
+Fresh process check found game79698 still running, so preserved its installed
+executable/launcher and staged a hash-guarded installer with backup. Requested
+normal exit without submitting. Actual installation and same-screen behavior
+remain pending; fixture success is not reported as game execution. Existing
+isolated service/database/auth denial remain unchanged. Earlier CI check timed
+out in automatic approval review; one permitted read-only retry succeeded.
+Published87450b3 Build38636188349 and AI38636188333 passed; 8167bde checks are
+still in progress. Current polling source requires its subsequent hosted CI.

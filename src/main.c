@@ -660,6 +660,11 @@ static void signing_screen_context(void)
         (unsigned)record[0x19],(unsigned)record[0x1A],(unsigned)record[0x1B]);
     nfl2k5_franchise_signing_context(&observation);
 }
+void nfl2k5_franchise_guest_poll(void)
+{
+    nfl2k5_franchise_poll();
+    signing_screen_context();
+}
 #endif
 void nfl2k5_diag_fsm(uint32_t obj, uint32_t desc, int push)
 {
