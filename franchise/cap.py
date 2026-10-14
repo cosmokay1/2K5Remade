@@ -610,8 +610,14 @@ class Ledger:
         return self._apply_preseason_restructure(player_id,scope=scope,converted_base=converted_base,
             record_id=record_id,expected_revision=expected_revision,calendar_generation_id=generation_id)
 
-    def _apply_preseason_restructure(self,player_id,*,scope,converted_base,record_id,expected_revision,calendar_generation_id):
-        from franchise.restructures import calculate_preseason_restructure
+    def apply_calendar_layered_preseason_restructure(self,player_id,*,generation_id,scope,converted_base,record_id,expected_revision):
+        if type(generation_id) is not str or not generation_id.strip():
+            raise Rejected('Exact calendar amendment generation required')
+        return self._apply_preseason_restructure(player_id,scope=scope,converted_base=converted_base,
+            record_id=record_id,expected_revision=expected_revision,calendar_generation_id=generation_id,layered=True)
+
+    def _apply_preseason_restructure(self,player_id,*,scope,converted_base,record_id,expected_revision,calendar_generation_id,layered=False):
+        from franchise.restructures import calculate_preseason_restructure,calculate_layered_preseason_restructure,PreseasonRestructureScope
         with self._lock:
             if type(expected_revision) is not int or expected_revision != self.revision:
                 raise Rejected('Restructure used stale franchise state')
@@ -629,13 +635,18 @@ class Ledger:
                 view=self.generation_calendar_view(calendar_generation_id)
                 if view.current_contract!=contract or view.current_year!=self._league_year:
                     raise Rejected('Amendment cursor disagrees with authoritative calendar view')
+            if layered and (previous is None or previous.restructure is None or not contract.bonus_layers
+                    or not isinstance(scope,PreseasonRestructureScope)
+                    or scope.league_year<=previous.restructure.scope.league_year):
+                raise Rejected('Layered amendment requires a sourced prior conversion and strictly later calendar year')
             cash_id = self.contract_cash_id(player_id)
             cash = self._cash.records.get(cash_id) if self._cash is not None else None
             if cash is None:
                 raise Rejected('Allocated original cash required for restructure')
             years = len(contract.offer.salaries) - contract.elapsed_years
             minimums = self._veteran_minimums[player_id][:years]
-            plan = calculate_preseason_restructure(contract, cash, scope=scope, converted_base=converted_base,
+            calculate=calculate_layered_preseason_restructure if layered else calculate_preseason_restructure
+            plan = calculate(contract, cash, scope=scope, converted_base=converted_base,
                 annual_minimums=minimums, record_id=record_id, expected_cash_id=cash_id)
             self._check_transaction_date(scope.league_year, scope.amended_on,calendar_amendment=calendar_generation_id is not None)
             if (self._veteran_minimum_profile is not None
@@ -659,7 +670,8 @@ class Ledger:
             updated=None
             if previous is not None:
                 from franchise.generations import GenerationCalendarView
-                updated=replace(previous,contract=plan.contract,restructure=plan,restructure_calendar_year=scope.league_year)
+                updated=replace(previous,contract=plan.contract,restructure=plan,restructure_calendar_year=scope.league_year,
+                    **({'prior_restructures':previous.prior_restructures+(previous.restructure,)} if layered else {}))
                 updated_view=GenerationCalendarView(updated,scope.league_year,scope.league_year)
             self._charges = charges
             self._contracts[player_id] = plan.contract.offer
@@ -1337,6 +1349,8 @@ class Ledger:
 
     def generation_snapshot(self):
         with self._lock:
+            if any(agreement.prior_restructures for agreement in self._generation_agreements.values()):
+                raise Rejected('Layered amendment history requires versioned generation posting')
             if self._team_identity is None:
                 raise Rejected('Bound team identity required for generation posting')
             return {'format':1,'team_id':self._team_identity,'financial':self.financial_snapshot(),

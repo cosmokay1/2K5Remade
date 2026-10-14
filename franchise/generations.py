@@ -1,5 +1,5 @@
 """Immutable team-book identity, independent of contract terms and payments."""
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 import hashlib
 import json
 from typing import TYPE_CHECKING
@@ -86,6 +86,7 @@ class GenerationAgreement:
     release_calendar_year: int | None = None
     outgoing_trade_calendar_year: int | None = None
     restructure_calendar_year: int | None = None
+    prior_restructures: tuple["RestructurePlan", ...] = ()
 
     def __post_init__(self):
         from franchise.books import ActiveContract
@@ -110,7 +111,11 @@ class GenerationAgreement:
             raise ValueError('Typed consistent generation agreement required')
         from franchise.releases import ReleasePlan
         from franchise.trades import TradePlan
-        from franchise.restructures import RestructurePlan
+        from franchise.restructures import RestructurePlan,PreseasonRestructureScope
+        if (type(self.prior_restructures) is not tuple
+                or any(not isinstance(plan,RestructurePlan) for plan in self.prior_restructures)
+                or (self.prior_restructures and self.restructure is None)):
+            raise ValueError('Immutable typed prior amendment history and latest plan required')
         for plan, kind in ((self.release, ReleasePlan), (self.outgoing_trade, TradePlan),
                            (self.incoming_trade, TradePlan), (self.restructure, RestructurePlan)):
             if plan is not None and not isinstance(plan, kind):
@@ -132,13 +137,25 @@ class GenerationAgreement:
         restructure_original=self.original_contract
         if self.restructure_calendar_year is not None:
             if (type(self.restructure_calendar_year) is not int or not 2020 <= self.restructure_calendar_year <= 2030
-                    or self.restructure is None or self.restructure.scope.league_year!=self.restructure_calendar_year
+                    or self.restructure is None or not isinstance(self.restructure.scope,PreseasonRestructureScope)
+                    or self.restructure.scope.league_year!=self.restructure_calendar_year
                     or self.restructure.original_contract.elapsed_years<self.original_contract.elapsed_years):
                 raise ValueError('Explicit sourced calendar amendment cursor required')
             restructure_original=replace(self.original_contract,elapsed_years=self.restructure.original_contract.elapsed_years)
             if any(year is not None and (type(year) is not int or year<self.restructure_calendar_year)
                    for year in (self.release_calendar_year,self.outgoing_trade_calendar_year)):
                 raise ValueError('Lifecycle year precedes calendar amendment')
+        if self.prior_restructures:
+            if self.restructure_calendar_year is None:
+                raise ValueError('Repeated amendment requires explicit latest calendar year')
+            self._validate_amendment_history()
+            restructure_original=self.restructure.original_contract
+            for plan,year in ((self.release,self.release_calendar_year),
+                              (self.outgoing_trade,self.outgoing_trade_calendar_year)):
+                if plan is not None and (year is None or
+                        plan.original_contract.elapsed_years-self.contract.elapsed_years!=
+                        year-self.restructure.scope.league_year):
+                    raise ValueError('Closed amendment history year and economic cursor disagree')
         if self.release_calendar_year is not None:
             if (type(self.release_calendar_year) is not int or not 2020 <= self.release_calendar_year <= 2030
                     or self.release is None or self.release.scope.league_year != self.release_calendar_year
@@ -157,6 +174,57 @@ class GenerationAgreement:
                     or self.restructure.original_contract != restructure_original))
                 or (self.incoming_trade is not None and self.incoming_trade.buyer_contract != self.original_contract)):
             raise ValueError('Generation lifecycle plan disagrees with agreement')
+
+    def _validate_amendment_history(self):
+        from franchise.books import ActiveContract,BonusLayer
+        from franchise.cash import CashObligation
+        from franchise.restructures import PreseasonRestructureScope,calculate_preseason_restructure,calculate_layered_preseason_restructure
+        previous=None
+        for plan in (*self.prior_restructures,self.restructure):
+            if (not isinstance(plan.original_contract,ActiveContract) or not isinstance(plan.contract,ActiveContract)
+                    or not isinstance(plan.original_cash,CashObligation) or not isinstance(plan.cash_obligation,CashObligation)
+                    or not isinstance(plan.scope,PreseasonRestructureScope) or not isinstance(plan.bonus_layer,BonusLayer)):
+                raise ValueError('Typed immutable amendment history components required')
+            if previous is None:
+                if (plan.original_contract.elapsed_years<self.original_contract.elapsed_years
+                        or plan.original_contract!=replace(self.original_contract,elapsed_years=plan.original_contract.elapsed_years)):
+                    raise ValueError('First amendment must preserve immutable birth economics')
+            else:
+                delta=plan.scope.league_year-previous.scope.league_year
+                if (delta<=0 or plan.original_contract!=replace(previous.contract,
+                        elapsed_years=previous.contract.elapsed_years+delta)):
+                    raise ValueError('Amendment source years and economic cursors disagree')
+                before,after=previous.cash_obligation,plan.original_cash
+                if (before.obligation_id!=after.obligation_id or before.player_id!=after.player_id
+                        or before.amount!=after.amount or before.source!=after.source
+                        or before.paid_components is None or after.paid_components is None
+                        or any(dict(after.paid_components).get(key,0)<amount for key,amount in before.paid_components)):
+                    raise ValueError('Amendment history dropped or changed prior nominal cash and payments')
+            calculate=calculate_layered_preseason_restructure if plan.original_contract.bonus_layers else calculate_preseason_restructure
+            actual=calculate(plan.original_contract,plan.original_cash,scope=plan.scope,
+                converted_base=plan.converted_base,annual_minimums=plan.annual_minimums,
+                record_id=plan.bonus_layer.record_id,expected_cash_id=self.identity.cash_obligation_id)
+            if actual!=plan:
+                raise ValueError('Amendment plan disagrees with sourced conversion and payment history')
+            previous=plan
+        if previous.contract!=self.contract:
+            raise ValueError('Latest amendment does not produce effective contract')
+
+    def amendment_history_snapshot(self):
+        """Versioned model archive; empty history preserves legacy serializers."""
+        if not self.prior_restructures:
+            return None
+        def snapshot(plan):
+            scope=asdict(plan.scope)
+            scope.update(amended_on=plan.scope.amended_on.isoformat(),
+                first_regular_season_game=plan.scope.first_regular_season_game.isoformat(),
+                exclusions=sorted(plan.scope.exclusions))
+            return {'original_contract':plan.original_contract.to_dict(),'original_cash':plan.original_cash.to_dict(),
+                'scope':scope,'annual_minimums':list(plan.annual_minimums),'converted_base':plan.converted_base,
+                'bonus_layer':asdict(plan.bonus_layer),'contract':plan.contract.to_dict(),
+                'cash_obligation':plan.cash_obligation.to_dict()}
+        return {'format':1,'prior_restructures':[snapshot(plan) for plan in self.prior_restructures],
+            'latest_restructure':snapshot(self.restructure)}
 
     def canonical_identity(self, team_id):
         if self.assignment_request_id is not None:

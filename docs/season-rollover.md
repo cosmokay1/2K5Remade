@@ -237,3 +237,14 @@ layered contracts; no durable repeated-conversion route is enabled yet.
 Next implement immutable prior amendment plans plus a separately versioned second
 amendment event/receipt; replay must validate birth terms through every prior plan
 and current cursor, retaining all sources and payment indices before write support.
+
+
+Immutable repeated-conversion history is now available on GenerationAgreement:
+prior_restructures holds prior plans, restructure is latest, and the detached
+amendment_history_snapshot has its own format marker. Source-year increments
+must equal original contract elapsed-index increments; terms and old layers
+remain identical across each boundary, and paid components cannot disappear.
+The explicit Ledger layered calendar API validates this history before mutation.
+The legacy format1 generation snapshot refuses history-bearing state. A versioned
+Store event and snapshot plus native routing must be added before durable repeated
+conversions can be enabled.

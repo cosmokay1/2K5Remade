@@ -339,3 +339,10 @@ owned-pipe execution passed Franchise AI 38519720705; Build 38519720719 passed.
 Repeated conversion pure reconciliation is now implemented and covered within
 520 offline tests; immutable multi-amendment history and versioned durable writes
 remain next. Actual guest execution/save integration remain external gates.
+
+
+Repeated conversion model/Ledger follow-through: immutable prior amendment plans,
+exact year/cursor/payment continuity, preserved release/trade history and explicit
+later-year Ledger mutation now pass within 528 offline tests. Legacy generation
+snapshots reject history-bearing state. Versioned Store replay/snapshots and
+native repeated-conversion routing remain next; no guest integration is implied.

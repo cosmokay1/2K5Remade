@@ -3069,3 +3069,23 @@ conversion callers remain guarded. Independent expected second-conversion charge
 and payment/nominal preservation pass, with unpaid bonus/identity/floor failures.
 All 520 offline tests passed. Immutable multi-amendment history and a separately
 versioned durable event/receipt are the next implementation boundary.
+
+
+## October 13, 2026 — Immutable repeated-amendment model and Ledger
+
+GenerationAgreement now retains an immutable prior_restructures tuple while the
+existing restructure remains latest. Nonempty history revalidates every pure plan,
+immutable birth economics, exact sourced year/elapsed deltas, old bonus layers,
+nominal cash identity/source continuity and monotonic paid components. History
+closure checks bind release/assignment year deltas to exact economic cursors.
+A separately versioned detached model history snapshot preserves every plan;
+legacy model outputs stay unchanged when prior history is empty.
+Added explicit Ledger apply_calendar_layered_preseason_restructure for a strictly
+later sourced calendar year/current agreement. It constructs the history-bearing
+agreement and reanchored view before mutable posting, preserving original bonus
+indices and cash payments. Existing first-conversion API still rejects layers.
+Format1 generation_snapshot fails closed if history is present so persistence
+cannot silently omit prior amendments. All 528 offline tests passed, including
+8 new focused model/Ledger checks. Versioned Store persistence/replay and native
+repeated-conversion routing remain next; no durable repeated-write support or
+actual game integration is claimed.
