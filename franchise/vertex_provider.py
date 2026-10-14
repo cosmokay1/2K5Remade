@@ -26,7 +26,7 @@ VERTEX_SCHEMA = {
 class VertexProvider:
     def __init__(self, *, project: str, location: str, model: str, client=None,
                  use_gcloud_login: bool = False, credentials=None,
-                 instructions=INSTRUCTIONS, response_schema=None):
+                 instructions=INSTRUCTIONS, response_schema=None, max_context_bytes=1048576):
         if not all(type(value) is str and value.strip() for value in (project, location, model)):
             raise ValueError("GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION, and GEMINI_MODEL are required")
         if credentials is not None and use_gcloud_login:
@@ -36,6 +36,9 @@ class VertexProvider:
         schema = VERTEX_SCHEMA if response_schema is None else response_schema
         if type(schema) is not dict:
             raise ValueError('Structured decision schema required')
+        if type(max_context_bytes) is not int or max_context_bytes <= 0:
+            raise ValueError("Positive integer model context byte limit required")
+        self.max_context_bytes = max_context_bytes
         self.instructions = instructions
         self.response_schema = json.loads(json.dumps(schema, allow_nan=False))
         self.model = model
@@ -63,9 +66,14 @@ class VertexProvider:
         self._client = client
 
     def __call__(self, context: dict) -> str:
+        if type(context) is not dict:
+            raise ValueError("Model context must be an object; no inference submitted")
+        contents = json.dumps(context, allow_nan=False)
+        if len(contents.encode("utf-8")) > self.max_context_bytes:
+            raise ValueError("Model context exceeds request size limit; no inference submitted")
         try:
             result = self._client.models.generate_content(
-                model=self.model, contents=json.dumps(context),
+                model=self.model, contents=contents,
                 config={"system_instruction": self.instructions,
                         "response_mime_type": "application/json",
                         "response_schema": self.response_schema,

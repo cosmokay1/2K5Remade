@@ -2179,3 +2179,21 @@ passed locally through Bridge; a rebuilt portable C++ harness accepted its actua
 Python reply. All437 Python tests and portable native protocol checks pass.
 The new actual Windows process execution awaits CI. Prior promise-source CI
 38500341337 was still live when checked; no retail game/save evidence is claimed.
+
+### Bound model context before inference (2026-10-13)
+
+VertexProvider now requires finite object context and checks the exact serialized
+escaped UTF-8 JSON against a default1MiB context limit before calling the SDK.
+An explicit positive integer constructor option can change that limit. Oversized
+contexts reject without inference or silent removal of story history; existing
+output/deadline/retry controls remain intact. The limit is context bytes, not
+an estimate of token cost, total SDK request size or inference frequency.
+
+Two new tests verify exact escaped-byte boundary, bool/invalid limits, oversized/
+NaN/nonobject/unserializable input with zero SDK calls, unchanged finances when
+negotiation fails and successful manual cap-enforced signing afterward. All439
+Python tests pass. Tests use fake SDK calls; no paid cloud request or new
+authorization was used. Story memory reduction and cost telemetry remain open.
+Promise-context commit2a27925 passed CI38500341337; new native context
+fixture and latest provider changes still need their own Windows execution.
+Retail game and actual save/load gates remain unresolved.
