@@ -1,7 +1,9 @@
 # Durable season transition — implementation worklist
 
-Current source has no executable year rollover. This document records the
-required implementation boundary, not a completed rule or transaction.
+Current source supports a scoped, atomic veteran-only league-year transition
+and calendar-aware release accounting. Rookie cohorts, options, incentives,
+carryover and actual guest year advancement remain incomplete. The ordered list
+below describes the full boundary; later sections record implemented portions.
 
 The transition must run league-wide under one BEGIN IMMEDIATE transaction,
 with a stable request identity, exact team coverage and expected revisions.
@@ -120,9 +122,10 @@ Two-team/two-transition tests cover restart, historical transition retry, explic
 intervening payroll, retained debt, expiry, stale/partial closing rollback and
 posting-type/missing-peer tamper. Calendar contract context format2 separates
 current state from the economic archive; legacy contexts/inventory reject after
-advancement rather than showing stale current contracts. Native format2 support
-is still unimplemented. Post-transition signing/release/trade/restructure remain
-guarded until calendar-aware lifecycle paths are completed; payments, reads and
+advancement rather than showing stale current contracts. Native format2 inspection
+passed synthetic Windows pipe checks. Never-held veteran signing and explicit
+calendar-aware Store releases now have supported paths; other post-transition
+signing/trade/restructure paths remain guarded. Payments, reads and
 further supported transitions work. This does not complete playable franchise
 season advancement, rookie lifecycle, official posting or actual guest save hooks.
 
@@ -139,3 +142,17 @@ Postroll sign events persist exact calendar, financial and cash postings. New
 payment events also record calendar views; earlier supported unmarked payment
 events remain compatible with strict canonical monetary replay because payments
 cannot age agreements. No owner funding is silently recorded as payment.
+
+## Calendar-aware releases
+
+`release_calendar_preseason_veteran` binds the exact current generation and
+release year, preserving economic archives and original salary/payment indices.
+Retained charges anchor at the release year and age once on later transitions.
+Ownership removal, cash/cap postings, receipt checks and final connection checks
+commit together; historical retries return their original receipt. The supported
+healthy preseason scope still excludes unresolved liabilities.
+
+Explicit `calendar_v2` inspection reports the release cursor separately, checks
+retained allocated cash, and preserves the archived contract. Legacy inspection
+rejects these releases. Native write receipts and actual guest transactions remain
+pending; inspection alone grants no game-side release authority.

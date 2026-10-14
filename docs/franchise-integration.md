@@ -203,3 +203,18 @@ accepted actual Python-generated active, expired and never-held snapshots. The
 extended Windows pipe scenario adds saved personality and compares complete
 snapshots across two sidecar launches without changing the database; execution
 for that extension passed in Windows run 38509950333 on revision 11cac7d.
+
+`calendar_v2` explicitly requests format3 inspection, adding `release_calendar`
+to the same archive/current-state envelope. Calendar releases report their sourced
+release year and original salary-year cursor separately from archived economic
+terms. Allocated prior base payments remain owed/paid; cancelled future base is
+excluded while guarantees and bonus layers remain liabilities. Native validation
+checks these component ceilings, settled prior base and unpaid guarantees. Other
+agreements carry a null release calendar. `calendar_v1` continues rejecting these
+new release archives instead of silently changing its format.
+
+Both contract and player inspection support this version without inference or
+financial writes. Actual Python replies passed the portable C++ validator. A new
+Windows fixture reads released/expired agreements and personalities across two
+sidecar launches; its CI execution is pending. This does not expose a native
+calendar-release transaction or establish guest gameplay/save integration.

@@ -431,6 +431,57 @@ int main() {
                 {"current_contract",current_contract},{"annual_charges",{37}},
                 {"ownership_current",true},{"expiry_source",nullptr},{"anchor_year",2026}}}}}};
         franchise::validate_result(calendar_reply,calendar_request);
+        auto calendar_release_request=calendar_request;calendar_release_request["context_format"]="calendar_v2";
+        auto calendar_release_reply=calendar_reply;
+        auto& release_context=calendar_release_reply["result"];
+        release_context["format"]=3;
+        release_context["release_calendar"]={{"league_year",2027},{"elapsed_years",1},{"source","synthetic release"}};
+        auto& released_archive=release_context["economic_archive"];
+        released_archive["status"]="released";released_archive["charge_scope"]="retained_obligations";
+        released_archive["contract"]={{"offer",{{"player_id","v"},{"salaries",{10,20,30}},
+            {"signing_bonus",9},{"guaranteed_salaries",{0,0,5}}}},
+            {"source","synthetic"},{"elapsed_years",0},{"bonus_years",3}};
+        released_archive["annual_charges"]={3,8};
+        released_archive["cash_obligation"]={{"obligation_id","contract:v"},{"player_id","v"},
+            {"amount",24},{"paid",19},{"source","synthetic allocated"},
+            {"paid_components",nlohmann::json::array({nlohmann::json::array({"signing_bonus",9}),
+                nlohmann::json::array({"base:0",10})})}};
+        released_archive["guarantees"]={{"unpaid_guaranteed_base_by_original_year",{0,0,5}},
+            {"unpaid_signing_bonus",0},{"obligation_source","synthetic"}};
+        release_context["calendar_accounting"]={{"status","released"},{"anchor_year",2027},
+            {"current_contract",nullptr},{"annual_charges",{3,8}},
+            {"ownership_current",false},{"expiry_source",nullptr}};
+        franchise::validate_result(calendar_release_reply,calendar_release_request);
+        auto legacy_release=calendar_release_reply;
+        legacy_release["result"]["release_calendar"]=nullptr;
+        legacy_release["result"]["economic_archive"]["contract"]["elapsed_years"]=1;
+        franchise::validate_result(legacy_release,calendar_release_request);
+        auto active_v2=calendar_reply;active_v2["result"]["format"]=3;
+        active_v2["result"]["release_calendar"]=nullptr;
+        franchise::validate_result(active_v2,calendar_release_request);
+        for(int scenario=0;scenario<11;++scenario) {
+            auto bad=calendar_release_reply;auto& context=bad["result"];
+            if(scenario==0) context["release_calendar"]=nullptr;
+            if(scenario==1) context["release_calendar"]["elapsed_years"]=true;
+            if(scenario==2) context["release_calendar"]["league_year"]=2026;
+            if(scenario==3) context["release_calendar"]["source"]=" ";
+            if(scenario==4) context["economic_archive"]["cash_obligation"]["amount"]=25;
+            if(scenario==5) {
+                context["economic_archive"]["cash_obligation"]["paid_components"][1][1]=9;
+                context["economic_archive"]["cash_obligation"]["paid"]=18;
+            }
+            if(scenario==6) context["economic_archive"]["guarantees"]["unpaid_guaranteed_base_by_original_year"][2]=4;
+            if(scenario==7) context["calendar_accounting"]["ownership_current"]=true;
+            if(scenario==8) context["format"]=2;
+            if(scenario==9) context["release_calendar"].erase("elapsed_years");
+            if(scenario==10) context["calendar_accounting"]["annual_charges"]={8};
+            bool rejected=false;
+            try {franchise::validate_result(bad,calendar_release_request);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Corrupt calendar release context accepted");
+        }
+        bool release_downgrade=false;
+        try {franchise::validate_result(calendar_release_reply,calendar_request);}catch(const std::exception&){release_downgrade=true;}
+        if(!release_downgrade) throw std::runtime_error("Release format accepted for legacy request");
         auto calendar_player_request=player_request;
         calendar_player_request["context_format"]="calendar_v1";
         calendar_player_request["team_id"]="a";
@@ -441,6 +492,12 @@ int main() {
         profile["financial_revision"]=calendar_reply["result"]["financial_revision"];
         profile["calendar_contract_context"]=calendar_reply["result"];
         franchise::validate_result(calendar_player_reply,calendar_player_request);
+        auto released_player_request=calendar_player_request;
+        released_player_request["context_format"]="calendar_v2";
+        auto released_player_reply=calendar_player_reply;
+        released_player_reply["result"]["context_format"]="calendar_v2";
+        released_player_reply["result"]["calendar_contract_context"]=release_context;
+        franchise::validate_result(released_player_reply,released_player_request);
         for (int scenario=0;scenario<8;++scenario) {
             auto bad=calendar_player_reply;
             if (scenario==0) bad["result"]["context_format"]="unknown";

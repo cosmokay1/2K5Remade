@@ -315,6 +315,77 @@ inline void validate_contract_accounting(const nlohmann::json& accounting, const
     }
 }
 inline void validate_calendar_contract_context(const nlohmann::json& result, const nlohmann::json& request) {
+    if (request.at("context_format")=="calendar_v2") {
+        if (!result.is_object() || result.size()!=8 || !result.at("format").is_number_integer() || result.at("format")!=3)
+            throw std::runtime_error("Invalid release calendar context format");
+        auto normalized=result; normalized.erase("release_calendar"); normalized["format"]=2;
+        auto legacy_request=request; legacy_request["context_format"]="calendar_v1";
+        validate_calendar_contract_context(normalized,legacy_request);
+        const auto& release=result.at("release_calendar");
+        const auto& archive=result.at("economic_archive");
+        const auto& view=result.at("calendar_accounting");
+        if (release.is_null() && archive.at("status")!="released") return;
+        if (!release.is_null() && (!release.is_object() || release.size()!=3 || archive.at("status")!="released" ||
+            view.at("status")!="released" || !release.at("source").is_string() ||
+            release.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos))
+            throw std::runtime_error("Invalid sourced release calendar");
+        if (!release.is_null()) {
+            integer_money(release.at("league_year")); integer_money(release.at("elapsed_years"));
+        }
+        const auto& contract=archive.at("contract");
+        const auto offer=canonical_offer(contract.at("offer"));
+        const auto cursor=(release.is_null() ? contract.at("elapsed_years") : release.at("elapsed_years")).get<int64_t>();
+        const auto term=static_cast<int64_t>(offer.at("salaries").size());
+        if (!release.is_null() && (release.at("league_year")!=view.at("anchor_year") ||
+            release.at("league_year")>result.at("league_year") ||
+            cursor<contract.at("elapsed_years").get<int64_t>() || cursor>=term))
+            throw std::runtime_error("Release calendar disagrees with preserved contract");
+        std::map<std::string,int64_t> ceilings{{"signing_bonus",offer.at("signing_bonus").get<int64_t>()}};
+        for(int64_t i=0;i<term;++i)
+            ceilings["base:"+std::to_string(i)]=(i<cursor ? offer.at("salaries")[i] : offer.at("guaranteed_salaries")[i]).get<int64_t>();
+        if(contract.contains("bonus_layers"))
+            for(const auto& layer:contract.at("bonus_layers"))
+                ceilings["bonus:"+layer.at("record_id").get<std::string>()]=layer.at("amount").get<int64_t>();
+        int64_t nominal=0;
+        for(const auto& component:ceilings) nominal=checked_money_sum(nominal,component.second);
+        const auto& cash=archive.at("cash_obligation");
+        if(!cash.is_object() || !cash.contains("paid_components") || !cash.at("paid_components").is_array() || cash.at("amount")!=nominal)
+            throw std::runtime_error("Release calendar cash disagrees with preserved liabilities");
+        std::map<std::string,int64_t> paid;
+        for(const auto& row:cash.at("paid_components")) {
+            const auto key=row[0].get<std::string>();
+            const auto found=ceilings.find(key);
+            if(found==ceilings.end() || row[1]>found->second)
+                throw std::runtime_error("Released payment exceeds calendar liability");
+            paid[key]=row[1].get<int64_t>();
+        }
+        for(int64_t i=0;i<cursor;++i)
+            if(paid["base:"+std::to_string(i)]!=ceilings.at("base:"+std::to_string(i)))
+                throw std::runtime_error("Released calendar has unpaid prior base");
+        const auto& guarantees=archive.at("guarantees");
+        if(!guarantees.is_object()) throw std::runtime_error("Missing allocated release guarantees");
+        for(int64_t i=0;i<term;++i) {
+            auto remaining=std::max<int64_t>(0,offer.at("guaranteed_salaries")[i].get<int64_t>()-paid["base:"+std::to_string(i)]);
+            if(guarantees.at("unpaid_guaranteed_base_by_original_year")[i]!=remaining)
+                throw std::runtime_error("Release base guarantee disagrees with payments");
+        }
+        const auto original_unpaid=ceilings.at("signing_bonus")-paid["signing_bonus"];
+        int64_t unpaid_bonus=original_unpaid;
+        if(contract.contains("bonus_layers") && !contract.at("bonus_layers").empty()) {
+            if(guarantees.at("unpaid_original_signing_bonus")!=original_unpaid)
+                throw std::runtime_error("Release original bonus disagrees with payments");
+            for(const auto& layer:contract.at("bonus_layers")) {
+                auto key="bonus:"+layer.at("record_id").get<std::string>();
+                auto remaining=ceilings.at(key)-paid[key];
+                if(guarantees.at("unpaid_bonus_layers").at(key)!=remaining)
+                    throw std::runtime_error("Release layer bonus disagrees with payments");
+                unpaid_bonus=checked_money_sum(unpaid_bonus,remaining);
+            }
+        }
+        if(guarantees.at("unpaid_signing_bonus")!=unpaid_bonus)
+            throw std::runtime_error("Release bonus total disagrees with payments");
+        return;
+    }
     if (!request.at("context_format").is_string() || request.at("context_format")!="calendar_v1" ||
         !result.is_object() || result.size()!=7 || !result.at("format").is_number_integer() || result.at("format")!=2 ||
         result.at("team_id")!=request.at("team_id") || !result.at("team_id").is_string() ||
@@ -641,13 +712,14 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
             throw std::runtime_error("Player context identity mismatch");
         integer_money(result.at("financial_revision"));
         if (request.contains("context_format")) {
-            if (!request.at("context_format").is_string() || request.at("context_format")!="calendar_v1" ||
+            if (!request.at("context_format").is_string() ||
+                (request.at("context_format")!="calendar_v1" && request.at("context_format")!="calendar_v2") ||
                 result.at("context_format")!=request.at("context_format") ||
                 !result.at("contract_accounting").is_null())
                 throw std::runtime_error("Invalid calendar player context format");
             const auto& calendar=result.at("calendar_contract_context");
             if (!calendar.is_null()) {
-                auto expected=nlohmann::json{{"context_format","calendar_v1"},
+                auto expected=nlohmann::json{{"context_format",request.at("context_format")},
                     {"team_id",request.at("team_id")},{"generation_id",calendar.at("generation_id")}};
                 validate_calendar_contract_context(calendar,expected);
                 if (calendar.at("financial_revision")!=result.at("financial_revision") ||

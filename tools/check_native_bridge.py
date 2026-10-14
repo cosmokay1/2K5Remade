@@ -389,6 +389,38 @@ def main():
             assert calendar_path.read_bytes()==unchanged
         print("Native Windows advanced calendar contract/player contexts, personality, settled expiry and restart verified (synthetic).")
 
+        from datetime import date
+        from fractions import Fraction
+        from franchise.releases import PreseasonReleaseScope,EXCLUDED_LIABILITIES
+        from franchise.guarantees import DiscountProfile
+        released_id=calendar.load_team('a').contract_identity('a').generation_id
+        calendar.release_calendar_preseason_veteran('a','calendar-release','a',generation_id=released_id,
+            scope=PreseasonReleaseScope(2027,date(2027,7,1),date(2027,9,10),EXCLUDED_LIABILITIES,
+                True,True,0,'synthetic Windows calendar release'),
+            discount=DiscountProfile(2027,Fraction(0),'synthetic discount'),payment_year_offsets=(0,1),
+            expected_revision=calendar.load_team('a').revision,access_check=lambda:None)
+        unchanged=calendar_path.read_bytes();previous=None
+        for attempt in range(2):
+            result=subprocess.run([sys.argv[1],sys.executable,str(calendar_path),'--calendar-release-context'],
+                text=True,capture_output=True,timeout=20,check=True)
+            replies=[json.loads(line) for line in result.stdout.splitlines()]
+            assert len(replies)==4 and all(reply['error'] is None for reply in replies)
+            if previous is not None:assert replies==previous
+            previous=replies
+            released=replies[0]['result']
+            assert released==calendar.calendar_contract_context('a',released_id,context_format='calendar_v2')
+            assert released['economic_archive']['contract']['elapsed_years']==0
+            assert released['release_calendar']['elapsed_years']==1
+            assert released['calendar_accounting']['status']=='released'
+            assert released['calendar_accounting']['ownership_current'] is False
+            assert released['economic_archive']['cash_obligation']['amount']==5000000
+            assert replies[1]['result']['release_calendar'] is None
+            for team,reply in zip(('a','b'),replies[2:]):
+                assert reply['result']==calendar.player_context(team,team,context_format='calendar_v2')
+                assert reply['result']['personality']=={'money':0.8}
+            assert calendar_path.read_bytes()==unchanged
+        print("Native Windows calendar-release archives and player contexts survive restart (synthetic).")
+
         if len(sys.argv)>2:
             c_path=Path(directory)/'C host ownership.sqlite'
             c_store=FranchiseStore(c_path)

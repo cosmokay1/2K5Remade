@@ -2809,3 +2809,16 @@ another rollover. Retained cash/charges replay without double aging. Calendar-re
 archive context fails closed until versioned native accounting is implemented;
 no service/game transaction route was opened. Independent review found no concrete
 Store defect; all488 offline tests pass, including rollback and six tamper cases.
+
+Calendar-release inspection now uses explicit calendar_v2 / format3 for contract
+and player context. The preserved economic terms, sourced release-year cursor and
+current retained-charge slice stay separate. Native checks reconcile nominal
+cash against already-earned prior base, retained guarantees and bonus layers,
+including allocated payment ceilings and unpaid guarantees. Review found and
+fixed a marker-null downgrade: all v2 released archives reconcile cash even when
+using the legacy archive cursor. Legacy v1 still rejects new calendar releases.
+Actual Python released/expired contract and player replies passed C++ validation.
+All489 offline tests passed, including inspection after another rollover without
+archive changes. Windows pipe fixtures now query released/expired generations
+and saved personalities twice with identical database bytes; CI execution remains
+pending. No calendar-release service write route or real guest hook is claimed.

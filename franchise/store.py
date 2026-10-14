@@ -870,7 +870,7 @@ class FranchiseStore:
         """One validated read snapshot; never generates/rebinds an actor."""
         if type(player_id) is not str or not player_id.strip():
             raise ValueError('Stable player identity required')
-        if context_format is not None and (type(context_format) is not str or context_format != 'calendar_v1'):
+        if context_format is not None and (type(context_format) is not str or context_format not in ('calendar_v1','calendar_v2')):
             raise ValueError('Unsupported player context format')
         with self._connection() as db:
             ledger = self._load(db,team_id)
@@ -881,8 +881,8 @@ class FranchiseStore:
             calendar_accounting = None
             if player_id in ledger._contracts:
                 agreement=ledger.generation_accounting(ledger.contract_identity(player_id).generation_id)
-                if context_format == 'calendar_v1':
-                    calendar_accounting=self._calendar_contract_context_from_ledger(team_id,ledger,agreement)
+                if context_format in ('calendar_v1','calendar_v2'):
+                    calendar_accounting=self._calendar_contract_context_from_ledger(team_id,ledger,agreement,context_format=context_format)
                 else:
                     accounting=self._generation_accounting_view(ledger,agreement)
             result = {'player_id':player_id,'financial_revision':ledger.revision,'initialized':actor is not None,
@@ -895,7 +895,7 @@ class FranchiseStore:
                     'negotiation_history':history[-10:],
                     'negotiation_history_total':len(history),
                     'negotiation_history_has_more':len(history)>10}
-            if context_format == 'calendar_v1':
+            if context_format in ('calendar_v1','calendar_v2'):
                 result.update(context_format=context_format,calendar_contract_context=calendar_accounting)
             return result
 
@@ -911,8 +911,8 @@ class FranchiseStore:
             return self._contract_generations_from_ledger(team_id,self._load(db,team_id))
 
     @staticmethod
-    def _generation_accounting_view(ledger,agreement,*,archive_only=False):
-        if agreement.release_calendar_year is not None:
+    def _generation_accounting_view(ledger,agreement,*,archive_only=False,calendar_release=False):
+        if agreement.release_calendar_year is not None and not calendar_release:
             raise Rejected('Calendar release archives require versioned lifecycle accounting')
         if ledger._generation_calendar_anchor is not None and not archive_only:
             raise Rejected('Legacy contract context cannot represent advanced calendar; use calendar contract context')
@@ -935,19 +935,21 @@ class FranchiseStore:
             return {'team_id':team_id,'generation_id':generation_id,'financial_revision':ledger.revision,
                 'accounting':self._generation_accounting_view(ledger,agreement)}
 
-    def calendar_contract_context(self,team_id,generation_id):
+    def calendar_contract_context(self,team_id,generation_id,*,context_format='calendar_v1'):
         """Versioned current calendar state with a separately labeled economic archive."""
         if any(type(value) is not str or not value.strip() for value in (team_id,generation_id)):
             raise ValueError('Stable team and agreement identities required')
         with self._connection() as db:
             ledger=self._load(db,team_id)
             agreement=ledger.generation_accounting(generation_id)
-            return self._calendar_contract_context_from_ledger(team_id,ledger,agreement)
+            return self._calendar_contract_context_from_ledger(team_id,ledger,agreement,context_format=context_format)
 
-    def _calendar_contract_context_from_ledger(self,team_id,ledger,agreement):
+    def _calendar_contract_context_from_ledger(self,team_id,ledger,agreement,*,context_format='calendar_v1'):
+        if type(context_format) is not str or context_format not in ('calendar_v1','calendar_v2'):
+            raise ValueError('Unsupported calendar accounting format')
         generation_id=agreement.identity.generation_id
         view=ledger.generation_calendar_view(generation_id)
-        return {'format':2,'team_id':team_id,'generation_id':generation_id,
+        result = {'format':3 if context_format=='calendar_v2' else 2,'team_id':team_id,'generation_id':generation_id,
             'financial_revision':ledger.revision,'league_year':ledger._league_year,
             'calendar_accounting':{'status':view.status,
                 'anchor_year':view.anchor_year,
@@ -955,7 +957,13 @@ class FranchiseStore:
                 'annual_charges':[json_amount(value) for value in view.annual_charges()],
                 'ownership_current':ledger._active_generation_ids.get(agreement.identity.player_id)==generation_id,
                 'expiry_source':view.expiry_source},
-            'economic_archive':self._generation_accounting_view(ledger,agreement,archive_only=True)}
+            'economic_archive':self._generation_accounting_view(ledger,agreement,archive_only=True,
+                calendar_release=context_format=='calendar_v2')}
+        if context_format=='calendar_v2':
+            result['release_calendar']=({'league_year':agreement.release_calendar_year,
+                'elapsed_years':agreement.release.original_contract.elapsed_years,
+                'source':agreement.release.scope.source} if agreement.release_calendar_year is not None else None)
+        return result
 
     @staticmethod
     def _contract_generations_from_ledger(team_id,ledger):

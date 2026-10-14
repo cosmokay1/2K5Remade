@@ -77,6 +77,46 @@ class StoredYearTransitionTests(unittest.TestCase):
                 with self.subTest(scenario=scenario),self.assertRaises((ValueError,Rejected)):
                     FranchiseStore(path).load_team('a')
 
+    def test_calendar_v2_reads_release_cursor_without_rewriting_archived_terms(self):
+        self.store.advance_league_year(**self.inputs)
+        inputs=self.calendar_release_inputs()
+        self.store.release_calendar_preseason_veteran('a','later','a',**inputs)
+        before=self.path.read_bytes()
+        context=self.store.calendar_contract_context('a',inputs['generation_id'],context_format='calendar_v2')
+        self.assertEqual(context['format'],3)
+        self.assertEqual(context['release_calendar'],dict(league_year=2027,elapsed_years=1,source=inputs['scope'].source))
+        self.assertEqual(context['economic_archive']['contract']['elapsed_years'],0)
+        self.assertEqual(context['calendar_accounting']['status'],'released')
+        self.assertFalse(context['calendar_accounting']['ownership_current'])
+        self.assertEqual(context['economic_archive']['cash_obligation']['paid_components'],
+            [['signing_bonus',3000000],['base:0',2000000]])
+        def unexpected(_):raise AssertionError('Read invoked inference')
+        def disabled():raise AccessDisabled('synthetic shutdown')
+        bridge=Bridge(self.store,provider=unexpected,access_check=disabled)
+        request=dict(protocol=1,request_id='released',operation='contract_context',team_id='a',
+            generation_id=inputs['generation_id'],timeout_ms=1000,context_format='calendar_v2')
+        self.assertEqual(bridge.handle(request)['result'],context)
+        profile={key:value for key,value in request.items() if key!='generation_id'}
+        profile.update(operation='player_context',player_id='a')
+        result=bridge.handle(profile)
+        self.assertIsNone(result['error'])
+        self.assertEqual(result['result']['calendar_contract_context'],context)
+        ordinary=self.store.calendar_contract_context('b',self.store.load_team('b').contract_identity('b').generation_id,
+            context_format='calendar_v2')
+        self.assertIsNone(ordinary['release_calendar'])
+        self.assertEqual(self.path.read_bytes(),before)
+        next_year=copy.deepcopy(self.inputs)
+        next_year.update(request_id='inspect-later',from_year=2027,to_year=2028)
+        for team in ('a','b'):
+            next_year['teams'][team].update(expected_revision=self.store.load_team(team).revision,
+                expired_generation_ids=[],next_minimum_profile=self.minimum_profile(2028,team,2).to_dict())
+        self.store.advance_league_year(**next_year)
+        later=FranchiseStore(self.path).calendar_contract_context('a',inputs['generation_id'],context_format='calendar_v2')
+        self.assertEqual(later['economic_archive'],context['economic_archive'])
+        self.assertEqual(later['release_calendar'],context['release_calendar'])
+        self.assertEqual(later['calendar_accounting']['annual_charges'],context['calendar_accounting']['annual_charges'][1:])
+        self.assertEqual(later['league_year'],2028)
+
     def minimum_profile(self,year,team,term):
         players=(team,'new') if team=='a' else (team,)
         return VeteranMinimumProfile(year,tuple((player,(7,)*term,('active_inactive',)*term) for player in players))

@@ -111,7 +111,9 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       Calendar-aware Ledger and atomic Store release commit/replay now bind the
       current generation/year, retain original cash/base indices and bonus layers,
       and start dead-charge aging at the release year. Immutable restructuring and
-      assignment archives remain. Native calendar-release accounting/receipts and
+      assignment archives remain. Explicit calendar_v2 native inspection now
+      separates release-year cursor from archived terms and validates allocated
+      retained cash; actual Windows pipe execution is pending. Native write receipts and
       service/game transaction wiring are pending; legacy post-roll APIs remain guarded.
 - [ ] Implement atomic trades with both teams' obligations and ownership.
       Supported sourced preseason veteran contract assignments now commit paired
