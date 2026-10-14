@@ -95,6 +95,100 @@ class SigningContextBridgeTests(unittest.TestCase):
         self.assertFalse(result['result']['ai_authorized'])
         self.assertEqual(self.fixture.store.load_team('49ers').revision, 0)
 
+    def captured_proposal(self):
+        return {**self.request, 'operation': 'negotiate_proposal',
+                'guest_offer': {'amount_word': 829, 'flags_word': (1<<29)|(2<<16)|4}}
+
+    def classified_bridge(self, provider, access=lambda: None):
+        # Authored fixture floors only; do not assign a policy to real players.
+        from franchise.books import OpeningBooks
+        from franchise.cap import Ledger
+        from franchise.store import FranchiseStore
+        from tools.export_legacy_contracts import legacy_contracts
+        player = self.fixture.bindings['players'][1]['player_id']
+        store = FranchiseStore(Path(self.fixture.temporary.name)/'classified.sqlite')
+        store.create_franchise({'49ers': Ledger.from_opening(OpeningBooks(
+            legacy_contracts=legacy_contracts(self.fixture.bindings,self.fixture.payload)['49ers']),
+            cap=80500000, roster_reserve=0, max_bonus_years=5,
+            veteran_minimums={player: (1000,)*15})}, seed=self.fixture.bindings['personality_seed'])
+        return Bridge(store, provider=provider, access_check=access,
+            guest_snapshot=(self.fixture.bindings,self.fixture.payload))
+
+    def test_captured_proposal_requires_control_and_known_minimum_before_inference(self):
+        request = self.captured_proposal()
+        self.assertEqual(self.bridge.handle(request)['error'], 'ai_disabled')
+        self.bridge.access_check = lambda: None
+        reply = self.bridge.handle(request)
+        self.assertEqual(reply['error'], 'state_rejected')
+        self.assertIn('classification', reply['detail'].lower())
+        self.provider.assert_not_called()
+        self.assertEqual(self.fixture.store.negotiation_history('49ers',self.fixture.bindings['players'][1]['player_id']), [])
+
+    def test_captured_proposal_derives_actor_performance_offer_and_replays_without_signing(self):
+        calls=[]
+        def provider(context):
+            calls.append(context)
+            return json.dumps(dict(action='accept', reason='Agreement proposed', salaries=None, signing_bonus=None))
+        bridge = self.classified_bridge(provider)
+        request = self.captured_proposal()
+        before = bridge.store.load_team('49ers').financial_snapshot()
+        reply = bridge.handle(request)
+        self.assertIsNone(reply['error'])
+        result = reply['result']; checkpoint = result['signing_checkpoint']
+        self.assertEqual(result['outcome'], 'accepted_proposal')
+        self.assertEqual(calls[0]['personality'], checkpoint['player_context']['personality'])
+        self.assertEqual(calls[0]['relationships'], checkpoint['player_context']['relationships'])
+        self.assertEqual(calls[0]['performance'], checkpoint['performance_context'])
+        self.assertFalse(calls[0]['performance']['history_present'])
+        self.assertEqual(result['offer'], checkpoint['offer_context']['offer'])
+        self.assertFalse(checkpoint['ai_authorized']); self.assertFalse(checkpoint['write_authorized'])
+        from franchise.store import FranchiseStore
+        reopened = Bridge(FranchiseStore(bridge.store.path), provider=lambda _: self.fail('Repeated inference'),
+            access_check=lambda: None, guest_snapshot=bridge.guest_snapshot)
+        replay = reopened.handle(request)
+        self.assertIsNone(replay['error'])
+        self.assertEqual(replay['result']['evidence'], result['evidence'])
+        self.assertEqual(bridge.store.load_team('49ers').financial_snapshot(), before)
+        self.assertEqual(len(calls), 1)
+
+    def test_captured_proposal_rejects_overridden_actor_source_terms_and_revision(self):
+        import copy
+        bridge = self.classified_bridge(self.provider)
+        request = self.captured_proposal()
+        for field in ('personality','performance','relationships','team_id','offer','save'):
+            with self.subTest(field=field):
+                self.assertEqual(bridge.handle({**request,field:{}})['error'], 'invalid_request')
+        changed = copy.deepcopy(request); changed['observation']['biography']['dob_region_raw']='000001'
+        self.assertEqual(bridge.handle(changed)['error'], 'state_rejected')
+        self.assertEqual(bridge.handle({**request,'expected_revision':1})['error'], 'state_rejected')
+        changed = copy.deepcopy(request); changed['guest_offer']['flags_word']=(6<<16)|4
+        self.assertEqual(bridge.handle(changed)['error'], 'state_rejected')
+        self.provider.assert_not_called()
+
+    def test_captured_proposal_rechecks_shutdown_before_model_dispatch(self):
+        access = Mock(side_effect=[None, AccessDisabled('Disabled after checkpoint')])
+        bridge = self.classified_bridge(self.provider, access)
+        self.assertEqual(bridge.handle(self.captured_proposal())['error'], 'ai_disabled')
+        self.provider.assert_not_called()
+
+    def test_captured_request_cannot_relabel_a_client_supplied_evidence_proposal(self):
+        provider = Mock(return_value=json.dumps(dict(action='accept',reason='Authored',salaries=None,signing_bonus=None)))
+        bridge = self.classified_bridge(provider)
+        request = self.captured_proposal()
+        context_request = {**request,'operation':'signing_context','performance_format':'saved_history_v1'}
+        checkpoint = bridge.handle(context_request)['result']
+        direct = dict(protocol=1,request_id=request['request_id'],operation='negotiate_proposal',
+            team_id=checkpoint['team_id'],offer=checkpoint['offer_context']['offer'],
+            expected_revision=0,timeout_ms=5000,contract_format='original_fxg_v1',
+            personality=checkpoint['player_context']['personality'],
+            relationships=checkpoint['player_context']['relationships'],performance={'games':16})
+        self.assertIsNone(bridge.handle(direct)['error'])
+        reply = bridge.handle(request)
+        self.assertEqual(reply['error'],'state_rejected')
+        self.assertIn('evidence',reply['detail'])
+        self.assertEqual(provider.call_count,1)
+        self.assertEqual(bridge.store.load_team('49ers').revision,0)
+
 
 if __name__ == '__main__':
     unittest.main()

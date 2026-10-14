@@ -72,6 +72,23 @@ writes or preserve unrelated bits in a live offer context.
 The native validator also checks
 acceptance preview/evidence revisions. Guest commit/recovery remains unfinished.
 
+`negotiate_proposal` also accepts a captured-screen request with only protocol,
+request_id, operation, observation, guest_offer, expected_revision, timeout_ms,
+and optional promise_goals. The observation and raw offer have the same shapes
+as signing_context. The server requires fresh remote access, reconciles the
+pinned legacy checkpoint, derives persisted personality/relationships and saved
+performance, and requires an eligible exact-format financial preview before
+inference. Clients cannot add or override actor, performance, team or offer data.
+The service then uses the existing proposal-only path with original_fxg_v1.
+
+Successful replies add signing_checkpoint; native validation checks that read
+checkpoint and the proposal's matching source evidence and exact offer. Dialogue
+persists through the ordinary proposal path. On replay the checkpoint is freshly
+read and may include updated dialogue history, while the recorded proposal is
+reused without new inference. A reply exceeding the pipe frame reports
+context_too_large; dialogue may already be recorded, but no contract is committed.
+This variant does not resolve active-save selection or authorize guest writes.
+
 ## Native candidate
 
 `native/franchise_bridge` builds a standalone Windows C++17 transport check.

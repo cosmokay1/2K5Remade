@@ -90,6 +90,49 @@ class Bridge:
                     raise TimeoutError('Signing checkpoint expired')
                 self._require_frame(request_id, result)
                 return self._reply(request_id, result=result)
+            if operation == 'negotiate_proposal' and 'observation' in request:
+                fields = {'protocol', 'request_id', 'operation', 'observation', 'guest_offer',
+                          'expected_revision', 'timeout_ms'}
+                if set(request) not in (fields, fields | {'promise_goals'}):
+                    raise ValueError('Complete captured signing proposal required')
+                timeout = request['timeout_ms']
+                if type(timeout) is not int or not 1 <= timeout <= 60000:
+                    raise ValueError('Bounded signing proposal timeout required')
+                deadline = time.monotonic() + timeout / 1000
+                self.connection_check()
+                self.access_check()  # A read checkpoint alone never grants inference.
+                checkpoint_request = {key: request[key] for key in fields}
+                checkpoint_request.update(operation='signing_context', performance_format='saved_history_v1')
+                checkpoint_reply = self.handle(checkpoint_request)
+                if checkpoint_reply['error'] is not None:
+                    return checkpoint_reply
+                checkpoint = checkpoint_reply['result']
+                inspected = checkpoint['offer_context']
+                if inspected['outcome'] != 'eligible_preview':
+                    raise Rejected(inspected['reason'])
+                remaining = int((deadline-time.monotonic())*1000)
+                if remaining < 1:
+                    raise TimeoutError('Signing proposal checkpoint expired')
+                actor = checkpoint['player_context']
+                normalized = dict(protocol=PROTOCOL, request_id=request_id, operation=operation,
+                    team_id=checkpoint['team_id'], offer=inspected['offer'],
+                    expected_revision=request['expected_revision'], timeout_ms=remaining,
+                    personality=actor['personality'], relationships=actor['relationships'],
+                    performance=checkpoint['performance_context'], contract_format='original_fxg_v1')
+                if 'promise_goals' in request:
+                    normalized['promise_goals'] = request['promise_goals']
+                reply = self.handle(normalized)
+                if reply['error'] is None:
+                    evidence = reply['result']['evidence']
+                    if any(json.dumps(evidence[key],sort_keys=True,allow_nan=False) !=
+                           json.dumps(normalized[key],sort_keys=True,allow_nan=False)
+                           for key in ('personality','relationships','performance')):
+                        raise Rejected('Recorded proposal evidence differs from captured signing checkpoint')
+                    reply['result']['signing_checkpoint'] = checkpoint
+                    if len(json.dumps(reply,allow_nan=False).encode('utf-8'))+1 > 65536:
+                        return self._reply(request_id,error='context_too_large',
+                            detail='Captured proposal reply exceeds pipe frame capacity; no contract committed')
+                return reply
             if operation == 'manual_restructure':
                 from datetime import date
                 from franchise.cap import money

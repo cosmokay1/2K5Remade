@@ -5227,3 +5227,39 @@ package or launcher was replaced. No cloud/model/control/IAM request, salary
 classification, guest write or financial transaction occurred. Actual root
 proposal submission, UI presentation, precommit/guest recovery and save/load
 remain required; this closes proposal representation only.
+
+## October14,2026 — Captured signing checkpoint to proposal path
+
+Added a captured-screen request variant to the existing negotiate_proposal
+operation. It accepts the live observation/raw offer/revision and optional
+promises, requires remote access, reconciles the pinned checkpoint, derives
+persisted identity/team/personality/relationships and saved sparse performance,
+and requires an eligible exact-format preview before inference. Client actor,
+performance, team and decoded-offer overrides reject. The ordinary proposal-only
+engine retains dialogue but never signs, with the remaining shared deadline.
+
+Successful replies attach the read-only checkpoint. Native validation checks
+checkpoint/offer/performance source and exact proposal encoding, rejecting changed
+actor/evidence, false write permission and incompatible eligibility. Service replay
+also refuses to relabel previously client-supplied evidence as captured evidence.
+Repeated captured requests re-read the checkpoint and reuse recorded dialogue
+without inference; checkpoint dialogue history can therefore change on replay.
+An oversized combined reply reports context_too_large without a contract commit;
+the dialogue may already have been recorded.
+
+Five focused tests cover enabled authored acceptance/restart with unchanged
+finances, missing classification, source/actor/revision/format overrides, shutdown
+before dispatch and replay evidence substitution. Full offline702 tests pass
+in19.564s. Portable native checks and an actual authored Python Bridge receipt
+pass native validation. A real local sidecar subprocess accepts the read checkpoint
+and returns ai_disabled for captured negotiation with missing ADC, retaining
+revision0. Private MSVC game/native compilation and actual Windows protocol
+execution pass; game hash
+389e78140f0719f15ee8d31b0886cca319e80297c573ee1ccc176199010d2fd3.
+
+Prior812f54e CI38646195809/38646195538 is successful. Fresh check still found
+game80919; no running game or service package was replaced. No real player's
+minimum/credit policy, cloud control/IAM, financial state or guest memory changed;
+no paid inference was attempted. Actual root proposal submission/presentation,
+active save selection, persistent runtime auth, classification policy, guest
+commit/recovery and save/load remain unverified or blocked on their inputs.

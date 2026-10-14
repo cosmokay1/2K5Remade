@@ -784,6 +784,36 @@ int main(int argc,char** argv) {
             {"unmapped_requested_metrics",{"tackles","targets","pressures","qb_hits"}},
             {"scope","Saved historical counters only; calendar years are candidates. Raw modes are not played/CPU/fast-sim coverage. Entries are not summed and missing metrics are not zero. No current-week, salary-credit or promise-goal attribution."}};
         franchise::validate_result(performance_reply,performance_request);
+        auto captured_request=guest_request;
+        captured_request["operation"]="negotiate_proposal";
+        captured_request["request_id"]="captured-proposal";
+        captured_request["observation"]["calendar"]=performance_request["observation"]["calendar"];
+        auto checkpoint=performance_reply["result"];
+        checkpoint["offer_context"]=guest_reply["result"]["offer_context"];
+        auto captured_reply=proposal_reply;
+        auto& captured_event=captured_reply["result"];
+        captured_event["request_id"]="captured-proposal";
+        captured_event["offer"]=checkpoint["offer_context"]["offer"];
+        captured_event["proposal_preview"]=checkpoint["offer_context"]["preview"];
+        captured_event["contract_format"]="original_fxg_v1";
+        captured_event["guest_offer"]=captured_request["guest_offer"];
+        captured_event["guest_counter"]=nullptr;
+        captured_event["signing_checkpoint"]=checkpoint;
+        captured_event["evidence"]={{"financial_revision",0},{"personality",checkpoint["player_context"]["personality"]},
+            {"relationships",checkpoint["player_context"]["relationships"]},{"performance",checkpoint["performance_context"]}};
+        franchise::validate_result(captured_reply,captured_request);
+        for(int scenario=0;scenario<6;++scenario) {
+            auto bad=captured_reply;
+            if(scenario==0) bad["result"]["evidence"]["personality"]={{"money",0.99}};
+            if(scenario==1) bad["result"]["evidence"]["relationships"]={{"trust",0.1}};
+            if(scenario==2) bad["result"]["evidence"]["performance"]["player_id"]=std::string(32,'c');
+            if(scenario==3) bad["result"]["signing_checkpoint"]["write_authorized"]=true;
+            if(scenario==4) bad["result"]["signing_checkpoint"]["offer_context"]["outcome"]="accounting_rejected";
+            if(scenario==5) bad["result"]["signing_checkpoint"]["saved_payload_sha256"]=std::string(64,'c');
+            bool rejected=false;
+            try{franchise::validate_result(bad,captured_request);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Captured proposal source substitution accepted");
+        }
         for(int scenario=0;scenario<11;++scenario) {
             auto bad=performance_reply;
             auto& evidence=bad["result"]["performance_context"];

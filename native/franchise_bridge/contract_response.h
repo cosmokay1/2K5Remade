@@ -929,6 +929,32 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
     if (!response["error"].is_null()) return;
     const auto& result = response["result"];
     auto operation = request.at("operation").get<std::string>();
+    if(operation=="negotiate_proposal" && request.contains("observation")) {
+        auto checkpoint_request=request;
+        checkpoint_request["operation"]="signing_context";
+        checkpoint_request["performance_format"]="saved_history_v1";
+        checkpoint_request.erase("promise_goals");
+        auto checkpoint_reply=response;
+        checkpoint_reply["result"]=result.at("signing_checkpoint");
+        validate_result(checkpoint_reply,checkpoint_request);
+        const auto& checkpoint=checkpoint_reply.at("result");
+        const auto& inspected=checkpoint.at("offer_context");
+        if(inspected.at("outcome")!="eligible_preview" ||
+            result.at("evidence").at("personality")!=checkpoint.at("player_context").at("personality") ||
+            result.at("evidence").at("relationships")!=checkpoint.at("player_context").at("relationships") ||
+            result.at("evidence").at("performance")!=checkpoint.at("performance_context"))
+            throw std::runtime_error("Captured proposal source or eligibility mismatch");
+        auto normalized=request;
+        normalized.erase("observation");normalized.erase("guest_offer");
+        normalized["team_id"]=checkpoint.at("team_id");
+        normalized["offer"]=inspected.at("offer");
+        normalized["contract_format"]="original_fxg_v1";
+        auto proposal_reply=response;
+        proposal_reply["result"].erase("signing_checkpoint");
+        validate_result(proposal_reply,normalized);
+        return;
+    }
+    if(result.contains("signing_checkpoint")) throw std::runtime_error("Unexpected captured signing checkpoint");
     if ((request.contains("receipt_format") || result.contains("receipt_format")) &&
         operation!="manual_restructure" && operation!="manual_trade" && operation!="manual_release")
         throw std::runtime_error("Unsupported compact receipt operation");

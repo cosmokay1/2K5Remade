@@ -24,12 +24,12 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 ## Latest verified state — October 14, 2026
 
-- Latest published verified source: `64ef086`. Build `38645309410` and Franchise AI
-  `38645309320` passed. CI checks asset-free runtime and bridge components;
+- Latest published verified source: `812f54e`. Build `38646195809` and Franchise AI
+  `38646195538` passed. CI checks asset-free runtime and bridge components;
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.
-- Latest verified published CI suite: **692 tests passed on Windows and Ubuntu**. Actual AIBASELIN parsing
+- Latest verified published CI suite: **697 tests passed on Windows and Ubuntu**. Actual AIBASELIN parsing
   resolves 1937 roster/free-agent members. This does not prove contract/save
   round-trip integration. The read-only signing observer includes bounded bank-slot/name reads and is compiled and installed after confirmed exit;
   actual readback identifies Jeremiah Trotter at bank slot1910, matching AIBASELIN.
@@ -85,6 +85,11 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   unrepresentable demands stay unchanged and ineligible, with no rounding or
   signing. Durable replay checks format/encodings and native validation checks
   exact salaries/charges. Actual root negotiation requests, UI and commit remain.
+- Captured-screen proposal requests now reconcile the pinned checkpoint and
+  derive UUID/team, saved personality/relationships, sparse performance and exact
+  offer inside the service. Missing classification, bad checkpoints and disabled
+  control reject before inference. Native checks bind proposal evidence back to
+  that checkpoint. Actual root submission/presentation is still pending.
 - Actual AI/game/save integration, telemetry capture and final playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 
