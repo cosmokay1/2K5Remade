@@ -3551,3 +3551,25 @@ The log also reports an unavailable tiled aperture, which remains unresolved.
 No real franchise transaction, game completion or save/reload is claimed.
 All assets, Microsoft binaries, screenshots and raw analysis remain private and
 ignored; no binary release, paid inference or new cloud infrastructure was used.
+
+
+## October 14, 2026 — Build parity investigation
+
+Commit 3a256fd Build check 38544464324 and Franchise AI checks 38544464378
+both completed successfully. These CI checks remain asset-free; they do not
+replace the real Proton results above.
+
+Read-only comparison identified a material runtime-build discrepancy: the
+initial private direct-CMake build used optimization OFF and left the four
+compatibility options OFF. Standard tools/build.ps1 builds enable optimization,
+AUDIO_LOCK, 33660_DRAIN, NETPOLL and STATE9_READY. The observed state-9 give-up
+branch is consistent with STATE9_READY being disabled. These are inherited
+bypasses, not proof that hardware/resource-readiness defects have been fixed.
+
+apply-gen-patches.py --check confirmed the required existing hooks were already
+present. The private Deck recipe now runs that preparation step before the
+register-locals conversion and uses exactly the standard five compile options.
+The optimized full-game rebuild is actively compiling generated code in
+2k5-parity-build; log is under the Deck's private 2k5-franchise-build directory.
+Its eventual boot/frontend outcome is not yet known. Do not restart this build
+solely because a status observation times out; inspect the container/log first.
