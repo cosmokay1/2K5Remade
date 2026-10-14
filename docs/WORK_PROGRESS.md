@@ -2478,3 +2478,19 @@ franchise pipe option fails clearly on native POSIX builds; Proton Windows route
 remains the intended Deck delivery. Actual game compilation/playability and
 Linux runtime CI remain unverified. Runtime symbol check reports33 referenced
 functions resolved; portable protocol CTest and all471 offline tests pass.
+
+### Merged CI dependency failures and calendar wire context (2026-10-13)
+
+Build run38506837822 failed: Windows lacked SDL3Config.cmake and Linux
+Ubuntu24.04 could not find libsdl3-dev. Published c9e5d54 to build official
+SDL3 3.2.20 at exact source96292a5b464258a2b926e0a3d72f8b98c2a81aa6
+for both jobs; retained exact source license/attribution. Verification pending.
+
+Added explicit calendar_v1 contract context routing, matching Store anchor year
+and native format2 validation. Parallel validator checks layered surviving,
+expired and released golden contexts plus23 corruption cases. Real Python
+Bridge replies for current/expired agreements validated through portable C++.
+AI-off wire test preserves DBbytes and rejects unknown/legacy advanced-calendar
+formats. All472 offline tests and portable CTest pass. Added Windows pipe
+fixture for two agreement contexts across two process restarts; execution pending.
+Actual game UI/save integration and postroll contract mutation remain unfinished.

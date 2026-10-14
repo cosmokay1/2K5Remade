@@ -173,3 +173,17 @@ franchise callbacks still need to consume the handshake, reconcile the ledger
 and guest state, and complete verified save/readback transactions. The shared
 C lifecycle source is compiled by the asset-free Windows fixture. Actual root
 game build and execution remain unverified.
+
+## Calendar-aware contract inspection
+
+contract_context accepts explicit context_format=calendar_v1. This requests
+format2 current calendar accounting alongside a separately labeled economic
+archive. Native validation binds the requested generation/team, original terms
+and bonus layers, exact elapsed-year cursor/charges, ownership and sourced fully
+settled expiry. Legacy context stays unchanged before rollover and rejects
+afterward rather than displaying archived terms as current. This read is available
+with AI disabled and never invokes the model or changes finances.
+
+The native synthetic fixture now reads a surviving and expired generation twice
+across owned sidecar process restarts. Its first Windows execution is pending.
+This is engine inspection, not verified guest save or in-game interface behavior.

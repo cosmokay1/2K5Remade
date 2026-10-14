@@ -194,8 +194,11 @@ class Bridge:
                         release_result(receipt)))
                 return self._reply(request_id,result=release_result(receipt))
             if operation == 'contract_context':
-                if set(request) != {'protocol','request_id','operation','team_id','generation_id','timeout_ms'}:
+                fields = {'protocol','request_id','operation','team_id','generation_id','timeout_ms'}
+                if set(request) not in (fields,fields | {'context_format'}):
                     raise ValueError('Unexpected contract context fields')
+                if 'context_format' in request and request['context_format'] != 'calendar_v1':
+                    raise ValueError('Unsupported contract context format')
                 if any(type(request[key]) is not str or not request[key].strip() for key in ('team_id','generation_id')):
                     raise ValueError('Stable team and agreement identities required')
                 timeout=request['timeout_ms']
@@ -203,7 +206,8 @@ class Bridge:
                     raise ValueError('Timeout must be 1-60000 milliseconds')
                 deadline=time.monotonic()+timeout/1000
                 self.connection_check()
-                result=self.store.contract_context(request['team_id'],request['generation_id'])
+                context = self.store.calendar_contract_context if 'context_format' in request else self.store.contract_context
+                result=context(request['team_id'],request['generation_id'])
                 self.connection_check()
                 if time.monotonic() >= deadline:
                     raise TimeoutError('Contract context request expired')

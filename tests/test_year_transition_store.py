@@ -104,3 +104,26 @@ class StoredYearTransitionTests(unittest.TestCase):
             db.commit()
         with self.assertRaisesRegex(ValueError,'Partial league'):
             self.store.load_team('a')
+
+    def test_calendar_wire_context_is_explicit_read_only_and_available_with_ai_off(self):
+        from franchise.bridge import Bridge
+        from franchise.control import AccessDisabled
+        def forbidden(_): raise AssertionError('Read must not invoke inference')
+        def disabled(): raise AccessDisabled('off')
+        self.store.advance_league_year(**self.inputs)
+        bridge=Bridge(self.store,provider=forbidden,access_check=disabled)
+        raw=self.path.read_bytes()
+        for team in ('a','b'):
+            request=dict(protocol=1,request_id='calendar-'+team,operation='contract_context',
+                team_id=team,generation_id=self.store.load_team(team).contract_identity(team).generation_id,
+                timeout_ms=1000,context_format='calendar_v1')
+            reply=bridge.handle(request)
+            self.assertIsNone(reply['error'])
+            self.assertEqual(reply['result']['format'],2)
+            current=reply['result']['calendar_accounting']
+            self.assertEqual(current['anchor_year'],2026)
+            self.assertEqual(current['status'],'active' if team=='a' else 'expired')
+            self.assertEqual(bridge.handle(dict(request,context_format='unknown'))['error'],'invalid_request')
+            legacy=dict(request);del legacy['context_format']
+            self.assertEqual(bridge.handle(legacy)['error'],'state_rejected')
+        self.assertEqual(self.path.read_bytes(),raw)

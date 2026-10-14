@@ -423,6 +423,65 @@ int main() {
             try { franchise::validate_result(bad,agreement_request); } catch (const std::exception&) { rejected=true; }
             if (!rejected) throw std::runtime_error("Invalid requested agreement context accepted");
         }
+        auto calendar_request=agreement_request; calendar_request["context_format"]="calendar_v1";
+        auto current_contract=identified["contract"]; current_contract["elapsed_years"]=2;
+        auto calendar_reply=nlohmann::json{{"error",nullptr},{"result",{{"format",2},{"team_id","a"},
+            {"generation_id",identified["generation_id"]},{"financial_revision",4},{"league_year",2027},
+            {"economic_archive",identified},{"calendar_accounting",{{"status","active"},
+                {"current_contract",current_contract},{"annual_charges",{37}},
+                {"ownership_current",true},{"expiry_source",nullptr},{"anchor_year",2026}}}}}};
+        franchise::validate_result(calendar_reply,calendar_request);
+        for (int scenario=0;scenario<15;++scenario) {
+            auto bad=calendar_reply; auto req=calendar_request;auto& view=bad["result"]["calendar_accounting"];
+            if (scenario==0) bad["result"]["format"]=true;
+            if (scenario==1) bad["result"]["league_year"]=2025;
+            if (scenario==2) view["anchor_year"]=true;
+            if (scenario==3) view["current_contract"]["elapsed_years"]=1;
+            if (scenario==4) view["current_contract"]["offer"]["salaries"][2]=99;
+            if (scenario==5) view["ownership_current"]=false;
+            if (scenario==6) view["annual_charges"]={19,37};
+            if (scenario==7) view["expiry_source"]="invented";
+            if (scenario==8) view["unexpected"]=0;
+            if (scenario==9) req["context_format"]="invented";
+            if (scenario==10) bad["result"]["economic_archive"]["generation_id"]="legacy-contract:"+std::string(64,'b');
+            if (scenario==11) view["current_contract"]["source"]="changed";
+            if (scenario==12) view["current_contract"]["bonus_layers"][0]["amount"]=9;
+            if (scenario==13) view["current_contract"]=nullptr;
+            if (scenario==14) bad["result"]["league_year"]=2031;
+            bool rejected=false;
+            try { franchise::validate_result(bad,req); } catch (const std::exception&) { rejected=true; }
+            if (!rejected) throw std::runtime_error("Corrupt current calendar agreement accepted");
+        }
+        auto expired_reply=calendar_reply;auto& expired=expired_reply["result"];
+        expired["league_year"]=2028;expired["calendar_accounting"]={{"status","expired"},
+            {"current_contract",nullptr},{"annual_charges",nlohmann::json::array()},
+            {"ownership_current",false},{"expiry_source","synthetic verified eligible close"},{"anchor_year",2026}};
+        auto& paid_cash=expired["economic_archive"]["cash_obligation"];
+        const auto& original_offer=expired["economic_archive"]["contract"]["offer"];
+        auto components=nlohmann::json::array();
+        components.push_back({"signing_bonus",original_offer["signing_bonus"]});
+        for(size_t i=0;i<original_offer["salaries"].size();++i)
+            components.push_back({"base:"+std::to_string(i),original_offer["salaries"][i]});
+        for(const auto& layer:expired["economic_archive"]["contract"]["bonus_layers"])
+            components.push_back({"bonus:"+layer["record_id"].get<std::string>(),layer["amount"]});
+        paid_cash["paid_components"]=components;paid_cash["paid"]=paid_cash["amount"];
+        expired["economic_archive"]["guarantees"]={{"unpaid_guaranteed_base_by_original_year",{0,0,0}},
+            {"unpaid_signing_bonus",0},{"unpaid_original_signing_bonus",0},
+            {"unpaid_bonus_layers",{{"bonus:restructure:conversion",0}}}};
+        franchise::validate_result(expired_reply,calendar_request);
+        for(int scenario=0;scenario<7;++scenario) {
+            auto bad=expired_reply;auto& view=bad["result"]["calendar_accounting"];
+            if(scenario==0) view["expiry_source"]=nullptr;
+            if(scenario==1) view["expiry_source"]=" ";
+            if(scenario==2) view["ownership_current"]=true;
+            if(scenario==3) bad["result"]["league_year"]=2027;
+            if(scenario==4) bad["result"]["economic_archive"]["cash_obligation"]["paid_components"]=nullptr;
+            if(scenario==5) bad["result"]["economic_archive"]["cash_obligation"]=nullptr;
+            if(scenario==6) view["current_contract"]=current_contract;
+            bool rejected=false;
+            try {franchise::validate_result(bad,calendar_request);} catch(const std::exception&) {rejected=true;}
+            if(!rejected) throw std::runtime_error("Unsettled or corrupt calendar expiry accepted");
+        }
         auto unknown=accounting;
         unknown["cash_obligation"].erase("paid_components"); unknown["guarantees"]=nullptr;
         player_reply["result"]["contract_accounting"]=unknown;
@@ -435,6 +494,17 @@ int main() {
         retained["cash_obligation"]["amount"]=49;
         player_reply["result"]["contract_accounting"]=retained;
         franchise::validate_result(player_reply,player_request);
+        auto closed_calendar=calendar_reply;
+        auto closed_archive=retained;closed_archive["generation_id"]=identified["generation_id"];
+        closed_calendar["result"]["economic_archive"]=closed_archive;
+        closed_calendar["result"]["calendar_accounting"]={{"status","released"},{"current_contract",nullptr},
+            {"annual_charges",nlohmann::json::array()},{"ownership_current",false},
+            {"expiry_source",nullptr},{"anchor_year",2026}};
+        franchise::validate_result(closed_calendar,calendar_request);
+        auto invalid_closed=closed_calendar;invalid_closed["result"]["calendar_accounting"]["status"]="expired";
+        bool closed_rejected=false;
+        try {franchise::validate_result(invalid_closed,calendar_request);}catch(const std::exception&){closed_rejected=true;}
+        if(!closed_rejected) throw std::runtime_error("Released generation gained calendar expiry");
         retained["status"]="assigned";
         retained["cash_obligation"]=nullptr;
         retained["guarantees"]={{"unpaid_guaranteed_base_by_original_year",{0,0,0}},

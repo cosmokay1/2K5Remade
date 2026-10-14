@@ -348,6 +348,40 @@ def main():
             assert promises.load_team('a').charges==(20,) and promise_path.read_bytes()==unchanged
         print("Native Windows sourced promise circumstances, unknown counts, raw score and restart verified (synthetic).")
 
+        from franchise.salary_rules import VeteranMinimumProfile
+        calendar_path=Path(directory)/'Advanced calendar.sqlite'
+        calendar=FranchiseStore(calendar_path)
+        terms={}
+        for team,term in (('a',3),('b',1)):
+            contract=ActiveContract(Offer(team,(2000000,)*term,3000000),'synthetic calendar contract')
+            profile=VeteranMinimumProfile(2026,((team,(7,)*term,('active_inactive',)*term),))
+            calendar.create_team(team,Ledger.from_opening(OpeningBooks(contracts=(contract,)),
+                cap=10000000,roster_reserve=0,max_bonus_years=5,veteran_minimums=profile.floors(),veteran_minimum_profile=profile))
+            calendar.initialize_cash(team,(CashObligation('contract:'+team,team,contract.nominal_cash,5000000,
+                'synthetic settled payroll',(('signing_bonus',3000000),('base:0',2000000))),),source='synthetic cash coverage')
+            terms[team]=dict(expected_revision=2,next_cap=9000000,next_cap_source='synthetic next cap',
+                roster_reserve=0,reserve_source='synthetic reserve',
+                next_minimum_profile=VeteranMinimumProfile(2027,((team,(7,7,7),('active_inactive',)*3),)).to_dict(),
+                expired_generation_ids=[calendar.load_team(team).contract_identity(team).generation_id] if team=='b' else [],
+                exclusions=sorted(FranchiseStore.YEAR_TRANSITION_EXCLUSIONS),source='synthetic eligible closing')
+        calendar.anchor_calendar(request_id='initial',league_year=2026,source='synthetic year',expected_revisions={'a':1,'b':1})
+        calendar.migrate_generations(calendar_path)
+        calendar.advance_league_year(request_id='next',from_year=2026,to_year=2027,source='synthetic transition',teams=terms)
+        unchanged=calendar_path.read_bytes();previous=None
+        for attempt in range(2):
+            result=subprocess.run([sys.argv[1],sys.executable,str(calendar_path),'--calendar-context'],
+                text=True,capture_output=True,timeout=20,check=True)
+            replies=[json.loads(line) for line in result.stdout.splitlines()]
+            assert len(replies)==2 and all(reply['error'] is None for reply in replies)
+            if previous is not None:assert replies==previous
+            previous=replies
+            active,expired=(reply['result']['calendar_accounting'] for reply in replies)
+            assert active['status']=='active' and active['current_contract']['elapsed_years']==1
+            assert active['annual_charges']==[3000000,3000000] and active['ownership_current'] is True
+            assert expired['status']=='expired' and expired['current_contract'] is None and expired['ownership_current'] is False
+            assert calendar_path.read_bytes()==unchanged
+        print("Native Windows advanced calendar context, archived terms, settled expiry and restart verified (synthetic).")
+
         if len(sys.argv)>2:
             c_path=Path(directory)/'C host ownership.sqlite'
             c_store=FranchiseStore(c_path)

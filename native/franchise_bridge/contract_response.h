@@ -314,6 +314,57 @@ inline void validate_contract_accounting(const nlohmann::json& accounting, const
         if (unpaid!=guarantees.at("unpaid_signing_bonus")) throw std::runtime_error("Saved unpaid bonus total disagrees");
     }
 }
+inline void validate_calendar_contract_context(const nlohmann::json& result, const nlohmann::json& request) {
+    if (!request.at("context_format").is_string() || request.at("context_format")!="calendar_v1" ||
+        !result.is_object() || result.size()!=7 || !result.at("format").is_number_integer() || result.at("format")!=2 ||
+        result.at("team_id")!=request.at("team_id") || !result.at("team_id").is_string() ||
+        result.at("generation_id")!=request.at("generation_id") || !result.at("generation_id").is_string())
+        throw std::runtime_error("Invalid calendar agreement identity or format");
+    integer_money(result.at("financial_revision")); integer_money(result.at("league_year"));
+    const auto& archive=result.at("economic_archive");
+    if (!archive.is_object() || archive.size()!=7 || archive.at("generation_id")!=result.at("generation_id"))
+        throw std::runtime_error("Missing calendar economic archive");
+    const auto player=archive.at("contract").at("offer").at("player_id").get<std::string>();
+    validate_contract_accounting(archive,player);
+    const auto& view=result.at("calendar_accounting");
+    if (!view.is_object() || view.size()!=6 || !view.at("ownership_current").is_boolean())
+        throw std::runtime_error("Invalid current calendar accounting");
+    integer_money(view.at("anchor_year"));
+    const auto anchor=view.at("anchor_year").get<int64_t>(), year=result.at("league_year").get<int64_t>();
+    if (anchor<2020 || anchor>year || year>2030) throw std::runtime_error("Invalid calendar year cursor");
+    const auto delta=static_cast<size_t>(year-anchor);
+    const auto& charges=view.at("annual_charges");
+    if (!charges.is_array()) throw std::runtime_error("Invalid current calendar charges");
+    auto expected_charges=nlohmann::json::array();
+    const auto& original_charges=archive.at("annual_charges");
+    for (size_t i=delta;i<original_charges.size();++i) expected_charges.push_back(original_charges[i]);
+    if (charges.dump()!=expected_charges.dump()) throw std::runtime_error("Calendar charges changed preserved schedule");
+    const auto old_status=archive.at("status").get<std::string>(), status=view.at("status").get<std::string>();
+    const auto& original=archive.at("contract");
+    const auto elapsed=original.at("elapsed_years").get<int64_t>()+static_cast<int64_t>(delta);
+    const auto term=static_cast<int64_t>(original.at("offer").at("salaries").size());
+    if (old_status!="active") {
+        if (status!=old_status || view.at("ownership_current")!=false ||
+            !view.at("current_contract").is_null() || !view.at("expiry_source").is_null())
+            throw std::runtime_error("Closed agreement gained calendar ownership or expiry");
+    } else if (status=="active") {
+        auto expected=original; expected["elapsed_years"]=elapsed;
+        if (elapsed>=term || view.at("ownership_current")!=true || !view.at("expiry_source").is_null() ||
+            view.at("current_contract").dump()!=expected.dump())
+            throw std::runtime_error("Current contract disagrees with economic calendar cursor");
+    } else if (status=="expired") {
+        const auto& cash=archive.at("cash_obligation");
+        if (elapsed<term || view.at("ownership_current")!=false || !view.at("current_contract").is_null() ||
+            !view.at("expiry_source").is_string() ||
+            view.at("expiry_source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos ||
+            !cash.is_object() || !cash.contains("paid_components") || !cash.at("paid_components").is_array() ||
+            cash.at("paid")!=cash.at("amount"))
+            throw std::runtime_error("Expiry lacks exhausted term and allocated settlement");
+        // Archive validation proves every allocation is bounded by its original
+        // component; fully paid nominal compensation therefore settles them all.
+        restructure_cash_record(cash);
+    } else throw std::runtime_error("Invalid current calendar lifecycle");
+}
 inline void validate_restructure(const nlohmann::json& result, const nlohmann::json& request) {
     const bool compact=target_receipt_mode(result,request);
     const auto player=request.at("player_id").get<std::string>();
@@ -570,6 +621,10 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         return;
     }
     if (operation == "contract_context") {
+        if (request.contains("context_format")) {
+            validate_calendar_contract_context(result,request);
+            return;
+        }
         if (!result.is_object() || result.size()!=4 || result.at("team_id")!=request.at("team_id") ||
             !result.at("team_id").is_string() || result.at("generation_id")!=request.at("generation_id") ||
             !result.at("generation_id").is_string()) throw std::runtime_error("Agreement context identity mismatch");

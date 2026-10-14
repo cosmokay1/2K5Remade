@@ -909,6 +909,7 @@ class FranchiseStore:
             return {'format':2,'team_id':team_id,'generation_id':generation_id,
                 'financial_revision':ledger.revision,'league_year':ledger._league_year,
                 'calendar_accounting':{'status':view.status,
+                    'anchor_year':view.anchor_year,
                     'current_contract':view.current_contract.to_dict() if view.current_contract is not None else None,
                     'annual_charges':[json_amount(value) for value in view.annual_charges()],
                     'ownership_current':ledger._active_generation_ids.get(agreement.identity.player_id)==generation_id,
