@@ -137,10 +137,13 @@ successful hello; failed hello, ai_disabled and transport failures clear that
 local grant, while the server checks fresh access for every AI request. Manual
 and read operations remain independently available.
 
-Destruction waits for the owned worker, then closes the child. It belongs outside
-render-time callbacks. The existing transport writes before its response timeout,
-so this work does not establish an unconditional shutdown deadline against a
-peer that stops reading. Real game-host lifecycle and performance tests remain
+Destruction closes the owned kill-on-close job before joining the worker, keeping
+the parent's pipe handles alive until the worker finishes. This releases a write
+blocked by a peer that stops reading. It belongs outside render-time callbacks.
+The Windows stalled-peer CTest fills stdin and checks destruction and child exit;
+its first CI execution remains pending. The response timeout still starts after
+the synchronous write, so it is not an end-to-end request timeout.
+Real game-host lifecycle and performance tests remain
 necessary before linking/enabling this transport in an integrated runtime.
 
 The synthetic C caller tests early AI denial, explicit modes, null arguments,
