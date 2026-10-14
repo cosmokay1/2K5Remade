@@ -2312,3 +2312,12 @@ model call, fixture fallback, guessed guest addresses or guest writes. Same C
 source compiles in asset-free native fixture with off/invalid/missing-config
 cases. Portable strict C syntax and protocol CTest pass. Independent review
 found no concrete lifecycle defect. Actual root build/runtime remains gated.
+
+### Strengthened shutdown validation (2026-10-13)
+
+Windows and Ubuntu run 38503835760 passed for 04cfe1f. The Windows
+fixture establishes an actual blocked write by retaining a pending request
+beyond the five-second response deadline, then verifies owned child exit.
+This validates shutdown ordering; it does not yet validate the later
+HANDLE_LIST sentinel or lifecycle source introduced in fb11725. That exact
+revision is running in 38504026771; keep polling the same job.

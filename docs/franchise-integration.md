@@ -18,7 +18,9 @@ establish a salary field map, contract calling convention or financial hook.
 A small C-compatible adapter now wraps the existing strict
 Win32 PipeClient, with an explicit service mode, bounded response retrieval and
 owned child lifetime. The added asset-free plain-C caller validates that ABI and
-transport before the game target is linked; its Windows execution awaits CI. It does not read or write guest
+transport; its Windows execution passed in run 38503080961. Root lifecycle
+wiring and restricted handle inheritance were added afterward and await CI.
+It does not read or write guest
 rosters, commit game contracts, supply unverified addresses or create a franchise
 UI. Verified guest transaction callbacks
 remain required work. A real transaction hook may only follow the controlled
@@ -141,7 +143,8 @@ Destruction closes the owned kill-on-close job before joining the worker, keepin
 the parent's pipe handles alive until the worker finishes. This releases a write
 blocked by a peer that stops reading. It belongs outside render-time callbacks.
 The Windows stalled-peer CTest fills stdin and checks destruction and child exit;
-its first CI execution remains pending. The response timeout still starts after
+the strengthened write-stall fixture passed Windows CI in run 38503835760.
+The subsequently added inherited-handle exclusion check remains pending. The response timeout still starts after
 the synchronous write, so it is not an end-to-end request timeout.
 Real game-host lifecycle and performance tests remain
 necessary before linking/enabling this transport in an integrated runtime.
