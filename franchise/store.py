@@ -790,6 +790,22 @@ class FranchiseStore:
                 if (self._checkpoint_hash(payload.get('posting'))!=self._checkpoint_hash(ledger.financial_snapshot()) or
                         self._checkpoint_hash(payload.get('cash_posting'))!=self._checkpoint_hash(ledger.cash_snapshot())):
                     raise ValueError('Versioned financial or cash posting types disagree with replay')
+            calendar_fields = {'calendar_format','calendar_posting'}
+            if ledger._generation_calendar_anchor is not None and kind in ('sign','cash_payment'):
+                marked = bool(calendar_fields & set(payload))
+                if ((kind == 'sign' or marked) and
+                        (not calendar_fields <= set(payload) or type(payload['calendar_format']) is not int
+                         or payload['calendar_format'] != 1
+                         or self._checkpoint_hash(payload['calendar_posting']) != self._checkpoint_hash(self._calendar_posting(ledger)))):
+                    raise ValueError('Calendar-aware transaction posting disagrees with replay')
+                # Earlier supported cash-payment events did not carry calendar
+                # views; payments cannot age agreements, but their amounts/types
+                # still must match exact replay.
+                if (self._checkpoint_hash(payload['posting']) != self._checkpoint_hash(ledger.financial_snapshot())
+                        or self._checkpoint_hash(payload.get('cash_posting')) != self._checkpoint_hash(ledger.cash_snapshot())):
+                    raise ValueError('Calendar-aware transaction posting disagrees with replay')
+            elif 'calendar_format' in payload or ('calendar_posting' in payload and kind != 'year_transition'):
+                raise ValueError('Unexpected calendar transaction posting')
             if payload.get("posting") != ledger.financial_snapshot():
                 raise ValueError("Recorded financial posting disagrees with replay")
         if origin is not None and set(ledger._actors) != ledger._veteran_minimums.keys() | ledger._rookies.keys():
@@ -1105,6 +1121,8 @@ class FranchiseStore:
             payload["posting"] = ledger.financial_snapshot()
             if self._has_new_generations(ledger):
                 payload.update(format=1,generation_posting=ledger.generation_snapshot())
+            if ledger._generation_calendar_anchor is not None:
+                payload.update(calendar_format=1,calendar_posting=self._calendar_posting(ledger))
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'cash_payment', ?)",
                        (team_id, key, json.dumps(payload, allow_nan=False)))
             return payload["cash_posting"]
@@ -1505,6 +1523,8 @@ class FranchiseStore:
                 payload["cash_posting"] = ledger.cash_snapshot()
             payload["posting"] = ledger.financial_snapshot()
             payload["contract_charges"] = [json_amount(value) for value in receipt.charges]
+            if ledger._generation_calendar_anchor is not None:
+                payload.update(calendar_format=1,calendar_posting=self._calendar_posting(ledger))
             serialized = json.dumps(payload, allow_nan=False)
             db.execute("INSERT INTO ownership VALUES (?, ?)", (offer.player_id, team_id))
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'sign', ?)", (team_id, "sign:" + request_id, serialized))

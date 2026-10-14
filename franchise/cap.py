@@ -326,6 +326,8 @@ class Ledger:
             return
         identity = self.contract_identity(player_id)
         previous = self._generation_agreements.get(identity.generation_id)
+        if self._generation_calendar_anchor is not None and previous is not None:
+            raise Rejected('Post-transition amendment of existing agreement is unsupported')
         release = self._released.get(player_id)
         outgoing = self._traded_out.get(player_id)
         restructure = self._restructures.get(player_id)
@@ -341,6 +343,10 @@ class Ledger:
             previous.assignment_request_id if previous is not None else None,
             previous.assigned_from_team if previous is not None else None,
             previous.assigned_from_generation_id if previous is not None else None)
+        if self._generation_calendar_anchor is not None:
+            from franchise.generations import GenerationCalendarView
+            self._generation_calendar_views[identity.generation_id]=GenerationCalendarView(
+                self._generation_agreements[identity.generation_id],self._league_year,self._league_year)
 
     def generation_accounting(self, generation_id):
         with self._lock:
@@ -445,12 +451,13 @@ class Ledger:
                 if any(k not in ceilings or v>ceilings[k] for k,v in paid.items()):
                     raise Rejected('Generation cash allocations exceed preserved payment rights')
                 previous=self._generation_calendar_views.get(gid)
+                agreement_anchor=previous.anchor_year if previous is not None else anchor
                 if previous is not None and previous.authoritative_expired:
-                    view=GenerationCalendarView(agreement,anchor,to_year,True,cash,previous.expiry_source)
+                    view=GenerationCalendarView(agreement,agreement_anchor,to_year,True,cash,previous.expiry_source)
                 else:
-                    view=GenerationCalendarView(agreement,anchor,to_year)
+                    view=GenerationCalendarView(agreement,agreement_anchor,to_year)
                     if agreement.status=='active':
-                        outgoing_index=agreement.contract.elapsed_years+(from_year-anchor)
+                        outgoing_index=agreement.contract.elapsed_years+(from_year-agreement_anchor)
                         required={k:v for k,v in ceilings.items() if not k.startswith('base:')
                             or int(k[5:])<=outgoing_index}
                         if any(paid.get(k,0)!=v for k,v in required.items()):
@@ -458,7 +465,7 @@ class Ledger:
                         if view.scheduled_term_complete:
                             expiring.add(gid)
                             if gid in expired_generation_ids:
-                                view=GenerationCalendarView(agreement,anchor,to_year,True,cash,source)
+                                view=GenerationCalendarView(agreement,agreement_anchor,to_year,True,cash,source)
                         else:
                             contract=view.current_contract
                             remaining=contract.offer.salaries[contract.elapsed_years:]
@@ -1058,7 +1065,10 @@ class Ledger:
             self.revision += 1
 
     def _validate_offer(self, offer: Offer, expected_revision: int, *, returning=False):
-        self._require_pretransition_operations()
+        if self._generation_calendar_anchor is not None and (returning
+                or offer.player_id in self._contracts or offer.player_id in self._rookies
+                or offer.player_id not in self._veteran_minimums):
+            raise Rejected('Post-transition signing requires a never-held registered veteran')
         if type(expected_revision) is not int or expected_revision != self.revision:
             raise Rejected("Offer was based on stale franchise state")
         if offer.player_id in self._players:

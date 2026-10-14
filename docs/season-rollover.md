@@ -125,3 +125,17 @@ is still unimplemented. Post-transition signing/release/trade/restructure remain
 guarded until calendar-aware lifecycle paths are completed; payments, reads and
 further supported transitions work. This does not complete playable franchise
 season advancement, rookie lifecycle, official posting or actual guest save hooks.
+
+## Never-held veteran signings after rollover
+
+Current sourced cap/floors now permit ordinary signing of a registered veteran
+with no historical contract on that team, subject to exclusive league ownership.
+The new agreement's calendar anchor is its actual signing year, and subsequent
+transitions age it relative to that anchor. Older agreements retain their own
+anchors. Historical re-signing/renewals and dated postroll lifecycle mutations
+remain guarded.
+
+Postroll sign events persist exact calendar, financial and cash postings. New
+payment events also record calendar views; earlier supported unmarked payment
+events remain compatible with strict canonical monetary replay because payments
+cannot age agreements. No owner funding is silently recorded as payment.

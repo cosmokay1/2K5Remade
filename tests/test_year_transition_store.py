@@ -13,12 +13,16 @@ from franchise.store import FranchiseStore
 
 
 class StoredYearTransitionTests(unittest.TestCase):
+    def minimum_profile(self,year,team,term):
+        players=(team,'new') if team=='a' else (team,)
+        return VeteranMinimumProfile(year,tuple((player,(7,)*term,('active_inactive',)*term) for player in players))
+
     def setUp(self):
         directory=tempfile.TemporaryDirectory();self.addCleanup(directory.cleanup)
         self.path=Path(directory.name)/'league.sqlite';self.store=FranchiseStore(self.path)
         for team,term in (('a',3),('b',1)):
             contract=ActiveContract(Offer(team,(2000000,)*term,3000000),'synthetic original')
-            profile=VeteranMinimumProfile(2026,((team,(7,)*term,('active_inactive',)*term),))
+            profile=self.minimum_profile(2026,team,term)
             self.store.create_team(team,Ledger.from_opening(OpeningBooks(contracts=(contract,),
                 retained=(ChargeRecord('debt:'+team,(7,11,13),'synthetic retained schedule'),)),
                 cap=10000000,roster_reserve=0,max_bonus_years=5,veteran_minimums=profile.floors(),veteran_minimum_profile=profile))
@@ -28,7 +32,7 @@ class StoredYearTransitionTests(unittest.TestCase):
         self.store.migrate_generations(self.path)
         self.inputs=dict(request_id='roll-2027',from_year=2026,to_year=2027,source='synthetic declared league close',teams={})
         for team in ('a','b'):
-            profile=VeteranMinimumProfile(2027,((team,(7,7,7),('active_inactive',)*3),))
+            profile=self.minimum_profile(2027,team,3)
             self.inputs['teams'][team]=dict(expected_revision=2,next_cap=9000000,next_cap_source='synthetic next cap',
                 roster_reserve=500,reserve_source='synthetic reserve',next_minimum_profile=profile.to_dict(),
                 expired_generation_ids=[self.store.load_team(team).contract_identity(team).generation_id] if team=='b' else [],
@@ -67,7 +71,7 @@ class StoredYearTransitionTests(unittest.TestCase):
         for team in ('a','b'):
             item=next_inputs['teams'][team];item['expected_revision']=restarted.load_team(team).revision
             item['expired_generation_ids']=[]
-            item['next_minimum_profile']=VeteranMinimumProfile(2028,((team,(7,7),('active_inactive',)*2),)).to_dict()
+            item['next_minimum_profile']=self.minimum_profile(2028,team,2).to_dict()
         restarted.advance_league_year(**next_inputs)
         final=FranchiseStore(self.path)
         self.assertEqual(final.league_calendar()['league_year'],2028)
@@ -127,3 +131,56 @@ class StoredYearTransitionTests(unittest.TestCase):
             legacy=dict(request);del legacy['context_format']
             self.assertEqual(bridge.handle(legacy)['error'],'state_rejected')
         self.assertEqual(self.path.read_bytes(),raw)
+
+    def test_postroll_new_signing_uses_birth_year_and_replays_through_next_transition(self):
+        self.store.advance_league_year(**self.inputs)
+        before=self.store.load_team('a').cash_snapshot()
+        receipt=self.store.sign('a','new-2027',Offer('new',(2000000,2000000),1000000),3)
+        restarted=FranchiseStore(self.path)
+        ledger=restarted.load_team('a')
+        gid=ledger.contract_identity('new').generation_id
+        self.assertEqual(ledger.generation_calendar_view(gid).anchor_year,2027)
+        self.assertEqual(ledger.active_contract('new').elapsed_years,0)
+        self.assertEqual(ledger.charges,(5500011,5500013))
+        self.assertEqual(ledger.cash_snapshot()['paid_total'],before['paid_total'])
+        self.assertEqual(restarted.sign('a','new-2027',receipt.offer,3),receipt)
+        for request,cash_id,component,amount in (('new-bonus','contract:new','signing_bonus',1000000),
+                ('new-base','contract:new','base:0',2000000),('old-base','contract:a','base:1',2000000)):
+            ledger=restarted.load_team('a')
+            restarted.record_payment('a',request,cash_id,amount,expected_cash_revision=ledger._cash.revision,
+                source='synthetic recorded payroll',payment_reference=request,component=component)
+        inputs=copy.deepcopy(self.inputs);inputs.update(request_id='roll-2028-new',from_year=2027,to_year=2028)
+        for team in ('a','b'):
+            item=inputs['teams'][team];item['expected_revision']=restarted.load_team(team).revision
+            item['expired_generation_ids']=[];item['next_minimum_profile']=self.minimum_profile(2028,team,2).to_dict()
+        restarted.advance_league_year(**inputs)
+        final=FranchiseStore(self.path).load_team('a')
+        self.assertEqual(final.active_contract('a').elapsed_years,2)
+        self.assertEqual(final.active_contract('new').elapsed_years,1)
+        self.assertEqual(final.charges,(5500013,))
+        self.assertEqual(final.cash_snapshot()['unpaid_total'],4000000)
+
+    def test_postroll_bad_offer_and_calendar_posting_tamper_cannot_change_money(self):
+        self.store.advance_league_year(**self.inputs)
+        raw=self.path.read_bytes()
+        for offer in (Offer('new',(1,),0),Offer('new',(20000000,),0)):
+            with self.assertRaises(Rejected):self.store.sign('a','bad',offer,3)
+            self.assertEqual(self.path.read_bytes(),raw)
+        self.store.sign('a','good',Offer('new',(2000000,),0),3)
+        with closing(sqlite3.connect(self.path)) as db:
+            row=db.execute("SELECT id,payload FROM events WHERE request_key='sign:good'").fetchone()
+            payload=json.loads(row[1]);payload['calendar_format']=True
+            db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(payload),row[0]));db.commit()
+        with self.assertRaisesRegex(ValueError,'Calendar-aware'):self.store.load_team('a')
+
+    def test_prior_unmarked_postroll_cash_history_keeps_exact_replay_compatibility(self):
+        self.store.advance_league_year(**self.inputs)
+        self.store.record_payment('a','prior-pay','contract:a',2000000,expected_cash_revision=0,
+            source='synthetic recorded payroll',payment_reference='prior-pay',component='base:1')
+        with closing(sqlite3.connect(self.path)) as db:
+            row=db.execute("SELECT id,payload FROM events WHERE request_key='cash:payment:prior-pay'").fetchone()
+            payload=json.loads(row[1]);del payload['calendar_format'];del payload['calendar_posting']
+            db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(payload),row[0]));db.commit()
+        ledger=FranchiseStore(self.path).load_team('a')
+        self.assertEqual(ledger.cash_snapshot()['paid_total'],7000000)
+        self.assertEqual(ledger.active_contract('a').elapsed_years,1)

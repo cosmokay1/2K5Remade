@@ -2514,3 +2514,24 @@ defenders, penalties/nullified plays and episode deduplication. Hits remain a
 distinct observed counter, not inferred from pressures or sacks. Played/CPU/fast
 sim coverage must be verified separately; unavailable counters remain unknown.
 No game counter capture or new metric implementation is claimed.
+
+### Windows verification and never-held postroll veteran signing (2026-10-13)
+
+Windows run38507267705 passed native calendar_v1 current/expired contexts
+across process restart. Build run38507497961 passed the Windows runtime/tools
+build with pinned SDL3 and recompiler repairs; Linux still fails on GGL Windows
+include/dependencies. Actual game execution remains unverified.
+
+Implemented current-year signing for never-held registered veterans while
+preserving historical re-signing guards. New agreement calendar anchors follow
+actual signing year, and later close/aging uses per-agreement anchors. Durable
+store tests verify actual2027birth→2028year1 beside older2026birth→year2,
+explicit payments, retained charges/cash, retry/restart, cap/floor rejection and
+typed calendar tamper. Earlier unmarked postroll cash history remains compatible
+with exact monetary replay. Independent review found no defect.
+
+Linux GGL header/TLS/diagnostic portability edits are local in the dependency
+fork; its actual SRW condition-variable wait remains to implement. Preserve real
+lock behavior and avoid synchronization stubs or disabling the guest lock.
+
+All 478 offline tests pass for postroll signing and payment compatibility.
