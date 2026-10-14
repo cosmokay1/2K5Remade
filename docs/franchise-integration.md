@@ -453,3 +453,13 @@ Gaming Mode sends startup output to runtime-logs/steam-launch.log but actual
 game stderr is redirected to the private prefix's
 pfx/drive_c/users/steamuser/AppData/Local/NFL2K5-PC/logs/session.log. Read that
 file for signing observations; absence from the launcher log proves nothing.
+
+
+Team identity is a separate verification:0x000C4CA0 scans the active table for
+a matching record pointer, returning index or0xFFFF.0x000C4D50 then reads
+0x00E5775C[index]. In the bank-backed branch,0x000C4BE0 uses bank+0x18 count
+and0x000C4C50 uses bank+0x1C base with stride0x1F4. Baseline header0x338
+declares52 records and its relative pointer0x33C resolves0x44A8; the current
+roster inspector names only its supported first32 clubs. Do not assert other[0]
+is a stable team ID or derive the live club from a guessed franchise base.
+Current-mode selection and live team-table binding still need evidence.

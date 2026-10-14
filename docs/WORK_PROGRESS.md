@@ -3843,3 +3843,20 @@ UI comparison. No AI decision, accepted signing, guest write or save/reload is
 proved by this readback. Both corrected-source258c223 workflows completed
 successfully: Build38589604849 and Franchise AI38589604925. Updated worklist
 from pending readback to this limited actual runtime evidence.
+
+
+## October 14, 2026 — Team getter audit and failed UI capture
+
+Read-only audit confirms team-pointer identity is table association through
+0x000C4CA0, with0x000C4D50 subsequently indexing0x00E5775C. The bank-backed
+count/base fields are+0x18/+0x1C, stride0x1F4; independent baseline reads show
+52 team records and base44A8. This does not verify the observed offer's club.
+
+Attempted one game-only screenshot to reduce manual UI readback: fresh display1
+window3000001 had exact ESPN NFL2K5 title, PID68889 and matching X input focus.
+ffmpeg's window-specific X11 capture emitted an image-data BadMatch and produced
+black pixels. No UI amounts can be inferred; this is not evidence of a black
+game screen. Screenshot remains private/ignored, and no controller input, game
+restart, guest write or save change was made. Displayed years/salary and live team
+association remain pending user-visible confirmation. Existing Trotter trace is
+unchanged; no additional speculative fields or financial interception were added.
