@@ -49,6 +49,21 @@ class InspectPlayerHistoryTests(unittest.TestCase):
         self.assertEqual([e['mode_code_raw'] for e in report['entries']], [0, 0])
         self.assertFalse(any(e.get('mapped_metric_name') == 'completions' for e in report['entries']))
 
+    def test_games_and_rushing_are_separate_from_passing_touchdowns(self):
+        payload = self.fixture()
+        bank = 0x41D54
+        struct.pack_into('<I', payload, 0x360, 5)
+        for index, (code, value) in enumerate(((0, 10), (1, 30), (2, -2), (3, 2), (9, 5))):
+            word = (1 << 23) | (code << 16) | (value & 0xFFFF)
+            if index == 4: word |= 0x80000000
+            struct.pack_into('<I', payload, bank + 4 * index, word)
+        report = inspect_player_history(bytes(payload), 0)
+        self.assertEqual([e['mapped_metric_name'] for e in report['entries']],
+                         ['games', 'rush_attempts', 'rushing_yards', 'rushing_touchdowns', 'passing_touchdowns'])
+        self.assertEqual(report['entries'][2]['mapped_unit'], 'yards')
+        self.assertEqual(report['entries'][2]['signed_value_raw'], -2)
+        self.assertFalse(any(e.get('mapped_metric_name') in ('targets', 'pressures', 'qb_hits') for e in report['entries']))
+
     def test_outside_unaligned_or_unterminated_history_rejects(self):
         for case in range(6):
             payload = self.fixture()

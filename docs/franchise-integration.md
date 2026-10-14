@@ -583,3 +583,13 @@ missing entries remain absent, deleted entries remain marked, and no complete
 window or zero count is invented. These are built-in historical game records;
 future simulated-season and live observations still require controlled pairs.
 Other statistic codes and defensive units remain unverified.
+
+
+Additional named history codes:0 games played;1 rush attempts;2 rushing yards;
+3 rushing touchdowns. Descriptor fields63/03/50/3F map respectively to these
+codes. McNabb's saved games sequence and rushing records corroborate the names
+against [NFL's historical table](https://www.nfl.com/players/donovan-mcnabb/stats/career).
+Zero rushing touchdowns are absent in the earliest row, illustrating why sparse
+missing data must not automatically become an observed zero. Rushing touchdowns
+remain distinct from passing touchdowns; no total-touchdown counter is invented.
+This mapping still does not classify binary modes into played/CPU/fast-sim.

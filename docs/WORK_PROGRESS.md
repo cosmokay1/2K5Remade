@@ -4068,3 +4068,25 @@ General calendar assignment and simulated/played history remain unverified;
 defensive candidates cannot be named from plausible values alone. Five focused
 history tests passed, adding metric mapping with raw-key retention and missing
 metric behavior. No hidden ratings, paid calls or game/save writes occurred.
+
+
+## October14,2026 — Private Deck build installed; games/rushing history mapped
+
+User explicitly closed normally. SSH pgrep verified no NFL2K5.exe process
+before installation. Preserved the previous private executable as
+runtime/NFL2K5.pre-handshake.exe (SHA256
+1f1aa6150ba5d2046c4dc4c2067c008db2aab04232ef0bc664aaa1b5d33ab1b3),
+then atomically installed the previously compiled staged binary SHA256
+e6c10393d53b1cc355e981d612779fed96fbeeadd9ef8f7e067014a8a262b9aa.
+This includes the d61427b host handshake changes; no new game execution or
+configured remote hello is claimed. Steam launcher and controls are unchanged.
+Actual Vertex sidecar/runtime identity and game financial imports remain gates
+for AI decisions. The installed build still uses original signing judgment.
+
+History descriptor fields63/03/50/3F map to codes0/1/2/3. Added named games,
+rush attempts, rushing yards and rushing touchdowns, corroborated by McNabb's
+baseline history and [NFL's published historical table](https://www.nfl.com/players/donovan-mcnabb/stats/career).
+Private named readback retained without save edits. Six focused tests passed,
+including signed rushing yards, separate passing/rushing TDs and no invented
+target/pressure/QB-hit values. No model request, runtime control renewal or
+guest financial mutation occurred.
