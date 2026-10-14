@@ -3,9 +3,9 @@
 **Current verdict:** the durable engine enforces its supported sourced acquisition,
 release, assignment and first-restructure rules, with exact cap obligations,
 separate nominal cash/payments, persistent stories and exclusive ownership.
-It is still not a complete modern NFL franchise money system or an audit of the
-original game's financial code. Actual guest transactions and save/load remain
-unverified.
+It is still not a complete modern NFL franchise money system. The October14
+static original-game audit below identifies signing/accounting boundaries, but
+actual financial units, guest transaction readback and save/load remain unverified.
 
 Re-ran `python -m tools.audit_money` against the current source on October 13.
 F01/F02/F03/F07 reject the original invalid inputs; F04 now charges the same
@@ -33,6 +33,36 @@ not disappear from the ledger.
 The original findings and early repair notes below are retained as historical
 evidence. Their line references and descriptions reflect the earlier prototype.
 The executable audit and [worklist](../WORKLIST.md) describe current coverage.
+
+## October 14 — Original-game signing accounting, static evidence only
+
+The legally supplied executable and AIBASELIN save now permit direct analysis.
+This evidence supplements the earlier asset-free engine audit; it does not prove
+modern NFL rules or an original-game cap defect.
+
+- Interactive signing routine0x00323D80 checks roster/cap preconditions before
+  calling offer judgment0x00323A60. That judgment uses score output from
+  0x003232A0: below70 refuses further negotiation,70..79 declines,80..109 accepts,
+  and110+ uses the generous-offer acceptance message. These are original-game
+  score thresholds, not probabilities or new AI behavior.
+- After acceptance and before new player contract fields are written, a conditional
+  0x0013ED30 updates uint16[team+0x19C+2*index]; signing passes index0. Its guard
+  consults0x0013EC30. It adds0x0013ED00's result computed from the old contract and
+  stores only the low16bits. The effect of overflow on actual franchises is untested.
+- 0x0013ED00 uses salary word+0x0A, packed allocation bits20..23 and term-like
+  bits24..27 via0x000E6020, multiplying the result by packed bits0..3.
+- Cap accessor0x0013ECA0 conditionally subtracts that accumulator from global
+  0x00E3C278. It is separate from the roster salary total at team+0x124.
+- Later roster refresh0x000C3F00 walks players whose record+0x24 low nibble is
+  nonzero, sums0x000E6380 and0x000E6020 plus0x00246F20, and writes team+0x124.
+
+Preserve the old-contract adjustment, player mutations, roster updates and total
+refresh around the future AI offer judgment. A whole-function boolean replacement
+would lose required accounting and history effects. No original-game financial
+writes or AI interception have been added. Required observations remain selected
+player binding, UI amount/unit agreement, salary-only and term-only controlled
+saves, unchanged-save control and reload verification. The16-bit accumulator's
+UI meaning, persistence and overflow intent remain unresolved.
 
 ## Historical prototype snapshot
 

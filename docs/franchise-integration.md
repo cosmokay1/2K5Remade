@@ -388,7 +388,7 @@ Financial mapping remains incomplete until these observations agree.
 Shared routine0x00323D80 performs roster and cap preconditions before interactive
 offer judgment0x00323A60 at0x00323F0E. A rejected judgment returns before player
 contract writes. A conditional0x0013ED30 call follows acceptance before those
-writes; its side effects still need tracing. Subsequent player-state, roster,
+writes; it updates a separate old-contract accumulator (see the money audit). Subsequent player-state, roster,
 team-refresh and history calls are part of the original transaction. Replacing
 the whole routine with an AI acceptance boolean would skip these effects.
 
@@ -420,3 +420,21 @@ readback remains a current-bank locator, not a durable identity. Malformed,
 unreadable, unterminated and unsupported surrogate names report identity unknown;
 no relative-pointer fallback is attempted. This code is compiled and fixture-tested
 but has not yet observed the actual AIBASELIN player in the running game.
+
+
+Offer judgment0x00323A60 calls score routine0x003232A0 and displays original
+refusal/decline/accept/generous-accept messages at score thresholds70/80/110.
+Acceptance is determined by the score output referenced by EDI, not simply the
+score routine's EAX return. That routine also participates in automated franchise
+paths. Any AI replacement must be scoped to the verified interactive boundary and
+preserve result/message state; do not override the shared scorer indiscriminately.
+
+
+The original demand chain includes hidden-rating dependencies:0x002BD440 reads
+player+0x3B and+0x4C (Durability/Leadership per the attributed layout) and calls
+position-specific weighted evaluation. Other helpers derive behavior from bank
+slot modulo and experience buckets; these are not durable personalities. A
+conditional RNG call in0x003232A0 advances shared random state. The future AI
+path must supply its own performance/personality decision, avoiding these ratings
+as valuation inputs, while explicitly preserving the surrounding score/status
+interface and deciding RNG sequencing. The current observer exposes no ratings.

@@ -3698,3 +3698,23 @@ and PID65155 remains active; no restart or executable replacement occurred.
 User was asked to exit normally when finished so the staged observer can be
 applied safely. Actual selected-player readback and controlled contract/save
 pairs remain pending.
+
+
+## October 14, 2026 — Original judgment and cap-adjustment dependencies
+
+Parallel read-only audits identified the pre-write old-contract adjustment: guard
+0x0013EC30, calculation0x0013ED00, uint16 accumulator at team+0x19C+2*index and
+write0x0013ED56. Signing passes index0. Cross-checked that cap accessor0x0013ECA0
+subtracts this accumulator and later0x000C3F00 separately refreshes team+0x124.
+Documented truncating storage without claiming an observed overflow/cap bug.
+
+The interactive judgment0x00323A60 uses an output score from0x003232A0, with
+refusal/decline/accept thresholds70/80 and a messaging threshold110. Default
+demand depends on hidden durability/leadership and weighted position evaluation,
+plus slot/experience heuristics and conditional shared RNG. This identifies what
+the performance/personality AI must replace while retaining cap/roster/history
+transaction effects. No interception or financial write was made.
+
+CI for80279d9 was observed live: Build38553654953 and Franchise AI38553655040
+were in progress. Do not report them as passing until completed. The currently
+open Deck game still requires normal exit before staged observer activation.
