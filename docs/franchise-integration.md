@@ -180,6 +180,20 @@ authenticated AI decisions or guest transaction/save integration.
 
 ## Calendar-aware contract inspection
 
+For the initial preserved-legacy snapshot, `python -m
+tools.reconcile_signing_context SAVE BINDINGS OBSERVATION DATABASE
+--expected-revision REVISION` validates a complete captured signing checkpoint.
+OBSERVATION contains biography (the existing pinned biography fields), team
+(table_index, table_mode, payroll_raw, league_cap_raw, team_flag_raw,
+first_year_accumulator_raw) and calendar (season_index, display_year,
+phase_01_raw, phase_02_raw, step_04_raw, step_05_raw, counter_08_raw).
+Integers are raw observed guest units. Complete fields must match the saved
+snapshot and preserved ledger; a new year/bank or changed modern book does not
+automatically rebind. The result identifies the saved player/context and revision
+but explicitly grants neither AI nor write permission. Cash/rookie reconciliation,
+active franchise selection and atomic precommit checks remain required. This tool
+is not yet called automatically by the native game bridge.
+
 contract_context accepts explicit context_format=calendar_v1. This requests
 format2 current calendar accounting alongside a separately labeled economic
 archive. Native validation binds the requested generation/team, original terms

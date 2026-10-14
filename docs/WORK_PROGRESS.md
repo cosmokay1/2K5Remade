@@ -4898,3 +4898,29 @@ change. Game remains running for the user; actual child cleanup after normal
 game exit, authenticated game authorization, AI decisions, guest commit/recovery
 and save/reload remain pending. Logging source committed/pushed as9537d80;
 its published CI is not yet asserted successful.
+
+## October14,2026 — Saved/live signing checkpoint reconciled
+
+Added tools/reconcile_signing_context.py to bind a complete live biography, team
+and raw calendar observation to the existing pinned snapshot and saved legacy
+book. It checks exact original cap/payroll/adjustment inputs, all saved legacy
+contract records including source, full annual ledger charge vector, current
+ownership and explicit revision, then returns the persisted player context.
+Changed identity, calendar, cap inputs, source schedules or revision reject.
+Inspection neither assigns a salary floor nor invokes a model/financial write;
+the result explicitly denies AI/write authority. Active franchise selection,
+cash/rookie obligations, modern ledger mutations, concurrent write authorization
+and automatic game/bridge submission require subsequent integration.
+
+Actual captured Trotter fields from the root-game session reconcile against
+original/saves/AIGILDON-signing/SAVEGAME.DAT and the diagnostic ledger: UUID
+a564eb821c3742929f408fac07929cc5, Giants, revision0, persisted personality and
+classification_pending. Retained private observation/result JSON under
+.local-runtime/root-transport-diagnostic. This is a local reconciliation of actual
+game observations, not a new native game request or a guest transaction.
+
+Four focused tests pass, including same IDs/cap totals but different preserved
+contract source rejection. Full offline682 tests pass in24.778s; diff check passes.
+Prior9537d80 Build38633164511 and AI38633164597 now completed successfully;
+72443cd Build38633607007 passed while AI38633606823 remains in progress.
+No game installation, model request or control/IAM change in this milestone.

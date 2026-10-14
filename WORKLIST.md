@@ -53,6 +53,11 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   now execute on the Deck using the packaged Windows service. This diagnostic
   keeps AI disabled with explicit missing ADC and uses a private cloned ledger;
   zero model attempts were recorded. Guest transaction integration remains pending.
+- The live Trotter biography/team/calendar observation now passes a reusable
+  read-only signing checkpoint against AIGILDON and the pinned legacy ledger,
+  resolving the persisted UUID/personality at revision0. Changed identity, raw
+  cap/calendar inputs, contract provenance and revisions reject. This checkpoint
+  does not authorize AI or writes; automatic game/bridge submission remains pending.
 - Actual AI/game/save integration, telemetry capture and final playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 
