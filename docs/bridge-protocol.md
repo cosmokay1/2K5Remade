@@ -281,3 +281,21 @@ legacy trades bind original, seller and buyer records to `contract:<player>` and
 conserve nominal cash while preserving the seller's allocated payment history.
 Generation assignments retain their explicit source and destination identities.
 Matching wire/archive copies alone do not satisfy these provenance checks.
+
+
+## Saved historical performance input
+
+For a pinned snapshot, `tools.export_player_performance.saved_player_performance`
+returns the player's stable ID and named saved history for the performance field.
+It validates biography/calendar bindings first. Records retain source entry,
+raw mode and candidate calendar year; it does not aggregate periods or claim
+played/CPU/fast-sim coverage. Deleted records, unknown bit30, unmapped codes and
+negative counts are excluded with counts; signed yards remain valid. Missing
+history/metrics remain unknown. Tackles, targets, pressures and QB hits are still
+unmapped and are not manufactured.
+
+Negotiation rejects a supplied performance player_id belonging to another player.
+Provider instructions exclude these historical records from salary-credit and
+promise scoring. Export is not proof of the active game/save or authority to
+negotiate/sign; the real guest bridge still needs verified snapshot selection,
+calendar/revision reconciliation and sourced financial classification.

@@ -24,12 +24,12 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 ## Latest verified state — October 14, 2026
 
-- Latest published verified source: `1548831`. Build `38621703475` and Franchise AI
-  `38621703539` passed. CI checks asset-free runtime and bridge components;
+- Latest published verified source: `33db7a3`. Build `38624020793` and Franchise AI
+  `38624020917` passed. CI checks asset-free runtime and bridge components;
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.
-- Latest verified published CI suite: **653 tests passed on Windows and Ubuntu**. Actual AIBASELIN parsing
+- Latest verified published CI suite: **660 tests passed on Windows and Ubuntu**. Actual AIBASELIN parsing
   resolves 1937 roster/free-agent members. This does not prove contract/save
   round-trip integration. The read-only signing observer includes bounded bank-slot/name reads and is compiled and installed after confirmed exit;
   actual readback identifies Jeremiah Trotter at bank slot1910, matching AIBASELIN.
@@ -234,7 +234,7 @@ invent future published NFL values: separate verified inputs from simulation pol
 - [x] Add offer previews using the same financial validation as final commits.
       Durable previews also check league ownership; previews do not reserve room.
 - [ ] Add player/agent and team/GM priorities with persistence and bounded updates. Source-backed immutable GM profiles now persist with original team configuration and feed private draft context; player priorities and bounded relationship updates already persist. GM evolution and actual CPU team strategy remain.
-- [ ] Feed actual statistics, roles and relationship history; label missing evidence. Actual AIBASELIN history bank now has bounded raw-code extraction: 1325 player lists partition36866 entries without gaps/overlaps;612 members have no history pointer and remain unknown. Games/rushing codes0..3 and passing codes6..10 now have descriptor-backed names/count-or-yard units corroborated by NFL McNabb history; other metric names/units, period calendars, observation modes and actual model consumption remain pending.
+- [ ] Feed actual statistics, roles and relationship history; label missing evidence. Actual AIBASELIN history bank now has bounded raw-code extraction: 1325 player lists partition36866 entries without gaps/overlaps;612 members have no history pointer and remain unknown. Games/rushing codes0..3 and passing codes6..10 now have descriptor-backed names/count-or-yard units corroborated by NFL McNabb history; A pinned saved-performance export now passes those named counters into actual Negotiation context in offline tests, with missing metrics, excluded flags and candidate years explicit. Other metric names/units, period calendars, observation modes, active game binding and live model consumption remain pending.
 - [ ] Evaluate production with opportunities/context: targets/snaps, efficiency,
       drops, opponents/scheme, health, recency and sample size where available.
       Five exact sourced opportunity/yardage ratios now feed negotiation and draft

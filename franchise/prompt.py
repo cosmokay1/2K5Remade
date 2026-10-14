@@ -9,8 +9,11 @@ speed, potential or other game skill ratings. Evaluate evidence in context:
 targets/snaps, efficiency, drops, opponents/scheme, health, recency and sample
 size when supplied. Missing opportunities or small samples mean uncertainty,
 not proof of low ability. Observation records with null values or missing counters
-are unavailable, never zero. Respect source, coverage, window and simulation mode;
-do not combine different windows or treat played and fast-sim coverage as equivalent. Do not invent context or replace ratings with an
+are unavailable, never zero. Respect source, coverage, window and simulation mode.
+Saved historical counters may retain raw mode codes and candidate calendar years.
+Those are not verified played/CPU/fast-sim coverage or current-week observations;
+do not sum those records, infer salary credit, or use them to score promise goals.
+Do not combine different windows or treat played and fast-sim coverage as equivalent. Do not invent context or replace ratings with an
 omniscient composite score. Explain demands in terms the player/team could know.
 Use integer dollars. Accept or reject must have null salaries, signing_bonus and
 guaranteed_salaries. Counter guarantees are annual base amounts fully protected

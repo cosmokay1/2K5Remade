@@ -64,6 +64,8 @@ class Negotiation:
         self._access_check = access_check
         self._access_check()
         from franchise.performance import PerformanceEvidence
+        if type(performance) is dict and 'player_id' in performance and performance['player_id'] != player_id:
+            raise ValueError('Performance evidence belongs to another player')
         observed = performance if isinstance(performance, PerformanceEvidence) else None
         typed_fields = {'player_id', 'window', 'mode', 'coverage', 'observations'}
         if type(performance) is dict and typed_fields <= set(performance):

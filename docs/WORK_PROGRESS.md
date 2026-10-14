@@ -4726,3 +4726,34 @@ including cleanup after tampered-preview refusal. No game prefix, save, executab
 cloud credentials or paid inference was used. Only authored Python files/fixture
 were copied to the private source check tree. Published Windows/native checks
 still need a successful replacement CI run; this focused proof is not gameplay.
+
+
+## October14,2026 — Pinned saved performance reaches negotiation context
+
+Added saved_player_performance: validate same-year UUID/biography bindings, then
+export only descriptor-backed named history counters under that stable player ID.
+No ratings, aggregate sums or invented current-week/played/CPU/fast-sim coverage.
+Each record retains its source entry, raw mode and candidate calendar year.
+Deleted/unknown-bit30/unmapped/negative-count records are excluded with explicit
+counts; signed yards remain valid. Missing history/metrics stay unknown. Tackles,
+targets, pressures and QB hits remain unmapped. Export does not establish salary
+credit, promise coverage, the active game snapshot or signing authority.
+
+Negotiation now rejects an explicit foreign performance player_id before actor
+binding/provider context. Shared model instructions explain historical/raw-mode
+and candidate-year limitations. Six authored tests cover source binding/biography
+refusal, actual Negotiation provider-context consumption, null history, deleted/
+unknown/unmapped/negative counts, signed yards, raw mode and foreign-player denial.
+Final full offline suite passes676 tests in25.155s.
+
+Private actual AIGILDON exports retain Trotter's6 named game-count records,
+McNabb's44 named records across all9 supported metric names, and Gildon's10 game
+records. Trotter/Gildon have42/58 unmapped records respectively; those are not
+called tackles or sacks by guessing. Kept reports private in
+.local-runtime/performance-context-readback.json; no save/game/control/model call.
+This export is usable as the bridge performance input but the real root game
+snapshot resolver/live consumption and salary classification remain pending.
+Latest completed published33db7a3 Build38624020793/AI38624020917 are successful;
+logs verify660 tests on both Windows/Ubuntu.482c364's failed Windows fixture is
+addressed separately by42d02fb; replacement CI has not yet run for these local
+commits. No claim of actual AI signing, new-build execution or save/load delivery.
