@@ -4374,3 +4374,25 @@ rejects347000 against the scaled348000 veteran floor, accepts348000, preserves
 insufficient scaled pool; allocation fixtures are authored, not official pick
 values. Actual guest encoding, original obligation/guarantee conversion and
 persisted source policy remain unintegrated. No new Deck build or model request.
+
+## October14,2026 — Historical salary policy survives engine restart
+
+VeteranMinimumProfile accepts an optional typed HistoricalEconomy. Published
+rule years remain2026 onward; converted floors use the stored exact policy.
+Serialization retains target/reference caps, year/source/version and posting;
+strict deserialization refuses altered source/reference/posting metadata.
+Unscaled profiles preserve their existing JSON shape. Negotiation context
+now includes adaptation provenance alongside the original CBA floor source.
+
+Actual SQLite fixture restart preserves scaled348000 floor and rejects347000;
+durable Store signing at348000 replays identically on another load. Changing
+the target conversion cap without matching the stored floor rejects replay.
+Year transition checks the same adaptation before mutating any finances;
+authored removal/replacement attempts leave financial/cash/generation snapshots
+unchanged, while a transition retaining policy advances sourced floors.
+
+Initial full suite ran643 tests with four HTTP/TLS loopback-bind permission
+errors in the sandbox; no financial regression failure. After the rollover guard
+and its boundary test, full offline suite outside sandbox passed644 tests in
+21.422s. No cloud/model request or game/save write was performed. This validates
+durable engine policy, not guest calendar/contract import or AI signing.

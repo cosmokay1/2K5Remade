@@ -116,6 +116,13 @@ minimums reject. It cannot invent pick allotments. Original offer-word encoding,
 legacy guarantees/debt conversion, persistence of adaptation provenance and the
 game calendar/import remain required before actual transactions use these inputs.
 
+Adaptation provenance now persists within `VeteranMinimumProfile` and is exposed
+in negotiation context. Replay rejects unsupported reference sources/posting or
+converted-floor disagreement. A year transition rejects removing/changing the
+adaptation before mutation. This covers durable engine rule inputs; it does not
+prove real-game calendar mapping, legacy contract conversion or rookie allotment
+provenance. Existing unscaled profile records retain their prior serialization.
+
 `tools.inspect_franchise_cap` now derives the franchise tail from the validated
 saved scheduler boundary and reads the league-cap field at tail+15D0. Original
 save/load routines2D0790/2D0CE0 transfer this field to/from globalE3C278. Team

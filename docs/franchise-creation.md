@@ -41,6 +41,16 @@ and `teams` (team IDs mapped to `Ledger.bootstrap_config()` objects). Original s
 books and classification/rules inputs remain mandatory; this command does not decode
 raw retail saves or certify the export's game meaning.
 
+Historical salary-floor profiles may include a typed `HistoricalEconomy` policy.
+Their `start_year` remains the published modern rule year (2026 at game2004),
+not the game's display year. The profile persists the exact conversion policy,
+target cap, reference cap/year/source and posting direction; reload reconstructs
+and compares the resulting floors. Unscaled profiles retain their previous JSON
+shape. Negotiation context labels the adaptation beside the minimum source.
+Year transitions require the same adaptation policy; switching economies needs
+an explicit verified migration rather than silently changing salary floors.
+Actual game-to-rule calendar binding remains an adapter requirement.
+
 ```sh
 python3 -m tools.create_franchise --input /path/to/bootstrap.json --database /path/to/new-franchise.sqlite
 ```

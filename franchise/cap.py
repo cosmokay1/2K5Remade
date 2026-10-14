@@ -424,6 +424,10 @@ class Ledger:
             if (self._veteran_minimum_profile is not None
                     and self._veteran_minimum_profile.start_year!=from_year):
                 raise Rejected('Current salary profile disagrees with anchored outgoing year')
+            current_economy = (self._veteran_minimum_profile.economy
+                               if self._veteran_minimum_profile is not None else None)
+            if current_economy != next_minimum_profile.economy:
+                raise Rejected('Year transition cannot change the historical economy without verified migration')
             cap,reserve=money(next_cap),money(roster_reserve)
             floors=next_minimum_profile.floors()
             if set(floors)!=set(self._veteran_minimums):
@@ -1068,7 +1072,9 @@ class Ledger:
                     "veteran_minimum_salaries": self._veteran_minimums.get(player_id),
                     "salary_floor_profile": ({"start_year": self._veteran_minimum_profile.start_year,
                                               "rule_version": self._veteran_minimum_profile.rule_version,
-                                              "source": self._veteran_minimum_profile.source}
+                                              "source": self._veteran_minimum_profile.source,
+                                              **({"economy": self._veteran_minimum_profile.economy.to_dict()}
+                                                 if self._veteran_minimum_profile.economy is not None else {})}
                                              if self._veteran_minimum_profile else None),
                     "existing_player_tender": self._tenders.get(player_id, 0),
                     "room_for_replacing_player_tender": json_amount(self.room + self._tenders.get(player_id, 0) + self._draft_reserved(player_id_only=player_id)[0]),

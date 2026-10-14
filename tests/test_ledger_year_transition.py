@@ -11,6 +11,24 @@ from franchise.guarantees import DiscountProfile
 
 
 class LedgerYearTransitionTests(unittest.TestCase):
+    def test_year_transition_preserves_historical_policy_or_rejects_without_mutation(self):
+        from franchise.historical_economy import HistoricalEconomy
+        economy = HistoricalEconomy(80500000)
+        ledger = self.ledger()
+        current = VeteranMinimumProfile(2026, (('v', (7,)*3, ('active_inactive',)*3),), economy=economy)
+        ledger._veteran_minimum_profile = current
+        ledger._veteran_minimums = current.floors()
+        before = (ledger.financial_snapshot(), ledger.cash_snapshot(), ledger.generation_snapshot())
+        for replacement in (None, HistoricalEconomy(161000000)):
+            profile = VeteranMinimumProfile(2027, (('v', (7,)*3, ('active_inactive',)*3),), economy=replacement)
+            with self.assertRaisesRegex(Rejected, 'historical economy'):
+                self.transition(ledger, next_minimum_profile=profile)
+            self.assertEqual((ledger.financial_snapshot(), ledger.cash_snapshot(), ledger.generation_snapshot()), before)
+        next_profile = VeteranMinimumProfile(2027, (('v', (7,)*3, ('active_inactive',)*3),), economy=economy)
+        self.transition(ledger, next_minimum_profile=next_profile)
+        self.assertEqual(ledger._veteran_minimum_profile.economy, economy)
+        self.assertEqual(ledger._veteran_minimums, next_profile.floors())
+
     def calendar_amendment_ledger(self):
         ledger=self.ledger();old=ledger._active_contracts['v']
         guaranteed=replace(old,offer=replace(old.offer,guaranteed_salaries=(0,2000000,0)))

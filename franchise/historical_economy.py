@@ -70,3 +70,12 @@ class HistoricalEconomy:
                 'reference_cap_source': CAP_SOURCE,
                 'posting': '1000-dollar units; minimums up, ceilings down',
                 'scope': 'simulation adaptation; no original contract rewrite or game synchronization'}
+
+    @classmethod
+    def from_dict(cls, data):
+        if type(data) is not dict or 'target_cap_dollars' not in data:
+            raise ValueError('Complete historical economy policy required')
+        economy = cls(data['target_cap_dollars'])
+        if data != economy.to_dict():
+            raise ValueError('Unsupported historical economy version, source or posting policy')
+        return economy

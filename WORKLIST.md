@@ -144,7 +144,7 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       negotiation availability without deleting historical receipts.
 
 - [ ] Define verified league-year rules; explicitly choose economic treatment
-      (user chose2004 dollars/$80.5M cap; exact proportional scaling now uses sourced2026 cap301.2M with minima up/ceilings down to1000-dollar units. Actual import/calendar/provenance integration remains required.)
+      (user chose2004 dollars/$80.5M cap; exact proportional scaling uses sourced2026 cap301.2M with minima up/ceilings down to1000-dollar units. Salary-profile provenance now persists/replays and rollover rejects an implicit economy change. Actual import/calendar and rookie-source integration remain required.)
       for historical start years rather than silently combining incompatible eras.
 - [ ] Load annual minimums and draft allotments with recorded source/version.
 - [ ] Separate cash owed/paid, cap charges, guarantees, and management reserves.
