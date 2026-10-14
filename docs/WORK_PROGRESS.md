@@ -2393,3 +2393,18 @@ exact posting types and sourced-year rollback. Independent review found boolean
 posting forgery through Python equality; canonical JSON hashes now reject it. Actual rollover/projection/expiry remain unfinished.
 
 All 452 offline tests pass for the reviewed calendar-anchor implementation.
+
+### Calendar-backed agreement projections in progress (2026-10-13)
+
+Added actual-store calendar_projection using validated league replay and immutable
+generation schedules. Forward views preserve original payment indices, closed
+payment ceilings and nominal cash; scheduled term completion does not imply
+settlement or expired ownership. Tests verify persisted state bytes unchanged,
+future charges, unpaid cash past scheduled term, and released layered obligations
+without resurrecting cancelled bases. Focused tests pass; full suite/review pending.
+No season transition or actual guest state change occurs.
+
+Projection review found no concrete defect. Added next-year post-June release
+debt and paired assignment coverage: seller bonus debt remains separate from
+buyer base schedules, with cash and payment rights unchanged. Independent
+layered/elapsed-year examples also passed. All 455 offline tests pass.

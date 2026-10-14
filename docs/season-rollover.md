@@ -66,3 +66,14 @@ must match the anchored year. league_calendar validates and returns this origin.
 This establishes an initial year only. It does not advance contracts, expire
 agreement generations, settle liabilities or authorize a next-year cap. Source
 labels are caller declarations, not proof of a decoded game calendar.
+
+## Calendar-backed schedule projections
+
+FranchiseStore.calendar_projection requires an anchored year and validates full
+league replay before returning original agreement schedules at a current/future
+CBA year. It reports recorded status separately from scheduled term completion,
+keeps original year indices, unchanged nominal cash and closed payment ceilings,
+and provides no future cap, ownership change or settlement grant. Historical
+agreement economics and lifecycle plans remain unchanged. This is the projection
+view needed for rollover work, not an executable season transition. New-year
+agreement anchors and authoritative expiry/ownership transitions remain work.

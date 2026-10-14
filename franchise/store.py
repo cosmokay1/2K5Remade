@@ -375,6 +375,25 @@ class FranchiseStore:
                 self._load_teams(db, tuple(sorted(anchor['expected_revisions'])))
             return anchor
 
+    def calendar_projection(self, team_id, *, target_year):
+        """Project recorded schedules only; no future cap, settlement or ownership grant."""
+        from franchise.generations import project_agreement
+        if type(target_year) is not int or not 2020 <= target_year <= 2030:
+            raise ValueError('Explicit published-CBA projection year required')
+        with self._connection() as db:
+            anchor = self._calendar_anchor(db)
+            if anchor is None or target_year < anchor['league_year']:
+                raise Rejected('Anchored calendar and current/future projection year required')
+            ledger = self._load(db, team_id)
+            offset = target_year - anchor['league_year']
+            return {'team_id':team_id,'financial_revision':ledger.revision,
+                    'recorded_league_year':anchor['league_year'],'target_year':target_year,
+                    'calendar_source':anchor['source'],
+                    'modeled_remaining_charges':[json_amount(value) for value in ledger.charges[offset:]],
+                    'agreements':[project_agreement(item,years_forward=offset) for item in ledger.generation_agreements()],
+                    'unchanged_cash':ledger.cash_snapshot(),
+                    'season_advanced':False,'ownership_changed':False,'future_cap':None}
+
     @staticmethod
     def _franchise_origin(db):
         from franchise.initialization import VERSION,validate_seed

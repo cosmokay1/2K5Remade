@@ -4,6 +4,25 @@ import hashlib
 import json
 from typing import TYPE_CHECKING
 
+
+def project_agreement(agreement, *, years_forward):
+    """Read-only schedule view; never expires ownership or changes payment rights."""
+    from franchise.cap import json_amount
+    if not isinstance(agreement, GenerationAgreement) or type(years_forward) is not int or years_forward < 0:
+        raise ValueError('Typed agreement and nonnegative integer projection offset required')
+    active = agreement.status == 'active'
+    index = agreement.contract.elapsed_years + years_forward
+    complete = active and index >= len(agreement.contract.offer.salaries)
+    return {'generation_id':agreement.identity.generation_id,
+            'player_id':agreement.identity.player_id,
+            'recorded_status':agreement.status,
+            'years_forward':years_forward,
+            'projected_original_year_index':index if active else None,
+            'scheduled_term_complete':complete,
+            'remaining_charges':[json_amount(value) for value in agreement.annual_charges()[years_forward:]],
+            # Closed payment ceilings must not turn cancelled bases back into earned salary.
+            'unchanged_payment_ceilings':agreement.payment_ceilings()}
+
 if TYPE_CHECKING:
     from franchise.books import ActiveContract
     from franchise.releases import ReleasePlan
