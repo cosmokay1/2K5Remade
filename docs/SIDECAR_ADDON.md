@@ -49,3 +49,8 @@ legal signing or save/reload. The read-only adapter fixture checks authored RAM,
 identity bounds, physical/ordinary memory access and unchanged memory. Actual game
 build, execution and controlled SOFTDRINK saves remain acceptance gates. Public
 licensing for our original addon code has not been selected; retain all notices.
+
+Verified source6f75219: CI38656804337 passed Windows DLL ABI/load/forward/stop/reload
+and all702 regressions on Windows/Ubuntu; Build38656804259 passed. The DLL fixture
+keeps the service disabled; actual-game deployment and service-through-DLL checks
+are still required.

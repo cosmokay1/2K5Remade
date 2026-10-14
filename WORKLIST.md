@@ -33,7 +33,7 @@ it from the franchise application. Keep domain rules out of the reusable core.
 - [x] Verify Windows transport and franchise regression CI after extraction: consumer ba8a4f5 run 38655649598 passed Windows/Ubuntu.
 - [x] Publish private standalone source with provenance: https://github.com/cosmokay1/engine-sidecar (export bdaa2df). Standalone Windows/Linux CI 38655732233 passed.
 - [ ] Select a public reuse license before public distribution.
-- [ ] Build and validate a separately loadable franchise addon, thin native shim and unchanged read-only callback behavior.
+- [x] Build and validate separately loadable franchise addon and thin shim: 6f75219 Windows DLL ABI/load/forward/unload/reload fixture passed in CI38656804337; authored RAM observation remained read-only. Actual game execution remains below.
 
 ## Active base decision — October 14, 2026
 
@@ -58,8 +58,8 @@ not establish v0.6 compatibility or a new completion percentage.
 
 ## Latest verified state — October 14, 2026
 
-- Latest published verified source: `cb41cbc`. Build `38647049179` and Franchise AI
-  `38647049334` passed. CI checks asset-free runtime and bridge components;
+- Latest published verified implementation: `6f75219`. Build `38656804259` and Franchise AI
+  `38656804337` passed. Windows DLL addon fixture and702 tests on Windows/Ubuntu passed; this addon build has not been installed or executed in the actual game. CI checks asset-free runtime and bridge components;
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.
