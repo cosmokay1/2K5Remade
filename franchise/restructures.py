@@ -54,12 +54,25 @@ class RestructurePlan:
 
 
 def calculate_preseason_restructure(contract, cash, *, scope, converted_base, annual_minimums, record_id, expected_cash_id=None):
+    return _calculate_preseason_restructure(contract, cash, scope=scope, converted_base=converted_base, annual_minimums=annual_minimums, record_id=record_id, expected_cash_id=expected_cash_id, layered=False)
+
+
+def calculate_layered_preseason_restructure(contract, cash, *, scope, converted_base, annual_minimums, record_id, expected_cash_id=None):
+    """Pure reconciliation only; durable history authority is a separate operation."""
+    return _calculate_preseason_restructure(contract, cash, scope=scope, converted_base=converted_base, annual_minimums=annual_minimums, record_id=record_id, expected_cash_id=expected_cash_id, layered=True)
+
+
+def _calculate_preseason_restructure(contract, cash, *, scope, converted_base, annual_minimums, record_id, expected_cash_id, layered):
     if not isinstance(contract, ActiveContract) or not isinstance(cash, CashObligation) or not isinstance(scope, PreseasonRestructureScope):
         raise ValueError('Typed original contract, allocated cash and amendment scope required')
-    if contract.bonus_layers:
+    if contract.bonus_layers and not layered:
         raise ValueError('Repeated layered restructure requires separate reconciliation')
     if type(record_id) is not str or not record_id.strip() or money(converted_base) == 0:
         raise ValueError('Identified positive base conversion required')
+    if layered and (not contract.bonus_layers or any(layer.original_start_index>contract.elapsed_years for layer in contract.bonus_layers)):
+        raise ValueError('Existing current or earlier bonus layers required')
+    if any(layer.record_id==record_id for layer in contract.bonus_layers):
+        raise ValueError('New conversion requires a unique bonus identity')
     expected_cash_id = 'contract:' + contract.offer.player_id if expected_cash_id is None else expected_cash_id
     if type(expected_cash_id) is not str or not expected_cash_id.strip():
         raise ValueError('Explicit expected cash identity required')
@@ -70,14 +83,16 @@ def calculate_preseason_restructure(contract, cash, *, scope, converted_base, an
     if type(annual_minimums) is not tuple or len(annual_minimums) != remaining or any(money(value) == 0 for value in annual_minimums):
         raise ValueError('Explicit positive annual floors for all remaining years required')
     if (cash.player_id != offer.player_id or cash.obligation_id != expected_cash_id
-            or cash.amount != sum(offer.salaries) + offer.signing_bonus or cash.paid_components is None):
+            or cash.amount != contract.nominal_cash or cash.paid_components is None):
         raise ValueError('Allocated original nominal contract cash required')
     paid = dict(cash.paid_components)
-    ceilings = {'signing_bonus': offer.signing_bonus, **{'base:' + str(i): salary for i, salary in enumerate(offer.salaries)}}
+    ceilings = contract.compensation_components()
     if any(key not in ceilings or value > ceilings[key] for key, value in paid.items()):
         raise ValueError('Paid allocations disagree with original contract')
     if paid.get('signing_bonus', 0) != offer.signing_bonus:
         raise ValueError('Original signing bonus must already be fully paid')
+    if any(paid.get(layer.cash_component,0)!=layer.amount for layer in contract.bonus_layers):
+        raise ValueError('Every existing bonus layer must already be fully paid')
     for i, salary in enumerate(offer.salaries):
         value = paid.get('base:' + str(i), 0)
         if (i < elapsed and value != salary) or (i >= elapsed and value != 0):
@@ -93,10 +108,10 @@ def calculate_preseason_restructure(contract, cash, *, scope, converted_base, an
         raise ValueError('Remaining salary falls below verified annual minimum')
     layer = BonusLayer(record_id, converted_base, elapsed, min(remaining, 5), scope.source)
     amended_offer = replace(offer, salaries=tuple(salaries), guaranteed_salaries=tuple(guarantees))
-    amended = replace(contract, offer=amended_offer, bonus_layers=(layer,),
+    amended = replace(contract, offer=amended_offer, bonus_layers=contract.bonus_layers+(layer,),
                       source=contract.source + '; base conversion: ' + scope.source)
     amended_cash = replace(cash, source=cash.source + '; base conversion: ' + scope.source)
-    if sum(amended_offer.salaries) + amended_offer.signing_bonus + layer.amount != cash.amount:
+    if amended.nominal_cash != cash.amount:
         raise ValueError('Converted base and bonus fail nominal cash reconciliation')
     if sum(amended.charges()) != sum(contract.charges()):
         raise ValueError('Remaining base and original/new bonus charges fail reconciliation')

@@ -139,3 +139,36 @@ class PreseasonRestructureTests(unittest.TestCase):
         self.assertEqual((result.seller_cash.amount,result.buyer_cash.amount),(38,142))
         after=calculate_preseason_trade(plan.contract,cash,scope=replace(trade,traded_on=date(2026,6,2)),record_id='trade-after')
         self.assertEqual(after.retained_bonus.annual_charges,(Fraction(18,5),Fraction(52,5)))
+
+    def test_reconciled_later_conversion_preserves_each_paid_bonus_schedule(self):
+        from franchise.restructures import calculate_layered_preseason_restructure
+        first=self.plan()
+        contract=replace(first.contract,elapsed_years=3)
+        cash=replace(first.cash_obligation,paid=40,paid_components=first.cash_obligation.paid_components+
+            ((first.bonus_layer.cash_component,8),('base:2',2)))
+        scope=replace(self.scope(),league_year=2027,amended_on=date(2027,6,1),
+            first_regular_season_game=date(2027,9,10),source='synthetic second conversion')
+        inputs=dict(scope=scope,converted_base=8,annual_minimums=(2,)*4,record_id='second-conversion')
+        second=calculate_layered_preseason_restructure(contract,cash,**inputs)
+        self.assertEqual(second.original_contract,contract)
+        self.assertEqual(second.contract.bonus_layers,(first.bonus_layer,second.bonus_layer))
+        self.assertEqual(second.bonus_layer.original_start_index,3)
+        self.assertEqual(second.bonus_layer.allocation_years,4)
+        self.assertEqual(second.contract.offer.salaries,(10,10,2,12,30,40,50))
+        self.assertEqual(second.contract.charges(),(Fraction(88,5),Fraction(178,5),Fraction(218,5),Fraction(268,5)))
+        self.assertEqual(sum(second.contract.charges()),sum(contract.charges()))
+        self.assertEqual(second.contract.nominal_cash,180)
+        self.assertEqual(second.cash_obligation.paid_components,cash.paid_components)
+        self.assertEqual(second.cash_obligation.paid,40)
+        self.assertNotIn(second.bonus_layer.cash_component,dict(second.cash_obligation.paid_components))
+        with self.assertRaisesRegex(ValueError,'Repeated layered'):
+            calculate_preseason_restructure(contract,cash,**inputs)
+        for changed in (dict(record_id=first.bonus_layer.record_id),dict(converted_base=True),
+                        dict(converted_base=19),dict(annual_minimums=(2,))):
+            with self.subTest(changed=changed),self.assertRaises(ValueError):
+                calculate_layered_preseason_restructure(contract,cash,**{**inputs,**changed})
+        unpaid=replace(cash,paid=32,paid_components=tuple((k,v) for k,v in cash.paid_components if k!=first.bonus_layer.cash_component))
+        with self.assertRaisesRegex(ValueError,'existing bonus'):
+            calculate_layered_preseason_restructure(contract,unpaid,**inputs)
+        with self.assertRaisesRegex(ValueError,'Existing current'):
+            calculate_layered_preseason_restructure(self.contract(),self.cash(),**inputs)

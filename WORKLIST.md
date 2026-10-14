@@ -332,3 +332,10 @@ routing, full/compact native validation and Windows synthetic pipe smoke are
 implemented for the first supported post-rollover guaranteed-base conversion.
 517 offline tests and portable native checks pass; actual Windows smoke awaits CI.
 Repeated conversions and actual guest mutation/save-load verification remain open.
+
+
+At 2f5ffda, Windows calendar amendment full/compact/current-context/later-roll
+owned-pipe execution passed Franchise AI 38519720705; Build 38519720719 passed.
+Repeated conversion pure reconciliation is now implemented and covered within
+520 offline tests; immutable multi-amendment history and versioned durable writes
+remain next. Actual guest execution/save integration remain external gates.

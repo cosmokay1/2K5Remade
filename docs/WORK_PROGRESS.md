@@ -3054,3 +3054,18 @@ Prior 8eb076b Build 38519382382 and Franchise AI 38519382379 passed.
 Current 2f5ffda Build 38519720719 and Franchise AI 38519720705 were last confirmed
 running; actual new Windows amendment pipe execution remains pending.
 No guest execution, actual save integration or playable delivery is claimed.
+
+
+## October 13, 2026 — Verified Windows amendments; repeated-conversion reconciliation
+
+2f5ffda Build 38519720719 and Franchise AI 38519720705 passed. Windows log
+explicitly confirms actual owned-pipe calendar amendment full/compact receipts,
+current contract/player contexts and later-roll restart. These are synthetic
+sidecar/client fixtures; no guest gameplay or real save integration is proven.
+Added a separate pure layered conversion calculator using exact original nominal
+cash/component ceilings, fully settled prior bonuses and base salaries, unique
+new layer identity and unchanged old bonus schedules. Existing durable first-
+conversion callers remain guarded. Independent expected second-conversion charges
+and payment/nominal preservation pass, with unpaid bonus/identity/floor failures.
+All 520 offline tests passed. Immutable multi-amendment history and a separately
+versioned durable event/receipt are the next implementation boundary.

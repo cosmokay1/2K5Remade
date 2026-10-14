@@ -225,3 +225,15 @@ current generation_id. Its format2 receipt identifies the original league year
 and agreement; retries preserve that historical receipt after later rollover.
 Full and compact native receipts are supported. This remains synthetic sidecar
 integration, with actual game mutation and save/load verification outstanding.
+
+
+Repeated-conversion implementation boundary: the explicit pure
+calculate_layered_preseason_restructure reconciles existing bonus components and
+requires every old bonus fully paid, settled prior salaries, unpaid current/future
+salaries, a fresh layer identity and current unconditional guarantee/floor facts.
+It appends the new layer without resetting old allocation indices and preserves
+nominal cash and paid allocations. The existing first-conversion API still rejects
+layered contracts; no durable repeated-conversion route is enabled yet.
+Next implement immutable prior amendment plans plus a separately versioned second
+amendment event/receipt; replay must validate birth terms through every prior plan
+and current cursor, retaining all sources and payment indices before write support.
