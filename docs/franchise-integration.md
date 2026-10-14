@@ -468,7 +468,7 @@ table0x00E5786C). Counts above52, unknown modes, malformed bank geometry and
 unmatched pointers reject association. On a match it reads team+0x124 and
 global0x00E3C278 as raw original accounting values, not modern ledger authority.
 Portable authored low/high-memory tests cover table selection and read-only
-behavior; actual live team/cap matching still needs the installed probe's trace.
+behavior; the actual matching trace is described below.
 
 The installed probe's actual AIGILDON/Trotter observation now reports mode2,
 table index15 (Giants), payroll77038 and league cap80500. This matches the
@@ -483,6 +483,22 @@ zero-extends that byte back to the global. The save inspector's year byte at
 0x917EF is a schedule game-year field from the attributed format reference;
 do not substitute it for verified live season/calendar state. Scheduler record
 selection, week/phase meaning and an actual season-index read are still pending.
+
+`python -m tools.inspect_franchise_calendar SAVEGAME.DAT` now derives the saved
+scheduler start from the ROST header's declared size, rather than scanning for
+plausible bytes: prefix2E0 + declared roster size +20, rounded to even. Original
+C1F90 stores allocation+20; BFE50 advances allocation+40. The scheduler size83DC
+and franchise tail165B0 must exactly exhaust this observed file layout. Both
+ROST signatures, franchise mode2 and32-team scheduler are required. In all three
+private saves this locates91320, season index0/display year2004. Phase/step codes
+remain raw; no NFL phase or ledger calendar is assigned.
+
+Existing v1 snapshot bindings retain their schedule-year comparison and now also
+require the independently decoded saved display year to match. Creation rejects
+divergent year sources; resolution rejects a season advance even when the old
+scheduled-game year remains unchanged. This preserves the current private
+companion while refusing unsupported migration. It does not establish active
+save selection or live season synchronization.
 
 
 User-visible Gildon calibration: the current raw offer word829 matches$8.29M,

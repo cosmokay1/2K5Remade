@@ -15,7 +15,12 @@ from tools.franchise_snapshot_bindings import create_bindings, resolve_bindings,
 
 class SnapshotBindingsTests(unittest.TestCase):
     def fixture(self):
-        return save_fixtures.InspectFranchiseSaveTests().fixture()
+        data = save_fixtures.InspectFranchiseSaveTests().fixture()
+        data[0x2E0:0x2E4] = b'ROST'; data[0x30C:0x310] = b'ROST'
+        struct.pack_into('<I', data, 0x2E4, 0x91020)
+        data[0x91320] = 2; data[0x91323] = 32
+        data[0x91326] = 22  # Display season 2026, matching the fixture's game year.
+        return data
 
     def test_signing_transfer_and_restart_preserve_ids_and_initial_profiles(self):
         payload = self.fixture(); original = bytes(payload)
@@ -52,6 +57,10 @@ class SnapshotBindingsTests(unittest.TestCase):
         bindings = create_bindings(bytes(self.fixture()))
         payload = self.fixture(); payload[0x917EF] += 1
         with self.assertRaises(ValueError): resolve_bindings(bindings, bytes(payload))
+        # An old game-year byte must not conceal a real season advance.
+        payload = self.fixture(); payload[0x91326] += 1
+        with self.assertRaises(ValueError): resolve_bindings(bindings, bytes(payload))
+        with self.assertRaises(ValueError): create_bindings(bytes(payload))
         payload = self.fixture(); struct.pack_into('<H', payload, 0x358, 0)
         with self.assertRaises(ValueError): resolve_bindings(bindings, bytes(payload))
 

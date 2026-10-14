@@ -4257,3 +4257,26 @@ season-index and week/phase validation remain pending. The saved game-year byte
 used by roster inspection is not accepted as independent runtime calendar proof.
 Published589bea2 and ebb12a1 both passed Build and Franchise AI workflows;
 5c83166 workflows38612170134/38612170392 remain in progress at this check.
+
+## October14,2026 — Saved season boundary and binding guard
+
+Traced original save/load composition: E2E00 prefix2E0, A5460 size0,
+C1F90 roster header allocation+20, BFE50/16A0F0 span allocation+40 rounded
+even, C5300 scheduler83DC, and 2D0780 franchise tail165B0. The new independent
+tools.inspect_franchise_calendar derives the scheduler boundary from the declared
+ROST span and requires exact section exhaustion, both tags and mode2/32-team
+header. It exposes season-index/display-year from the independently audited
+serializer/getter/display chain, leaving phase/step/counter meanings raw.
+
+All three private baseline/control/signing saves locate the scheduler at91320
+and yield season index0/display year2004; payloads were only read. V1 snapshot
+creation/resolution now additionally require this saved season to match their
+existing year constraint. An actual season change can no longer pass just
+because a scheduled game's year byte remained unchanged. Unsupported divergent
+calendar creation/migration rejects; existing companion IDs/profiles are not
+rewritten. All1937 pinned members still resolve in each private save.
+
+Nine focused calendar/binding/observer tests passed, including authored divergent
+game/season years, malformed section lengths/modes and season-advance rejection.
+No live calendar read, modern calendar import, automatic companion selection or
+guest write is claimed. The currently installed Deck observer is untouched.

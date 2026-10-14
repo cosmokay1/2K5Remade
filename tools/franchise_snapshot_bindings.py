@@ -13,6 +13,7 @@ import uuid
 
 from franchise.initialization import initial_actor, validate_seed
 from tools.inspect_franchise_save import inspect_save, PLAYER_START, PLAYER_STRIDE
+from tools.inspect_franchise_calendar import inspect_calendar
 
 VERSION = 'original-save-bindings-v1'
 
@@ -41,6 +42,8 @@ def _members(payload, roster):
 
 def create_bindings(payload: bytes, *, seed=None) -> dict:
     roster = inspect_save(payload)
+    if inspect_calendar(payload)['display_year'] != roster['year']:
+        raise ValueError('Schedule year differs from saved season; verified calendar migration required')
     seed = secrets.token_hex(32) if seed is None else seed
     validate_seed(seed)
     return {'version': VERSION, 'franchise_id': uuid.uuid4().hex,
@@ -65,6 +68,8 @@ def resolve_bindings(bindings: dict, payload: bytes) -> dict:
     validate_seed(bindings['personality_seed'])
     if type(bindings['baseline_year']) is not int or bindings['baseline_year'] != roster['year']:
         raise ValueError('Year change requires verified identity migration; refusing automatic remapping')
+    if inspect_calendar(payload)['display_year'] != bindings['baseline_year']:
+        raise ValueError('Saved season changed; verified identity migration required')
     members = _members(payload, roster)
     if type(bindings['players']) is not list or len(bindings['players']) != len(members):
         raise ValueError('Roster membership change requires verified identity migration')
