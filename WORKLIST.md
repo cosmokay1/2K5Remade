@@ -135,6 +135,10 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       unpaid bonus and other trade protections remain; supported assignments now use
       separate receiving generations when returning to a former club.
 - [ ] Implement extensions/restructures without erasing existing bonus layers.
+      First calendar-aware Ledger conversions now preserve immutable original
+      terms and paid indices, reanchor the amended schedule and retain both bonus
+      schedules through later rollover/release. Store replay and native calendar
+      amendment routing remain open.
       Pure sourced preseason guaranteed-base conversion and immutable bonus layers now
       preserve exact old/new schedules. Supported amendment cash, replay and subsequent release/trade commits now retain
       all layers. Strict local protocol/native validation is implemented. Extensions,

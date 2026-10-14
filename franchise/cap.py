@@ -570,8 +570,8 @@ class Ledger:
                 self._refresh_generation_agreement(player_id)
             return plan
 
-    def _check_transaction_date(self,year,on,*,calendar_release=False,calendar_trade=False):
-        advanced=calendar_release or calendar_trade
+    def _check_transaction_date(self,year,on,*,calendar_release=False,calendar_trade=False,calendar_amendment=False):
+        advanced=calendar_release or calendar_trade or calendar_amendment
         if advanced:
             if self._generation_calendar_anchor is None or self._league_year != year:
                 raise Rejected('Transaction year must match the advanced league calendar')
@@ -601,6 +601,16 @@ class Ledger:
         return ids
 
     def apply_preseason_restructure(self, player_id, *, scope, converted_base, record_id, expected_revision):
+        return self._apply_preseason_restructure(player_id,scope=scope,converted_base=converted_base,
+            record_id=record_id,expected_revision=expected_revision,calendar_generation_id=None)
+
+    def apply_calendar_preseason_restructure(self,player_id,*,generation_id,scope,converted_base,record_id,expected_revision):
+        if type(generation_id) is not str or not generation_id.strip():
+            raise Rejected('Exact calendar amendment generation required')
+        return self._apply_preseason_restructure(player_id,scope=scope,converted_base=converted_base,
+            record_id=record_id,expected_revision=expected_revision,calendar_generation_id=generation_id)
+
+    def _apply_preseason_restructure(self,player_id,*,scope,converted_base,record_id,expected_revision,calendar_generation_id):
         from franchise.restructures import calculate_preseason_restructure
         with self._lock:
             if type(expected_revision) is not int or expected_revision != self.revision:
@@ -610,6 +620,15 @@ class Ledger:
             if player_id not in self._players:
                 raise Rejected('Player has no active owned contract to restructure')
             contract = self.active_contract(player_id)
+            previous=None
+            if calendar_generation_id is not None:
+                if (self._generation_calendar_anchor is None
+                        or self._active_generation_ids.get(player_id)!=calendar_generation_id):
+                    raise Rejected('Current owned advanced-calendar agreement required')
+                previous=self.generation_accounting(calendar_generation_id)
+                view=self.generation_calendar_view(calendar_generation_id)
+                if view.current_contract!=contract or view.current_year!=self._league_year:
+                    raise Rejected('Amendment cursor disagrees with authoritative calendar view')
             cash_id = self.contract_cash_id(player_id)
             cash = self._cash.records.get(cash_id) if self._cash is not None else None
             if cash is None:
@@ -618,7 +637,7 @@ class Ledger:
             minimums = self._veteran_minimums[player_id][:years]
             plan = calculate_preseason_restructure(contract, cash, scope=scope, converted_base=converted_base,
                 annual_minimums=minimums, record_id=record_id, expected_cash_id=cash_id)
-            self._check_transaction_date(scope.league_year, scope.amended_on)
+            self._check_transaction_date(scope.league_year, scope.amended_on,calendar_amendment=calendar_generation_id is not None)
             if (self._veteran_minimum_profile is not None
                     and scope.minimum_source != self._veteran_minimum_profile.source):
                 raise Rejected('Restructure minimum source disagrees with salary profile')
@@ -637,6 +656,11 @@ class Ledger:
                 + (amended[i] if i < len(amended) else Fraction(0)) for i in range(horizon))
             if any(value < 0 for value in charges):
                 raise Rejected('Restructure credits exceed recorded obligations')
+            updated=None
+            if previous is not None:
+                from franchise.generations import GenerationCalendarView
+                updated=replace(previous,contract=plan.contract,restructure=plan,restructure_calendar_year=scope.league_year)
+                updated_view=GenerationCalendarView(updated,scope.league_year,scope.league_year)
             self._charges = charges
             self._contracts[player_id] = plan.contract.offer
             self._active_contracts[player_id] = plan.contract
@@ -645,7 +669,11 @@ class Ledger:
             self._cash.revision += 1
             self._last_transaction_date = scope.amended_on
             self.revision += 1
-            self._refresh_generation_agreement(player_id)
+            if updated is not None:
+                self._generation_agreements[calendar_generation_id]=updated
+                self._generation_calendar_views[calendar_generation_id]=updated_view
+            else:
+                self._refresh_generation_agreement(player_id)
             return plan
 
     @staticmethod
@@ -1320,6 +1348,8 @@ class Ledger:
                         if a.release_calendar_year is not None else {}),
                     **({'outgoing_trade_calendar_year':a.outgoing_trade_calendar_year}
                         if a.outgoing_trade_calendar_year is not None else {}),
+                    **({'restructure_calendar_year':a.restructure_calendar_year}
+                        if a.restructure_calendar_year is not None else {}),
                     **({'assignment_request_id':a.assignment_request_id,
                         'assigned_from_team':a.assigned_from_team,
                         'assigned_from_generation_id':a.assigned_from_generation_id}

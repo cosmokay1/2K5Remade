@@ -11,6 +11,72 @@ from franchise.guarantees import DiscountProfile
 
 
 class LedgerYearTransitionTests(unittest.TestCase):
+    def calendar_amendment_ledger(self):
+        ledger=self.ledger();old=ledger._active_contracts['v']
+        guaranteed=replace(old,offer=replace(old.offer,guaranteed_salaries=(0,2000000,0)))
+        ledger._active_contracts['v']=guaranteed;ledger._contracts['v']=guaranteed.offer
+        ledger._generation_agreements.clear();ledger._refresh_generation_agreement('v')
+        self.transition(ledger)
+        return ledger
+
+    def amendment_inputs(self,ledger,**changes):
+        from franchise.restructures import PreseasonRestructureScope,EXCLUDED_RESTRUCTURE_TERMS
+        inputs=dict(generation_id=ledger.contract_identity('v').generation_id,
+            scope=PreseasonRestructureScope(2027,date(2027,6,1),date(2027,9,10),0,True,True,True,
+                EXCLUDED_RESTRUCTURE_TERMS,ledger._veteran_minimum_profile.source,'synthetic guaranteed calendar conversion'),
+            converted_base=100000,record_id='calendar-conversion',expected_revision=1)
+        inputs.update(changes);return inputs
+
+    def test_calendar_amendment_preserves_original_economics_and_cash_indices(self):
+        ledger=self.calendar_amendment_ledger();gid=ledger.contract_identity('v').generation_id
+        original=ledger.generation_accounting(gid);cash=ledger.cash_snapshot()
+        plan=ledger.apply_calendar_preseason_restructure('v',**self.amendment_inputs(ledger))
+        amended=ledger.generation_accounting(gid)
+        self.assertIs(amended.original_contract,original.original_contract)
+        self.assertEqual(amended.original_contract.elapsed_years,0)
+        self.assertEqual(amended.restructure_calendar_year,2027)
+        self.assertEqual(amended.restructure.original_contract.elapsed_years,1)
+        self.assertEqual(plan.bonus_layer.original_start_index,1)
+        self.assertEqual(plan.bonus_layer.allocation_years,2)
+        self.assertEqual(ledger.charges,(2950011,3050013))
+        self.assertEqual(ledger.cash_snapshot()['nominal_total'],cash['nominal_total'])
+        self.assertEqual(ledger.cash_snapshot()['paid_total'],cash['paid_total'])
+        self.assertEqual(ledger.cash_snapshot()['obligations'][0]['paid_components'],cash['obligations'][0]['paid_components'])
+        view=ledger.generation_calendar_view(gid)
+        self.assertEqual((view.anchor_year,view.current_contract.elapsed_years),(2027,1))
+        ledger._cash.pay('contract:v',100000,ledger._cash.revision,component='bonus:calendar-conversion')
+        ledger._cash.pay('contract:v',1900000,ledger._cash.revision,component='base:1')
+        self.transition(ledger,from_year=2027,to_year=2028,expected_revision=2,
+            next_minimum_profile=VeteranMinimumProfile(2028,(('v',(7,7),('active_inactive',)*2),)))
+        self.assertEqual(ledger.charges,(3050013,))
+        self.assertEqual(ledger.active_contract('v').elapsed_years,2)
+        self.assertIs(ledger.generation_accounting(gid),amended)
+        release=self.release_inputs(ledger,scope=PreseasonReleaseScope(2028,date(2028,7,1),date(2028,9,10),
+            EXCLUDED_LIABILITIES,True,True,0,'synthetic later release'),
+            discount=DiscountProfile(2028,Fraction(0),'synthetic rate'),payment_year_offsets=(0,),expected_revision=3)
+        ledger.apply_calendar_preseason_release('v',**release)
+        self.assertEqual(ledger.charges,(1050013,0))
+        self.assertIs(ledger.generation_accounting(gid).restructure,plan)
+        self.assertEqual(ledger.cash_snapshot()['nominal_total'],7000000)
+        self.assertEqual(ledger.cash_snapshot()['paid_total'],7000000)
+
+    def test_calendar_amendment_invalid_and_repeated_calls_cannot_mutate(self):
+        for changes in ({'generation_id':'foreign'},{'generation_id':True},{'expected_revision':True},
+                        {'converted_base':0},{'record_id':''}):
+            ledger=self.calendar_amendment_ledger()
+            before=(ledger.generation_snapshot(),ledger.generation_calendar_snapshot(),ledger.cash_snapshot())
+            with self.subTest(changes=changes),self.assertRaises((ValueError,Rejected)):
+                ledger.apply_calendar_preseason_restructure('v',**self.amendment_inputs(ledger,**changes))
+            self.assertEqual((ledger.generation_snapshot(),ledger.generation_calendar_snapshot(),ledger.cash_snapshot()),before)
+        ledger=self.calendar_amendment_ledger()
+        with self.assertRaises(Rejected):
+            ledger.apply_preseason_restructure('v',**{key:value for key,value in self.amendment_inputs(ledger).items() if key!='generation_id'})
+        ledger.apply_calendar_preseason_restructure('v',**self.amendment_inputs(ledger))
+        before=(ledger.generation_snapshot(),ledger.generation_calendar_snapshot(),ledger.cash_snapshot())
+        with self.assertRaisesRegex(ValueError,'Repeated layered'):
+            ledger.apply_calendar_preseason_restructure('v',**self.amendment_inputs(ledger,expected_revision=2,record_id='second'))
+        self.assertEqual((ledger.generation_snapshot(),ledger.generation_calendar_snapshot(),ledger.cash_snapshot()),before)
+
     def incoming_plan(self):
         from franchise.generations import assignment_identity
         seller=self.ledger();source=seller.contract_identity('v').generation_id

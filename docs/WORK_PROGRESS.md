@@ -2986,3 +2986,20 @@ payment and rollover; after accelerated cap charges age out, unpaid future
 nominal cash remains recorded. All 510 offline tests passed. Six actual Python
 full/compact return and guaranteed trade receipts passed C++ validation. These
 new histories are durable synthetic financial evidence, not guest capture.
+
+First calendar-aware Ledger guaranteed-base amendments now require exact current
+owned generation/view and sourced current date/floors. GenerationAgreement carries
+optional restructure_calendar_year; immutable original terms remain unchanged,
+while plan input may differ only by the advanced elapsed cursor. The amended
+schedule anchors at amendment year, and later closed release/trade markers take
+their own effective anchors without erasing the prior amendment. All updated
+agreements, views and charges validate before cash/contract/revision mutation.
+Legacy and repeated layered paths remain guarded. Payment component indices and
+nominal obligation stay unchanged; new bonus layer uses the original year start
+and remaining-term allocation. All 513 offline tests passed, including payment,
+second rollover and subsequent release with both bonus schedules retained, stale/
+foreign/no-op rejection and invalid marker/source checks. Independent review found
+no concrete defect and passed 33 focused checks. Store persistence/replay and
+native calendar amendment routing remain open. Prior 8f7e080 Build 38518353558 and
+FranchiseAI 38518353684 both passed; this Ledger change is a separate revision.
+No actual game/guest save execution is claimed.

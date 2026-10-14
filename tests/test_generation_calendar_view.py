@@ -12,6 +12,25 @@ from franchise.guarantees import DiscountProfile
 
 
 class GenerationCalendarViewTests(unittest.TestCase):
+    def test_calendar_amendment_keeps_original_terms_and_reanchors_current_schedule(self):
+        fixture=test_restructures.PreseasonRestructureTests();original=fixture.contract()
+        advanced=replace(original,elapsed_years=3)
+        cash=CashObligation('contract:v','v',180,40,'synthetic settled prior salary',
+            (('signing_bonus',10),('base:0',10),('base:1',10),('base:2',10)))
+        scope=replace(fixture.scope(),league_year=2027,amended_on=date(2027,6,1),first_regular_season_game=date(2027,9,10))
+        plan=fixture.plan(contract=advanced,cash=cash,scope=scope,annual_minimums=(2,)*4)
+        agreement=GenerationAgreement(legacy_identity('a','v'),original,plan.contract,
+            restructure=plan,restructure_calendar_year=2027)
+        self.assertIs(agreement.original_contract,original)
+        self.assertEqual(agreement.original_contract.elapsed_years,2)
+        self.assertEqual(agreement.restructure.original_contract.elapsed_years,3)
+        self.assertEqual(GenerationCalendarView(agreement,2027,2028).annual_charges(),plan.contract.charges()[1:])
+        with self.assertRaises(ValueError):GenerationCalendarView(agreement,2026,2027)
+        for year in (None,True,2026,2031):
+            with self.subTest(year=year),self.assertRaises(ValueError):replace(agreement,restructure_calendar_year=year)
+        with self.assertRaises(ValueError):
+            replace(agreement,restructure=replace(plan,original_contract=replace(advanced,source='changed original source')))
+
     def test_calendar_assignment_keeps_earned_base_and_original_bonus_indices(self):
         fixture=test_trades.PreseasonTradeTests()
         contract=replace(fixture.contract(),bonus_layers=(BonusLayer('layer',6,0,3,'synthetic prior layer'),))

@@ -85,6 +85,7 @@ class GenerationAgreement:
     assigned_from_generation_id: str | None = None
     release_calendar_year: int | None = None
     outgoing_trade_calendar_year: int | None = None
+    restructure_calendar_year: int | None = None
 
     def __post_init__(self):
         from franchise.books import ActiveContract
@@ -128,6 +129,16 @@ class GenerationAgreement:
                 raise ValueError('Incoming plan cash disagrees with assignment source')
         release_contract=self.contract
         trade_contract=self.contract
+        restructure_original=self.original_contract
+        if self.restructure_calendar_year is not None:
+            if (type(self.restructure_calendar_year) is not int or not 2020 <= self.restructure_calendar_year <= 2030
+                    or self.restructure is None or self.restructure.scope.league_year!=self.restructure_calendar_year
+                    or self.restructure.original_contract.elapsed_years<self.original_contract.elapsed_years):
+                raise ValueError('Explicit sourced calendar amendment cursor required')
+            restructure_original=replace(self.original_contract,elapsed_years=self.restructure.original_contract.elapsed_years)
+            if any(year is not None and (type(year) is not int or year<self.restructure_calendar_year)
+                   for year in (self.release_calendar_year,self.outgoing_trade_calendar_year)):
+                raise ValueError('Lifecycle year precedes calendar amendment')
         if self.release_calendar_year is not None:
             if (type(self.release_calendar_year) is not int or not 2020 <= self.release_calendar_year <= 2030
                     or self.release is None or self.release.scope.league_year != self.release_calendar_year
@@ -143,7 +154,7 @@ class GenerationAgreement:
         if ((self.release is not None and self.release.original_contract != release_contract)
                 or (self.outgoing_trade is not None and self.outgoing_trade.original_contract != trade_contract)
                 or (self.restructure is not None and (self.restructure.contract != self.contract
-                    or self.restructure.original_contract != self.original_contract))
+                    or self.restructure.original_contract != restructure_original))
                 or (self.incoming_trade is not None and self.incoming_trade.buyer_contract != self.original_contract)):
             raise ValueError('Generation lifecycle plan disagrees with agreement')
 
@@ -211,6 +222,9 @@ class GenerationCalendarView:
         if (self.agreement.outgoing_trade_calendar_year is not None
                 and self.anchor_year != self.agreement.outgoing_trade_calendar_year):
             raise ValueError('Retained calendar assignment charges must start at the actual trade year')
+        if (self.agreement.status=='active' and self.agreement.restructure_calendar_year is not None
+                and self.anchor_year!=self.agreement.restructure_calendar_year):
+            raise ValueError('Amended calendar charges must start at the actual amendment year')
         facts=(self.expiry_eligible,self.expiry_cash,self.expiry_source)
         if not any(value is not None for value in facts):
             return

@@ -204,3 +204,16 @@ receiving agreement ages independently. Original and return receipts remain stab
 through later payroll/rollover. A transferred-guarantee chain also covers buyer
 release, explicit payment and future unpaid cash after cap acceleration ages out.
 No archived liability or cash payment is erased because ownership changes.
+
+## First calendar-aware guaranteed-base amendment
+
+The Ledger has an explicit exact-generation path for the first supported
+postroll guaranteed-base conversion. The immutable original contract remains
+unchanged; the amendment's input differs only by the derived elapsed cursor.
+New bonus allocation uses original salary-year indices and the remaining term,
+with unchanged nominal cash and allocated paid history. Current-year/floor/source
+checks and complete updated agreement/view validation precede mutation. The active
+amended schedule anchors at its actual year; later release/assignment schedules
+use their own years while preserving amendment history. Repeated layered
+conversions remain unsupported and reject before mutation. This is Ledger
+accounting only; durable Store replay and native/game routing remain open.
