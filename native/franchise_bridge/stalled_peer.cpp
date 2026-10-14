@@ -2,8 +2,13 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdint>
+#include <cwchar>
 
 int wmain(int argc, wchar_t** argv) {
+    if (argc == 3 && std::wcscmp(argv[1], L"--inheritance-control") == 0) {
+        HANDLE event = reinterpret_cast<HANDLE>(static_cast<uintptr_t>(_wcstoui64(argv[2], nullptr, 10)));
+        return SetEvent(event) ? 0 : 4;
+    }
     if (argc < 5) return 2;
     HANDLE unrelated = reinterpret_cast<HANDLE>(static_cast<uintptr_t>(_wcstoui64(argv[4], nullptr, 10)));
     // Numeric handles can be reused by child startup. Signal the candidate;

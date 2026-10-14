@@ -2610,3 +2610,14 @@ object. Scoped RAII closes the sentinel on success or failure. Production handle
 allow-list and owned-job shutdown behavior are unchanged. Local portable protocol
 CTest passes; Windows-only fixture compilation/execution needs new-revision CI.
 No game/runtime playability claim follows from these source checks.
+
+### Inheritance regression positive control (2026-10-13)
+
+Added a real unrestricted-inheritance fixture launch before the PipeClient test.
+It must signal the original parent event and exit successfully; the parent resets
+that event before exercising the production allow-list and blocked-write shutdown.
+This proves the revised signal-based check detects genuine inheritance instead of
+merely suppressing a numeric-handle false positive. Control-process observation,
+termination on timeout and handle cleanup are bounded. Independent read-only
+review found no concrete API/lifecycle defect. Local portable protocol CTest
+passes; this Windows-only control still requires exact-revision CI execution.

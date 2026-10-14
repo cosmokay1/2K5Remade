@@ -10,6 +10,25 @@ int wmain(int argc, wchar_t** argv) {
         std::unique_ptr<void, decltype(&CloseHandle)> unrelated(
             CreateEventW(&attributes, TRUE, FALSE, nullptr), &CloseHandle);
         if (!unrelated) throw std::runtime_error("Cannot create inheritance sentinel");
+        // Positive control: unrestricted inheritance must signal the same event.
+        std::wstring command = franchise::quote(argv[1]) + L" --inheritance-control " +
+            std::to_wstring(reinterpret_cast<uintptr_t>(unrelated.get()));
+        STARTUPINFOW startup{}; startup.cb = sizeof(startup);
+        PROCESS_INFORMATION control{};
+        if (!CreateProcessW(argv[1], command.data(), nullptr, nullptr, TRUE,
+                            CREATE_NO_WINDOW, nullptr, nullptr, &startup, &control))
+            throw std::runtime_error("Cannot launch inheritance control");
+        CloseHandle(control.hThread);
+        std::unique_ptr<void, decltype(&CloseHandle)> control_process(control.hProcess, &CloseHandle);
+        if (WaitForSingleObject(control_process.get(), 5000) != WAIT_OBJECT_0) {
+            TerminateProcess(control_process.get(), 1);
+            WaitForSingleObject(control_process.get(), 1000);
+            throw std::runtime_error("Inheritance control did not exit");
+        }
+        DWORD code = 1;
+        if (!GetExitCodeProcess(control_process.get(), &code) || code != 0 ||
+            WaitForSingleObject(unrelated.get(), 0) != WAIT_OBJECT_0 || !ResetEvent(unrelated.get()))
+            throw std::runtime_error("Inheritance control did not signal parent event");
         auto client = std::make_unique<franchise::PipeClient>(argv[1],
             std::to_wstring(reinterpret_cast<uintptr_t>(unrelated.get())), franchise::ServiceMode::OfflineFixture);
         HANDLE child = OpenProcess(SYNCHRONIZE, FALSE, client->process_id());
