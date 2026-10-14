@@ -2382,3 +2382,14 @@ advance the year; original payment indices and prior transaction plans must
 remain immutable. Calendar/projection anchors and an atomic common league event
 are required before changing financial state. Rollover remains unimplemented;
 no new season, game transaction or future cap value is claimed.
+
+### Initial league calendar anchor in progress (2026-10-13)
+
+Implemented common all-team calendar_anchor events with complete coverage,
+expected revisions, source/year agreement, immutable membership and idempotent
+retry. Replay checks peer records and binds dated transaction/projection checks
+to the declared year. Cap/cash untouched; revisions advance once. Six focused calendar tests pass, including format4 migration in both orders,
+exact posting types and sourced-year rollback. Independent review found boolean
+posting forgery through Python equality; canonical JSON hashes now reject it. Actual rollover/projection/expiry remain unfinished.
+
+All 452 offline tests pass for the reviewed calendar-anchor implementation.

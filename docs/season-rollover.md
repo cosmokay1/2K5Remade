@@ -52,3 +52,17 @@ transitions, disagreement and retries with changed terms must reject.
 The first supported transition may exclude unresolved rookie/option/rights
 state explicitly while these cases are implemented. That milestone does not
 complete the franchise lifecycle or replace the full delivery target.
+
+## Initial calendar anchor implementation
+
+FranchiseStore.anchor_calendar binds a declared sourced 2020–2030 initial year
+to all existing teams atomically with exact expected revisions. Each team gets
+a common calendar_anchor event and revision increment; cap and cash remain
+unchanged. Prior sourced minimum/pool profiles and dated transaction history
+must agree. Team membership cannot change after binding. Replay validates
+all participating records, and later dated financial operations/roster projections
+must match the anchored year. league_calendar validates and returns this origin.
+
+This establishes an initial year only. It does not advance contracts, expire
+agreement generations, settle liabilities or authorize a next-year cap. Source
+labels are caller declarations, not proof of a decoded game calendar.

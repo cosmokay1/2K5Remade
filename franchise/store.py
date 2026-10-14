@@ -266,6 +266,8 @@ class FranchiseStore:
             self._insert_team(db,team_id,ledger)
 
     def _insert_team(self,db,team_id,ledger):
+        if db.execute("SELECT 1 FROM events WHERE kind='calendar_anchor' LIMIT 1").fetchone():
+            raise Rejected('League membership is fixed after calendar anchoring')
         if type(team_id) is not str or not team_id.strip():
             raise ValueError("Stable team ID required")
         config = ledger.bootstrap_config()
@@ -292,6 +294,86 @@ class FranchiseStore:
                 payload = {'player_id':player,'actor':actor,'posting':ledger.financial_snapshot()}
                 db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,'actor',?)",
                            (team_id,'actor:'+player,json.dumps(payload,allow_nan=False)))
+
+    @staticmethod
+    def _validate_calendar_year(ledger, year):
+        years = []
+        if ledger._veteran_minimum_profile is not None:
+            years.append(ledger._veteran_minimum_profile.start_year)
+        if ledger._rookie_pool_opening is not None:
+            years.append(ledger._rookie_pool_opening.league_year)
+        if ledger._last_transaction_date is not None:
+            years.append(ledger._last_transaction_date.year)
+        if any(value != year for value in years):
+            raise Rejected('Calendar year disagrees with sourced rules or transaction history')
+
+    @classmethod
+    def _calendar_anchor(cls, db):
+        rows = db.execute("SELECT team_id,request_key,payload FROM events WHERE kind='calendar_anchor'").fetchall()
+        if not rows:
+            return None
+        first = json.loads(rows[0][2])
+        if type(first) is not dict:
+            raise ValueError('Invalid league calendar record')
+        anchor = first.get('anchor')
+        if (type(anchor) is not dict or set(anchor) != {'format','request_id','league_year','source','expected_revisions'}
+                or type(anchor['format']) is not int or anchor['format'] != 1
+                or type(anchor['league_year']) is not int or not 2020 <= anchor['league_year'] <= 2030
+                or any(type(anchor[key]) is not str or not anchor[key].strip() for key in ('request_id','source'))
+                or type(anchor['expected_revisions']) is not dict
+                or any(type(value) is not int or value < 0 for value in anchor['expected_revisions'].values())):
+            raise ValueError('Invalid league calendar anchor')
+        teams = {row[0] for row in db.execute('SELECT id FROM teams')}
+        if (set(anchor['expected_revisions']) != teams or len(rows) != len(teams)
+                or {row[0] for row in rows} != teams):
+            raise ValueError('Calendar anchor does not cover the complete league')
+        for team, key, serialized in rows:
+            payload = json.loads(serialized)
+            if (key != 'calendar:' + anchor['request_id'] or type(payload) is not dict
+                    or set(payload) != {'anchor','posting'}
+                    or cls._checkpoint_hash(payload['anchor']) != cls._checkpoint_hash(anchor)):
+                raise ValueError('League calendar records disagree')
+        return anchor
+
+    def anchor_calendar(self, *, request_id, league_year, source, expected_revisions):
+        """Bind the initial sourced year atomically; this does not advance a season."""
+        if (type(request_id) is not str or not request_id.strip()
+                or type(source) is not str or not source.strip()
+                or type(league_year) is not int or not 2020 <= league_year <= 2030
+                or type(expected_revisions) is not dict
+                or any(type(key) is not str or not key.strip() or type(value) is not int or value < 0
+                       for key, value in expected_revisions.items())):
+            raise ValueError('Explicit sourced calendar year and team revisions required')
+        anchor = {'format':1,'request_id':request_id,'league_year':league_year,
+                  'source':source,'expected_revisions':dict(expected_revisions)}
+        with self._connection(write=True) as db:
+            teams = {row[0] for row in db.execute('SELECT id FROM teams')}
+            if not teams or teams != set(expected_revisions):
+                raise Rejected('Calendar anchoring requires complete league team coverage')
+            previous = self._calendar_anchor(db)
+            if previous is not None:
+                if self._checkpoint_hash(previous) != self._checkpoint_hash(anchor):
+                    raise Rejected('League calendar already anchored with different terms')
+                self._load_teams(db, tuple(sorted(teams)))
+                return previous
+            ledgers = self._load_teams(db, tuple(sorted(teams)))
+            for team, ledger in ledgers.items():
+                if ledger.revision != expected_revisions[team]:
+                    raise Rejected('Calendar anchoring is based on stale team state')
+                self._validate_calendar_year(ledger, league_year)
+            for team, ledger in sorted(ledgers.items()):
+                ledger.revision += 1
+                payload = {'anchor':anchor,'posting':ledger.financial_snapshot()}
+                db.execute("INSERT INTO events(team_id,request_key,kind,payload) VALUES(?,?,'calendar_anchor',?)",
+                           (team,'calendar:'+request_id,json.dumps(payload,allow_nan=False)))
+            return anchor
+
+    def league_calendar(self):
+        with self._connection() as db:
+            anchor = self._calendar_anchor(db)
+            if anchor is not None:
+                self._load_teams(db, tuple(sorted(anchor['expected_revisions'])))
+            return anchor
 
     @staticmethod
     def _franchise_origin(db):
@@ -328,7 +410,7 @@ class FranchiseStore:
     def _load_teams(self,db,team_ids):
         ledgers={team:self._load_one(db,team) for team in team_ids}
         # One fresh read transaction validates the league, without persistent cache.
-        if db.execute("SELECT 1 FROM events WHERE kind IN ('trade_out','trade_in','generation_trade_out','generation_trade_in') LIMIT 1").fetchone():
+        if db.execute("SELECT 1 FROM events WHERE kind IN ('calendar_anchor','trade_out','trade_in','generation_trade_out','generation_trade_in') LIMIT 1").fetchone():
             for (other,) in db.execute('SELECT id FROM teams').fetchall():
                 if other not in ledgers:
                     self._load_one(db,other)
@@ -510,6 +592,17 @@ class FranchiseStore:
                 self._validate_dialogue(payload["event"], efficiency_cache=efficiency_cache)
             elif kind == "budget":
                 ledger.update_budget(**{key: payload[key] for key in ("cap", "roster_reserve", "expected_revision")})
+            elif kind == 'calendar_anchor':
+                anchor = self._calendar_anchor(db)
+                if (type(payload) is not dict or set(payload) != {'anchor','posting'}
+                        or self._checkpoint_hash(payload['anchor']) != self._checkpoint_hash(anchor)
+                        or anchor['expected_revisions'][team_id] != ledger.revision):
+                    raise ValueError('Calendar anchor disagrees with league replay')
+                self._validate_calendar_year(ledger, anchor['league_year'])
+                ledger._league_year = anchor['league_year']
+                ledger.revision += 1
+                if self._checkpoint_hash(payload['posting']) != self._checkpoint_hash(ledger.financial_snapshot()):
+                    raise ValueError('Calendar financial posting types disagree with replay')
             else:
                 raise ValueError("Unknown financial event; refusing to reconstruct state")
             if kind in ('return_sign','generation_release','generation_restructure') or (kind=='cash_payment' and self._has_new_generations(ledger)):
@@ -666,6 +759,8 @@ class FranchiseStore:
         if type(classification_source) is not str or not classification_source.strip():
             raise ValueError("Roster classification provenance required")
         ledger = self.load_team(team)
+        if getattr(ledger, '_league_year', None) is not None and ledger._league_year != league_year:
+            raise Rejected('Projection year disagrees with anchored league calendar')
         if ledger._opening_books is None:
             raise Rejected("Original obligation records required")
         if (ledger._veteran_minimum_profile is not None

@@ -413,6 +413,8 @@ class Ledger:
 
     def _check_transaction_date(self,year,on):
         known_years=[]
+        if getattr(self, '_league_year', None) is not None:
+            known_years.append(self._league_year)
         if self._veteran_minimum_profile is not None:
             known_years.append(self._veteran_minimum_profile.start_year)
         if self._rookie_pool_opening is not None:
