@@ -34,7 +34,7 @@ class NegotiationEfficiencyTests(unittest.TestCase):
             self.assertEqual(session.ledger.revision,0)
 
     def test_legacy_descriptive_data_does_not_invent_rates(self):
-        session=self.session({'yards':100})
+        session=self.session({'yards':100,'observations':'Played well in observed games'})
         def provider(context):
             self.assertNotIn('observed_efficiency',context)
             return json.dumps({'action':'reject','reason':'Opportunities unavailable','salaries':None,'signing_bonus':None})

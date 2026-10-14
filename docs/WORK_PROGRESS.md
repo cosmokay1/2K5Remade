@@ -1671,3 +1671,15 @@ to replace unavailable targets with zero rates. Legacy records remain compatible
 323 full tests, syntax/diff and executable money audit pass. No paid inference,
 actual guest counters or live weighting verification occurred.1ad48e8 passed
 Franchise AI38487147877 and Build38487147775. Actual game integration remains gated.
+
+## October 13, 2026 — Preserve historical evidence retries after efficiency rollout
+
+Audit found old draft receipts lacked the new derived view and could reject an
+unchanged retry. Comparison now reconstructs it only from strict original
+counters, while returning the unchanged historical receipt without provider
+calls/history writes. Canonical JSON comparison avoids bool/int equivalence.
+Also preserved freeform legacy performance using an observations label; typed
+identity/window/mode/coverage claims still require complete canonical evidence.
+324 full tests, diff and synthetic money audit pass.50f37c8 Build38490369723
+passed; Franchise AI38490369770 remained running. No real game/save evidence
+was added; full delivery goal remains active.

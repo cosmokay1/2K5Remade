@@ -162,11 +162,18 @@ class DraftScouting:
             recalled = self.ledger.recalled_scouting(request_id)
             if recalled is not None:
                 # A durable retry returns its original evidence, not new advice.
-                original = dict(recalled['evidence'])
+                original = json.loads(json.dumps(recalled['evidence'], allow_nan=False))
                 current_retry = dict(context)
+                # Historical advice predates derived rates. Reconstruct the
+                # optional view from its original counters for comparison only;
+                # never rewrite its saved evidence or regenerate the decision.
+                for prospect in original['prospects']:
+                    if 'observed_efficiency' not in prospect:
+                        prospect['observed_efficiency'] = [PerformanceEvidence.from_context(window).efficiency_context()
+                            for window in prospect['performance']]
                 original.pop('history')
                 current_retry.pop('history')
-                if original != current_retry:
+                if json.dumps(original,sort_keys=True,allow_nan=False) != json.dumps(current_retry,sort_keys=True,allow_nan=False):
                     raise ValueError('Scouting request ID reused with changed evidence')
                 check()
                 return recalled

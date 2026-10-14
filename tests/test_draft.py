@@ -368,3 +368,29 @@ class DraftComparisonTests(unittest.TestCase):
                 db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(payload),event_id))
                 db.commit()
             with self.assertRaisesRegex(ValueError,'Scouting efficiency'):store.load_team('a')
+
+    def test_pre_efficiency_advice_retry_preserves_original_receipt_and_history(self):
+        import json,sqlite3,tempfile
+        from contextlib import closing
+        from franchise.draft import DraftScouting
+        from franchise.store import FranchiseStore,StoredLedger
+        with tempfile.TemporaryDirectory() as directory:
+            store,ledger,inputs=self.durable_scouting(directory)
+            advice=DraftScouting(ledger,access_check=lambda:None).recommend('legacy',
+                lambda _:json.dumps({'action':'recommend','player_id':'a','reason':'Observed production',
+                    'uncertainty':'Targets unavailable'}),**inputs)
+            legacy=json.loads(json.dumps(advice))
+            for prospect in legacy['evidence']['prospects']:prospect.pop('observed_efficiency')
+            with closing(sqlite3.connect(store.path)) as db:
+                event_id,serialized=db.execute("SELECT id,payload FROM events WHERE kind='draft_scouting'").fetchone()
+                payload=json.loads(serialized)
+                payload['event']=legacy
+                db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(payload),event_id))
+                db.commit()
+            reopened=StoredLedger(FranchiseStore(store.path),'a')
+            before=reopened.store.load_team('a').financial_snapshot()
+            def forbidden(_):raise AssertionError('Historical advice must not be regenerated')
+            recalled=DraftScouting(reopened,access_check=lambda:None).recommend('legacy',forbidden,**inputs)
+            self.assertEqual(recalled,legacy)
+            self.assertEqual(reopened.store.load_team('a').financial_snapshot(),before)
+            self.assertNotIn('observed_efficiency',recalled['evidence']['prospects'][0])

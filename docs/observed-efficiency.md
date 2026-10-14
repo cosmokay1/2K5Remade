@@ -29,3 +29,11 @@ corrupted negotiation/draft evidence. No live inference or real game statistics
 were used. This supplies consistent arithmetic to personality/performance-driven
 reasoning; it does not prove how a live model weights those facts. Verified guest
 counter capture and actual play/save evidence remain required.
+
+Historical draft retries reconstruct a missing derived view only for comparing
+the original source evidence with current inputs; they return the unchanged old
+receipt and never write the derived field into history or call a provider again.
+Comparison uses canonical JSON so booleans cannot compare equal to numeric facts.
+Legacy descriptive data containing an observations label stays untyped unless
+it claims the typed player/window/mode/coverage schema. Claimed typed contexts
+still require complete canonical metadata.

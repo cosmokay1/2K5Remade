@@ -62,7 +62,8 @@ class Negotiation:
         self._access_check()
         from franchise.performance import PerformanceEvidence
         observed = performance if isinstance(performance, PerformanceEvidence) else None
-        if type(performance) is dict and 'observations' in performance:
+        typed_fields = {'player_id', 'window', 'mode', 'coverage', 'observations'}
+        if type(performance) is dict and typed_fields <= set(performance):
             observed = PerformanceEvidence.from_context(performance)
         self._efficiency = None
         if observed is not None:
