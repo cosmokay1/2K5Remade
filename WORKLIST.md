@@ -32,6 +32,9 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   asset-free; they do not prove guest/gameplay integration.
 - Request/token ceilings and remote shutdown are sufficient for current work.
   Additional dollar-policy machinery is deferred at the user's direction.
+- Xbox asset intake and Steam Deck SSH are now verified. Static analysis located
+  the actual Sign Contract FSM descriptor0x00557B2C and message11 callback,
+  but runtime navigation, units, selected-player identity and signing remain unverified.
 - Actual game/save integration, telemetry capture, in-game controls and playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 
@@ -51,17 +54,19 @@ steps, rather than expand the already substantial standalone engine.
 
 ## Current blockers
 
-| ID | Missing input | What it blocks | Independent work that continues |
+| ID | Input / status | What it blocks | Independent work that continues |
 |---|---|---|---|
-| B01 | Legally obtained Xbox `default.xbe` and extracted game assets | Verified guest addresses, financial field mapping, real gameplay | Financial engine, persistence, negotiation, diagnostics, bridge protocol, synthetic integration |
+| B01 | User-supplied Xbox executable/disc now extracted; title/hash checked | Static intake resolved; runtime field/call verification remains | Private executable analysis and native build |
 | B02 | Raw franchise saves and companion metadata; controlled transaction pairs | Contract decoding, reconciliation and save round trips | Synthetic import fixtures, read-only diff tooling, state schema |
-| B03 | Windows runtime and Steam Deck capable of running the user's legal game | Runtime reproduction, UI/gameplay validation, delivery acceptance | Portable engine tests and asset-free Windows compilation checks |
+| B03 | Steam Deck SSH and Proton verified; full Windows game build pending | Actual franchise execution, save/reload and delivery acceptance | Private local build environment and read-only signing-path analysis |
 | B04 | Written upstream/third-party permission or suitable licenses | Redistribution of modified binaries and affected bundled components | Original source development, attribution, permission-request drafts |
 | B05 | Explicit approval for scoped runtime impersonation delegation | Live runtime-identity read/inference verification | Offline/native recovery and financial implementation |
 
-The user currently has no game binary/save. Never download retail assets to
-resolve that blocker. Do not repeatedly ask for the same missing input. Report
-the required inputs once when an otherwise ready milestone reaches that gate.
+User-supplied Xbox assets are now present locally; raw franchise saves remain
+pending. The Steam Deck is reachable over project-key SSH with Proton installed.
+Keep game assets and raw disassembly private; do not download additional retail
+assets or publish binaries without resolved rights. Do not repeatedly ask for
+the same missing input.
 
 ## M0 — Provenance and repeatable development
 

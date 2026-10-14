@@ -3458,3 +3458,30 @@ legal Xbox assets, controlled franchise saves and Windows gameplay access.
 Source audit and the bounded existing FSM probe are ready. No guessed contract
 write or additional quota/infrastructure work will substitute for that evidence.
 User has the local intake instructions; no repeated asset request is needed.
+
+
+## October14,2026 — Assets received, Sign Contract path identified, Deck connected
+
+Observed the actual browser partial file through its final rename to the user
+7zarchive; archive extraction completed. The Xbox extractor's initial option
+placement caused a default output directory; verified all19listed file sizes
+and moved the completed disc into ignored original/disc. Existing XBE parser
+verified retail header title53450030 and input SHA256. Private analysis produced
+31081detected entries/278523crossrefs plus UTF16candidate-to-reference mapping;
+no generated code or guest financial memory was modified.
+
+Verified the actual Sign Contract descriptor557B2C, message11 callback3478A0
+and shared interactive/automated routine323D80. Corrected a critical identity
+distinction: CB8C34 holds negotiation context, [context] points to the player,
+and [context+4] is a separate object. Recorded static display-field candidates
+with units/durable-ID/save semantics explicitly unverified. These are meaningful
+source anchors for the first runtime experiment, not integration acceptance.
+
+User supplied SteamDeck host and enabledsshd. Initial key rejection resolved via
+a project-private key authorized by the user; SSHuname confirms x86_64SteamOS.
+Read-only inventory found Proton8/9/11/Experimental and about77GBfree, without
+nativecompiler/CMake. Existing rootlessPodman works. Private open-source
+Wine/CMake/Ninja/MSI tooling image built under the Deck user's container storage;
+Microsoft installer metadata fetched only. Compiler/SDK download still requires
+explicit license acceptance. No proprietary toolchain or game asset was published,
+no paid inference/cloud infrastructure was used, and no game was executed yet.

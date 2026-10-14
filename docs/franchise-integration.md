@@ -308,3 +308,50 @@ Asset intake may use original/disc/default.xbe plus the complete extracted disc
 structure (including vc_53450030). The existing analyzer's default is the legacy
 original/default.xbe path; pass -Xbe original/disc/default.xbe explicitly for the
 folder described to the user. No duplication or public upload is required.
+
+
+## User-provided executable analysis — October14,2026
+
+The completed user archive contains a6300958720-byte Xbox image. Its directory
+lists19files; extracted sizes match and the complete disc is private in
+original/disc. default.xbe is11948032bytes, identifies title ESPN NFL2K5 /
+0x53450030 / retail, and hashes SHA256
+73105b17a3161c546fea792a1c84ce37f9966a67c416f474cdbfab74b911a4a9.
+Asset and raw analysis paths are Git-ignored and remain local. Header identity
+is not runtime execution or a redistribution grant.
+
+Existing parser/disassembler produced31081detected entries and278523crossrefs.
+A bounded raw UTF16 scan found101occurrences of franchise/contract/salary/
+free-agent/negotiation terms, with96distinct string starts. ASCII-only string
+search would have missed these. Detected function ends can merge neighboring
+callbacks: inspect exact instruction ranges instead of trusting aggregate labels.
+
+Actual static Sign Contract chain:
+
+- Descriptor0x00557B2C names Sign Contract via0x00EACD5C and uses message
+  list0x00557AA0. Message11 entry0x00557AB0 points to type1record0x00557980,
+  whose function slot0x00557984 holds0x003478A0.
+- Entry path0x002B8820 calls0x00323140; its returned negotiation context is
+  installed by0x00347890 at0x002B882F. Descriptor is loaded intoEDX at
+  0x002B884C and pushed through existing FSM0x0006E390 at0x002B8851.
+- Callback0x003478A0 ends at0x003478FB and calls shared0x00323D80 at
+  0x003478B1, with contextECX, &0x00CB8C38 inEDX and FSM/zero stack arguments.
+  An automated record-iteration path also calls the shared routine.
+- Global0x00CB8C34 is a negotiation-context pointer, not a durable player ID.
+  [context] points to the player; [context+4] points to a separate object used
+  in roster-count checks. Screen message6 callback0x00347B00 modifies
+  context+8/+0x0A/+0x0C; these are not player fields at the same offsets.
+
+Additional financial-display evidence: player salary getter0x000E5FE0 reads
+uint16[player+0x0A]*10; its monetary unit still requires UI/save confirmation.
+player+0x26 low nibble selects payment-allocation profile through0x00AE7AD8,
+not contract duration. Transaction-history reads use player+0x27 low nibble for
+the integer term. Team salary display0x00362640 reads object+0x124 and displays
+cap room using0x0013ECA0 minus that value. These establish candidates, not modern
+cap/guarantee rules or a safe write interface. The Counter Offer string belongs
+to message/result construction; it does not itself establish offer submission.
+
+Next: run the existing FSM trace on the Deck and confirm0x00557B2C appears in
+real franchise navigation. Keep context/player/object pointers separate, verify
+UI amounts and controlled save changes, and only then intercept the shared
+signing routine. No memory write or generated-code modification occurred here.
