@@ -912,6 +912,8 @@ class FranchiseStore:
 
     @staticmethod
     def _generation_accounting_view(ledger,agreement,*,archive_only=False,calendar_release=False):
+        if agreement.outgoing_trade_calendar_year is not None:
+            raise Rejected('Calendar assignment archives require versioned lifecycle accounting')
         if agreement.release_calendar_year is not None and not calendar_release:
             raise Rejected('Calendar release archives require versioned lifecycle accounting')
         if ledger._generation_calendar_anchor is not None and not archive_only:

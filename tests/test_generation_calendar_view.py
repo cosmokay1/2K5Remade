@@ -12,6 +12,47 @@ from franchise.guarantees import DiscountProfile
 
 
 class GenerationCalendarViewTests(unittest.TestCase):
+    def test_calendar_assignment_keeps_earned_base_and_original_bonus_indices(self):
+        fixture=test_trades.PreseasonTradeTests()
+        contract=replace(fixture.contract(),bonus_layers=(BonusLayer('layer',6,0,3,'synthetic prior layer'),))
+        cash=CashObligation('contract:v','v',75,25,'synthetic settled prior salary and bonus',
+            (('signing_bonus',9),('bonus:layer',6),('base:0',10)))
+        scope=fixture.scope(when=date(2027,6,2),year=2027)
+        plan=fixture.plan(contract=replace(contract,elapsed_years=1),cash=cash,scope=scope)
+        agreement=GenerationAgreement(legacy_identity('a','v'),contract,contract,
+            outgoing_trade=plan,outgoing_trade_calendar_year=2027)
+        self.assertIs(agreement.contract,contract)
+        self.assertEqual(agreement.contract.elapsed_years,0)
+        self.assertEqual(agreement.payment_ceilings()['base:0'],10)
+        self.assertEqual(agreement.payment_ceilings()['base:1'],0)
+        self.assertEqual(agreement.payment_ceilings()['base:2'],0)
+        self.assertEqual(agreement.annual_charges(),(5,5))
+        self.assertEqual(GenerationCalendarView(agreement,2027,2028).annual_charges(),(5,))
+        self.assertEqual((plan.seller_cash.amount,plan.seller_cash.paid),(25,25))
+        self.assertEqual(plan.buyer_cash.amount,50)
+        self.assertEqual(plan.buyer_contract.offer.salaries,(20,30))
+        self.assertEqual(plan.buyer_contract.bonus_layers,())
+        for year in (None,True,2026,2031):
+            with self.subTest(year=year),self.assertRaises(ValueError):
+                replace(agreement,outgoing_trade_calendar_year=year)
+        with self.assertRaises(ValueError):GenerationCalendarView(agreement,2026,2027)
+        with self.assertRaises(ValueError):
+            replace(agreement,outgoing_trade=replace(plan,original_contract=replace(plan.original_contract,source='changed source')))
+
+    def test_calendar_assignment_preserves_prior_restructure_plan(self):
+        amendment=test_restructures.PreseasonRestructureTests().plan()
+        cash=CashObligation('contract:v','v',180,40,'synthetic settled amended year',
+            (('signing_bonus',10),('base:0',10),('base:1',10),('base:2',2),('bonus:restructure:v',8)))
+        fixture=test_trades.PreseasonTradeTests()
+        plan=fixture.plan(contract=replace(amendment.contract,elapsed_years=3),cash=cash,
+            scope=fixture.scope(when=date(2027,6,2),year=2027))
+        agreement=GenerationAgreement(legacy_identity('a','v'),amendment.original_contract,amendment.contract,
+            restructure=amendment,outgoing_trade=plan,outgoing_trade_calendar_year=2027)
+        self.assertIs(agreement.restructure,amendment)
+        self.assertEqual(agreement.contract.elapsed_years,2)
+        self.assertEqual(agreement.payment_ceilings()['base:2'],2)
+        self.assertEqual(plan.seller_cash.paid_components,cash.paid_components)
+
     def calendar_release(self,contract,cash):
         scope=PreseasonReleaseScope(2027,date(2027,7,1),date(2027,9,10),EXCLUDED_LIABILITIES,
             True,True,0,'synthetic eligible calendar release')

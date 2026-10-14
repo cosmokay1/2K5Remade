@@ -11,6 +11,52 @@ from franchise.guarantees import DiscountProfile
 
 
 class LedgerYearTransitionTests(unittest.TestCase):
+    def calendar_trade_inputs(self,ledger,**changes):
+        from franchise.trades import PreseasonTradeScope,EXCLUDED_TRADE_LIABILITIES
+        inputs=dict(generation_id=ledger.contract_identity('v').generation_id,
+            scope=PreseasonTradeScope(2027,date(2027,6,2),date(2027,9,10),date(2027,9,10),
+                EXCLUDED_TRADE_LIABILITIES,True,0,True,True,'synthetic calendar assignment'),
+            record_id='calendar-assignment',expected_revision=1)
+        inputs.update(changes);return inputs
+
+    def test_calendar_trade_out_preserves_economic_cursor_and_earned_payments(self):
+        ledger=self.ledger();gid=ledger.contract_identity('v').generation_id
+        original=ledger.generation_accounting(gid)
+        self.transition(ledger);ledger._last_transaction_date=date(2026,6,1)
+        plan=ledger.apply_calendar_preseason_trade_out('v',**self.calendar_trade_inputs(ledger))
+        assigned=ledger.generation_accounting(gid)
+        self.assertIs(assigned.contract,original.contract)
+        self.assertIs(assigned.original_contract,original.original_contract)
+        self.assertEqual(assigned.outgoing_trade_calendar_year,2027)
+        self.assertEqual(plan.original_contract.elapsed_years,1)
+        self.assertEqual(assigned.payment_ceilings()['base:0'],2000000)
+        self.assertEqual(assigned.payment_ceilings()['base:1'],0)
+        self.assertEqual(ledger.cash_snapshot()['nominal_total'],5000000)
+        self.assertEqual(ledger.cash_snapshot()['paid_total'],5000000)
+        self.assertEqual(plan.buyer_cash.amount,4000000)
+        self.assertEqual(plan.buyer_contract.offer.salaries,(2000000,2000000))
+        self.assertEqual(ledger.charges,(1000011,1000013))
+        self.assertNotIn('v',ledger._players)
+        snapshot=ledger.generation_snapshot()
+        self.assertEqual(snapshot['agreements'][0]['outgoing_trade_calendar_year'],2027)
+        self.transition(ledger,from_year=2027,to_year=2028,expected_revision=2,
+            next_minimum_profile=VeteranMinimumProfile(2028,(('v',(7,7),('active_inactive',)*2),)))
+        self.assertEqual(ledger.charges,(1000013,))
+        self.assertEqual(ledger.generation_calendar_view(gid).annual_charges(),plan.retained_bonus.annual_charges[1:])
+
+    def test_calendar_trade_out_rejects_stale_identity_and_legacy_path_without_mutation(self):
+        for changes in ({'generation_id':'foreign'},{'generation_id':True},{'expected_revision':True},
+                        {'expected_revision':0},{'record_id':''}):
+            ledger=self.ledger();self.transition(ledger)
+            before=(ledger.generation_snapshot(),ledger.generation_calendar_snapshot(),ledger.cash_snapshot())
+            with self.subTest(changes=changes),self.assertRaises((Rejected,ValueError)):
+                ledger.apply_calendar_preseason_trade_out('v',**self.calendar_trade_inputs(ledger,**changes))
+            self.assertEqual((ledger.generation_snapshot(),ledger.generation_calendar_snapshot(),ledger.cash_snapshot()),before)
+        ledger=self.ledger();self.transition(ledger)
+        with self.assertRaises(Rejected):
+            ledger.apply_preseason_trade_out('v',**{key:value for key,value in self.calendar_trade_inputs(ledger).items()
+                                                  if key!='generation_id'})
+
     def release_inputs(self,ledger,**changes):
         inputs=dict(generation_id=ledger.contract_identity('v').generation_id,
             scope=PreseasonReleaseScope(2027,date(2027,7,1),date(2027,9,10),EXCLUDED_LIABILITIES,
@@ -129,7 +175,7 @@ class LedgerYearTransitionTests(unittest.TestCase):
             self.assertEqual(ledger.generation_calendar_view(gid).payment_ceilings(),ceilings)
             self.assertEqual(ledger.charges,charges[1:]);self.assertEqual(ledger.cash_snapshot(),cash)
 
-    def test_layered_survivor_keeps_layer_and_original_amendment_plan(self):
+    def test_layered_survivor_and_assignment_keep_original_amendment_plan(self):
         from tests.test_restructures import PreseasonRestructureTests
         ledger=self.ledger();old=ledger._active_contracts['v']
         guaranteed=replace(old,offer=replace(old.offer,guaranteed_salaries=(2000000,0,0)))
@@ -148,3 +194,12 @@ class LedgerYearTransitionTests(unittest.TestCase):
         self.assertEqual(ledger.active_contract('v').bonus_layers,plan.contract.bonus_layers)
         self.assertIs(ledger.generation_accounting(gid).restructure,plan)
         self.assertEqual(ledger.cash_snapshot(),before)
+        assigned=ledger.apply_calendar_preseason_trade_out('v',**self.calendar_trade_inputs(ledger,expected_revision=2))
+        agreement=ledger.generation_accounting(gid)
+        self.assertIs(agreement.restructure,plan)
+        self.assertIs(agreement.contract,plan.contract)
+        self.assertEqual(assigned.original_contract.bonus_layers,plan.contract.bonus_layers)
+        self.assertEqual(agreement.payment_ceilings()['base:0'],1000000)
+        self.assertEqual(ledger.charges,(Fraction(4000000,3)+11,Fraction(4000000,3)+13))
+        self.assertEqual(assigned.seller_cash.amount+assigned.buyer_cash.amount,9000000)
+        self.assertEqual(assigned.seller_cash.paid_components,tuple(tuple(row) for row in before['obligations'][0]['paid_components']))

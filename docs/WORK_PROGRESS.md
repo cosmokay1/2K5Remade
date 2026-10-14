@@ -2874,3 +2874,22 @@ retry/database bytes, then runs the existing subsequent payment/rollover/reopen
 assertions. Python fixture orchestration passed locally and the tool compiles;
 actual Windows execution of this new history transport fixture awaits CI. This
 is asset-free transport validation and cannot establish actual guest gameplay.
+
+Calendar-aware seller assignment now binds an exact current generation and its
+advanced contract before calculation. GenerationAgreement carries an optional
+sourced outgoing_trade_calendar_year; the original economic contract, amendment
+and incoming assignment remain immutable, while only the trade plan uses the
+advanced elapsed-year cursor. Closed seller payment ceilings retain earned prior
+base and zero transferred future base. Retained bonus charges anchor at the trade
+year and age once; optional snapshot metadata leaves legacy shapes unchanged.
+All archive/view/charge validations complete before ownership/cash/revision
+mutation. The dated guard permits the current calendar trade while preserving
+legacy guards and chronological ordering. Store/native inspection rejects these
+new archives until explicit versioned accounting is wired. All 497 offline tests
+passed, including layered compensation conservation, later-year debt, stale/
+foreign identity no-mutation and preserved original amendment records. Independent
+review found no concrete defect and passed 31 focused checks. This is seller Ledger
+accounting only: receiving Ledger, atomic paired Store replay/rollback, versioned
+native requests/receipts and actual guest trades remain required. No paired trade
+service route was enabled. Prior 642d533 platform Build38515051821 passed; expanded
+Windows history FranchiseAI38515051781 remained active at last inspection.

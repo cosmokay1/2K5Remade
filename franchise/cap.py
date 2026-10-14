@@ -570,10 +570,11 @@ class Ledger:
                 self._refresh_generation_agreement(player_id)
             return plan
 
-    def _check_transaction_date(self,year,on,*,calendar_release=False):
-        if calendar_release:
+    def _check_transaction_date(self,year,on,*,calendar_release=False,calendar_trade=False):
+        advanced=calendar_release or calendar_trade
+        if advanced:
             if self._generation_calendar_anchor is None or self._league_year != year:
-                raise Rejected('Release year must match the advanced league calendar')
+                raise Rejected('Transaction year must match the advanced league calendar')
         else:
             self._require_pretransition_operations()
         known_years=[]
@@ -584,7 +585,7 @@ class Ledger:
         if self._rookie_pool_opening is not None:
             known_years.append(self._rookie_pool_opening.league_year)
         if self._last_transaction_date is not None:
-            if not calendar_release:
+            if not advanced:
                 known_years.append(self._last_transaction_date.year)
             if on < self._last_transaction_date:
                 raise Rejected('Dated transaction precedes established franchise chronology')
@@ -661,6 +662,16 @@ class Ledger:
             'cash_obligation': plan.cash_obligation.to_dict()}
 
     def apply_preseason_trade_out(self, player_id, *, scope, record_id, expected_revision,buyer_cash_id=None):
+        return self._apply_preseason_trade_out(player_id,scope=scope,record_id=record_id,
+            expected_revision=expected_revision,buyer_cash_id=buyer_cash_id,calendar_generation_id=None)
+
+    def apply_calendar_preseason_trade_out(self,player_id,*,generation_id,scope,record_id,expected_revision,buyer_cash_id=None):
+        if type(generation_id) is not str or not generation_id.strip():
+            raise Rejected('Exact calendar assignment generation required')
+        return self._apply_preseason_trade_out(player_id,scope=scope,record_id=record_id,
+            expected_revision=expected_revision,buyer_cash_id=buyer_cash_id,calendar_generation_id=generation_id)
+
+    def _apply_preseason_trade_out(self,player_id,*,scope,record_id,expected_revision,buyer_cash_id,calendar_generation_id):
         from franchise.trades import calculate_preseason_trade
         with self._lock:
             if type(expected_revision) is not int or expected_revision != self.revision:
@@ -670,6 +681,15 @@ class Ledger:
             if player_id not in self._players or player_id in self._traded_out:
                 raise Rejected('Player has no active owned contract to trade')
             contract = self.active_contract(player_id)
+            previous=None
+            if calendar_generation_id is not None:
+                if (self._generation_calendar_anchor is None
+                        or self._active_generation_ids.get(player_id)!=calendar_generation_id):
+                    raise Rejected('Current owned advanced-calendar agreement required')
+                previous=self.generation_accounting(calendar_generation_id)
+                view=self.generation_calendar_view(calendar_generation_id)
+                if view.current_contract!=contract or view.current_year!=self._league_year:
+                    raise Rejected('Assignment cursor disagrees with authoritative calendar view')
             cash_id = self.contract_cash_id(player_id)
             if self._team_identity is not None and self.contract_identity(player_id).generation_id.startswith('contract-gen:') and buyer_cash_id is None:
                 raise Rejected('Explicit destination generation cash identity required for assignment')
@@ -677,7 +697,7 @@ class Ledger:
             if cash is None:
                 raise Rejected('Allocated original cash required for trade')
             plan = calculate_preseason_trade(contract, cash, scope=scope, record_id=record_id, expected_cash_id=cash_id,buyer_cash_id=buyer_cash_id)
-            self._check_transaction_date(scope.league_year,scope.traded_on)
+            self._check_transaction_date(scope.league_year,scope.traded_on,calendar_trade=calendar_generation_id is not None)
             if plan.retained_bonus.record_id in self._retained_record_ids():
                 raise Rejected('Trade retained-record identity already exists')
             if (self._veteran_minimum_profile is not None
@@ -690,6 +710,11 @@ class Ledger:
                             + (retained[i] if i < len(retained) else Fraction(0)) for i in range(years))
             if any(value < 0 for value in charges):
                 raise Rejected('Trade credits exceed recorded obligations')
+            updated=None
+            if previous is not None:
+                from franchise.generations import GenerationCalendarView
+                updated=replace(previous,outgoing_trade=plan,outgoing_trade_calendar_year=scope.league_year)
+                updated_view=GenerationCalendarView(updated,scope.league_year,scope.league_year)
             self._charges = charges
             self._traded_out[player_id] = plan
             self._last_transaction_date=scope.traded_on
@@ -699,7 +724,11 @@ class Ledger:
             self._cash.records[cash.obligation_id] = plan.seller_cash
             self._cash.revision += 1
             self.revision += 1
-            self._refresh_generation_agreement(player_id)
+            if updated is not None:
+                self._generation_agreements[calendar_generation_id]=updated
+                self._generation_calendar_views[calendar_generation_id]=updated_view
+            else:
+                self._refresh_generation_agreement(player_id)
             return plan
 
     def apply_preseason_trade_in(self, plan, *, expected_revision,assignment_request_id=None,
@@ -1263,6 +1292,8 @@ class Ledger:
                     'return_request_id':a.return_request_id,
                     **({'release_calendar_year':a.release_calendar_year}
                         if a.release_calendar_year is not None else {}),
+                    **({'outgoing_trade_calendar_year':a.outgoing_trade_calendar_year}
+                        if a.outgoing_trade_calendar_year is not None else {}),
                     **({'assignment_request_id':a.assignment_request_id,
                         'assigned_from_team':a.assigned_from_team,
                         'assigned_from_generation_id':a.assigned_from_generation_id}

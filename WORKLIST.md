@@ -118,6 +118,9 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       transaction/restart execution passed run 38514505285 at dcea1b2. Actual game wiring remains open and legacy
       post-roll APIs remain guarded.
 - [ ] Implement atomic trades with both teams' obligations and ownership.
+      Calendar-aware seller Ledger assignments now preserve economic archives,
+      earned prior base and actual-year retained charges. Receiving Ledger and
+      paired Store/native calendar paths remain open; no postroll trade route is enabled.
       Supported sourced preseason veteran contract assignments now commit paired
       cash/cap/ownership events with independent league replay. Consideration, rookies,
       unpaid bonus and other trade protections remain; supported assignments now use

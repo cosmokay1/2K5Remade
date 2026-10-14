@@ -165,3 +165,15 @@ bonus indices and original amendment plans remain immutable. Seller bonus debt
 and buyer base guarantees stay separate. Accelerated guarantee cap charges may
 age out while unpaid nominal future guarantee cash remains recorded; cap timing
 must never erase cash liability. These are synthetic histories, not decoded saves.
+
+## Calendar-aware assignment prerequisites
+
+The seller Ledger has an explicit exact-generation calendar assignment path.
+Its immutable economic contract and prior amendment/incoming plans remain intact;
+the outgoing plan records the advanced original salary-year cursor and sourced
+trade year. Earned prior base remains in seller cash ceilings, transferred future
+base does not, and retained bonus charges start at the actual trade year. This
+path validates before mutation and preserves legacy postroll guards. It is not
+an atomic paired Store trade: receiving calendar bookkeeping, paired replay and
+rollback, native versioned accounting/receipts and guest wiring remain open.
+Store inspection rejects these outgoing archives until that protocol exists.
