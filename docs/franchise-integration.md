@@ -463,3 +463,20 @@ declares52 records and its relative pointer0x33C resolves0x44A8; the current
 roster inspector names only its supported first32 clubs. Do not assert other[0]
 is a stable team ID or derive the live club from a guessed franchise base.
 Current-mode selection and live team-table binding still need evidence.
+
+
+User-visible Gildon calibration: the current raw offer word829 matches$8.29M,
+context+0x0A=2 matches2years, context+8 low byte4 matches40%bonus and bits29..31
+value1 matchesDescending. The displayed total is an offer total, not an annual
+cap charge. Display helpers multiply the word by10 (0x000E5FF0), then
+0x0031E580 formats thousands/millions; this supports$10000 per raw offer-word
+unit for this verified signing path. Save persistence, annual allocations and
+rounding remain unverified. Earlier Trotter word1949 versus user report$19.9M
+remains unresolved; do not silently reinterpret it as verified$19.49M.
+
+Next controlled-save sequence: preserve AIBASELIN; save a separate unchanged
+copy as AICNTRL without submitting an offer; capture payload and companions;
+reload AIBASELIN before one documented Gildon signing; save its result separately
+as AIGILDON and reload for contract readback. Record visible terms/cap before
+and after, and compare with tools.save_diff --control-after. Original-game
+signing is still vanilla; this experiment verifies mapping, not AI integration.

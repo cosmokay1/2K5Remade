@@ -3860,3 +3860,23 @@ game screen. Screenshot remains private/ignored, and no controller input, game
 restart, guest write or save change was made. Displayed years/salary and live team
 association remain pending user-visible confirmation. Existing Trotter trace is
 unchanged; no additional speculative fields or financial interception were added.
+
+
+## October 14, 2026 — Gildon offer display calibration
+
+User first reported Trotter$19.9M/Balanced/40%/6years, which does not precisely
+match earlier word1949; clarification was requested without inventing a unit
+conversion. User then reported current$8.29M/Descending/40%/2years. Actual
+current trace identifies Jason Gildon slot1792 with context word829, byte0x0A=2,
+low byte+8=4 and packed style bits29..31=1 (dword2D020004). The current screen
+thus gives exact user-visible offer calibration for Gildon. Preserved trace
+privately in analysis/AIBASELIN/gildon-live-observer.txt.
+
+Cross-checked display word-to-value helper0x000E5FF0 multiplies by10 and
+0x0031E580 formats integer thousands/millions. This verifies the observed
+Gildon total-offer path's$10000 raw-word scale, not general annual cap/bonus
+posting or save persistence. AIBASELIN hash is still
+2f82cfd9c608411c40b006db10f1e6dc6dfe46b187dd50c1ae94dd6341fd3dd2.
+The next required input is a separate unchanged AICNTRL save before a documented
+vanilla signing/result AIGILDON save and reload. No offer submission, guest write,
+model request or save mutation was performed by the agent.
