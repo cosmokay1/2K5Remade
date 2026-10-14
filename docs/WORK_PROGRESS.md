@@ -2505,3 +2505,12 @@ Published c2bd146 on codex/platform-build-fixes with narrow source/CMake fixes,
 including removal of an include-only renderer from standalone translation units.
 Updated root submodule URL/branch and revision pin consistently. Actual platform
 compile verification is pending CI; no game build or render behavior is claimed.
+
+### Quarterback-hit investigation scope (2026-10-13)
+
+Added quarterback hits alongside pressures by user direction. Investigate actual
+contact, pass-release timing, defender/QB attribution, sack overlap, multiple
+defenders, penalties/nullified plays and episode deduplication. Hits remain a
+distinct observed counter, not inferred from pressures or sacks. Played/CPU/fast
+sim coverage must be verified separately; unavailable counters remain unknown.
+No game counter capture or new metric implementation is claimed.

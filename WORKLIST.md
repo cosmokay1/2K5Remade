@@ -144,11 +144,15 @@ invent future published NFL values: separate verified inputs from simulation pol
       counters; otherwise instrument pass release/outcome events. Handle throws
       away, interceptions, spikes and nullified plays without inferring targets
       from receptions. Persist source/provenance for each counter.
-- [ ] Investigate QB pressures as observed play events: identify dropbacks,
+- [ ] Investigate QB pressures and quarterback hits as distinct observed play events: identify dropbacks,
       rushers, timing and disruption; define/test attribution and avoid counting
       each frame as a new pressure. Do not substitute proximity or sacks silently.
+      For hits, verify actual contact and timing relative to pass release; attribute
+      the defender and quarterback, and establish sourced handling of sack overlap,
+      multiple defenders, penalties and nullified plays. Deduplicate each contact
+      episode. Verify saved counters or instrument events; never infer hits from pressures.
 - [ ] Establish equivalent evidence for played, CPU-played and fast-sim games.
-      If fast simulation exposes no targets/pressures, report them unavailable
+      If fast simulation exposes no targets/pressures/quarterback hits, report them unavailable
       rather than zero or manufacture them from hidden ratings.
 - [ ] Exclude hidden skill/overall/potential ratings from franchise evaluations;
       do not turn a generated composite grade into a new visible OVR.
