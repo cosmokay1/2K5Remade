@@ -76,3 +76,25 @@ failed calls, or re-enables the remote switch. This is a request ceiling, not a
 $5 spending guarantee. Token/dollar admission limits, authoritative game-season
 attribution and native launcher configuration remain subsequent work. Explicit
 paid demonstration scripts are outside these production runtime launch paths.
+
+
+## Native host launch options
+
+The original `franchise_host_create` ABI is preserved. The explicit
+`franchise_host_create_with_budget` entry point additionally receives the separate
+usage database, persistent scope, and positive request limit (at most INT64_MAX).
+Budget options are accepted only for Vertex runtime mode. Arguments are validated
+before handles/process creation and quoted individually for Windows.
+
+The existing host startup hook accepts these explicit environment variables:
+
+- `NFL2K5_FRANCHISE_AI_BUDGET_DATABASE`
+- `NFL2K5_FRANCHISE_AI_BUDGET_SCOPE`
+- `NFL2K5_FRANCHISE_AI_REQUEST_LIMIT`
+
+If any value is supplied, all are required; the limit must contain decimal digits
+and represent a positive value within INT64_MAX. Missing budget configuration
+retains the previous launch ABI, but the Python runtime keeps AI unavailable while
+manual operations remain usable. No native launch automatically grants AI access,
+selects a new period, or restores budget capacity. Actual Windows budget-launch
+pipe validation awaits CI; no guest/gameplay integration is established.

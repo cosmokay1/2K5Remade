@@ -25,6 +25,11 @@ typedef enum FranchiseHostStatus {
 
 FranchiseHostStatus franchise_host_create(const wchar_t* python, const wchar_t* database,
     FranchiseHostMode mode, FranchiseHostClient** out_client);
+/* Vertex runtime only. Explicit persisted budget; no automatic credit or scope.
+ * The original create API supplies no budget and starts runtime AI disabled. */
+FranchiseHostStatus franchise_host_create_with_budget(const wchar_t* python, const wchar_t* database,
+    FranchiseHostMode mode, const wchar_t* budget_database, const wchar_t* budget_scope,
+    unsigned long long request_limit, FranchiseHostClient** out_client);
 /* Explicit UTF-8 JSON bytes, excluding terminator; max 4095, no NUL/CR/LF.
  * A pending or unread cached reply rejects the next submission as BUSY.
  * AI negotiate requires a validated successful hello grant. Server access is

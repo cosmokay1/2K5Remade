@@ -29,6 +29,23 @@ extern "C" FranchiseHostStatus franchise_host_create(const wchar_t* python, cons
     } catch (...) { return FRANCHISE_HOST_SERVICE_FAILURE; }
 }
 
+extern "C" FranchiseHostStatus franchise_host_create_with_budget(const wchar_t* python,const wchar_t* database,
+    FranchiseHostMode mode,const wchar_t* budget_database,const wchar_t* budget_scope,
+    unsigned long long request_limit,FranchiseHostClient** out_client) {
+    if(!out_client) return FRANCHISE_HOST_INVALID_ARGUMENT;
+    *out_client=nullptr;
+    if(!python || !database || !budget_database || !budget_scope || mode!=FRANCHISE_HOST_VERTEX_RUNTIME)
+        return FRANCHISE_HOST_INVALID_ARGUMENT;
+    try {
+        franchise::BudgetLaunch budget{budget_database,budget_scope,request_limit};
+        franchise::launch_command(python,database,franchise::ServiceMode::VertexRuntime,budget);
+        auto client=std::make_unique<FranchiseHostClient>();
+        client->transport=std::make_unique<franchise::PipeClient>(python,database,franchise::ServiceMode::VertexRuntime,budget);
+        *out_client=client.release();return FRANCHISE_HOST_OK;
+    } catch(const std::invalid_argument&) { return FRANCHISE_HOST_INVALID_ARGUMENT; }
+      catch(...) { return FRANCHISE_HOST_SERVICE_FAILURE; }
+}
+
 extern "C" FranchiseHostStatus franchise_host_submit(FranchiseHostClient* client, const char* bytes, size_t length) {
     if (!client || !bytes || !length || length > 4095 || std::memchr(bytes,0,length) ||
         std::memchr(bytes,'\r',length) || std::memchr(bytes,'\n',length)) return FRANCHISE_HOST_INVALID_ARGUMENT;

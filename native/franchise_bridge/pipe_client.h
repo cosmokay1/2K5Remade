@@ -1,6 +1,7 @@
 #pragma once
 #include <windows.h>
 #include "contract_response.h"
+#include "launch_options.h"
 #include <chrono>
 #include <future>
 #include <stdexcept>
@@ -8,20 +9,6 @@
 #include <thread>
 
 namespace franchise {
-enum class ServiceMode { OfflineFixture, VertexRuntime };
-// Quote one Windows command-line argument, including embedded quotes/backslashes.
-inline std::wstring quote(const std::wstring& value) {
-    std::wstring result = L"\"";
-    size_t slashes = 0;
-    for (wchar_t c : value) {
-        if (c == L'\\') { ++slashes; continue; }
-        result.append(c == L'"' ? slashes * 2 + 1 : slashes, L'\\');
-        slashes = 0;
-        result += c;
-    }
-    result.append(slashes * 2, L'\\');
-    return result + L"\"";
-}
 
 class PipeClient {
     HANDLE input_ = nullptr, output_ = nullptr, process_ = nullptr, job_ = nullptr;
@@ -41,9 +28,8 @@ class PipeClient {
         if (output_) { CloseHandle(output_); output_ = nullptr; }
     }
 public:
-    PipeClient(const std::wstring& python, const std::wstring& database, ServiceMode mode) {
-        if (mode != ServiceMode::OfflineFixture && mode != ServiceMode::VertexRuntime)
-            throw std::runtime_error("Explicit supported service mode required");
+    PipeClient(const std::wstring& python, const std::wstring& database, ServiceMode mode, const std::optional<BudgetLaunch>& budget=std::nullopt) {
+        std::wstring command=launch_command(python,database,mode,budget);
         SECURITY_ATTRIBUTES attributes{sizeof(SECURITY_ATTRIBUTES), nullptr, TRUE};
         HANDLE child_input = nullptr, child_output = nullptr;
         if (!CreatePipe(&child_input, &input_, &attributes, 4096) ||
@@ -97,9 +83,6 @@ public:
         startup.lpAttributeList = attributes_list;
         PROCESS_INFORMATION info{};
         // Mode is fixed before launch; runtime never falls back to a fixture.
-        std::wstring command = quote(python) + L" -m franchise.sidecar --database " + quote(database) +
-            (mode == ServiceMode::OfflineFixture ? L" --provider offline-fixture" :
-             L" --provider vertex --impersonate-runtime");
         BOOL started = CreateProcessW(python.c_str(), command.data(), nullptr, nullptr,
                                       TRUE, CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT,
                                       nullptr, nullptr, &startup.StartupInfo, &info);

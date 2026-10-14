@@ -3286,3 +3286,22 @@ tests passed. Published 00b65f2 Build38526105080 and FranchiseAI38526104386 pass
 Token/dollar admission, authoritative game-season attribution, native launcher
 options and measured gameplay spending remain next. No spending guarantee or
 actual game integration is claimed.
+
+
+## October 14, 2026 — Native persistent-budget launch wiring
+
+Added explicit franchise_host_create_with_budget while preserving the old C ABI.
+Shared portable command construction validates mode, nonblank strings and positive
+INT64-bounded request limits before Win32 handles/process creation, safely quotes
+all arguments and forwards the actual runtime --ai-request-limit option.
+The existing host startup hook reads explicit budget database/scope/limit fields;
+partial policy, non-decimal, zero and overflowing limits refuse launch. No defaults,
+new periods or AI grants are manufactured. Old unconfigured launch remains manual-
+capable with AI unavailable under the Python mandatory-budget policy.
+Rebuilt portable protocol CTest passed with new launch/quoting/invalid-policy
+cases. Python Windows-smoke source compiles. Added actual Windows host lifecycle
+checks and plain-C budget launch/read/restart smoke; the latter forces nonexistent
+ADC and verifies the exact SQLite policy/scope with zero inference attempts.
+Windows execution awaits this commit's CI. Prior a39ff30 Build38527218113 and
+FranchiseAI38527218123 passed all580 offline tests. Token/spending admission and
+actual game/season integration remain open; no paid inference was performed.

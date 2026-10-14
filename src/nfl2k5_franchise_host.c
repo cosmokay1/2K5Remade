@@ -21,8 +21,25 @@ int nfl2k5_franchise_start(void)
         fprintf(stderr, "[FRANCHISE] Explicit vertex provider, Python and database paths required.\n");
         return 0;
     }
-    if (franchise_host_create(python, database, FRANCHISE_HOST_VERTEX_RUNTIME,
-                              &franchise_client) != FRANCHISE_HOST_OK) {
+    const wchar_t *budget_database = _wgetenv(L"NFL2K5_FRANCHISE_AI_BUDGET_DATABASE");
+    const wchar_t *budget_scope = _wgetenv(L"NFL2K5_FRANCHISE_AI_BUDGET_SCOPE");
+    const wchar_t *budget_limit = _wgetenv(L"NFL2K5_FRANCHISE_AI_REQUEST_LIMIT");
+    FranchiseHostStatus status;
+    if ((budget_database && *budget_database) || (budget_scope && *budget_scope) || (budget_limit && *budget_limit)) {
+        unsigned long long limit = 0;
+        const wchar_t *digit;
+        if (!budget_database || !*budget_database || !budget_scope || !*budget_scope || !budget_limit || !*budget_limit) return 0;
+        for (digit = budget_limit; *digit; ++digit) {
+            if (*digit < L'0' || *digit > L'9' || limit > (9223372036854775807ULL - (*digit-L'0'))/10) return 0;
+            limit = limit*10 + (*digit-L'0');
+        }
+        if (!limit) return 0;
+        status = franchise_host_create_with_budget(python,database,FRANCHISE_HOST_VERTEX_RUNTIME,
+            budget_database,budget_scope,limit,&franchise_client);
+    } else {
+        status = franchise_host_create(python,database,FRANCHISE_HOST_VERTEX_RUNTIME,&franchise_client);
+    }
+    if (status != FRANCHISE_HOST_OK) {
         fprintf(stderr, "[FRANCHISE] Sidecar launch failed.\n");
         return 0;
     }

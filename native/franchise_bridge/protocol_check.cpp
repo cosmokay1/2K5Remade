@@ -1,8 +1,30 @@
 #include "contract_response.h"
+#include "launch_options.h"
 #include <iostream>
 
 int main() {
     try {
+        const franchise::BudgetLaunch launch_budget{LR"(C:\budget path\ledger.sqlite)",L"scope \"quoted\" --provider offline-fixture",17};
+        const auto budget_command=franchise::launch_command(L"python path",L"database path",franchise::ServiceMode::VertexRuntime,launch_budget);
+        const auto expected_budget=franchise::quote(L"python path")+L" -m franchise.sidecar --database "+franchise::quote(L"database path")+
+            L" --provider vertex --impersonate-runtime --ai-budget-database "+franchise::quote(launch_budget.database)+
+            L" --ai-budget-scope "+franchise::quote(launch_budget.scope)+L" --ai-request-limit 17";
+        if(budget_command!=expected_budget || franchise::quote(L"a\"b\\")!=L"\"a\\\"b\\\\\"") throw std::runtime_error("Launch quoting changed");
+        for(auto mode:{franchise::ServiceMode::OfflineFixture,franchise::ServiceMode::VertexRuntime})
+            if(franchise::launch_command(L"python",L"db",mode).find(L"--ai-budget")!=std::wstring::npos)
+                throw std::runtime_error("Implicit launch budget added");
+        for(int scenario=0;scenario<7;++scenario) {
+            auto budget=launch_budget;auto mode=franchise::ServiceMode::VertexRuntime;
+            if(scenario==0) mode=franchise::ServiceMode::OfflineFixture;
+            if(scenario==1) budget.database=L" ";
+            if(scenario==2) budget.scope=L"";
+            if(scenario==3) budget.request_limit=0;
+            if(scenario==4) budget.request_limit=~0ULL;
+            if(scenario==5) budget.scope=std::wstring(L"a\0b",3);
+            if(scenario==6) budget.database=std::wstring(L"a\0b",3);
+            bool rejected=false;try{franchise::launch_command(L"python",L"db",mode,budget);}catch(const std::invalid_argument&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Invalid runtime budget launch accepted");
+        }
         const std::string valid = R"({"protocol":1,"request_id":"one","result":{},"error":null,"detail":null})";
         franchise::decode_response(valid, "one");
         for (const std::string& bad : {

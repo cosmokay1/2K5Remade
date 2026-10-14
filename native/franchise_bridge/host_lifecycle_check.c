@@ -5,7 +5,10 @@
 int wmain(int argc, wchar_t **argv)
 {
     if (argc != 2) return 1;
-    if (_wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER", L"vertex") ||
+    if (_wputenv_s(L"NFL2K5_FRANCHISE_AI_BUDGET_DATABASE",L"") ||
+        _wputenv_s(L"NFL2K5_FRANCHISE_AI_BUDGET_SCOPE",L"") ||
+        _wputenv_s(L"NFL2K5_FRANCHISE_AI_REQUEST_LIMIT",L"") ||
+        _wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER", L"vertex") ||
         _wputenv_s(L"NFL2K5_FRANCHISE_PYTHON", argv[1]) ||
         _wputenv_s(L"NFL2K5_FRANCHISE_DATABASE", L"0")) return 2;
     if (!nfl2k5_franchise_start()) return 3;
@@ -14,6 +17,15 @@ int wmain(int argc, wchar_t **argv)
     nfl2k5_franchise_stop();
     nfl2k5_franchise_stop();
     if (!nfl2k5_franchise_start()) return 5;
+    nfl2k5_franchise_stop();
+    /* Invalid/partial policy must fail before an owned child is launched. */
+    if (_wputenv_s(L"NFL2K5_FRANCHISE_AI_BUDGET_DATABASE",L"usage with spaces.sqlite") ||
+        nfl2k5_franchise_start()) return 6;
+    if (_wputenv_s(L"NFL2K5_FRANCHISE_AI_BUDGET_SCOPE",L"franchise 2026") ||
+        _wputenv_s(L"NFL2K5_FRANCHISE_AI_REQUEST_LIMIT",L"+250") || nfl2k5_franchise_start()) return 7;
+    if (_wputenv_s(L"NFL2K5_FRANCHISE_AI_REQUEST_LIMIT",L"9223372036854775808") || nfl2k5_franchise_start()) return 8;
+    if (_wputenv_s(L"NFL2K5_FRANCHISE_AI_REQUEST_LIMIT",L"0") || nfl2k5_franchise_start()) return 9;
+    if (_wputenv_s(L"NFL2K5_FRANCHISE_AI_REQUEST_LIMIT",L"250") || !nfl2k5_franchise_start()) return 10;
     nfl2k5_franchise_stop();
     return 0;
 }

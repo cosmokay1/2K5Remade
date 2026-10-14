@@ -359,3 +359,8 @@ See docs/cloudflare-tunnel.md. Dedicated tunnel/DNS/TLS route is live; in-game i
 See docs/franchise-creation.md and docs/promise-observations.md. Automatic promise
 mapping now protects team scope and complete-window coverage; actual game counter
 capture and multi-window aggregation remain unverified/unimplemented.
+
+Native budget launch wiring is implemented through a compatible explicit C ABI
+and validated host environment fields. Portable launch/quoting checks pass;
+actual Windows configured-budget smoke is pending CI. Input/output token and
+spending admission, authoritative season scope and measured gameplay costs remain.

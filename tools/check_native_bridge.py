@@ -752,6 +752,25 @@ def main():
                 assert current.charges==(10,) and current.revision==1 and current._players=={'v'}
                 assert replies[3]['result']==c_store.player_context('a','v')
             print("Native Windows plain-C host adapter, bounded response retrieval and restart verified (synthetic).")
+            from franchise.inference_budget import InferenceBudget
+            budget_path=Path(directory)/'C budget with spaces.sqlite'
+            scope='C host 2026 "--provider offline-fixture"'
+            for attempt in range(2):
+                result=subprocess.run([sys.argv[2],sys.executable,str(c_path),str(budget_path),scope],
+                    text=True,capture_output=True,timeout=30,check=True)
+                replies=[json.loads(line) for line in result.stdout.splitlines()]
+                assert len(replies)==2 and replies[0]['error']=='ai_disabled'
+                assert replies[1]['error'] is None
+                assert replies[1]['result']==c_store.player_context('a','v')
+                assert budget_path.is_file()
+                import sqlite3
+                from contextlib import closing
+                with closing(sqlite3.connect(budget_path)) as budget_db:
+                    assert budget_db.execute('SELECT scope,request_limit FROM policies').fetchall()==[(scope,2)]
+                status=InferenceBudget(budget_path,scope=scope,request_limit=2).status()
+                assert status['attempts']==0 and status['request_limit']==2
+            print("Native Windows plain-C explicit budget launch preserves scope and manual reads without paid inference (synthetic).")
+
 
 
 
