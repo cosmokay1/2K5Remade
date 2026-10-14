@@ -576,6 +576,41 @@ def main():
         finally:amendment_fixture.doCleanups()
         print("Native Windows calendar amendment full/compact receipts, current contexts and later-roll restart verified (synthetic).")
 
+        from tests import test_layered_restructure_bridge
+        layered_fixture=test_layered_restructure_bridge.LayeredRestructureBridgeTests()
+        layered_fixture.setUp()
+        try:
+            request=layered_fixture.request
+            requests=[request,{**request,'receipt_format':'target_v1'}]
+            payload=''.join(json.dumps(item,separators=(',',':'))+'\n' for item in requests)
+            historical=None
+            for phase in ('commit','expired'):
+                if phase=='expired':layered_fixture.fixture.expire()
+                previous=None
+                for attempt in range(2):
+                    result=subprocess.run([sys.argv[1],sys.executable,str(layered_fixture.fixture.path),'--calendar-history'],
+                        input=payload,text=True,capture_output=True,timeout=30,check=True)
+                    replies=[json.loads(line) for line in result.stdout.splitlines()]
+                    assert len(replies)==2 and all(reply['error'] is None for reply in replies)
+                    expected=[layered_fixture.bridge.handle(item) for item in requests]
+                    assert replies==expected
+                    assert replies[0]['result']['restructure']['format']==3
+                    history=replies[0]['result']['restructure']['amendment_history']
+                    assert len(history['prior_restructures'])==1
+                    assert history==replies[1]['result']['restructure']['amendment_history']
+                    if attempt:assert replies==previous and layered_fixture.fixture.path.read_bytes()==unchanged
+                    else:unchanged=layered_fixture.fixture.path.read_bytes()
+                    if historical is not None:assert replies==historical
+                    previous=replies
+                historical=previous
+            ledger=FranchiseStore(layered_fixture.fixture.path).load_team('a')
+            agreement=ledger.generation_accounting(layered_fixture.fixture.gid)
+            assert len(agreement.prior_restructures)==1 and len(agreement.contract.bonus_layers)==2
+            assert ledger.generation_calendar_view(layered_fixture.fixture.gid).authoritative_expired
+            assert ledger.cash_snapshot()['unpaid_total']==0
+        finally:layered_fixture.doCleanups()
+        print("Native Windows repeated calendar amendment full/compact history, payroll, expiry and restart verified (synthetic).")
+
         if len(sys.argv)>2:
             c_path=Path(directory)/'C host ownership.sqlite'
             c_store=FranchiseStore(c_path)

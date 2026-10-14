@@ -143,7 +143,11 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       Pure sourced preseason guaranteed-base conversion and immutable bonus layers now
       preserve exact old/new schedules. Supported amendment cash, replay and subsequent release/trade commits now retain
       all layers. Strict local protocol/native validation is implemented. Extensions,
-      repeated conversions, game/UI controls and actual guest transactions remain.
+      game/UI controls and actual guest transactions remain. Repeated later-year
+      guaranteed-base conversions now have immutable history, format2 Store replay,
+      history-aware payment/rollover wrappers and explicit calendar_v2 native
+      full/compact receipts. Actual Windows repeated-path CI remains pending;
+      post-repeat release/trade persistence and richer terms remain open.
 - [ ] Implement offseason/regular-season accounting and roster-status costs.
 - [ ] Implement dated June-1 treatment, supported tenders/tags and salary benefits.
 - [ ] Implement incentive settlement, cap adjustments, carryover and year rollover. Atomic initial calendar anchoring now validates all teams, revisions, source years and exact postings across restart/migration; typed current contract views and closing settlement inspection preserve original plans/cash without a revenue gate. A scoped veteran-only atomic league transition now advances sourced schedules and eligible settled expiry with exact all-team replay; supported postroll veteran sign/release/trade/first-amendment mutations and native calendar context are implemented; rookie/cohort rules and actual game advancement remain open. Source/schema review identified generation projection, expiry and cohort dependencies; follow docs/season-rollover.md for the durable league-wide transition work.

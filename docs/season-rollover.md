@@ -256,3 +256,16 @@ to reject history-bearing state. The next Store event must use explicit format2
 before and after snapshots even when its opening agreement has only one amendment.
 Subsequent payment and rollover wrappers must also preserve and validate this
 history; old format1 events remain replayable before repeated conversion.
+
+
+Repeated later-year conversions now use the distinct format2 Store event
+calendar_layered_restructure, with explicit history snapshots before/after.
+Subsequent cash payments and affected team rollover wrappers validate complete
+history; mixed-team transitions keep unaffected teams' original wrapper shapes.
+The sidecar manual_restructure operation selects this path only with
+calendar_format=calendar_v2 and exact current generation_id. Format3 full/compact
+receipts carry the complete prior/latest amendment history, which the native
+client validates against terms, cash, bonus layers and original-year progression.
+Actual Windows repeated-path pipe execution remains pending CI. Store release and
+assignment paths for history-bearing agreements remain guarded until their own
+history-aware event/receipt support is added.

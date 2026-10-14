@@ -500,7 +500,201 @@ inline void validate_calendar_contract_context(const nlohmann::json& result, con
         restructure_cash_record(cash);
     } else throw std::runtime_error("Invalid current calendar lifecycle");
 }
+inline void validate_amendment_history_plan(const nlohmann::json& plan,const std::string& player,const std::string& cash_id) {
+    if(!plan.is_object() || plan.size()!=8) throw std::runtime_error("Invalid amendment history plan");
+    const auto& scope=plan.at("scope");
+    if(!scope.is_object() || scope.size()!=10) throw std::runtime_error("Invalid amendment history scope");
+    integer_money(scope.at("league_year"));integer_money(scope.at("current_year_earned_base"));
+    if(scope.at("league_year")<2020 || scope.at("league_year")>2030 || scope.at("current_year_earned_base")!=0)
+        throw std::runtime_error("Invalid amendment history calendar or earnings");
+    for(const auto* key:{"healthy","consent","renegotiation_eligible"})
+        if(!scope.at(key).is_boolean() || scope.at(key)!=true) throw std::runtime_error("Missing amendment history eligibility");
+    for(const auto* key:{"source","minimum_source"})
+        if(!scope.at(key).is_string() || scope.at(key).get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
+            throw std::runtime_error("Missing amendment history source");
+    auto date_valid=[&](const nlohmann::json& value) {
+        if(!value.is_string()) return false;
+        const auto text=value.get<std::string>();
+        if(text.size()!=10 || text[4]!='-' || text[7]!='-') return false;
+        for(size_t i=0;i<text.size();++i) if(i!=4 && i!=7 && (text[i]<'0' || text[i]>'9')) return false;
+        const int year=std::stoi(text.substr(0,4)),month=std::stoi(text.substr(5,2)),day=std::stoi(text.substr(8,2));
+        const int days[]={0,31,28,31,30,31,30,31,31,30,31,30,31};
+        return year==scope.at("league_year") && month>=1 && month<=12 && day>=1 &&
+            day<=days[month]+(month==2 && year%4==0 && (year%100!=0 || year%400==0));
+    };
+    if(!date_valid(scope.at("amended_on")) || !date_valid(scope.at("first_regular_season_game")) ||
+        scope.at("amended_on").get<std::string>()>=scope.at("first_regular_season_game").get<std::string>())
+        throw std::runtime_error("Invalid amendment history dates");
+    const std::set<std::string> required={"rookie_rules","salary_benefits","other_compensation","guarantee_offsets",
+        "guarantee_voids","conditional_guarantees","extension","void_years","unpaid_old_bonus","deferred_new_bonus","injury_liability","grievance"};
+    std::set<std::string> excluded;
+    if(!scope.at("exclusions").is_array()) throw std::runtime_error("Missing amendment history exclusions");
+    for(const auto& value:scope.at("exclusions"))
+        if(!value.is_string() || !excluded.insert(value.get<std::string>()).second) throw std::runtime_error("Duplicate amendment history exclusion");
+    if(excluded!=required) throw std::runtime_error("Incomplete amendment history exclusions");
+    const auto& original=plan.at("original_contract");const auto& amended=plan.at("contract");
+    if(!original.is_object() || !(original.size()==4 || (original.size()==5 && original.contains("bonus_layers"))) ||
+        !amended.is_object() || amended.size()!=5) throw std::runtime_error("Invalid amendment history contract");
+    for(const auto* contract:{&original,&amended}) {
+        integer_money(contract->at("elapsed_years"));integer_money(contract->at("bonus_years"));
+        if(contract->at("bonus_years")<1 || contract->at("bonus_years")>5 || !contract->at("source").is_string() ||
+            contract->at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
+            throw std::runtime_error("Invalid amendment history contract source or allocation");
+    }
+    auto before=canonical_offer(original.at("offer")),after=canonical_offer(amended.at("offer"));
+    const auto cursor=original.at("elapsed_years").get<int64_t>();
+    const auto term=before.at("salaries").size();
+    integer_money(plan.at("converted_base"));const auto converted=plan.at("converted_base").get<int64_t>();
+    if(before.at("player_id")!=player || after.at("player_id")!=player || cursor>=static_cast<int64_t>(term) || converted==0 ||
+        scope.at("league_year").get<int64_t>()+static_cast<int64_t>(term)-cursor-1>2030)
+        throw std::runtime_error("Invalid amendment history player, cursor or amount");
+    const auto base=before.at("salaries")[cursor].get<int64_t>();
+    if(before.at("guaranteed_salaries")[cursor]!=base || converted>base) throw std::runtime_error("Unprotected amendment history base");
+    before["salaries"][cursor]=base-converted;before["guaranteed_salaries"][cursor]=base-converted;
+    if(before.dump()!=after.dump()) throw std::runtime_error("Changed unrelated amendment history economics");
+    const auto& layer=plan.at("bonus_layer");
+    if(!layer.is_object() || layer.size()!=5 || !layer.at("record_id").is_string() ||
+        layer.at("record_id").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos || layer.at("source")!=scope.at("source"))
+        throw std::runtime_error("Invalid amendment history bonus source");
+    for(const auto* key:{"amount","original_start_index","allocation_years"}) integer_money(layer.at(key));
+    if(layer.at("amount")!=converted || layer.at("original_start_index")!=cursor ||
+        layer.at("allocation_years")!=std::min<size_t>(term-static_cast<size_t>(cursor),5))
+        throw std::runtime_error("Invalid amendment history bonus allocation");
+    auto old_layers=original.contains("bonus_layers") ? original.at("bonus_layers") : nlohmann::json::array();
+    if(!old_layers.is_array() || !amended.at("bonus_layers").is_array()) throw std::runtime_error("Invalid history layer arrays");
+    std::map<std::string,int64_t> ceilings{{"signing_bonus",original.at("offer").at("signing_bonus").get<int64_t>()}};
+    for(size_t i=0;i<term;++i) ceilings["base:"+std::to_string(i)]=original.at("offer").at("salaries")[i].get<int64_t>();
+    std::set<std::string> layer_ids;
+    for(const auto& old:old_layers) {
+        if(!old.is_object() || old.size()!=5 || !old.at("record_id").is_string() ||
+            !layer_ids.insert(old.at("record_id").get<std::string>()).second) throw std::runtime_error("Invalid prior history bonus identity");
+        integer_money(old.at("amount"));integer_money(old.at("original_start_index"));integer_money(old.at("allocation_years"));
+        if(old.at("amount")==0 || old.at("original_start_index")>cursor || old.at("allocation_years")<1 || old.at("allocation_years")>5 ||
+            old.at("original_start_index").get<int64_t>()+old.at("allocation_years").get<int64_t>()>static_cast<int64_t>(term) ||
+            !old.at("source").is_string() || old.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
+            throw std::runtime_error("Invalid prior history bonus allocation");
+        ceilings["bonus:"+old.at("record_id").get<std::string>()]=old.at("amount").get<int64_t>();
+    }
+    if(layer_ids.count(layer.at("record_id").get<std::string>())) throw std::runtime_error("Replaced existing history bonus");
+    old_layers.push_back(layer);
+    auto expected_contract=original;expected_contract["offer"]=after;expected_contract["bonus_layers"]=old_layers;
+    expected_contract["source"]=original.at("source").get<std::string>()+"; base conversion: "+scope.at("source").get<std::string>();
+    if(expected_contract.dump()!=amended.dump()) throw std::runtime_error("Changed history contract or prior bonus prefix");
+    const auto& minimums=plan.at("annual_minimums");
+    if(!minimums.is_array() || minimums.size()!=term-static_cast<size_t>(cursor)) throw std::runtime_error("Missing history salary floors");
+    for(size_t i=0;i<minimums.size();++i) {
+        integer_money(minimums[i]);if(minimums[i]==0 || after.at("salaries")[cursor+i]<minimums[i]) throw std::runtime_error("History salary below floor");
+    }
+    const auto& cash=plan.at("original_cash");const auto& settled=plan.at("cash_obligation");
+    restructure_cash_record(cash);restructure_cash_record(settled);
+    int64_t nominal=0;for(const auto& ceiling:ceilings) nominal=checked_money_sum(nominal,ceiling.second);
+    if(cash.at("player_id")!=player || cash.at("obligation_id")!=cash_id || cash.at("amount")!=nominal)
+        throw std::runtime_error("History cash disagrees with original compensation");
+    auto expected_cash=cash;expected_cash["source"]=cash.at("source").get<std::string>()+"; base conversion: "+scope.at("source").get<std::string>();
+    if(expected_cash.dump()!=settled.dump()) throw std::runtime_error("History conversion changed cash or paid allocations");
+    std::map<std::string,int64_t> paid;
+    for(const auto& row:cash.at("paid_components")) {
+        const auto key=row[0].get<std::string>();
+        if(!ceilings.count(key) || row[1]>ceilings.at(key)) throw std::runtime_error("History payment exceeds component");
+        paid[key]=row[1].get<int64_t>();
+    }
+    for(const auto& ceiling:ceilings) {
+        const auto& key=ceiling.first;
+        if(key.rfind("base:",0)!=0 || std::stoull(key.substr(5))<static_cast<uint64_t>(cursor)) {
+            if(paid[key]!=ceiling.second) throw std::runtime_error("History prior base or bonus unpaid");
+        } else if(paid[key]!=0) throw std::runtime_error("History remaining base already paid");
+    }
+}
+
+inline void validate_layered_calendar_restructure(const nlohmann::json& result,const nlohmann::json& request) {
+    const bool compact=target_receipt_mode(result,request);
+    const auto& receipt=result.at("restructure");
+    if(!result.is_object() || result.size()!=(compact?6:5) || !receipt.is_object() || receipt.size()!=6 ||
+        !receipt.at("format").is_number_integer() || receipt.at("format")!=3 ||
+        result.at("team_id")!=request.at("team_id") || result.at("player_id")!=request.at("player_id") ||
+        result.at("decision_mode")!="manual" || request.at("decision_mode")!="manual" ||
+        result.at("generation_id")!=request.at("generation_id") || receipt.at("generation_id")!=request.at("generation_id"))
+        throw std::runtime_error("Invalid repeated calendar amendment receipt");
+    const auto player=request.at("player_id").get<std::string>();
+    for(const auto* key:{"player_id","team_id","request_id"})
+        if(!request.at(key).is_string() || request.at(key).get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
+            throw std::runtime_error("Missing repeated amendment request identity");
+    const auto cash_id=generation_cash_identity(request.at("generation_id"),player);
+    integer_money(receipt.at("league_year"));integer_money(request.at("scope").at("league_year"));
+    if(receipt.at("league_year")!=request.at("scope").at("league_year")) throw std::runtime_error("Repeated amendment year mismatch");
+    const auto& financial=receipt.at("financial");const auto& cash=receipt.at("cash");
+    integer_money(request.at("expected_revision"));integer_money(financial.at("revision"));
+    const auto revision=request.at("expected_revision").get<int64_t>();
+    if(revision==std::numeric_limits<int64_t>::max() || financial.at("revision")!=revision+1 ||
+        !financial.at("signed_players").is_array() || !financial.at("charges").is_array() || financial.at("charges").empty())
+        throw std::runtime_error("Invalid repeated amendment financial revision");
+    std::set<std::string> owners;
+    for(const auto& owner:financial.at("signed_players"))
+        if(!owner.is_string() || !owners.insert(owner.get<std::string>()).second) throw std::runtime_error("Invalid repeated amendment ownership");
+    if(!owners.count(player)) throw std::runtime_error("Repeated amendment removed ownership");
+    for(const auto& charge:financial.at("charges")) exact_money(charge);
+    if(compact) target_financial(financial,"restructures",player);
+    else if(cash.contains("other_obligations")) throw std::runtime_error("Unmarked compact repeated cash");
+    const auto& history=receipt.at("amendment_history");
+    if(!history.is_object() || history.size()!=3 || !history.at("format").is_number_integer() || history.at("format")!=1 ||
+        !history.at("prior_restructures").is_array() || history.at("prior_restructures").empty())
+        throw std::runtime_error("Missing immutable prior amendment history");
+    auto plans=history.at("prior_restructures");plans.push_back(history.at("latest_restructure"));
+    std::set<std::string> ids;const nlohmann::json* previous=nullptr;
+    for(const auto& plan:plans) {
+        validate_amendment_history_plan(plan,player,cash_id);
+        if(!ids.insert(plan.at("bonus_layer").at("record_id").get<std::string>()).second) throw std::runtime_error("Duplicate amendment history identity");
+        if(!previous) {
+            if(plan.at("original_contract").contains("bonus_layers") && !plan.at("original_contract").at("bonus_layers").empty())
+                throw std::runtime_error("Incomplete original amendment history");
+        } else {
+            const auto delta=plan.at("scope").at("league_year").get<int64_t>()-previous->at("scope").at("league_year").get<int64_t>();
+            auto original=previous->at("contract");
+            original["elapsed_years"]=original.at("elapsed_years").get<int64_t>()+delta;
+            if(delta<=0 || original.dump()!=plan.at("original_contract").dump()) throw std::runtime_error("History year/cursor or economics changed");
+            const auto& before=previous->at("cash_obligation");const auto& after=plan.at("original_cash");
+            if(before.at("amount")!=after.at("amount") || before.at("source")!=after.at("source")) throw std::runtime_error("History nominal cash/source changed");
+            std::map<std::string,int64_t> paid;for(const auto& row:after.at("paid_components")) paid[row[0].get<std::string>()]=row[1].get<int64_t>();
+            for(const auto& row:before.at("paid_components")) if(paid[row[0].get<std::string>()]<row[1].get<int64_t>()) throw std::runtime_error("History prior payment dropped");
+        }
+        previous=&plan;
+    }
+    const auto& latest=history.at("latest_restructure");
+    auto scope=request.at("scope");std::sort(scope.at("exclusions").begin(),scope.at("exclusions").end());
+    if(latest.dump()!=financial.at("restructures").at(player).dump() || latest.at("scope").dump()!=scope.dump() ||
+        latest.at("converted_base")!=request.at("converted_base") ||
+        latest.at("bonus_layer").at("record_id")!="calendar-layered-restructure:"+request.at("request_id").get<std::string>())
+        throw std::runtime_error("Repeated amendment changed requested plan or history binding");
+    integer_money(request.at("converted_base"));
+    const auto& obligation=latest.at("cash_obligation");
+    if(compact) {target_cash(cash,obligation);return;}
+    if(!cash.is_object() || cash.size()!=6 || !cash.at("source").is_string() ||
+        cash.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
+        throw std::runtime_error("Invalid repeated full cash snapshot");
+    integer_money(cash.at("revision"));integer_money(cash.at("nominal_total"));integer_money(cash.at("paid_total"));integer_money(cash.at("unpaid_total"));
+    if(!cash.at("obligations").is_array() || cash.at("paid_total")>cash.at("nominal_total") ||
+        cash.at("unpaid_total").get<int64_t>()!=cash.at("nominal_total").get<int64_t>()-cash.at("paid_total").get<int64_t>())
+        throw std::runtime_error("Invalid repeated amendment cash totals");
+    int64_t nominal=0,paid=0;size_t matched=0;std::set<std::string> cash_ids;
+    for(const auto& record:cash.at("obligations")) {
+        if(!record.is_object() || !(record.size()==5 || (record.size()==6 && record.contains("paid_components"))))
+            throw std::runtime_error("Invalid repeated cash obligation shape");
+        for(const auto* key:{"obligation_id","player_id","source"})
+            if(!record.at(key).is_string() || record.at(key).get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
+                throw std::runtime_error("Missing repeated cash obligation identity");
+        if(record.contains("paid_components") && !record.at("paid_components").is_null()) restructure_cash_record(record);
+        if(!cash_ids.insert(record.at("obligation_id").get<std::string>()).second) throw std::runtime_error("Duplicate repeated amendment cash");
+        nominal=checked_money_sum(nominal,record.at("amount"));paid=checked_money_sum(paid,record.at("paid"));
+        if(record.at("paid")>record.at("amount")) throw std::runtime_error("Repeated cash overpayment");
+        if(record.at("obligation_id")==cash_id) {if(record.dump()!=obligation.dump()) throw std::runtime_error("Repeated cash archive mismatch");++matched;}
+    }
+    if(matched!=1 || nominal!=cash.at("nominal_total") || paid!=cash.at("paid_total")) throw std::runtime_error("Repeated cash reconciliation failed");
+}
+
 inline void validate_restructure(const nlohmann::json& result, const nlohmann::json& request) {
+    if(request.contains("calendar_format") && request.at("calendar_format")=="calendar_v2") {
+        validate_layered_calendar_restructure(result,request);return;
+    }
     const bool compact=target_receipt_mode(result,request);
     const bool calendar=request.contains("calendar_format");
     const auto& receipt=result.at("restructure");

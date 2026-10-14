@@ -80,12 +80,24 @@ def compact_lifecycle_result(result,operation):
         projected['restructure']=_participant(result['restructure'],player,'restructures','cash_obligation',expected)
         if 'format' in result['restructure']:
             receipt=result['restructure']
-            if (type(receipt['format']) is not int or receipt['format']!=2
+            if (type(receipt['format']) is not int or receipt['format'] not in (2,3)
                     or type(receipt['league_year']) is not int or not 2020<=receipt['league_year']<=2030
                     or receipt['generation_id']!=result.get('generation_id')
                     or expected!=_identity_cash(receipt['generation_id'],player)):
                 raise ValueError('Invalid calendar amendment receipt identity')
-            projected['restructure'].update(format=2,generation_id=receipt['generation_id'],league_year=receipt['league_year'])
+            projected['restructure'].update(format=receipt['format'],generation_id=receipt['generation_id'],league_year=receipt['league_year'])
+            if receipt['format']==3:
+                history=receipt.get('amendment_history')
+                if (set(receipt)!={'format','generation_id','league_year','financial','cash','amendment_history'}
+                        or type(history) is not dict or set(history)!={'format','prior_restructures','latest_restructure'}
+                        or type(history['format']) is not int or history['format']!=1
+                        or type(history['prior_restructures']) is not list or not history['prior_restructures']
+                        or any(type(plan) is not dict or set(plan)!={'original_contract','original_cash','scope','annual_minimums','converted_base','bonus_layer','contract','cash_obligation'}
+                            for plan in history['prior_restructures'])
+                        or _canonical(history['latest_restructure'])!=_canonical(receipt['financial']['restructures'][player])):
+                    raise ValueError('Invalid layered amendment history receipt')
+                projected['restructure']['amendment_history']=history
+
     elif operation=='manual_trade':
         seller,buyer=result['seller'],result['buyer']
         if seller==buyer or set(result['trade'])!={seller,buyer}:

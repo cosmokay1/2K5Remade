@@ -65,7 +65,7 @@ class Bridge:
                     raise ValueError('Canonical returned agreement identity required')
                 if calendar and (type(generation_id) is not str or not generation_id.strip()):
                     raise ValueError('Exact calendar amendment generation required')
-                if calendar and request['calendar_format']!='calendar_v1':
+                if calendar and request['calendar_format'] not in ('calendar_v1','calendar_v2'):
                     raise ValueError('Supported calendar amendment format required')
                 converted = money(request['converted_base'])
                 if converted == 0:
@@ -100,7 +100,8 @@ class Bridge:
                     return receipt_result({'decision_mode':'manual','team_id':request['team_id'],
                         'player_id':request['player_id'],'restructure':receipt,
                         **({'generation_id':generation_id} if generation_id is not None else {})})
-                apply=(self.store.restructure_calendar_preseason_veteran if calendar
+                apply=(self.store.restructure_calendar_layered_preseason_veteran if calendar and request['calendar_format']=='calendar_v2'
+                       else self.store.restructure_calendar_preseason_veteran if calendar
                        else self.store.restructure_preseason_veteran)
                 receipt = apply(request['team_id'],request_id,request['player_id'],
                     scope=PreseasonRestructureScope(**scope),converted_base=converted,

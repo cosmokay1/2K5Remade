@@ -3104,3 +3104,52 @@ format selection. Store persistence is in progress: repeated mutation plus later
 payment and season wrappers must bind history-bearing before/after snapshots.
 Native repeated-amendment routing remains outstanding. No guest gameplay or
 actual save/load integration is claimed.
+
+
+## October 13, 2026 — Repeated amendment persistence awaiting native validation
+
+Local Store implementation now records distinct calendar_layered_restructure
+format2 events with history-bearing generation snapshots before/after, returning
+format3 history receipts. Later cash payments require history snapshots even for
+legacy opening agreement IDs. Only history-bearing teams gain explicit versioned
+before/after generation fields in league rollover wrappers; other teams retain
+legacy shapes. Replay rejects deleted, retyped or unsourced history markers.
+Local explicit calendar_v2 manual sidecar requests select repeated amendments;
+full/compact receipts preserve bound latest/prior plans. All 540 offline tests
+passed including payroll, mixed-team rollover, settled expiry, historical retries,
+strict replay corruption and receipt/access/SQL rollback. Added Windows owned-pipe
+smoke source for the full/compact repeated receipt across restart and later expiry;
+Python compilation passed. Native validation is still being implemented and this
+combined source remains uncommitted until portable native checks pass. No actual
+Windows repeated-amendment execution or guest gameplay is claimed.
+
+
+## October 13, 2026 — Native repeated-history review in progress
+
+Published snapshot commit 1e163c9 passed Build 38520773506 and Franchise AI
+38520773515. The local native validator now has explicit repeated-amendment
+history-plan/chain code under review; portable fixtures/build validation are still
+pending, so the combined Store/sidecar/native change remains unpublished.
+Compact receipts additionally reject incomplete prior plan dictionaries; four
+focused receipt/Bridge tests pass after that tightening. Generated four actual
+full/compact Python sidecar replies across repeated conversion and later expiry
+for independent native acceptance checking. Actual Windows execution of this new
+repeated path is still pending; the earlier single calendar amendment was verified.
+
+
+## October 13, 2026 — Repeated amendments ready for Windows CI
+
+The combined repeated-amendment Store/sidecar/native path is validated locally.
+Native calendar_v2 receipt validation checks complete versioned prior/latest
+history, old layer prefix plus one new layer, exact source-year/cursor progression,
+nominal and paid cash continuity, current floors/guarantees, and binding to actual
+request terms and the posted financial archive. Full/compact cash validation
+reconciles typed records and totals. Legacy and first calendar request branches
+retain their existing behavior. Fresh portable build and CTest passed, including
+31 corruption cases. Six actual Python/sidecar receipt cases were accepted by the
+portable native validator. Final full Python suite: 540 tests passed.
+The actual Windows pipe smoke source now executes repeated full/compact mutation,
+restart retries, recorded payroll and later settled expiry/history preservation.
+That Windows execution awaits this commit's CI. Post-repeat Store release/trade
+support, explicit full-history inspection and actual game/save integration remain
+open. No playable build is claimed.

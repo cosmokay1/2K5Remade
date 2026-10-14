@@ -424,6 +424,74 @@ int main() {
             try { franchise::validate_result(bad, promised_request); } catch (const std::exception&) { rejected = true; }
             if (!rejected) throw std::runtime_error("Changed promise result accepted");
         }
+        // Captured from the actual two-year Python Store/Bridge fixture.
+        // Values are synthetic fixture money, with first 2027 and second 2028.
+        auto repeated_request=franchise::parse_frame(R"golden({"protocol":1,"request_id":"second-2028","operation":"manual_restructure","team_id":"a","player_id":"v","expected_revision":8,"timeout_ms":5000,"decision_mode":"manual","calendar_format":"calendar_v2","generation_id":"legacy-contract:be70191536cfa0fe2ecf746e944b3a7f17b5e761ecc8e57714e7c0003ca97c0a","scope":{"league_year":2028,"amended_on":"2028-06-01","first_regular_season_game":"2028-09-10","current_year_earned_base":0,"healthy":true,"consent":true,"renegotiation_eligible":true,"exclusions":["conditional_guarantees","deferred_new_bonus","extension","grievance","guarantee_offsets","guarantee_voids","injury_liability","other_compensation","rookie_rules","salary_benefits","unpaid_old_bonus","void_years"],"minimum_source":"https://nflpaweb.blob.core.windows.net/website/PDFs/CBA/March-15-2020-NFL-NFLPA-Collective-Bargaining-Agreement-Final-Executed-Copy.pdf","source":"synthetic second conversion"},"converted_base":200000})golden");
+        auto repeated_history=franchise::parse_frame(R"golden({"format":1,"prior_restructures":[{"original_contract":{"offer":{"player_id":"v","salaries":[2000000,2000000,2000000],"signing_bonus":3000000,"guaranteed_salaries":[0,2000000,2000000]},"source":"synthetic original","elapsed_years":1,"bonus_years":5},"original_cash":{"obligation_id":"contract:v","player_id":"v","amount":9000000,"paid":5000000,"source":"synthetic paid original bonus","paid_components":[["base:0",2000000],["signing_bonus",3000000]]},"scope":{"league_year":2027,"amended_on":"2027-06-01","first_regular_season_game":"2027-09-10","current_year_earned_base":0,"healthy":true,"consent":true,"renegotiation_eligible":true,"exclusions":["conditional_guarantees","deferred_new_bonus","extension","grievance","guarantee_offsets","guarantee_voids","injury_liability","other_compensation","rookie_rules","salary_benefits","unpaid_old_bonus","void_years"],"minimum_source":"https://nflpaweb.blob.core.windows.net/website/PDFs/CBA/March-15-2020-NFL-NFLPA-Collective-Bargaining-Agreement-Final-Executed-Copy.pdf","source":"synthetic first conversion"},"annual_minimums":[1345000,1390000],"converted_base":100000,"bonus_layer":{"record_id":"calendar-restructure:first-2027","amount":100000,"original_start_index":1,"allocation_years":2,"source":"synthetic first conversion"},"contract":{"offer":{"player_id":"v","salaries":[2000000,1900000,2000000],"signing_bonus":3000000,"guaranteed_salaries":[0,1900000,2000000]},"source":"synthetic original; base conversion: synthetic first conversion","elapsed_years":1,"bonus_years":5,"bonus_layers":[{"record_id":"calendar-restructure:first-2027","amount":100000,"original_start_index":1,"allocation_years":2,"source":"synthetic first conversion"}]},"cash_obligation":{"obligation_id":"contract:v","player_id":"v","amount":9000000,"paid":5000000,"source":"synthetic paid original bonus; base conversion: synthetic first conversion","paid_components":[["base:0",2000000],["signing_bonus",3000000]]}}],"latest_restructure":{"original_contract":{"offer":{"player_id":"v","salaries":[2000000,1900000,2000000],"signing_bonus":3000000,"guaranteed_salaries":[0,1900000,2000000]},"source":"synthetic original; base conversion: synthetic first conversion","elapsed_years":2,"bonus_years":5,"bonus_layers":[{"record_id":"calendar-restructure:first-2027","amount":100000,"original_start_index":1,"allocation_years":2,"source":"synthetic first conversion"}]},"original_cash":{"obligation_id":"contract:v","player_id":"v","amount":9000000,"paid":7000000,"source":"synthetic paid original bonus; base conversion: synthetic first conversion","paid_components":[["base:0",2000000],["base:1",1900000],["bonus:calendar-restructure:first-2027",100000],["signing_bonus",3000000]]},"scope":{"league_year":2028,"amended_on":"2028-06-01","first_regular_season_game":"2028-09-10","current_year_earned_base":0,"healthy":true,"consent":true,"renegotiation_eligible":true,"exclusions":["conditional_guarantees","deferred_new_bonus","extension","grievance","guarantee_offsets","guarantee_voids","injury_liability","other_compensation","rookie_rules","salary_benefits","unpaid_old_bonus","void_years"],"minimum_source":"https://nflpaweb.blob.core.windows.net/website/PDFs/CBA/March-15-2020-NFL-NFLPA-Collective-Bargaining-Agreement-Final-Executed-Copy.pdf","source":"synthetic second conversion"},"annual_minimums":[1390000],"converted_base":200000,"bonus_layer":{"record_id":"calendar-layered-restructure:second-2028","amount":200000,"original_start_index":2,"allocation_years":1,"source":"synthetic second conversion"},"contract":{"offer":{"player_id":"v","salaries":[2000000,1900000,1800000],"signing_bonus":3000000,"guaranteed_salaries":[0,1900000,1800000]},"source":"synthetic original; base conversion: synthetic first conversion; base conversion: synthetic second conversion","elapsed_years":2,"bonus_years":5,"bonus_layers":[{"record_id":"calendar-restructure:first-2027","amount":100000,"original_start_index":1,"allocation_years":2,"source":"synthetic first conversion"},{"record_id":"calendar-layered-restructure:second-2028","amount":200000,"original_start_index":2,"allocation_years":1,"source":"synthetic second conversion"}]},"cash_obligation":{"obligation_id":"contract:v","player_id":"v","amount":9000000,"paid":7000000,"source":"synthetic paid original bonus; base conversion: synthetic first conversion; base conversion: synthetic second conversion","paid_components":[["base:0",2000000],["base:1",1900000],["bonus:calendar-restructure:first-2027",100000],["signing_bonus",3000000]]}}})golden");
+        auto repeated_financial=franchise::parse_frame(R"golden({"revision":9,"cap":20000000,"roster_reserve":0,"charges":[3050000],"signed_players":["v"],"rookie_year_one_remaining":"0","rookie_total_remaining":0,"rookie_tenders":{}})golden");
+        repeated_financial["restructures"]={{"v",repeated_history["latest_restructure"]}};
+        auto repeated_cash=franchise::parse_frame(R"golden({"revision":5,"source":"synthetic complete allocated cash","nominal_total":9000000,"paid_total":7000000,"unpaid_total":2000000})golden");
+        repeated_cash["obligations"]={repeated_history["latest_restructure"]["cash_obligation"]};
+        auto repeated_reply=nlohmann::json{{"error",nullptr},{"result",{{"team_id","a"},{"player_id","v"},
+            {"decision_mode","manual"},{"generation_id",repeated_request["generation_id"]},
+            {"restructure",{{"format",3},{"generation_id",repeated_request["generation_id"]},{"league_year",2028},
+                {"financial",repeated_financial},{"cash",repeated_cash},{"amendment_history",repeated_history}}}}}};
+        franchise::validate_result(repeated_reply,repeated_request);
+        auto repeated_compact_request=repeated_request;repeated_compact_request["receipt_format"]="target_v1";
+        auto repeated_compact_reply=repeated_reply;repeated_compact_reply["result"]["receipt_format"]="target_v1";
+        repeated_compact_reply["result"]["restructure"]["financial"]=franchise::parse_frame(R"golden({"revision":9,"charges":[3050000],"signed_players":["v"]})golden");
+        repeated_compact_reply["result"]["restructure"]["financial"]["restructures"]={{"v",repeated_history["latest_restructure"]}};
+        repeated_compact_reply["result"]["restructure"]["cash"]=franchise::parse_frame(R"golden({"revision":5,"nominal_total":9000000,"paid_total":7000000,"unpaid_total":2000000,"other_obligations":{"count":0,"nominal_total":0,"paid_total":0,"unpaid_total":0}})golden");
+        repeated_compact_reply["result"]["restructure"]["cash"]["obligations"]={repeated_history["latest_restructure"]["cash_obligation"]};
+        franchise::validate_result(repeated_compact_reply,repeated_compact_request);
+        for(int scenario=0;scenario<29;++scenario) {
+            auto bad=repeated_reply;auto req=repeated_request;
+            auto& receipt=bad["result"]["restructure"];auto& history=receipt["amendment_history"];
+            auto& latest=history["latest_restructure"];auto& first=history["prior_restructures"][0];
+            if(scenario==0) receipt["format"]=2;
+            if(scenario==1) history["format"]=true;
+            if(scenario==2) history["prior_restructures"]=nlohmann::json::array();
+            if(scenario==3) first["scope"]["league_year"]=2028;
+            if(scenario==4) latest["original_contract"]["elapsed_years"]=1;
+            if(scenario==5) latest["contract"]["bonus_layers"].erase(0);
+            if(scenario==6) latest["original_cash"]["amount"]=8000000;
+            if(scenario==7) latest["original_cash"]["paid_components"][0][1]=0;
+            if(scenario==8) latest["original_cash"]["source"]="forged predecessor";
+            if(scenario==9) latest["cash_obligation"]["paid"]=0;
+            if(scenario==10) latest["scope"]["exclusions"].erase(0);
+            if(scenario==11) latest["scope"]["current_year_earned_base"]=false;
+            if(scenario==12) latest["scope"]["healthy"]=1;
+            if(scenario==13) latest["scope"]["amended_on"]="2028-02-30";
+            if(scenario==14) latest["annual_minimums"]={2000000};
+            if(scenario==15) latest["contract"]["offer"]["guaranteed_salaries"][0]=1;
+            if(scenario==16) first["contract"]["source"]="changed first source";
+            if(scenario==17) latest["bonus_layer"]["record_id"]=first["bonus_layer"]["record_id"];
+            if(scenario==18) latest["bonus_layer"]["allocation_years"]=2;
+            if(scenario==19) receipt["generation_id"]="legacy-contract:"+std::string(64,'f');
+            if(scenario==20) receipt["league_year"]=2027;
+            if(scenario==21) receipt["cash"]["nominal_total"]=9000000.0;
+            if(scenario==22) receipt["cash"]["obligations"].push_back(receipt["cash"]["obligations"][0]);
+            if(scenario==23) receipt["cash"]["obligations"][0]["extra"]=0;
+            if(scenario==24) history["extra"]=0;
+            if(scenario==25) req["calendar_format"]="calendar_v1";
+            if(scenario==26) req["converted_base"]=199999;
+            if(scenario==27) req["request_id"]="different";
+            if(scenario==28) receipt["financial"]["signed_players"]=nlohmann::json::array();
+            receipt["financial"]["restructures"]["v"]=latest;
+            bool rejected=false;
+            try {franchise::validate_result(bad,req);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Corrupt repeated calendar amendment accepted");
+        }
+        auto mismatched_history=repeated_reply;
+        mismatched_history["result"]["restructure"]["amendment_history"]["latest_restructure"]["converted_base"]=1;
+        bool history_rejected=false;
+        try {franchise::validate_result(mismatched_history,repeated_request);}catch(const std::exception&){history_rejected=true;}
+        if(!history_rejected) throw std::runtime_error("Repeated latest history did not bind archive");
+        auto compact_bad=repeated_compact_reply;
+        compact_bad["result"]["restructure"]["cash"]["other_obligations"]["paid_total"]=1;
+        bool compact_rejected=false;
+        try {franchise::validate_result(compact_bad,repeated_compact_request);}catch(const std::exception&){compact_rejected=true;}
+        if(!compact_rejected) throw std::runtime_error("Repeated compact cash failed to reconcile");
         auto player_request = franchise::parse_frame(R"({"operation":"player_context","player_id":"v"})");
         auto player_reply = franchise::parse_frame(R"({"error":null,"result":{"player_id":"v","financial_revision":0,"initialized":true,"personality":{},"relationships":{},"agreed_promises":[],"promise_history":[]}})");
         franchise::validate_result(player_reply, player_request);
