@@ -55,6 +55,19 @@ def _identity_cash(generation,player):
         raise ValueError('Canonical agreement identity required')
     return generation if prefix=='contract-gen:' else 'contract:'+player
 
+def _receipt_amendment_history(receipt):
+    history=receipt.get('amendment_history')
+    fields={'original_contract','original_cash','scope','annual_minimums','converted_base','bonus_layer','contract','cash_obligation'}
+    if (set(receipt)!={'format','generation_id','league_year','financial','cash','amendment_history'}
+            or type(history) is not dict or set(history)!={'format','prior_restructures','latest_restructure'}
+            or type(history['format']) is not int or history['format']!=1
+            or type(history['prior_restructures']) is not list or not history['prior_restructures']
+            or any(type(plan) is not dict or set(plan)!=fields
+                for plan in [*history['prior_restructures'],history['latest_restructure']])):
+        raise ValueError('Invalid layered amendment history receipt')
+    return history
+
+
 def compact_lifecycle_result(result,operation):
     """Project the exact fresh or historical receipt, never current league state."""
     player=result['player_id']
@@ -67,11 +80,21 @@ def compact_lifecycle_result(result,operation):
         projected['release']=_participant(result['release'],player,'released_contracts','cash_obligation',original.obligation_id)
         if 'format' in result['release']:
             receipt=result['release']
-            if type(receipt['format']) is not int or receipt['format']!=2 or type(receipt['league_year']) is not int:
+            if type(receipt['format']) is not int or receipt['format'] not in (2,3) or type(receipt['league_year']) is not int:
                 raise ValueError('Invalid calendar release receipt')
             if original.obligation_id!=_identity_cash(receipt['generation_id'],player):
                 raise ValueError('Calendar release cash identity mismatch')
-            projected['release'].update(format=2,generation_id=receipt['generation_id'],league_year=receipt['league_year'])
+            projected['release'].update(format=receipt['format'],generation_id=receipt['generation_id'],league_year=receipt['league_year'])
+            if receipt['format']==3:
+                history=_receipt_amendment_history(receipt)
+                latest=history['latest_restructure']
+                original_contract=dict(latest['contract'])
+                delta=receipt['league_year']-latest['scope']['league_year']
+                original_contract['elapsed_years']+=delta
+                if delta<0 or _canonical(original_contract)!=_canonical(archive['original_contract']):
+                    raise ValueError('Release history changed amendment economics or calendar cursor')
+                projected['release']['amendment_history']=history
+
         target=CashObligation.from_dict(projected['release']['cash']['obligations'][0])
         if target.paid!=original.paid or target.paid_components!=original.paid_components or target.amount>original.amount:
             raise ValueError('Release changed settled cash or increased nominal liability')
@@ -87,14 +110,8 @@ def compact_lifecycle_result(result,operation):
                 raise ValueError('Invalid calendar amendment receipt identity')
             projected['restructure'].update(format=receipt['format'],generation_id=receipt['generation_id'],league_year=receipt['league_year'])
             if receipt['format']==3:
-                history=receipt.get('amendment_history')
-                if (set(receipt)!={'format','generation_id','league_year','financial','cash','amendment_history'}
-                        or type(history) is not dict or set(history)!={'format','prior_restructures','latest_restructure'}
-                        or type(history['format']) is not int or history['format']!=1
-                        or type(history['prior_restructures']) is not list or not history['prior_restructures']
-                        or any(type(plan) is not dict or set(plan)!={'original_contract','original_cash','scope','annual_minimums','converted_base','bonus_layer','contract','cash_obligation'}
-                            for plan in history['prior_restructures'])
-                        or _canonical(history['latest_restructure'])!=_canonical(receipt['financial']['restructures'][player])):
+                history=_receipt_amendment_history(receipt)
+                if _canonical(history['latest_restructure'])!=_canonical(receipt['financial']['restructures'][player]):
                     raise ValueError('Invalid layered amendment history receipt')
                 projected['restructure']['amendment_history']=history
 

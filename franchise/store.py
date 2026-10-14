@@ -696,8 +696,12 @@ class FranchiseStore:
                     raise ValueError('Generation restructure financial posting disagrees with replay')
                 if self._checkpoint_hash(payload['cash_posting']) != self._checkpoint_hash(ledger.cash_snapshot()):
                     raise ValueError('Restructure cash posting disagrees with replay')
-            elif kind in ('release','generation_release','calendar_release'):
-                if kind=='calendar_release':
+            elif kind in ('release','generation_release','calendar_release','calendar_layered_release'):
+                layered=kind=='calendar_layered_release'
+                history_format=2 if layered else 1
+                if layered and not ledger.generation_accounting(payload['generation_id']).prior_restructures:
+                    raise ValueError('Layered release requires sourced prior amendment history')
+                if kind in ('calendar_release','calendar_layered_release'):
                     fields={'player_id','scope','discount','payment_year_offsets','record_id','expected_revision',
                         'generation_id','format','calendar_format','before_posting','before_cash',
                         'before_generation_posting','before_calendar_posting','posting','cash_posting',
@@ -708,15 +712,15 @@ class FranchiseStore:
                         raise ValueError('Calendar release opening state disagrees with replay')
                 if kind=='release' and ledger.contract_identity(payload['player_id']).generation_id.startswith('contract-gen:'):
                     raise ValueError('Return agreement release requires versioned generation event')
-                if kind in ('generation_release','calendar_release'):
-                    if (type(payload.get('format')) is not int or payload['format']!=1 or
+                if kind in ('generation_release','calendar_release','calendar_layered_release'):
+                    if (type(payload.get('format')) is not int or payload['format']!=history_format or
                             payload.get('generation_id')!=ledger.contract_identity(payload['player_id']).generation_id or
-                            self._checkpoint_hash(payload.get('before_generation_posting'))!=self._checkpoint_hash(ledger.generation_snapshot())):
+                            self._checkpoint_hash(payload.get('before_generation_posting'))!=self._checkpoint_hash(ledger.generation_snapshot(history_format=history_format))):
                         raise ValueError('Generation release opening state disagrees with replay')
                 if (self._checkpoint_hash(payload['before_posting']) != self._checkpoint_hash(ledger.financial_snapshot())
                         or self._checkpoint_hash(payload['before_cash']) != self._checkpoint_hash(ledger.cash_snapshot())):
                     raise ValueError('Release opening state disagrees with replay')
-                self._apply_release_payload(ledger,payload,calendar_release=kind=='calendar_release')
+                self._apply_release_payload(ledger,payload,calendar_release=kind in ('calendar_release','calendar_layered_release'))
                 self._check_cash_components(ledger)
                 if payload['cash_posting'] != ledger.cash_snapshot():
                     raise ValueError('Release cash posting disagrees with replay')
@@ -822,8 +826,8 @@ class FranchiseStore:
                     'posting','cash_posting','format','generation_posting','calendar_format','calendar_posting'}
                 if set(payload)!=required:
                     raise ValueError('Complete history-aware payment event required')
-            if kind in ('return_sign','generation_release','generation_restructure','calendar_release','calendar_restructure','calendar_layered_restructure') or (kind=='cash_payment' and (self._has_new_generations(ledger) or history_payment)):
-                generation_format=2 if history_payment or kind=='calendar_layered_restructure' else 1
+            if kind in ('return_sign','generation_release','generation_restructure','calendar_release','calendar_layered_release','calendar_restructure','calendar_layered_restructure') or (kind=='cash_payment' and (self._has_new_generations(ledger) or history_payment)):
+                generation_format=2 if history_payment or kind in ('calendar_layered_restructure','calendar_layered_release') else 1
                 if ('generation_posting' not in payload or type(payload.get('format')) is not int or payload['format']!=generation_format or
                         db.execute('PRAGMA user_version').fetchone()[0]!=4 or
                         self._checkpoint_hash(payload['generation_posting'])!=self._checkpoint_hash(ledger.generation_snapshot(history_format=generation_format))):
@@ -834,9 +838,9 @@ class FranchiseStore:
             if kind=='cash_payment' and not history_payment and payload.get('format')==2:
                 raise ValueError('History payment requires sourced prior amendment history')
             calendar_fields = {'calendar_format','calendar_posting'}
-            if ledger._generation_calendar_anchor is not None and kind in ('sign','cash_payment','calendar_release','calendar_restructure','calendar_layered_restructure'):
+            if ledger._generation_calendar_anchor is not None and kind in ('sign','cash_payment','calendar_release','calendar_layered_release','calendar_restructure','calendar_layered_restructure'):
                 marked = bool(calendar_fields & set(payload))
-                if ((kind in ('sign','calendar_release','calendar_restructure','calendar_layered_restructure') or marked) and
+                if ((kind in ('sign','calendar_release','calendar_layered_release','calendar_restructure','calendar_layered_restructure') or marked) and
                         (not calendar_fields <= set(payload) or type(payload['calendar_format']) is not int
                          or payload['calendar_format'] != 1
                          or self._checkpoint_hash(payload['calendar_posting']) != self._checkpoint_hash(self._calendar_posting(ledger)))):
@@ -1635,8 +1639,16 @@ class FranchiseStore:
             payment_year_offsets=payment_year_offsets,expected_revision=expected_revision,
             access_check=access_check,receipt_check=receipt_check,calendar_generation_id=generation_id)
 
+    def release_calendar_layered_preseason_veteran(self,team_id,request_id,player_id,*,generation_id,scope,discount,
+                                                 payment_year_offsets,expected_revision,access_check,receipt_check=None):
+        if type(generation_id) is not str or not generation_id.strip():
+            raise Rejected('Exact calendar release generation required')
+        return self._release_preseason_veteran(team_id,request_id,player_id,scope=scope,discount=discount,
+            payment_year_offsets=payment_year_offsets,expected_revision=expected_revision,
+            access_check=access_check,receipt_check=receipt_check,calendar_generation_id=generation_id,layered=True)
+
     def _release_preseason_veteran(self,team_id,request_id,player_id,*,scope,discount,payment_year_offsets,
-                                 expected_revision,access_check,receipt_check,calendar_generation_id):
+                                 expected_revision,access_check,receipt_check,calendar_generation_id,layered=False):
         from franchise.releases import PreseasonReleaseScope
         if receipt_check is not None and not callable(receipt_check):
             raise ValueError('Callable lifecycle receipt validation required')
@@ -1650,7 +1662,8 @@ class FranchiseStore:
         scope_data=asdict(scope)
         scope_data.update(removed_on=scope.removed_on.isoformat(),first_regular_season_game=scope.first_regular_season_game.isoformat(),
                           exclusions=sorted(scope.exclusions))
-        prefix='calendar-release:' if calendar_generation_id is not None else 'release:'
+        prefix='calendar-layered-release:' if layered else 'calendar-release:' if calendar_generation_id is not None else 'release:'
+        history_format=2 if layered else 1
         payload={'player_id':player_id,'scope':scope_data,'discount':{'league_year':discount.league_year,
             'annual_rate':json_amount(discount.annual_rate),'rate_source':discount.rate_source},
             'payment_year_offsets':list(payment_year_offsets),'record_id':prefix+request_id,'expected_revision':expected_revision}
@@ -1659,7 +1672,10 @@ class FranchiseStore:
         def receipt_for(saved):
             result={'financial':saved['posting'],'cash':saved['cash_posting']}
             if calendar_generation_id is not None:
-                result.update(format=2,generation_id=saved['generation_id'],league_year=saved['scope']['league_year'])
+                result.update(format=3 if layered else 2,generation_id=saved['generation_id'],league_year=saved['scope']['league_year'])
+            if layered:
+                result['amendment_history']=next(a['amendment_history'] for a in saved['generation_posting']['agreements']
+                    if a['identity']['generation_id']==saved['generation_id'])
             return result
         with self._connection(write=True) as db:
             ledger=self._load(db,team_id)
@@ -1678,20 +1694,22 @@ class FranchiseStore:
             if calendar_generation_id is not None:
                 if db.execute('PRAGMA user_version').fetchone()[0]!=4:
                     raise Rejected('Calendar release requires explicit format4 migration')
-                kind='calendar_release'
-                payload.update(format=1,calendar_format=1,before_generation_posting=ledger.generation_snapshot(),
+                kind='calendar_layered_release' if layered else 'calendar_release'
+                if layered and not ledger.generation_accounting(calendar_generation_id).prior_restructures:
+                    raise Rejected('Layered release requires sourced prior amendment history')
+                payload.update(format=history_format,calendar_format=1,before_generation_posting=ledger.generation_snapshot(history_format=history_format),
                     before_calendar_posting=self._calendar_posting(ledger))
             elif ledger.contract_identity(player_id).generation_id.startswith('contract-gen:'):
                 kind='generation_release'
                 payload.update(format=1,generation_id=ledger.contract_identity(player_id).generation_id,
-                    before_generation_posting=ledger.generation_snapshot())
+                    before_generation_posting=ledger.generation_snapshot(history_format=history_format))
             payload.update(before_posting=ledger.financial_snapshot(),before_cash=ledger.cash_snapshot())
-            self._apply_release_payload(ledger,payload,calendar_release=kind=='calendar_release')
+            self._apply_release_payload(ledger,payload,calendar_release=kind in ('calendar_release','calendar_layered_release'))
             self._check_cash_components(ledger)
             payload.update(posting=ledger.financial_snapshot(),cash_posting=ledger.cash_snapshot())
-            if kind in ('generation_release','calendar_release'):
-                payload['generation_posting']=ledger.generation_snapshot()
-            if kind=='calendar_release':
+            if kind in ('generation_release','calendar_release','calendar_layered_release'):
+                payload['generation_posting']=ledger.generation_snapshot(history_format=history_format)
+            if kind in ('calendar_release','calendar_layered_release'):
                 payload['calendar_posting']=self._calendar_posting(ledger)
             receipt=receipt_for(payload)
             if receipt_check is not None:

@@ -177,7 +177,7 @@ class Bridge:
                 calendar='calendar_format' in request
                 if request_fields != fields | ({'calendar_format','generation_id'} if calendar else set()) or request['decision_mode'] != 'manual':
                     raise ValueError('Explicit complete manual release request required')
-                if calendar and (request['calendar_format']!='calendar_v1' or type(request['generation_id']) is not str
+                if calendar and (request['calendar_format'] not in ('calendar_v1','calendar_v2') or type(request['generation_id']) is not str
                                  or not request['generation_id'].strip()):
                     raise ValueError('Explicit calendar release format and generation required')
                 if type(request['team_id']) is not str or not request['team_id'].strip():
@@ -208,7 +208,8 @@ class Bridge:
                 discount['annual_rate']=parse_amount(discount['annual_rate'])
                 def release_result(receipt):
                     return receipt_result({'decision_mode':'manual','player_id':request['player_id'],'release':receipt})
-                release=self.store.release_calendar_preseason_veteran if calendar else self.store.release_preseason_veteran
+                release=(self.store.release_calendar_layered_preseason_veteran if calendar and request['calendar_format']=='calendar_v2'
+                         else self.store.release_calendar_preseason_veteran if calendar else self.store.release_preseason_veteran)
                 receipt=release(request['team_id'],request_id,request['player_id'],
                     scope=PreseasonReleaseScope(**scope),discount=DiscountProfile(**discount),
                     payment_year_offsets=tuple(request['payment_year_offsets']),expected_revision=request['expected_revision'],

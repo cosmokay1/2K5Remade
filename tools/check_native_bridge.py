@@ -611,6 +611,44 @@ def main():
         finally:layered_fixture.doCleanups()
         print("Native Windows repeated calendar amendment full/compact history, payroll, expiry and restart verified (synthetic).")
 
+        from tests import test_layered_release_bridge
+        release_fixture=test_layered_release_bridge.LayeredReleaseBridgeTests()
+        release_fixture.setUp()
+        try:
+            requests=[release_fixture.request,{**release_fixture.request,'receipt_format':'target_v1'}]
+            payload=''.join(json.dumps(item,separators=(',',':'))+'\n' for item in requests)
+            historical=None
+            for phase in ('release','closed_year','paid'):
+                if phase=='closed_year':release_fixture.fixture.next_year()
+                if phase=='paid':
+                    for component,amount in (('bonus:calendar-layered-restructure:second-2028',200000),('base:2',1800000)):
+                        ledger=release_fixture.fixture.store.load_team('a')
+                        release_fixture.fixture.store.record_payment('a','native-release-'+component,'contract:v',amount,
+                            expected_cash_revision=ledger.cash_snapshot()['revision'],source='synthetic retained payroll',
+                            payment_reference='native-retained-'+component,component=component)
+                previous=None
+                for attempt in range(2):
+                    result=subprocess.run([sys.argv[1],sys.executable,str(release_fixture.fixture.path),'--calendar-history'],
+                        input=payload,text=True,capture_output=True,timeout=30,check=True)
+                    replies=[json.loads(line) for line in result.stdout.splitlines()]
+                    assert len(replies)==2 and all(reply['error'] is None for reply in replies)
+                    assert replies==[release_fixture.bridge.handle(item) for item in requests]
+                    receipt=replies[0]['result']['release']
+                    assert receipt['format']==3 and receipt['cash']['unpaid_total']==2000000
+                    assert receipt['amendment_history']==replies[1]['result']['release']['amendment_history']
+                    if attempt:assert replies==previous and release_fixture.fixture.path.read_bytes()==unchanged
+                    else:unchanged=release_fixture.fixture.path.read_bytes()
+                    if historical is not None:assert replies==historical
+                    previous=replies
+                historical=previous
+            ledger=FranchiseStore(release_fixture.fixture.path).load_team('a')
+            agreement=ledger.generation_accounting(release_fixture.fixture.gid)
+            assert agreement.status=='released' and len(agreement.prior_restructures)==1
+            assert ledger.cash_snapshot()['unpaid_total']==0
+            assert ledger.generation_calendar_view(release_fixture.fixture.gid).annual_charges()==()
+        finally:release_fixture.doCleanups()
+        print("Native Windows layered release full/compact history, retained payroll and rollover restart verified (synthetic).")
+
         if len(sys.argv)>2:
             c_path=Path(directory)/'C host ownership.sqlite'
             c_store=FranchiseStore(c_path)

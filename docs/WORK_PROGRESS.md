@@ -3168,3 +3168,26 @@ passed. Windows confirmation still awaits the fix commit's CI; repeated Windows
 pipe execution has not yet been verified.
 Separately, history-aware release Store and compact receipt work is local and
 uncommitted; its native validation/fixtures are still in progress.
+
+
+## October 13, 2026 — History-aware releases validated; Windows repeats confirmed
+
+048a8e6 Build 38522299429 and Franchise AI 38522299444 passed. The Windows log
+explicitly confirms repeated calendar amendment full/compact history, payroll,
+expiry and restart execution, verifying the explicit JSON-array fixture correction.
+Added history-aware calendar_layered_release format2 Store events, before/after
+history snapshots and format3 receipts. Immutable amendment chains, retained bonus
+and guaranteed-base liabilities, ownership removal, replay, historical retries
+and final callbacks remain atomic. Tests preserve $2 million unpaid cash after cap
+debt ages out, then settle it through explicit payroll without changing history.
+A four-year fixture verifies June-1 treatment with nonzero future bonus allocation.
+Manual release calendar_v2 now selects this explicit path; full/compact receipts
+preserve bound amendment history. Native checks share history validation and bind
+release timing to exact original cursors, cash/payment continuity, retained IDs,
+all bonus ceilings and cancelled salary. Existing v1 behavior remains unchanged.
+All 550 offline tests passed. Rebuilt portable CTest passed with 25 new corruption
+cases; four actual sidecar full/compact fresh/historical receipts validate.
+Added an actual Windows owned-pipe release smoke with restarts, later rollover and
+retained payroll. Its execution awaits this commit's CI. History-aware assignments,
+full-history inspection and actual guest/save integration remain open. No playable
+game delivery is claimed.

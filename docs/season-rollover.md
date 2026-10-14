@@ -269,3 +269,14 @@ client validates against terms, cash, bonus layers and original-year progression
 Actual Windows repeated-path pipe execution remains pending CI. Store release and
 assignment paths for history-bearing agreements remain guarded until their own
 history-aware event/receipt support is added.
+
+
+History-aware releases now have an explicit Store/API/native path. The distinct
+calendar_layered_release event uses format2 generation snapshots before/after;
+manual_release with calendar_format=calendar_v2 requires exact generation identity
+and returns a format3 receipt with the complete immutable amendment chain.
+Unpaid converted bonuses and guaranteed base remain payable when cap charges age
+out, and later payroll preserves original component indices. Historical full and
+compact receipts remain unchanged after rollover and payment. Other history-aware
+assignment paths remain guarded pending their corresponding event/receipt support.
+Actual Windows release pipe execution awaits CI; guest save/load remains unverified.
