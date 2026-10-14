@@ -344,8 +344,9 @@ Actual static Sign Contract chain:
 
 Additional financial-display evidence: player salary getter0x000E5FE0 reads
 uint16[player+0x0A]*10; its monetary unit still requires UI/save confirmation.
-player+0x26 low nibble selects payment-allocation profile through0x00AE7AD8,
-not contract duration. Transaction-history reads use player+0x27 low nibble for
+The accepted signing path writes its allocation candidate into the high nibble
+of player+0x26 (dword+0x24 bits20..23), using mask0x00F00000 at
+0x00323F77. The low nibble is a separate field; do not conflate them. Transaction-history reads use player+0x27 low nibble for
 the integer term. Team salary display0x00362640 reads object+0x124 and displays
 cap room using0x0013ECA0 minus that value. These establish candidates, not modern
 cap/guarantee rules or a safe write interface. The Counter Offer string belongs
@@ -354,7 +355,7 @@ to message/result construction; it does not itself establish offer submission.
 Actual Deck navigation now records descriptor0x00557B2C during a user Sign
 Contract attempt. The engine remains vanilla at that screen. Keep
 context/player/object pointers separate, verify UI amounts and controlled save
-changes, and only then intercept the shared signing routine. No financial write
+changes, and only then intercept the offer-judgment boundary. No financial write
 or signing interception has been implemented.
 
 
@@ -380,3 +381,32 @@ change as a control, then reload it and accept exactly one documented contract.
 Record player/team and visible terms before/after, preserve companion files,
 compare via `tools.save_diff --control-after`, and verify game reload/readback.
 Financial mapping remains incomplete until these observations agree.
+
+
+## Signing transaction boundaries reviewed against the actual executable
+
+Shared routine0x00323D80 performs roster and cap preconditions before interactive
+offer judgment0x00323A60 at0x00323F0E. A rejected judgment returns before player
+contract writes. A conditional0x0013ED30 call follows acceptance before those
+writes; its side effects still need tracing. Subsequent player-state, roster,
+team-refresh and history calls are part of the original transaction. Replacing
+the whole routine with an AI acceptance boolean would skip these effects.
+
+The accepted path copies context word+0x0C into player word+0x0A at0x00323F4D,
+copies context byte+0x0A low nibble into player dword+0x24 bits0..3 and24..27,
+and copies context+8 low nibble into bits20..23. Dollar units and the meanings
+of the two term-like fields remain unverified by visible amounts/save reload.
+The observer logs complete bytes and needs no change for the nibble correction.
+
+The actual baseline bank header at0x320 declares2479 records, with its relative
+pointer at0x324 resolving to0xB288. Runtime relocation0x000C0500 walks records
+with stride0x54 and calls0x000E5E70, which relocates college/name/stats pointers
+while leaving candidate monetary and packed bytes untouched. The current reader
+restricts roster references to2317 slots from the converter-supported scope;
+that limit is not the actual bank capacity. This static relationship does not
+yet bind a live signing target to a persistent player identity.
+
+Runtime verification must bind the observed pointer to a bank slot and name,
+then compare salary-only and term-only contracts from AIBASELIN with an unchanged
+save control. Keep the user's current game running; the compiled observer remains
+staged until it can be applied safely after exit.

@@ -3658,3 +3658,21 @@ staged privately as NFL2K5.next.exe (SHA256
 512b193b2376bffd0056b77be3f0d8db338103434ac4302234eff63d6bf18bcc),
 without replacing the user's running game. Actual observer readback and a
 controlled contract/save pair are the next runtime steps.
+
+
+## October 14, 2026 — Signing transaction audit and exact baseline name
+
+User confirmed the baseline name is AIBASELIN. Parallel read-only audits were
+cross-checked against the private executable disassembly: shared signing preserves
+roster/cap gates, interactive offer judgment, contract mutations and subsequent
+roster/team/history updates. The candidate allocation write is the high nibble
+of player+0x26, correcting the earlier low-nibble note; raw observer bytes remain
+valid. Runtime relocation walks84-byte records and preserves the candidate
+financial bytes. Actual bank capacity2479 differs from the inspector's restricted
+2317-slot scope. Units, persistent identity and live transaction/save reload remain
+unverified; no guest/save writes or Deck actions were performed for this audit.
+
+CI for4c7da04 completed successfully: Build38552289387 and Franchise AI38552289343.
+Updated the worklist's stale source/test/input summary to this evidence. Keep the
+user's current game undisturbed; staged observer activation and controlled save
+pairs remain the next runtime steps.

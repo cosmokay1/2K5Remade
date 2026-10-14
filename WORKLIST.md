@@ -24,18 +24,21 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 ## Latest verified state — October 14, 2026
 
-- Latest published verified source: `38fcc2d`. Build `38532242341` and Franchise AI
-  `38532242330` passed. These checks compile/test asset-free runtime and bridge
-  components; the actual game target is excluded. The opt-in FSM logger body also
-  passed its portable C checks. The standard game build now renders Franchise Options; the signing FSM has been observed, but its transaction hook remains unimplemented.
-- Current delivered local suite: **603 tests passed**. All bridge fixtures remain
-  asset-free; they do not prove guest/gameplay integration.
+- Latest published verified source: `4c7da04`. Build `38552289387` and Franchise AI
+  `38552289343` passed. CI checks asset-free runtime and bridge components;
+  the actual game target is excluded. The privately compiled standard game renders
+  Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
+  Signing still uses the original game logic; the AI transaction hook is pending.
+- Current delivered local suite: **608 tests passed**. Actual AIBASELIN parsing
+  resolves 1937 roster/free-agent members. This does not prove contract/save
+  round-trip integration. The read-only signing observer is compiled and staged;
+  runtime observation awaits a safe game exit.
 - Request/token ceilings and remote shutdown are sufficient for current work.
   Additional dollar-policy machinery is deferred at the user's direction.
 - Xbox asset intake and Steam Deck SSH are now verified. Static analysis located
   the actual Sign Contract FSM descriptor0x00557B2C and message11 callback,
   and that descriptor has now been observed during a user signing attempt. Units, durable selected-player identity and transaction readback remain unverified.
-- Actual game/save integration, telemetry capture, in-game controls and playable
+- Actual AI/game/save integration, telemetry capture and final playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 
 ## Current priority — a usable franchise negotiation in the game
@@ -62,8 +65,8 @@ steps, rather than expand the already substantial standalone engine.
 | B04 | Written upstream/third-party permission or suitable licenses | Redistribution of modified binaries and affected bundled components | Original source development, attribution, permission-request drafts |
 | B05 | Explicit approval for scoped runtime impersonation delegation | Live runtime-identity read/inference verification | Offline/native recovery and financial implementation |
 
-User-supplied Xbox assets are now present locally; raw franchise saves remain
-pending. The Steam Deck is reachable over project-key SSH with Proton installed.
+User-supplied Xbox assets and the AIBASELIN franchise baseline are present
+locally; controlled transaction and unchanged-save pairs remain pending. The Steam Deck is reachable over project-key SSH with Proton installed.
 Keep game assets and raw disassembly private; do not download additional retail
 assets or publish binaries without resolved rights. Do not repeatedly ask for
 the same missing input.
