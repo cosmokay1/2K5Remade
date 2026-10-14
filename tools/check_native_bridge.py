@@ -307,6 +307,48 @@ def main():
             assert len(json.dumps(dict(financial=current.financial_snapshot(),cash=current.cash_snapshot())).encode('utf-8'))>65536
         print("Native Windows compact long-franchise receipt, reconciled cash and restart verified (synthetic).")
 
+        from dataclasses import replace
+        from franchise.negotiation import Negotiation
+        from franchise.promises import PromiseGoal,GoalObservation,PromiseCircumstances
+        from franchise.store import StoredLedger
+        promise_path=Path(directory)/'promise circumstances.sqlite'
+        promises=FranchiseStore(promise_path)
+        promises.create_team('a',Ledger.from_opening(OpeningBooks(),cap=100,roster_reserve=0,
+            max_bonus_years=5,veteran_minimums={'p':(1,)}))
+        session=Negotiation(StoredLedger(promises,'a'),player_id='p',personality={},performance={'source':'synthetic'},
+            relationships={'trust':0.6},access_check=lambda:None)
+        session.respond('deal',Offer('p',(20,),0),lambda _:json.dumps(dict(action='accept',reason='Synthetic role agreement',
+            salaries=None,signing_bonus=None)),promise_goals=(PromiseGoal('starts','starts',8,80,'fixture season','synthetic proposal'),))
+        observed=(GoalObservation('starts','fixture season',4,'synthetic measured starts','synthetic full window',
+            'Source-backed circumstances supplied separately',True),)
+        known=PromiseCircumstances('p','a','fixture season','cpu_played',17,12,5,3,
+            'synthetic availability report','synthetic full window',True,None)
+        unknown=replace(known,available_games=None,coaching_dnp_games=None,complete_window=False,
+            unavailable_reason='Synthetic source did not measure eligibility or coaching DNPs')
+        promises.record_promise_score('a','progress','deal',observed,window_closed=False,expected_revision=1,
+            source='synthetic interim evaluation',circumstances=(unknown,))
+        promises.record_promise_score('a','final','deal',observed,window_closed=True,expected_revision=2,
+            source='synthetic final evaluation',circumstances=(known,))
+        original=None;unchanged=promise_path.read_bytes()
+        for attempt in range(2):
+            result=subprocess.run([sys.argv[1],sys.executable,str(promise_path),'--promise-context'],
+                text=True,capture_output=True,timeout=20,check=True)
+            responses=[json.loads(line) for line in result.stdout.splitlines()]
+            assert len(responses)==1 and responses[0]['error'] is None
+            reply=responses[0]
+            if original is None:original=reply
+            else:assert reply==original
+            context=reply['result']
+            assert context==promises.player_context('a','p')
+            assert context['financial_revision']==3 and context['relationships']['trust']==0.6
+            assert context['promise_history'][0]['circumstances'][0]['available_games'] is None
+            assert context['promise_history'][0]['score']['final_achievement_score'] is None
+            assert context['promise_history'][1]['circumstances']==[known.to_dict()]
+            assert context['promise_history'][1]['score']['final_achievement_score']=='1/2'
+            assert promises.load_team('a').charges==(20,) and promise_path.read_bytes()==unchanged
+        print("Native Windows sourced promise circumstances, unknown counts, raw score and restart verified (synthetic).")
+
+
 
 
 

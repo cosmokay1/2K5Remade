@@ -29,6 +29,54 @@ inline void integer_money(const nlohmann::json& value) {
         (value.is_number_unsigned() && value.get<uint64_t>() > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())))
         throw std::runtime_error("Invalid integer money");
 }
+inline void promise_circumstances(const nlohmann::json& history, const nlohmann::json& request) {
+    if (!history.contains("circumstances")) return;
+    const auto& records=history.at("circumstances");
+    const auto nonblank=[](const nlohmann::json& value) {
+        return value.is_string() && value.get<std::string>().find_first_not_of(" \t\r\n")!=std::string::npos;
+    };
+    if (!request.contains("team_id") || !nonblank(request.at("team_id")) ||
+        history.at("player_id")!=request.at("player_id") || !records.is_array() || records.empty() ||
+        !history.at("score").at("goals").is_array()) throw std::runtime_error("Invalid circumstance identity or coverage");
+    std::set<std::string> windows,seen;
+    for (const auto& goal:history.at("score").at("goals")) {
+        if (!nonblank(goal.at("window"))) throw std::runtime_error("Missing scored promise window");
+        windows.insert(goal.at("window").get<std::string>());
+    }
+    for (const auto& row:records) {
+        if (!row.is_object() || row.size()!=12) throw std::runtime_error("Invalid circumstance shape");
+        for (const auto* field:{"player_id","team_id","window","mode","source","coverage"})
+            if (!nonblank(row.at(field))) throw std::runtime_error("Missing circumstance provenance");
+        const auto window=row.at("window").get<std::string>();
+        const auto mode=row.at("mode").get<std::string>();
+        if (row.at("player_id")!=request.at("player_id") || row.at("team_id")!=request.at("team_id") ||
+            !windows.count(window) || !seen.insert(window).second ||
+            (mode!="played" && mode!="cpu_played" && mode!="fast_sim") || !row.at("complete_window").is_boolean())
+            throw std::runtime_error("Foreign or invalid circumstance scope");
+        bool unknown=false;
+        for (const auto* field:{"total_games","available_games","injury_unavailable_games","coaching_dnp_games"}) {
+            if (row.at(field).is_null()) unknown=true;
+            else integer_money(row.at(field));
+        }
+        if (unknown ? !nonblank(row.at("unavailable_reason")) : !row.at("unavailable_reason").is_null())
+            throw std::runtime_error("Invalid unknown circumstance reason");
+        const auto& total=row.at("total_games"); const auto& available=row.at("available_games");
+        const auto& injury=row.at("injury_unavailable_games"); const auto& coaching=row.at("coaching_dnp_games");
+        if (!total.is_null()) {
+            const auto limit=total.get<int64_t>();
+            for (const auto* field:{"available_games","injury_unavailable_games","coaching_dnp_games"})
+                if (!row.at(field).is_null() && row.at(field).get<int64_t>()>limit)
+                    throw std::runtime_error("Circumstance exceeds total games");
+            // Subtraction avoids overflow while checking disjoint nonnegative counts.
+            for (const auto* first:{"available_games","coaching_dnp_games"})
+                if (!row.at(first).is_null() && !injury.is_null() &&
+                    row.at(first).get<int64_t>()>limit-injury.get<int64_t>())
+                    throw std::runtime_error("Disjoint circumstances exceed total games");
+        }
+        if (!available.is_null() && !coaching.is_null() && coaching.get<int64_t>()>available.get<int64_t>())
+            throw std::runtime_error("Coaching DNP exceeds available games");
+    }
+}
 inline void exact_money(const nlohmann::json& value) {
     if (value.is_number_integer()) { integer_money(value); return; }
     if (!value.is_string()) throw std::runtime_error("Inexact response money");
@@ -552,8 +600,10 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
                 throw std::runtime_error("Invalid promise agreement context");
             promise_goals(agreement.at("goals"));
         }
-        for (const auto& history : result.at("promise_history"))
+        for (const auto& history : result.at("promise_history")) {
             if (!history.is_object()) throw std::runtime_error("Invalid promise history context");
+            promise_circumstances(history,request);
+        }
         if (result.contains("negotiation_history")) {
             if (!result.at("negotiation_history").is_array()) throw std::runtime_error("Invalid negotiation history context");
             if (result.contains("negotiation_history_total")) {

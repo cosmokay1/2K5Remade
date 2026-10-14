@@ -339,6 +339,40 @@ int main() {
         auto player_request = franchise::parse_frame(R"({"operation":"player_context","player_id":"v"})");
         auto player_reply = franchise::parse_frame(R"({"error":null,"result":{"player_id":"v","financial_revision":0,"initialized":true,"personality":{},"relationships":{},"agreed_promises":[],"promise_history":[]}})");
         franchise::validate_result(player_reply, player_request);
+        auto circumstance_request=player_request; circumstance_request["team_id"]="a";
+        auto circumstance_reply=player_reply;
+        auto circumstances=franchise::parse_frame(R"({"player_id":"v","team_id":"a","window":"season","mode":"cpu_played","total_games":16,"available_games":12,"injury_unavailable_games":4,"coaching_dnp_games":2,"source":"synthetic report","coverage":"full season","complete_window":true,"unavailable_reason":null})");
+        circumstance_reply["result"]["promise_history"]={{{"player_id","v"},{"score",{{"goals",{{{"window","season"}}}}}},{"circumstances",{circumstances}}}};
+        franchise::validate_result(circumstance_reply,circumstance_request);
+        auto unknown_circumstance=circumstance_reply;
+        unknown_circumstance["result"]["promise_history"][0]["circumstances"][0]["available_games"]=nullptr;
+        unknown_circumstance["result"]["promise_history"][0]["circumstances"][0]["unavailable_reason"]="Collector unavailable";
+        franchise::validate_result(unknown_circumstance,circumstance_request);
+        for (int scenario=0;scenario<18;++scenario) {
+            auto bad=circumstance_reply; auto req=circumstance_request;
+            auto& history=bad["result"]["promise_history"][0]; auto& row=history["circumstances"][0];
+            if (scenario==0) row["player_id"]="other";
+            if (scenario==1) row["team_id"]="other";
+            if (scenario==2) row["window"]="other";
+            if (scenario==3) row["mode"]="invented";
+            if (scenario==4) row["total_games"]=true;
+            if (scenario==5) row["available_games"]=-1;
+            if (scenario==6) row["available_games"]=17;
+            if (scenario==7) row["injury_unavailable_games"]=5;
+            if (scenario==8) row["coaching_dnp_games"]=13;
+            if (scenario==9) row["available_games"]=nullptr;
+            if (scenario==10) row["unavailable_reason"]="unexpected";
+            if (scenario==11) row["source"]=" ";
+            if (scenario==12) row["complete_window"]=1;
+            if (scenario==13) history["circumstances"].push_back(row);
+            if (scenario==14) row["unexpected"]=0;
+            if (scenario==15) req.erase("team_id");
+            if (scenario==16) history["player_id"]="other";
+            if (scenario==17) { row["total_games"]=INT64_MAX;row["available_games"]=INT64_MAX;row["injury_unavailable_games"]=1; }
+            bool rejected=false;
+            try { franchise::validate_result(bad,req); } catch (const std::exception&) { rejected=true; }
+            if (!rejected) throw std::runtime_error("Corrupt promise circumstances accepted");
+        }
         player_reply["result"]["contract_accounting"]=nullptr;
         franchise::validate_result(player_reply,player_request);
         auto accounting=nlohmann::json{{"status","active"},{"charge_scope","active_contract"},

@@ -51,3 +51,13 @@ adjust trust. Relationship changes remain explicit, bounded, once-only sourced
 transactions. A context-aware consequence policy and actual game capture/UI
 remain unfinished; this evidence format does not prove injuries or coaching
 choices were captured from the game.
+
+The native player-context boundary validates optional saved circumstances against
+the requested player/team and scored goal windows. It checks exact fields, known
+or unknown counts, bounds, simulation-mode declarations, coverage and reasons.
+Legacy histories without circumstances retain their prior wire shape. An
+asset-free Windows fixture reads both incomplete/unknown and final/known context
+across two native client processes, requiring identical replies, unchanged trust
+and cap charges, and byte-identical database state. Actual native Windows
+execution of this new fixture is pending CI; a portable C++ harness has accepted
+the actual Python context reply.

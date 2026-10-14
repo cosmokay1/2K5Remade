@@ -2160,3 +2160,22 @@ strict replay tampering, stable retries/legacy shapes and provider delivery.
 Independent read-only review passed24 focused cases with no concrete regression.
 Replay optimization13031b5 also passed CI38499740729. New context Windows
 execution remains pending CI; no retail game/save/load evidence is claimed.
+
+### Native promise circumstance validation and restart fixture (2026-10-13)
+
+Native player_context now validates optional circumstance history records: exact
+12-field schema, requested/history player and requested team binding, scored
+windows, unique nonempty context windows, declared mode, strict nullable counts,
+source/coverage/reason/completeness and overflow-safe disjoint/subset bounds.
+Legacy histories remain compatible. Added valid known/unknown native fixtures
+and18 corruption cases including bool counts, duplicates, foreign identities,
+missing team, unexpected fields and INT64_MAX count overflow.
+
+The new Windows smoke mode and source fixture persist interim unknown eligibility/
+coaching counts followed by final known availability/injury context. Two native
+processes must read identical context, rawfinalscore1/2, unchangedtrust0.6,
+cap20 and byte-identical database state. Exact fixture construction/request
+passed locally through Bridge; a rebuilt portable C++ harness accepted its actual
+Python reply. All437 Python tests and portable native protocol checks pass.
+The new actual Windows process execution awaits CI. Prior promise-source CI
+38500341337 was still live when checked; no retail game/save evidence is claimed.

@@ -3,6 +3,7 @@
 
 int wmain(int argc, wchar_t** argv) {
     if (argc != 3 && argc != 4) return 2;
+    const bool promise_context = argc == 4 && std::wstring(argv[3]) == L"--promise-context";
     const bool replay = argc == 4 && std::wstring(argv[3]) == L"--replay";
     const bool abrupt = argc == 4 && std::wstring(argv[3]) == L"--abrupt";
     const bool compact_release = argc == 4 && std::wstring(argv[3]) == L"--compact-release";
@@ -14,13 +15,19 @@ int wmain(int argc, wchar_t** argv) {
     const bool return_replay = argc == 4 && std::wstring(argv[3]) == L"--return-replay";
     const bool returned_amendment = argc == 4 && std::wstring(argv[3]) == L"--returned-restructure";
     const bool generation_trade = argc == 4 && std::wstring(argv[3]) == L"--generation-trade";
-    if (argc == 4 && !compact_release && !capacity && !generation_trade && !returned_amendment && !replay && !abrupt && !release && !assignment && !restructure && !returning) return 2;
+    if (argc == 4 && !promise_context && !compact_release && !capacity && !generation_trade && !returned_amendment && !replay && !abrupt && !release && !assignment && !restructure && !returning) return 2;
     try {
         franchise::PipeClient client(argv[1], argv[2], franchise::ServiceMode::OfflineFixture);
         if (abrupt) {
             std::cout << client.process_id() << std::endl;
             std::cin.get();
             ExitProcess(0);  // Deliberately bypass all client destructors.
+        }
+        if (promise_context) {
+            client.submit(R"({"protocol":1,"request_id":"promise-context","operation":"player_context","team_id":"a","player_id":"p","timeout_ms":5000})");
+            while (!client.ready()) std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            std::cout << client.take() << std::endl;
+            return 0;
         }
         if (generation_trade) {
             const char* requests[] = {
