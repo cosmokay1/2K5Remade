@@ -48,7 +48,7 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   the actual Sign Contract FSM descriptor0x00557B2C and message11 callback,
   and that descriptor has now been observed during a user signing attempt. Current
   bank/name readback is verified for Trotter; Gildon terms, saved ownership and first-year cap readback are verified; durable
-  pinned same-year UUID bindings now preserve1937 IDs/initial profiles across baseline/control/signing snapshots. Guard bytes are emitted by the privately compiled/installed observer; actual new-screen matching is pending; identity across rebuilds and AI/modern transaction integration remain unverified.
+  pinned same-year UUID bindings now preserve1937 IDs/initial profiles across baseline/control/signing snapshots. Actual Trotter slot/name/biography guard now matches the pinned candidate UUID in the running game test; automatic bridge binding/calendar/financial reconciliation remain pending; identity across rebuilds and AI/modern transaction integration remain unverified.
 - Actual AI/game/save integration, telemetry capture and final playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 

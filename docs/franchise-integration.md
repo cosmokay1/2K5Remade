@@ -634,3 +634,11 @@ selection, runtime calendar and financial revision must still reconcile before
 using it for a transaction. Raw fields remain uninterpreted and the trace says
 unbound_snapshot_guard. Actual configured live binding and Vertex sidecar
 execution remain unverified; the helper is not yet called by the game bridge.
+
+
+Actual Trotter test with installed guard build: slot1910, observed names and
+seven raw bytes match the pinned AIGILDON guard and existing issued UUID.
+User confirms the offer screen is open; no submission was requested. This is
+a real read-only candidate observation plus external resolver execution. The
+game bridge still has no resolver invocation, current-book import or financial
+authorization; live AI negotiation is not proved by this match.

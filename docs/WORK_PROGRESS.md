@@ -4153,3 +4153,21 @@ new SHA256a4648f45882f48ac12a322f7f7221585710a783fd89ddb91585262d9a0e4d67c.
 Requested a read-only AIGILDON/Trotter offer-screen observation without submitting
 an offer. Until its new trace is inspected, live guard matching remains unverified.
 Published712582b passed Build38605154365 and Franchise AI38605154405.
+
+
+## October14,2026 — Actual Trotter biography candidate matched
+
+User confirmed the requested Trotter offer screen is open after the AIGILDON
+load instruction. Actual session.log from active PID71410 reports slot1910,
+Jeremiah/Trotter, pbp_photo_raw19051905 and dob_region_raw16b449. Installed
+executable hashes to a4648f45882f48ac12a322f7f7221585710a783fd89ddb91585262d9a0e4d67c.
+The authored resolver matches those live guard fields against the private pinned
+companion and AIGILDON payload, yielding the existing Trotter candidate UUID.
+Private evidence retained in analysis/AIBASELIN/trotter-live-guard-match.json.
+No offer submission, guest write, model call or profile reroll was performed.
+
+This verifies actual guard observation and offline candidate matching in this
+controlled screen. The game bridge does not call the resolver yet; automatic
+franchise selection, runtime calendar and whole-book financial reconciliation
+remain required before a signing operation can use the candidate. Do not report
+this read-only match as AI negotiation integration or financial authorization.
