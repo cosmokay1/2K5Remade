@@ -1,5 +1,5 @@
 """Explicit nominal compensation and payments; independent of cap proration."""
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from franchise.cap import money, Rejected
 
 
@@ -34,10 +34,9 @@ class CashObligation:
                 raise ValueError("Payment allocations disagree with total paid")
 
     def to_dict(self):
-        record = asdict(self)
-        if self.paid_components is None:
-            del record["paid_components"]
-        else:
+        record = {"obligation_id":self.obligation_id,"player_id":self.player_id,
+                  "amount":self.amount,"paid":self.paid,"source":self.source}
+        if self.paid_components is not None:
             record["paid_components"] = [list(item) for item in self.paid_components]
         return record
 

@@ -2090,3 +2090,23 @@ Windows CI38498978074 for5f0b472 completed successfully:427tests on Ubuntu
 and Windows; native compact long-franchise cash reconciliation/restart fixture
 executed on Windows. Later cash-binding CI38499239068 was still live when
 checked. No retail gameplay or guest save/load evidence is implied.
+
+### Profiled cash serialization cost (2026-10-13)
+
+Profiled the fixed release-history format4 benchmark:215668 calls to
+CashObligation.to_dict consumed2.319seconds cumulatively through recursive
+dataclasses.asdict. Cash records contain immutable strings/integers and optional
+immutable component tuples. Direct field serialization now preserves the exact
+legacy dictionary/key order and omission rules, creates fresh component lists,
+and avoids redundant recursive copying. No reconciliation/checkpoint validation
+is skipped; no persistent cache is introduced.
+
+Same profiled workload retained215668 serialization calls but their cumulative
+time fell to0.066seconds; complete profiled workload6.893s to3.871s including
+fixture construction. Unprofiled sampleformat4 medianread105.30ms and retry
+105.20ms; format3 medianread60.26ms/retry52.68ms illustrates timing noise and
+remaining replay costs. Full/compact receipts remain71346/3043bytes. Eighteen
+independent comparisons against the old dataclass serializer produced identical
+JSON and verified output component mutation cannot alter immutable records.
+All429 Python tests and money audit pass. These are local synthetic measurements
+with profiler overhead, not game-frame, Windows or Deck acceptance.
