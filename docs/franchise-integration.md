@@ -470,6 +470,20 @@ global0x00E3C278 as raw original accounting values, not modern ledger authority.
 Portable authored low/high-memory tests cover table selection and read-only
 behavior; actual live team/cap matching still needs the installed probe's trace.
 
+The installed probe's actual AIGILDON/Trotter observation now reports mode2,
+table index15 (Giants), payroll77038 and league cap80500. This matches the
+controlled signed save and prior user-visible balances. It verifies this team
+association and raw original totals only; adjusted-cap accumulator semantics,
+current calendar, companion selection and full financial authority remain open.
+
+Calendar audit located the original season-index getter0x000C4EB0 at global
+0x00E576B8. The year display0x00247AC0 adds2004 to that index. Serialization
+0x000C5310 writes its low byte at scheduler-record+6, and loading0x000C5800
+zero-extends that byte back to the global. The save inspector's year byte at
+0x917EF is a schedule game-year field from the attributed format reference;
+do not substitute it for verified live season/calendar state. Scheduler record
+selection, week/phase meaning and an actual season-index read are still pending.
+
 
 User-visible Gildon calibration: the current raw offer word829 matches$8.29M,
 context+0x0A=2 matches2years, context+8 low byte4 matches40%bonus and bits29..31

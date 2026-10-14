@@ -4236,3 +4236,24 @@ runtime/NFL2K5.pre-team-probe.exe as rollback. Installed SHA256
 0783c6e91751e8989d1b6c33720db27df5b6cf93cb72f999c39abcebf1053760.
 Requested the same AIGILDON/Trotter screen without offer submission. Actual
 team/cap readback remains pending; original signing logic is unchanged.
+
+## October14,2026 — Actual signing team and raw cap matched
+
+User opened Trotter after loading the requested AIGILDON. Installed SHA256
+0783c6e91751e8989d1b6c33720db27df5b6cf93cb72f999c39abcebf1053760
+and actual process73738 were checked. The new trace identifies Trotter slot1910
+with the same biography guard, plus team mode2/table index15, payroll77038
+and league cap80500. Index15 is Giants in the supported saved roster ordering;
+the exact payroll matches AIGILDON and the cap matches prior user display.
+Private bounded trace retained in analysis/AIBASELIN/trotter-live-team-cap.txt.
+No game input, offer submission, financial write or control enablement performed.
+This closes the specific live team/raw total association; it does not authorize
+modern accounting or prove full franchise/calendar reconciliation.
+
+Independent calendar audit identifies season-index getterC4EB0/globalE576B8,
+display247AC0 adding2004, and scheduler serialization/load at record+6.
+No new field is installed or inferred from another process's memory; actual
+season-index and week/phase validation remain pending. The saved game-year byte
+used by roster inspection is not accepted as independent runtime calendar proof.
+Published589bea2 and ebb12a1 both passed Build and Franchise AI workflows;
+5c83166 workflows38612170134/38612170392 remain in progress at this check.
