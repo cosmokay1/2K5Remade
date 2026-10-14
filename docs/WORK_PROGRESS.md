@@ -2750,3 +2750,23 @@ CI now runs the renderer fixture against the pinned official SDL SDK before full
 runtime compilation; exact-revision Windows/Linux x86-64 results remain pending.
 Framebuffer staging currently has an explicit64MiB host allocation policy, not a
 claimed NV2A hardware limit; real game workload/performance remains unmeasured.
+
+### Linux renderer x86-64 passed; decoder include fix and release representation (2026-10-13)
+
+Build38511707664 at84b9768: Windows runtime/tools passed. Linux condition, AC97,
+checked-copy and actual renderer fixture steps passed on x86-64; fullruntime
+advanced to nv2a_mmio_hook.c GNU REG_RAX/... definitions missing because the feature
+macro came after system headers. Dependency26d96ce moves it before all includes;
+local Linux ARM64 syntax passes but that does not exercise the x86 register branch.
+Next exact x86 CI remains required.
+
+Added optional release_calendar_year to GenerationAgreement as a prerequisite for
+post-roll releases. It preserves economic original/amended contracts and exact
+restructure/incoming-assignment archives while separately validating the release
+cursor; retained views must anchor at the actual release year. Closed payment
+ceilings use that cursor so prior earned nonguaranteed salary is not cancelled.
+Absent markers leave legacy snapshots unchanged. Layered, restructured and
+incoming-assignment cases plus malformed markers/cursors pass; all483 offline
+tests pass. Independent review found no concrete representation defect. Ledger,
+Store and native transaction guards remain: exact authoritative cursor binding,
+versioned atomic replay and native receipts are still required before enablement.

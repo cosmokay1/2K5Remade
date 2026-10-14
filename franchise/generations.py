@@ -1,5 +1,5 @@
 """Immutable team-book identity, independent of contract terms and payments."""
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import json
 from typing import TYPE_CHECKING
@@ -83,6 +83,7 @@ class GenerationAgreement:
     assignment_request_id: str | None = None
     assigned_from_team: str | None = None
     assigned_from_generation_id: str | None = None
+    release_calendar_year: int | None = None
 
     def __post_init__(self):
         from franchise.books import ActiveContract
@@ -124,7 +125,14 @@ class GenerationAgreement:
                 raise ValueError('Canonical assignment source generation required')
             if self.incoming_trade.original_cash.obligation_id != source_cash:
                 raise ValueError('Incoming plan cash disagrees with assignment source')
-        if ((self.release is not None and self.release.original_contract != self.contract)
+        release_contract=self.contract
+        if self.release_calendar_year is not None:
+            if (type(self.release_calendar_year) is not int or not 2020 <= self.release_calendar_year <= 2030
+                    or self.release is None or self.release.scope.league_year != self.release_calendar_year
+                    or self.release.original_contract.elapsed_years < self.contract.elapsed_years):
+                raise ValueError('Explicit sourced calendar release cursor required')
+            release_contract=replace(self.contract,elapsed_years=self.release.original_contract.elapsed_years)
+        if ((self.release is not None and self.release.original_contract != release_contract)
                 or (self.outgoing_trade is not None and self.outgoing_trade.original_contract != self.contract)
                 or (self.restructure is not None and (self.restructure.contract != self.contract
                     or self.restructure.original_contract != self.original_contract))
@@ -161,7 +169,8 @@ class GenerationAgreement:
         ceilings = self.contract.compensation_components()
         if self.status != 'active':
             guarantees = self.contract.offer.guaranteed_salaries or (0,) * len(self.contract.offer.salaries)
-            for i in range(self.contract.elapsed_years, len(guarantees)):
+            cutoff=self.release.original_contract.elapsed_years if self.release is not None else self.contract.elapsed_years
+            for i in range(cutoff, len(guarantees)):
                 ceilings['base:' + str(i)] = guarantees[i] if self.status == 'released' else 0
         return ceilings
 
@@ -187,6 +196,9 @@ class GenerationCalendarView:
                 or type(self.anchor_year) is not int or type(self.current_year) is not int
                 or not 2020 <= self.anchor_year <= self.current_year <= 2030):
             raise ValueError('Typed agreement and explicit current/future anchored calendar required')
+        if (self.agreement.release_calendar_year is not None
+                and self.anchor_year != self.agreement.release_calendar_year):
+            raise ValueError('Retained calendar release charges must start at the actual release year')
         facts=(self.expiry_eligible,self.expiry_cash,self.expiry_source)
         if not any(value is not None for value in facts):
             return

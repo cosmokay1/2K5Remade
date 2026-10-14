@@ -1223,6 +1223,8 @@ class Ledger:
                 'active_generation_ids':dict(sorted(self._active_generation_ids.items())),
                 'agreements':[{'identity':asdict(a.identity),'status':a.status,
                     'return_request_id':a.return_request_id,
+                    **({'release_calendar_year':a.release_calendar_year}
+                        if a.release_calendar_year is not None else {}),
                     **({'assignment_request_id':a.assignment_request_id,
                         'assigned_from_team':a.assigned_from_team,
                         'assigned_from_generation_id':a.assigned_from_generation_id}
