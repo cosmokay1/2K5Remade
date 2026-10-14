@@ -103,3 +103,25 @@ identify the receiving book's cash obligation separately. Cash creation refuses
 ID collisions without replacing an earlier obligation. These mechanisms do not
 by themselves authorize a second agreement: player-keyed lifecycle archives and
 versioned replay/migration must change before former-club guards are lifted.
+
+## Agreement archives and native inspection
+
+Bound ledgers retain typed immutable agreement versions keyed by generation ID:
+the birth contract, effective contract and supported lifecycle plans. Amendments
+and closure replace the current archive version while preserving birth terms;
+cash settlement remains a live record under the agreement's own cash ID. Payment
+validation iterates these records and applies each agreement's lifecycle ceilings.
+Player context and the migration inventory use the same archive. Original
+format3 financial snapshots and event serialization remain unchanged.
+
+The native pipe supports `contract_context` with team_id, generation_id and
+timeout_ms, returning the exact agreement's accounting and current financial
+revision. It requires no model call or AI access. Unknown or foreign-team
+agreements reject, disconnect/deadline checks apply, and oversized responses
+return a bounded error. This is an inspection boundary for future in-game
+screens; it is not a completed game screen or guest hook.
+
+The legacy player-keyed posting view and return guards still remain. Archives
+are rebuilt from source history, not a new persistent format. Supporting a
+second agreement requires versioned events, migration and generation-specific
+ownership/history lookup before these guards can be lifted.

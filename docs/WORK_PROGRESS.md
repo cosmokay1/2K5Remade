@@ -1791,3 +1791,32 @@ prior heads 850ea16 and 1e59328; this change's remote CI awaits push.
 This remains the legacy identity foundation. Database format3, player-keyed
 archives and former-club return guards remain; actual multiple agreements need
 versioned archives/migration. No guest writes or playable build demonstrated.
+
+## October 13, 2026 — Agreement archives and native contract inspection
+
+Typed immutable agreement versions now retain birth/effective terms and supported
+release, assignment and restructure plans by generation. Bound active-contract,
+terms and guarantee reads use these archives; cash remains live under the exact
+agreement cash identity. Payment validation iterates all generation archives and
+applies per-agreement lifecycle ceilings. Inventory and player context share
+archive projections. Missing/mismatched archive coverage and typed source plans
+reject; original format3 postings remain unchanged.
+
+Added team-scoped read-only native contract_context by generation ID, available
+with AI disabled. Unknown/foreign-team IDs reject; deadlines, disconnect checks
+and the 64KiB frame limit apply. C++ validates requested identities and accounting.
+Four integration tests cover real stored agreement reads, release/payment/restart,
+request rejection/disconnection and oversized response recovery. Four archive
+tests cover immutable birth terms, effective/closed debt, live payments, invalid
+records and agreement-specific guarantee lookup.
+
+All 369 Python tests pass; portable C++ build/CTest pass. Independent isolated
+HEAD/current comparison found financial/cash snapshots, guarantees and persisted
+config/event JSON identical across sign/release/payment/trade chains/restructure
+and restart. Synthetic money audit passed 5,050 bonus-conservation cases. Exact
+prior f71e5fd passed both remote workflows; new head CI pending push.
+
+No new database format or former-club return signing enabled yet. Superseded
+agreement lookup, versioned posting migration and atomic return signing remain
+required. Actual guest hooks/screens, legal assets/save evidence and playability
+remain unverified.

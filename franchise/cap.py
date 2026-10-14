@@ -129,6 +129,7 @@ class Ledger:
         self._traded_in = {}
         self._restructures = {}
         self._team_identity = None
+        self._generation_agreements = {}
         self._generation_identities = {}
         self._generation_by_player = {}
         self._active_generation_ids = {}
@@ -250,6 +251,8 @@ class Ledger:
         with self._lock:
             if player_id not in self._active_contracts:
                 raise Rejected("Original active contract and elapsed years unavailable")
+            if self._team_identity is not None:
+                return self.generation_accounting(self.contract_identity(player_id).generation_id).contract
             return self._active_contracts[player_id]
 
     def bind_team_identity(self, team_id):
@@ -276,6 +279,8 @@ class Ledger:
             self._generation_identities = {item.generation_id:item for item in identities.values()}
             self._generation_by_player = {player:item.generation_id for player,item in identities.items()}
             self._active_generation_ids = {player:identities[player].generation_id for player in self._players}
+            for player in identities:
+                self._refresh_generation_agreement(player)
 
     def contract_identity(self, player_id):
         from franchise.generations import GenerationIdentity, legacy_identity
@@ -308,6 +313,49 @@ class Ledger:
             self._generation_identities[identity.generation_id] = identity
             self._generation_by_player[player_id] = identity.generation_id
             self._active_generation_ids[player_id] = identity.generation_id
+
+    def _refresh_generation_agreement(self, player_id):
+        from franchise.generations import GenerationAgreement
+        if self._team_identity is None:
+            return
+        identity = self.contract_identity(player_id)
+        previous = self._generation_agreements.get(identity.generation_id)
+        release = self._released.get(player_id)
+        outgoing = self._traded_out.get(player_id)
+        restructure = self._restructures.get(player_id)
+        contract = self._active_contracts.get(player_id)
+        if contract is None:
+            contract = release.original_contract if release is not None else outgoing.original_contract
+        original = previous.original_contract if previous is not None else (
+            restructure.original_contract if restructure is not None else contract)
+        self._generation_agreements[identity.generation_id] = GenerationAgreement(
+            identity, original, contract, release, outgoing, self._traded_in.get(player_id), restructure)
+
+    def generation_accounting(self, generation_id):
+        with self._lock:
+            agreement = self._generation_agreements.get(generation_id)
+            if agreement is None:
+                raise Rejected('Known contract generation required')
+            if (agreement.identity.generation_id != generation_id
+                    or self.contract_identity(agreement.identity.player_id) != agreement.identity):
+                raise Rejected('Archived agreement identity disagrees with contract generation')
+            return agreement
+
+    def generation_agreements(self):
+        with self._lock:
+            if set(self._generation_agreements) != set(self._generation_identities):
+                raise Rejected('Generation agreement archive coverage is inconsistent')
+            return tuple(self.generation_accounting(key) for key in sorted(self._generation_agreements))
+
+    def generation_cash(self, generation_id):
+        with self._lock:
+            agreement = self.generation_accounting(generation_id)
+            return self._cash.records.get(agreement.identity.cash_obligation_id) if self._cash is not None else None
+
+    def generation_guarantee_cash(self, generation_id):
+        with self._lock:
+            agreement = self.generation_accounting(generation_id)
+            return self._guarantee_cash(agreement.identity.player_id, agreement=agreement)
 
     def apply_preseason_release(self, player_id, *, scope, discount, payment_year_offsets,
                                record_id, expected_revision):
@@ -352,6 +400,7 @@ class Ledger:
             self._cash.records[cash.obligation_id] = plan.cash_obligation
             self._cash.revision += 1
             self.revision += 1
+            self._refresh_generation_agreement(player_id)
             return plan
 
     def _check_transaction_date(self,year,on):
@@ -418,6 +467,7 @@ class Ledger:
             self._cash.revision += 1
             self._last_transaction_date = scope.amended_on
             self.revision += 1
+            self._refresh_generation_agreement(player_id)
             return plan
 
     @staticmethod
@@ -470,6 +520,7 @@ class Ledger:
             self._cash.records[cash.obligation_id] = plan.seller_cash
             self._cash.revision += 1
             self.revision += 1
+            self._refresh_generation_agreement(player_id)
             return plan
 
     def apply_preseason_trade_in(self, plan, *, expected_revision):
@@ -517,6 +568,7 @@ class Ledger:
             self._cash.records[plan.buyer_cash.obligation_id] = plan.buyer_cash
             self._cash.revision += 1
             self.revision += 1
+            self._refresh_generation_agreement(player)
             return plan
 
     @staticmethod
@@ -562,6 +614,12 @@ class Ledger:
         with self._lock:
             if player_id not in self._contracts:
                 raise Rejected("Original contract terms are unavailable")
+            if self._team_identity is not None:
+                agreement = self.generation_accounting(self.contract_identity(player_id).generation_id)
+                result = agreement.contract.offer.to_dict()
+                if agreement.contract.bonus_layers:
+                    result['bonus_layers'] = [asdict(layer) for layer in agreement.contract.bonus_layers]
+                return result
             result = self._contracts[player_id].to_dict()
             contract = self._active_contracts.get(player_id)
             if contract is None and player_id in self._released:
@@ -574,21 +632,28 @@ class Ledger:
 
     def guarantee_cash(self, player_id):
         with self._lock:
-            offer = self._contracts.get(player_id)
+            if self._team_identity is not None:
+                return self.generation_guarantee_cash(self.contract_identity(player_id).generation_id)
+            return self._guarantee_cash(player_id)
+
+    def _guarantee_cash(self, player_id, *, agreement=None):
+        with self._lock:
+            offer = agreement.contract.offer if agreement is not None else self._contracts.get(player_id)
             if offer is None:
                 raise Rejected("Original contract terms are unavailable")
-            if player_id in self._traded_out:
-                layers = self._traded_out[player_id].original_contract.bonus_layers
+            if (agreement.status == 'assigned' if agreement is not None else player_id in self._traded_out):
+                layers = agreement.contract.bonus_layers if agreement is not None else self._traded_out[player_id].original_contract.bonus_layers
                 return {'unpaid_guaranteed_base_by_original_year': [0] * len(offer.salaries),
                         'unpaid_signing_bonus': 0,
                         **({'unpaid_original_signing_bonus': 0,
                             'unpaid_bonus_layers': {layer.cash_component: 0 for layer in layers}} if layers else {})}
-            record = self._cash.records.get(self.contract_cash_id(player_id)) if self._cash is not None else None
+            cash_id = agreement.identity.cash_obligation_id if agreement is not None else self.contract_cash_id(player_id)
+            record = self._cash.records.get(cash_id) if self._cash is not None else None
             if record is None or record.paid_components is None:
                 return None
             paid = dict(record.paid_components)
             guarantees = offer.guaranteed_salaries or (0,) * len(offer.salaries)
-            contract = self._active_contracts.get(player_id)
+            contract = agreement.contract if agreement is not None else self._active_contracts.get(player_id)
             if contract is None and player_id in self._released:
                 contract = self._released[player_id].original_contract
             layers = {layer.cash_component: max(0, layer.amount - paid.get(layer.cash_component, 0))
@@ -912,4 +977,5 @@ class Ledger:
             if isinstance(scale, UndraftedScale):
                 self._undrafted_bonus_remaining -= offer.signing_bonus
         self.revision += 1
+        self._refresh_generation_agreement(offer.player_id)
         return receipt

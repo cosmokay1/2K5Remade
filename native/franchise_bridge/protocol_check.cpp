@@ -187,6 +187,24 @@ int main() {
             try { franchise::validate_result(bad,player_request); } catch (const std::exception&) { rejected=true; }
             if (!rejected) throw std::runtime_error("Invalid agreement identity accepted");
         }
+        auto agreement_request=nlohmann::json{{"operation","contract_context"},{"team_id","a"},
+            {"generation_id",identified["generation_id"]}};
+        auto agreement_reply=nlohmann::json{{"error",nullptr},{"result",{{"team_id","a"},
+            {"generation_id",identified["generation_id"]},{"financial_revision",3},{"accounting",identified}}}};
+        franchise::validate_result(agreement_reply,agreement_request);
+        for (int scenario=0;scenario<7;++scenario) {
+            auto bad=agreement_reply;
+            if (scenario==0) bad["result"]["team_id"]="other";
+            if (scenario==1) bad["result"]["generation_id"]="legacy-contract:"+std::string(64,'b');
+            if (scenario==2) bad["result"]["accounting"]=nullptr;
+            if (scenario==3) bad["result"]["financial_revision"]=true;
+            if (scenario==4) bad["result"]["accounting"]["generation_id"]="legacy-contract:"+std::string(64,'b');
+            if (scenario==5) bad["result"]["extra"]=1;
+            if (scenario==6) bad["result"]["accounting"].erase("generation_id");
+            bool rejected=false;
+            try { franchise::validate_result(bad,agreement_request); } catch (const std::exception&) { rejected=true; }
+            if (!rejected) throw std::runtime_error("Invalid requested agreement context accepted");
+        }
         auto unknown=accounting;
         unknown["cash_obligation"].erase("paid_components"); unknown["guarantees"]=nullptr;
         player_reply["result"]["contract_accounting"]=unknown;

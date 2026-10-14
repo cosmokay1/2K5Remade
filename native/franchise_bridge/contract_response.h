@@ -406,6 +406,18 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
             throw std::runtime_error("Invalid retained cash posting");
         return;
     }
+    if (operation == "contract_context") {
+        if (!result.is_object() || result.size()!=4 || result.at("team_id")!=request.at("team_id") ||
+            !result.at("team_id").is_string() || result.at("generation_id")!=request.at("generation_id") ||
+            !result.at("generation_id").is_string()) throw std::runtime_error("Agreement context identity mismatch");
+        integer_money(result.at("financial_revision"));
+        const auto& accounting=result.at("accounting");
+        if (!accounting.is_object() || accounting.at("generation_id")!=result.at("generation_id"))
+            throw std::runtime_error("Missing requested agreement accounting");
+        const auto player=accounting.at("contract").at("offer").at("player_id").get<std::string>();
+        validate_contract_accounting(accounting,player);
+        return;
+    }
     if (operation == "player_context") {
         if (result.at("player_id") != request.at("player_id") || !result.at("player_id").is_string())
             throw std::runtime_error("Player context identity mismatch");

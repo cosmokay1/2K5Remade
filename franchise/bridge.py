@@ -29,7 +29,7 @@ class Bridge:
                 if set(request) != {"protocol", "request_id", "operation"}:
                     raise ValueError("Unexpected handshake fields")
                 self.access_check()
-                return self._reply(request_id, result={"ai_enabled": True, "operations": ["preview", "negotiate", "manual_sign", "manual_release", "manual_trade", "manual_restructure", "player_context"]})
+                return self._reply(request_id, result={"ai_enabled": True, "operations": ["preview", "negotiate", "manual_sign", "manual_release", "manual_trade", "manual_restructure", "player_context", "contract_context"]})
             if operation == 'manual_restructure':
                 from datetime import date
                 from franchise.cap import money
@@ -147,6 +147,24 @@ class Bridge:
                     payment_year_offsets=tuple(request['payment_year_offsets']),expected_revision=request['expected_revision'],
                     access_check=release_access)
                 return self._reply(request_id,result={'decision_mode':'manual','player_id':request['player_id'],'release':receipt})
+            if operation == 'contract_context':
+                if set(request) != {'protocol','request_id','operation','team_id','generation_id','timeout_ms'}:
+                    raise ValueError('Unexpected contract context fields')
+                if any(type(request[key]) is not str or not request[key].strip() for key in ('team_id','generation_id')):
+                    raise ValueError('Stable team and agreement identities required')
+                timeout=request['timeout_ms']
+                if type(timeout) is not int or not 1 <= timeout <= 60000:
+                    raise ValueError('Timeout must be 1-60000 milliseconds')
+                deadline=time.monotonic()+timeout/1000
+                self.connection_check()
+                result=self.store.contract_context(request['team_id'],request['generation_id'])
+                self.connection_check()
+                if time.monotonic() >= deadline:
+                    raise TimeoutError('Contract context request expired')
+                reply=self._reply(request_id,result=result)
+                if len(json.dumps(reply,allow_nan=False).encode('utf-8'))+1 > 65536:
+                    return self._reply(request_id,error='context_too_large',detail='Contract context exceeds pipe frame capacity')
+                return reply
             if operation == 'player_context':
                 if set(request) != {'protocol','request_id','operation','team_id','player_id','timeout_ms'}:
                     raise ValueError('Unexpected player context fields')

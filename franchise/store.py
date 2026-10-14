@@ -17,7 +17,6 @@ from franchise.cap import Ledger, Offer, Rejected, json_amount, money
 from franchise.rookie import RookieScale, UndraftedScale
 from franchise.books import OpeningBooks, parse_amount
 from franchise.cash import CashBook, CashObligation
-from franchise.generations import legacy_identity
 
 
 class GenerationPreflightError(ValueError):
@@ -441,26 +440,8 @@ class FranchiseStore:
             history=self._negotiation_history(db,team_id,player_id)
             accounting = None
             if player_id in ledger._contracts:
-                if player_id in ledger._active_contracts:
-                    contract = ledger._active_contracts[player_id]
-                    charges = contract.charges()
-                    status, charge_scope = 'active', 'active_contract'
-                elif player_id in ledger._released:
-                    plan = ledger._released[player_id]
-                    contract, charges = plan.original_contract, plan.charges()
-                    status, charge_scope = 'released', 'retained_obligations'
-                elif player_id in ledger._traded_out:
-                    plan = ledger._traded_out[player_id]
-                    contract, charges = plan.original_contract, plan.retained_bonus.annual_charges
-                    status, charge_scope = 'assigned', 'retained_obligations'
-                else:
-                    raise ValueError('Historical contract has no supported accounting status')
-                cash = ledger._cash.records.get(ledger.contract_cash_id(player_id)) if ledger._cash is not None else None
-                accounting = {'generation_id':ledger.contract_identity(player_id).generation_id,
-                    'status':status,'contract':contract.to_dict(),
-                    'annual_charges':[json_amount(value) for value in charges], 'charge_scope':charge_scope,
-                    'cash_obligation':cash.to_dict() if cash is not None else None,
-                    'guarantees':ledger.guarantee_cash(player_id)}
+                agreement=ledger.generation_accounting(ledger.contract_identity(player_id).generation_id)
+                accounting=self._generation_accounting_view(ledger,agreement)
             return {'player_id':player_id,'financial_revision':ledger.revision,'initialized':actor is not None,
                     'contract_accounting':accounting,
                     'personality':actor['personality'] if actor else None,
@@ -484,8 +465,25 @@ class FranchiseStore:
             return self._contract_generations_from_ledger(team_id,self._load(db,team_id))
 
     @staticmethod
-    def _legacy_generation_id(team_id,player_id):
-        return legacy_identity(team_id,player_id).generation_id
+    def _generation_accounting_view(ledger,agreement):
+        identity=agreement.identity
+        cash=ledger.generation_cash(identity.generation_id)
+        return {'generation_id':identity.generation_id,'status':agreement.status,
+            'contract':agreement.contract.to_dict(),
+            'annual_charges':[json_amount(value) for value in agreement.annual_charges()],
+            'charge_scope':'active_contract' if agreement.status=='active' else 'retained_obligations',
+            'cash_obligation':cash.to_dict() if cash is not None else None,
+            'guarantees':ledger.generation_guarantee_cash(identity.generation_id)}
+
+    def contract_context(self,team_id,generation_id):
+        """Read one exact team-book agreement, including its closed obligations."""
+        if any(type(value) is not str or not value.strip() for value in (team_id,generation_id)):
+            raise ValueError('Stable team and agreement identities required')
+        with self._connection() as db:
+            ledger=self._load(db,team_id)
+            agreement=ledger.generation_accounting(generation_id)
+            return {'team_id':team_id,'generation_id':generation_id,'financial_revision':ledger.revision,
+                'accounting':self._generation_accounting_view(ledger,agreement)}
 
     @staticmethod
     def _contract_generations_from_ledger(team_id,ledger):
@@ -493,28 +491,16 @@ class FranchiseStore:
             return {'record_id':record.record_id, 'annual_charges':[json_amount(value) for value in record.annual_charges],
                     'source':record.source}
         generations = []
-        for player in sorted(ledger._contracts):
-            retained = ()
-            if player in ledger._active_contracts:
-                contract, status = ledger._active_contracts[player], 'active'
-            elif player in ledger._released:
-                plan = ledger._released[player]
-                contract, status, retained = plan.original_contract, 'released', plan.retained
-            elif player in ledger._traded_out:
-                plan = ledger._traded_out[player]
-                contract, status, retained = plan.original_contract, 'assigned', (plan.retained_bonus,)
-            else:
-                raise ValueError('Historical contract has no supported generation status')
-            identity = ledger.contract_identity(player)
-            if identity is None or identity != legacy_identity(team_id,player):
-                raise ValueError('Contract generation identity disagrees with source team')
-            cash = ledger._cash.records.get(ledger.contract_cash_id(player)) if ledger._cash is not None else None
+        agreements=ledger.generation_agreements()
+        for agreement in sorted(agreements,key=lambda item:(item.identity.player_id,item.identity.generation_id)):
+            identity=agreement.identity
+            cash=ledger.generation_cash(identity.generation_id)
             generations.append({'generation_id':identity.generation_id,
-                'player_id':player, 'status':status, 'contract':contract.to_dict(),
+                'player_id':identity.player_id,'status':agreement.status,'contract':agreement.contract.to_dict(),
                 'cash_obligation':cash.to_dict() if cash is not None else None,
-                'retained_records':[charge_record(record) for record in retained]})
+                'retained_records':[charge_record(record) for record in agreement.retained_records]})
         books = ledger._opening_books
-        linked_cash_ids = {ledger.contract_cash_id(player) for player in ledger._contracts}
+        linked_cash_ids = {agreement.identity.cash_obligation_id for agreement in agreements}
         return {'format':1, 'team_id':team_id, 'financial_revision':ledger.revision,
             'cash_revision':ledger._cash.revision if ledger._cash is not None else None,
             'generations':generations,
@@ -618,31 +604,15 @@ class FranchiseStore:
     def _check_cash_components(ledger):
         if ledger._cash is None:
             return
-        for player, offer in ledger._contracts.items():
-            record = ledger._cash.records[ledger.contract_cash_id(player)]
+        for agreement in ledger.generation_agreements():
+            record=ledger.generation_cash(agreement.identity.generation_id)
+            if record is None:
+                raise ValueError('Known cash coverage lacks contract generation obligation')
             if record.paid_components is None:
                 continue
-            contract = ledger._active_contracts.get(player)
-            released = ledger._released.get(player)
-            assigned = ledger._traded_out.get(player)
-            if released is not None:
-                contract = released.original_contract
-            elif assigned is not None:
-                contract = assigned.original_contract
-            ceilings = contract.compensation_components() if contract is not None else {
-                "signing_bonus": offer.signing_bonus,
-                **{"base:" + str(i): salary for i, salary in enumerate(offer.salaries)}}
-            plan=getattr(ledger,'_released',{}).get(player)
-            if plan is not None:
-                guarantees=offer.guaranteed_salaries or (0,)*len(offer.salaries)
-                for i in range(plan.original_contract.elapsed_years,len(offer.salaries)):
-                    ceilings['base:'+str(i)]=guarantees[i]
-            trade=getattr(ledger,'_traded_out',{}).get(player)
-            if trade is not None:
-                for i in range(trade.original_contract.elapsed_years,len(offer.salaries)):
-                    ceilings['base:'+str(i)]=0
-            if any(key not in ceilings or amount > ceilings[key] for key, amount in record.paid_components):
-                raise ValueError("Paid component exceeds or disagrees with original contract")
+            ceilings=agreement.payment_ceilings()
+            if any(key not in ceilings or amount > ceilings[key] for key,amount in record.paid_components):
+                raise ValueError('Paid component exceeds or disagrees with original contract')
 
     @staticmethod
     def _check_opening_cash(ledger, records):
