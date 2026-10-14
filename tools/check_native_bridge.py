@@ -348,6 +348,32 @@ def main():
             assert promises.load_team('a').charges==(20,) and promise_path.read_bytes()==unchanged
         print("Native Windows sourced promise circumstances, unknown counts, raw score and restart verified (synthetic).")
 
+        if len(sys.argv)>2:
+            c_path=Path(directory)/'C host ownership.sqlite'
+            c_store=FranchiseStore(c_path)
+            c_store.create_team('a',Ledger.from_opening(OpeningBooks(),cap=100,roster_reserve=0,
+                max_bonus_years=5,veteran_minimums={'v':(1,)}))
+            agreement=None;context=None
+            for attempt in range(2):
+                result=subprocess.run([sys.argv[2],sys.executable,str(c_path)],
+                    text=True,capture_output=True,timeout=20,check=True)
+                replies=[json.loads(line) for line in result.stdout.splitlines()]
+                assert len(replies)==4
+                assert replies[0]['error'] is None and replies[0]['result']['ai_enabled'] is True
+                if attempt==0:
+                    assert replies[1]['error'] is None and replies[1]['result']['room_after']==90
+                    agreement=replies[2];context=replies[3]
+                else:
+                    assert replies[1]['error']=='state_rejected'
+                    assert replies[2]==agreement and replies[3]==context
+                assert replies[2]['error'] is None and replies[2]['result']['outcome']=='signed'
+                assert replies[3]['error'] is None
+                current=c_store.load_team('a')
+                assert current.charges==(10,) and current.revision==1 and current._players=={'v'}
+                assert replies[3]['result']==c_store.player_context('a','v')
+            print("Native Windows plain-C host adapter, bounded response retrieval and restart verified (synthetic).")
+
+
 
 
 

@@ -40,4 +40,4 @@ jobs:
         run: ctest --test-dir build-franchise-bridge -C Release --output-on-failure
       - name: Execute native pipe handshake and durable restart fixture
         if: runner.os == 'Windows'
-        run: python -m tools.check_native_bridge build-franchise-bridge/Release/franchise_bridge_check.exe
+        run: python -m tools.check_native_bridge build-franchise-bridge/Release/franchise_bridge_check.exe build-franchise-bridge/Release/franchise_c_host_check.exe

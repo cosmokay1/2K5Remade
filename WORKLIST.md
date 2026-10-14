@@ -186,6 +186,7 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
 
 ## M5 — Verified Remade integration (B01/B02 gate)
 
+- [ ] Link the reusable C-compatible franchise client into the actual root game host with explicit opt-in lifecycle ownership; validate host transport separately from guest transactions. The game target currently has no franchise-client linkage.
 - [ ] Establish a baseline game build and franchise behavior with the legal game.
 - [ ] Map contract records, cap/tender fields, player identity, statistics and save data.
 - [ ] Trace signing, extension, release, trade, draft and year-transition functions.

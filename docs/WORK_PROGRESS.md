@@ -2243,3 +2243,29 @@ executed successfully locally. Narrative round labels do not advance an actual
 game week; live-model variation and guest calendar/save validation remain open.
 Usage-diagnostic commitf7afca8 passed CI38501237122. New example execution on
 Windows still awaits its own CI; no retail gameplay or paid inference claimed.
+
+### Root game integration audit and C host adapter (2026-10-13)
+
+Audited actual root config/game.cmake and src/main.c: no franchise-client
+linkage/lifecycle/guest transaction calls exist yet. Build check configures
+NFL2K5_BUILD_GAME OFF. Generated guest code is present (38tracked files);
+retailXBE/rawsaves/Windowsdeps/build-generated function ranges are distinct
+missing inputs. Updated stale nested-remade references in integration guidance
+and added explicit unfinished actual-host linkage work. No financial offsets or
+calling conventions were guessed from unrelated roster/overall patches.
+
+Added a single-owner opaque C ABI around existing PipeClient, Windows static
+library and plain-C fixture. Staticstatuses contain exceptions; boundedsubmit,
+nonblockingready and cachedsize-query/short-buffer take preserve responses.
+Successfulhello is required before AInegotiate; disabled/failedhello/transport
+failure clears the grant. Serverstillrechecksaccess; manual/read calls remain
+independent. No actual main/config game hook or guest memory write is added.
+
+CheaderC11 strictsyntax and existing portable protocol build/CTest pass. Exact
+Cfixture JSON requests passed locally through Bridge twice with stalepreview
+rejection and identical manualsign/context, charge10/revision1. CI will build
+and execute the plain-C client against that synthetic DB; Windows execution
+is pending. Independent review found no concrete CABI defect. Existing blocking
+transport write precedes its response timeout; shutdown is not yet an
+unconditional bound against a nonreading peer. Actual game-host lifecycle,
+franchise hooks, save/readback and gameplay remain unverified.
