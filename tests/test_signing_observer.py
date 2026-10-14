@@ -151,6 +151,24 @@ int main(void) {
     put32(0xE576B8, 256); memcpy(before, ram, sizeof ram);
     nfl2k5_diag_fsm(1, 0x557B2C, 1);
     assert(!memcmp(before, ram, sizeof ram)); assert(!memcmp(contig_before, contig, sizeof contig));
+    /* Transaction checkpoints have their own bound, do not read when disabled,
+     * and accept high-memory locators without touching terms or guest registers. */
+    put32(0x2200, 95); put32(0x2300, 0x3478B6);
+    memcpy(before, ram, sizeof ram); memcpy(contig_before, contig, sizeof contig);
+    trace_env = NULL; reads = 0;
+    nfl2k5_diag_signing(0, 0x1000, 0x2200, 0, 0x2300); assert(!reads);
+    trace_env = "1";
+    nfl2k5_diag_signing(3, 0x1000, 0x2200, 0, 0x2300); assert(!reads);
+    nfl2k5_diag_signing(0, 0x1000, 0x2200, 0, 0x2300);
+    nfl2k5_diag_signing(1, 0x1000, 0x2200, 1, 0x2300);
+    nfl2k5_diag_signing(2, 0x1000, 0x2200, 0, 0x2300);
+    nfl2k5_diag_signing(1, 0x1000, UINT32_MAX, 0, 0x2300);
+    nfl2k5_diag_signing(0, UINT32_MAX, 0x2200, 0, UINT32_MAX);
+    assert(!memcmp(before, ram, sizeof ram)); assert(!memcmp(contig_before, contig, sizeof contig));
+    for (unsigned i=5; i<256; ++i)
+        nfl2k5_diag_signing(0, UINT32_MAX, 0, 0, 0);
+    reads = 0;
+    nfl2k5_diag_signing(1, 0x1000, 0x2200, 1, 0x2300); assert(!reads);
     return 0;
 }
 '''
@@ -173,3 +191,10 @@ int main(void) {
         self.assertIn('sign_calendar season_index_raw=2 display_year=2006 phase_01_raw=7', result.stderr)
         self.assertIn('counter_08_raw=99 team_flag_raw=1 first_year_accumulator_raw=500', result.stderr)
         self.assertIn('sign_calendar state=unverified', result.stderr)
+        self.assertIn('stage=0 context=0x00001000 result=0x00002200 caller_known=1 caller_raw=0x003478B6', result.stderr)
+        self.assertIn('return_code_raw=1 output_known=1 output_raw=95', result.stderr)
+        self.assertIn('result=0xFFFFFFFF', result.stderr)
+        self.assertIn('return_code_raw=0 output_known=0 output_raw=0', result.stderr)
+        self.assertIn('sign_transaction_player sequence=1 bank_slot=1', result.stderr)
+        self.assertIn('sign_transaction_team sequence=1 table_index=1 table_mode=2', result.stderr)
+        self.assertEqual(result.stderr.count('[FRANCHISE-TRACE] sign_transaction sequence='), 256)

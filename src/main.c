@@ -718,6 +718,46 @@ void nfl2k5_diag_fsm(uint32_t obj, uint32_t desc, int push)
             (unsigned int)player_raw[0x27]);
     }
 }
+/* Read-only checkpoints in the shared signing transaction. Stage1 is the
+ * interactive judgment return; stage2 may also be reached by its bypass path.
+ * Neither checkpoint proves that a contract was committed or grants AI access. */
+void nfl2k5_diag_signing(uint32_t stage, uint32_t context, uint32_t result,
+                         uint32_t return_code, uint32_t stack)
+{
+    static unsigned int recorded;
+    const char *enabled = getenv("NFL2K5_TRACE_FRANCHISE");
+    if (!enabled || strcmp(enabled, "1") || stage > 2u || recorded >= 256u) return;
+    uint8_t raw[16], guard[4], dob[3];
+    uint32_t player, team, flags, slot, team_index, team_mode;
+    uint32_t caller = 0, output = 0;
+    uint16_t amount;
+    int caller_known = stage == 0u && signing_screen_read(stack, &caller, sizeof(caller));
+    int output_known = stage != 0u && signing_screen_read(result, &output, sizeof(output));
+    ++recorded;
+    if (!signing_screen_read(context, raw, sizeof(raw))) {
+        fprintf(stderr, "[FRANCHISE-TRACE] sign_transaction sequence=%u stage=%u context=0x%08X state=unreadable\n",
+            recorded, (unsigned int)stage, (unsigned int)context);
+        return;
+    }
+    memcpy(&player, raw, sizeof(player));
+    memcpy(&team, raw + 4, sizeof(team));
+    memcpy(&flags, raw + 8, sizeof(flags));
+    memcpy(&amount, raw + 0xC, sizeof(amount));
+    fprintf(stderr, "[FRANCHISE-TRACE] sign_transaction sequence=%u stage=%u context=0x%08X result=0x%08X caller_known=%d caller_raw=0x%08X return_code_raw=%u output_known=%d output_raw=%u offer_flags_raw=0x%08X offer_amount_word_raw=%u scope=original_transaction_checkpoint\n",
+        recorded, (unsigned int)stage, (unsigned int)context, (unsigned int)result,
+        caller_known, (unsigned int)caller, (unsigned int)return_code,
+        output_known, (unsigned int)output, (unsigned int)flags, (unsigned int)amount);
+    if (signing_screen_slot(player, &slot) && player <= UINT32_MAX - 0x1Bu &&
+        signing_screen_read(player + 4u, guard, sizeof(guard)) &&
+        signing_screen_read(player + 0x19u, dob, sizeof(dob))) {
+        fprintf(stderr, "[FRANCHISE-TRACE] sign_transaction_player sequence=%u bank_slot=%u pbp_photo_raw=%02x%02x%02x%02x dob_region_raw=%02x%02x%02x identity_scope=unbound_snapshot_guard\n",
+            recorded, (unsigned int)slot, guard[0], guard[1], guard[2], guard[3], dob[0], dob[1], dob[2]);
+    }
+    if (signing_screen_team(team, &team_index, &team_mode)) {
+        fprintf(stderr, "[FRANCHISE-TRACE] sign_transaction_team sequence=%u table_index=%u table_mode=%u identity_scope=current_table_locator\n",
+            recorded, (unsigned int)team_index, (unsigned int)team_mode);
+    }
+}
 void nfl2k5_diag_texzero(uint32_t tex, uint32_t ret) { (void)tex; (void)ret; }
 void nfl2k5_diag_reg(uint32_t fn, uint32_t edx_, uint32_t a0, uint32_t a1, uint32_t obj) { (void)fn; (void)edx_; (void)a0; (void)a1; (void)obj; }
 void nfl2k5_diag_res43(uint32_t obj, uint32_t load, uint32_t fre, uint32_t where) { (void)obj; (void)load; (void)fre; (void)where; }

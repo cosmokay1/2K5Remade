@@ -24,12 +24,12 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 ## Latest verified state — October 14, 2026
 
-- Latest published verified source: `b6cf85f`. Build `38616885315` and Franchise AI
-  `38616885613` passed. CI checks asset-free runtime and bridge components;
+- Latest published verified source: `1548831`. Build `38621703475` and Franchise AI
+  `38621703539` passed. CI checks asset-free runtime and bridge components;
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.
-- Latest verified published CI suite: **647 tests passed on Windows and Ubuntu**. Actual AIBASELIN parsing
+- Latest verified published CI suite: **653 tests passed on Windows and Ubuntu**. Actual AIBASELIN parsing
   resolves 1937 roster/free-agent members. This does not prove contract/save
   round-trip integration. The read-only signing observer includes bounded bank-slot/name reads and is compiled and installed after confirmed exit;
   actual readback identifies Jeremiah Trotter at bank slot1910, matching AIBASELIN.
@@ -306,9 +306,9 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
 - [x] Fix native client shutdown ordering so a sidecar that stops reading cannot leave destruction waiting on a blocked pipe write; add a Windows stalled-peer regression. Shutdown now stops the owned sidecar before joining its worker; the strengthened stalled-write CTest passed Windows run 38503835760. Inherited-handle isolation and stalled-write cleanup passed Windows run 38504026771.
 - [ ] Link the reusable C-compatible franchise client into the actual root game host with explicit opt-in lifecycle ownership; validate host transport separately from guest transactions. OFF-by-default root target linkage and explicit vertex-only startup/cleanup are implemented; The shared lifecycle source and negative configuration cases passed Windows run 38504026771; actual root game execution remains pending.
 - [x] Establish a baseline game build and franchise behavior with the supplied game. Standard optimized build passes Proton validation and renders Franchise Options; user tested the vanilla Sign Contract path. This is baseline behavior only, not AI integration or full gameplay acceptance.
-- [ ] Map contract records, cap/tender fields, player identity, statistics and save data. Read-only current roster payroll reconstruction now matches all32 saved team totals in AIBASELIN, AICNTRL and AIGILDON (1696/1696/1697 active contracts). The installed bounded probe now matches actual Trotter signing team15/mode2, payroll77038 and league cap80500 to AIGILDON/prior UI evidence. Runtime season index and week/phase remain unverified. This covers original contract schedules only; modern obligations, tenders, durable identity and statistics remain open.
+- [ ] Map contract records, cap/tender fields, player identity, statistics and save data. Read-only current roster payroll reconstruction now matches all32 saved team totals in AIBASELIN, AICNTRL and AIGILDON (1696/1696/1697 active contracts). The installed bounded probe now matches actual Trotter signing team15/mode2, payroll77038 and league cap80500 to AIGILDON/prior UI evidence. The read-only calendar/cap-adjustment observer is now installed after confirmed normal exit; actual season index and week/phase remain unverified. This covers original contract schedules only; modern obligations, tenders, durable identity and statistics remain open.
 - [ ] Trace signing, extension, release, trade, draft and year-transition functions.
-- [ ] Trace CPU-controlled paths as well as user menu paths; avoid double decisions. Existing FSM push/pop probes have an opt-in 256-event trace; actual Sign Contract descriptor 00557B2C was observed during the user test. CPU paths and callback/transaction readback remain pending.
+- [ ] Trace CPU-controlled paths as well as user menu paths; avoid double decisions. Existing FSM push/pop probes have an opt-in 256-event trace; actual Sign Contract descriptor 00557B2C was observed during the user test. Authored read-only shared transaction entry, interactive judgment-return and precommit checkpoints now preserve the original decisions/writes; bounded portable memory checks and private MSVC game compilation pass. All three compiled callsites verified; the combined observer is installed after a fresh no-game guard. Runtime execution, CPU paths and callback/transaction readback remain pending.
 - [ ] Intercept a single verified free-agent signing through existing patch conventions.
 - [ ] Commit legal terms to the actual game and verify readback/save/reload.
       Original-game controlled Gildon signing now has saved contract/ownership

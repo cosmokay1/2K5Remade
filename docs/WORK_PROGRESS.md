@@ -4588,3 +4588,50 @@ default credentials are unavailable. CLI authentication is a different source.
 No owner fallback, credential copy, key creation or login mutation. B05 now tracks
 runtime authentication instead of pending delegation approval. Game signing and
 Deck integration remain unchanged and unverified.
+
+
+## October14,2026 — Calendar observer installed; signing checkpoints authored
+
+User confirmed normal game exit. SSH independently found no game process, checked
+both executable hashes and installed the staged334268e calendar/cap observer by
+rename after preserving NFL2K5.pre-calendar-probe.exe. Installed SHA256
+`dd2a51bfa1022e9a723b227117d335985957f3bf2c968cdcc2ee48d4563e9df4`;
+backup `0783c6e91751e8989d1b6c33720db27df5b6cf93cb72f999c39abcebf1053760`.
+Requested the same AIGILDON/Trotter offer screen without submission once; awaiting
+that runtime observation. No automatic launch, signing or save modification.
+
+Authored three reproducible apply-gen-patches checkpoints in shared323D80:
+entry323D80 (ecx/context, edx/output, safely read caller), interactive judgment
+return323F13 (esi/context, ebp/output, eax/return), and precommit323F17.
+The latter can also be reached by the original judgment-bypass path and is not
+proof of commit. Bounded observer uses existing guest-memory helpers, raw offer
+fields and pinned-biography guard inputs; no skill ratings or AI requests.
+All branches remain original; it neither replaces acceptance nor alters terms.
+
+Actual extracted C observer harness passes C11/Wall/Wextra/Werror with authored
+low/high RAM, disabled/no-read behavior, invalid context/output/caller pointers,
+unchanged guest memory and a separate256-event limit. Full offline suite passes
+653 tests in24.957s. Latest completed source1548831 has Build38621703475 and
+AI38621703539 success; logs verify653 tests on Windows and Ubuntu. ca73789 AI
+run38622309030 was still in progress when inspected, not claimed passing.
+
+Private patch application matched all three actual generated labels. Initial
+incremental build compiled the observer but used the pre-existing optimized
+build/gen-locals copy, so it did not establish linked callsites. Applied the same
+three patches to that actual compile input and started the required rebuild.
+The installed calendar observer remains unchanged during this independent build.
+No generated guest code/assets or private binaries are included in the commit.
+Actual checkpoint execution and AI/modern signing/save integration remain pending.
+
+
+The required rebuild completed successfully with MSVC: optimized recomp_0022.c
+compiled and the game linked. COFF relocation inspection shows exactly three
+nfl2k5_diag_signing callsites in that compiled object. Staged EXE SHA256
+`1bbad443ce59a46eb8e963634952fa11177e4a0f4cb0413c8c700d132d0cf985`.
+The user had not relaunched; a fresh process guard confirmed the game still
+closed. Installed the combined calendar/transaction observer by rename, retaining
+NFL2K5.pre-transaction-probe.exe with the calendar-only hash above, so another
+exit cycle is unnecessary. Installed hash verified exact. No signing, game launch
+or save write. The already requested AIGILDON/Trotter screen remains the next live
+check; old session.log has no new calendar/checkpoint evidence and is not reused
+as proof of this build's execution.
