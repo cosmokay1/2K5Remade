@@ -528,6 +528,54 @@ def main():
         finally:trade_fixture.doCleanups()
         print("Native Windows calendar trade transaction, full/compact receipts, v3 inspection and rollover restart verified (synthetic).")
 
+        from dataclasses import asdict
+        from tests import test_calendar_restructure_store
+        amendment_fixture=test_calendar_restructure_store.CalendarRestructureStoreTests()
+        amendment_fixture.setUp()
+        try:
+            scope=asdict(amendment_fixture.inputs['scope'])
+            for field in ('amended_on','first_regular_season_game'):
+                scope[field]=getattr(amendment_fixture.inputs['scope'],field).isoformat()
+            scope['exclusions']=sorted(scope['exclusions'])
+            request=dict(protocol=1,request_id='convert-2027',operation='manual_restructure',team_id='a',player_id='v',
+                decision_mode='manual',calendar_format='calendar_v1',generation_id=amendment_fixture.gid,
+                scope=scope,converted_base=amendment_fixture.inputs['converted_base'],
+                expected_revision=amendment_fixture.inputs['expected_revision'],timeout_ms=5000)
+            mutation_requests=[request,{**request,'receipt_format':'target_v1'}]
+            contexts=[dict(protocol=1,request_id='amended-contract',operation='contract_context',team_id='a',
+                generation_id=amendment_fixture.gid,context_format='calendar_v3',timeout_ms=5000),
+                dict(protocol=1,request_id='amended-player',operation='player_context',team_id='a',player_id='v',
+                    context_format='calendar_v3',timeout_ms=5000)]
+            previous_mutations=None
+            for year in (2027,2028):
+                if year==2028:
+                    amendment_fixture.fixture.pay('a','bonus:calendar-restructure:convert-2027',100000)
+                    amendment_fixture.fixture.pay('a','base:1',1900000)
+                    amendment_fixture.fixture.roll(('a',),2027)
+                previous=None
+                payload=''.join(json.dumps(item,separators=(',',':'))+'\n' for item in mutation_requests+contexts)
+                for attempt in range(2):
+                    result=subprocess.run([sys.argv[1],sys.executable,str(amendment_fixture.path),'--calendar-history'],
+                        input=payload,text=True,capture_output=True,timeout=30,check=True)
+                    replies=[json.loads(line) for line in result.stdout.splitlines()]
+                    assert len(replies)==4 and all(reply['error'] is None for reply in replies)
+                    receipt=amendment_fixture.amend()
+                    expected=dict(decision_mode='manual',team_id='a',player_id='v',generation_id=amendment_fixture.gid,restructure=receipt)
+                    assert replies[0]['result']==expected
+                    assert replies[1]['result']==compact_lifecycle_result(expected,'manual_restructure')
+                    assert replies[2]['result']==amendment_fixture.store.calendar_contract_context('a',amendment_fixture.gid,context_format='calendar_v3')
+                    assert replies[3]['result']==amendment_fixture.store.player_context('a','v',context_format='calendar_v3')
+                    if previous_mutations is not None:assert replies[:2]==previous_mutations
+                    if attempt:assert replies==previous and amendment_fixture.path.read_bytes()==unchanged
+                    else:unchanged=amendment_fixture.path.read_bytes()
+                    previous=replies;previous_mutations=replies[:2]
+                ledger=FranchiseStore(amendment_fixture.path).load_team('a')
+                assert ledger.active_contract('v').elapsed_years==year-2026
+                assert ledger.charges==((2950000,3050000) if year==2027 else (3050000,))
+                assert ledger.generation_accounting(amendment_fixture.gid).original_contract.elapsed_years==0
+        finally:amendment_fixture.doCleanups()
+        print("Native Windows calendar amendment full/compact receipts, current contexts and later-roll restart verified (synthetic).")
+
         if len(sys.argv)>2:
             c_path=Path(directory)/'C host ownership.sqlite'
             c_store=FranchiseStore(c_path)

@@ -656,15 +656,21 @@ class FranchiseStore:
                 ledger.revision += 1
                 if payload["cash_posting"] != ledger.cash_snapshot():
                     raise ValueError("Cash payment posting disagrees with replay")
-            elif kind in ('restructure','generation_restructure'):
+            elif kind in ('restructure','generation_restructure','calendar_restructure'):
                 extra=set()
-                if kind=='generation_restructure':
+                if kind in ('generation_restructure','calendar_restructure'):
                     extra={'format','generation_id','before_generation_posting','generation_posting'}
                     if (db.execute('PRAGMA user_version').fetchone()[0]!=4
                             or type(payload.get('format')) is not int or payload['format']!=1
                             or payload.get('generation_id')!=ledger.contract_identity(payload['player_id']).generation_id
                             or self._checkpoint_hash(payload.get('before_generation_posting'))!=self._checkpoint_hash(ledger.generation_snapshot())):
                         raise ValueError('Generation restructure opening state disagrees with replay')
+                    if kind=='calendar_restructure':
+                        extra.update({'calendar_format','before_calendar_posting','calendar_posting'})
+                        if (type(payload.get('calendar_format')) is not int or payload['calendar_format']!=1
+                                or ledger._generation_calendar_anchor is None
+                                or self._checkpoint_hash(payload.get('before_calendar_posting'))!=self._checkpoint_hash(self._calendar_posting(ledger))):
+                            raise ValueError('Calendar restructure opening state disagrees with replay')
                 elif ledger.contract_identity(payload['player_id']).generation_id.startswith('contract-gen:'):
                     raise ValueError('Return agreement restructure requires versioned generation event')
                 if set(payload) != extra | {'player_id','scope','converted_base','record_id','expected_revision',
@@ -675,9 +681,9 @@ class FranchiseStore:
                     raise ValueError('Restructure original obligations disagree with replay')
                 if self._checkpoint_hash(payload['before_posting']) != self._checkpoint_hash(ledger.financial_snapshot()) or self._checkpoint_hash(payload['before_cash']) != self._checkpoint_hash(ledger.cash_snapshot()):
                     raise ValueError('Restructure opening state disagrees with replay')
-                self._apply_restructure_payload(ledger,payload)
+                self._apply_restructure_payload(ledger,payload,calendar_restructure=kind=='calendar_restructure')
                 self._check_cash_components(ledger)
-                if kind=='generation_restructure' and self._checkpoint_hash(payload['posting']) != self._checkpoint_hash(ledger.financial_snapshot()):
+                if kind in ('generation_restructure','calendar_restructure') and self._checkpoint_hash(payload['posting']) != self._checkpoint_hash(ledger.financial_snapshot()):
                     raise ValueError('Generation restructure financial posting disagrees with replay')
                 if self._checkpoint_hash(payload['cash_posting']) != self._checkpoint_hash(ledger.cash_snapshot()):
                     raise ValueError('Restructure cash posting disagrees with replay')
@@ -792,7 +798,7 @@ class FranchiseStore:
                         raise ValueError('Year-transition posting disagrees with replay')
             else:
                 raise ValueError("Unknown financial event; refusing to reconstruct state")
-            if kind in ('return_sign','generation_release','generation_restructure','calendar_release') or (kind=='cash_payment' and self._has_new_generations(ledger)):
+            if kind in ('return_sign','generation_release','generation_restructure','calendar_release','calendar_restructure') or (kind=='cash_payment' and self._has_new_generations(ledger)):
                 if ('generation_posting' not in payload or type(payload.get('format')) is not int or payload['format']!=1 or
                         db.execute('PRAGMA user_version').fetchone()[0]!=4 or
                         self._checkpoint_hash(payload['generation_posting'])!=self._checkpoint_hash(ledger.generation_snapshot())):
@@ -801,9 +807,9 @@ class FranchiseStore:
                         self._checkpoint_hash(payload.get('cash_posting'))!=self._checkpoint_hash(ledger.cash_snapshot())):
                     raise ValueError('Versioned financial or cash posting types disagree with replay')
             calendar_fields = {'calendar_format','calendar_posting'}
-            if ledger._generation_calendar_anchor is not None and kind in ('sign','cash_payment','calendar_release'):
+            if ledger._generation_calendar_anchor is not None and kind in ('sign','cash_payment','calendar_release','calendar_restructure'):
                 marked = bool(calendar_fields & set(payload))
-                if ((kind in ('sign','calendar_release') or marked) and
+                if ((kind in ('sign','calendar_release','calendar_restructure') or marked) and
                         (not calendar_fields <= set(payload) or type(payload['calendar_format']) is not int
                          or payload['calendar_format'] != 1
                          or self._checkpoint_hash(payload['calendar_posting']) != self._checkpoint_hash(self._calendar_posting(ledger)))):
@@ -1426,7 +1432,7 @@ class FranchiseStore:
             **({'generation_id':payload['generation_id']} if calendar_release else {}))
 
     @staticmethod
-    def _apply_restructure_payload(ledger,payload):
+    def _apply_restructure_payload(ledger,payload,*,calendar_restructure=False):
         from datetime import date
         from franchise.restructures import PreseasonRestructureScope
         scope=dict(payload['scope'])
@@ -1439,9 +1445,64 @@ class FranchiseStore:
                 raise ValueError('Canonical restructure date required')
             scope[field]=parsed
         scope['exclusions']=FranchiseStore._scope_exclusions(scope['exclusions'])
-        return ledger.apply_preseason_restructure(payload['player_id'],scope=PreseasonRestructureScope(**scope),
+        apply=ledger.apply_calendar_preseason_restructure if calendar_restructure else ledger.apply_preseason_restructure
+        return apply(payload['player_id'],scope=PreseasonRestructureScope(**scope),
             converted_base=payload['converted_base'],record_id=payload['record_id'],
-            expected_revision=payload['expected_revision'])
+            expected_revision=payload['expected_revision'],
+            **({'generation_id':payload['generation_id']} if calendar_restructure else {}))
+
+    def restructure_calendar_preseason_veteran(self,team_id,request_id,player_id,*,generation_id,
+                                               scope,converted_base,expected_revision,access_check,receipt_check=None):
+        from franchise.restructures import PreseasonRestructureScope
+        if (any(type(value) is not str or not value.strip() for value in (team_id,request_id,player_id,generation_id))
+                or not isinstance(scope,PreseasonRestructureScope) or not callable(access_check)
+                or (receipt_check is not None and not callable(receipt_check))
+                or type(expected_revision) is not int or expected_revision<0):
+            raise ValueError('Exact calendar amendment identity and sourced typed inputs required')
+        money(converted_base)
+        scope_data=asdict(scope)
+        scope_data.update(amended_on=scope.amended_on.isoformat(),
+            first_regular_season_game=scope.first_regular_season_game.isoformat(),exclusions=sorted(scope.exclusions))
+        key='calendar-restructure:'+request_id
+        requested={'player_id':player_id,'generation_id':generation_id,'scope':scope_data,
+            'converted_base':converted_base,'record_id':key,'expected_revision':expected_revision}
+        def receipt_for(saved):
+            return {'format':2,'generation_id':saved['generation_id'],'league_year':saved['scope']['league_year'],
+                'financial':saved['posting'],'cash':saved['cash_posting']}
+        with self._connection(write=True) as db:
+            if db.execute('PRAGMA user_version').fetchone()[0]!=4:
+                raise Rejected('Calendar restructure requires explicit format4 migration')
+            ledger=self._load(db,team_id)
+            row=db.execute('SELECT kind,payload FROM events WHERE team_id=? AND request_key=?',(team_id,key)).fetchone()
+            if row:
+                saved=json.loads(row[1])
+                if row[0]!='calendar_restructure' or any(self._checkpoint_hash(saved[field])!=self._checkpoint_hash(value)
+                        for field,value in requested.items()):
+                    raise Rejected('Calendar amendment retry changed its terms')
+                receipt=receipt_for(saved)
+                if receipt_check is not None: receipt_check(receipt)
+                access_check()
+                return receipt
+            if db.execute('SELECT team_id FROM ownership WHERE player_id=?',(player_id,)).fetchone()!=(team_id,):
+                raise Rejected('Calendar amendment requires exclusive player ownership')
+            contract=ledger.active_contract(player_id)
+            cash=ledger.generation_cash(generation_id)
+            if cash is None:
+                raise Rejected('Allocated calendar amendment cash required')
+            payload={**requested,'format':1,'calendar_format':1,
+                'before_posting':ledger.financial_snapshot(),'before_cash':ledger.cash_snapshot(),
+                'before_generation_posting':ledger.generation_snapshot(),'before_calendar_posting':self._calendar_posting(ledger),
+                'original_contract':contract.to_dict(),'original_cash':cash.to_dict()}
+            self._apply_restructure_payload(ledger,payload,calendar_restructure=True)
+            self._check_cash_components(ledger)
+            payload.update(posting=ledger.financial_snapshot(),cash_posting=ledger.cash_snapshot(),
+                generation_posting=ledger.generation_snapshot(),calendar_posting=self._calendar_posting(ledger))
+            receipt=receipt_for(payload)
+            if receipt_check is not None: receipt_check(receipt)
+            access_check()
+            db.execute('INSERT INTO events(team_id,request_key,kind,payload) VALUES(?,?,?,?)',
+                (team_id,key,'calendar_restructure',json.dumps(payload,allow_nan=False)))
+            return receipt
 
     def restructure_preseason_veteran(self,team_id,request_id,player_id,*,scope,converted_base,
                                       expected_revision,access_check,generation_id=None,require_return_generation_id=False,receipt_check=None):

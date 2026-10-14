@@ -52,6 +52,43 @@ int main() {
         generation_archive["cash_obligation"]["obligation_id"]=generation_id;
         generation_reply["result"]["restructure"]["cash"]["obligations"][0]["obligation_id"]=generation_id;
         franchise::validate_result(generation_reply,generation_request);
+        auto calendar_amendment_request=restructure_request,calendar_amendment_reply=restructure_reply;
+        const auto opening_id="legacy-contract:"+std::string(64,'a');
+        calendar_amendment_request["calendar_format"]="calendar_v1";
+        calendar_amendment_request["generation_id"]=opening_id;
+        calendar_amendment_request["scope"]["league_year"]=2027;
+        calendar_amendment_reply["result"]["generation_id"]=opening_id;
+        auto& calendar_amendment=calendar_amendment_reply["result"]["restructure"];
+        calendar_amendment["format"]=2;calendar_amendment["generation_id"]=opening_id;calendar_amendment["league_year"]=2027;
+        auto& calendar_amendment_archive=calendar_amendment["financial"]["restructures"]["v"];
+        calendar_amendment_archive["scope"]["league_year"]=2027;
+        calendar_amendment_archive["bonus_layer"]["record_id"]="calendar-restructure:conversion";
+        calendar_amendment_archive["contract"]["bonus_layers"][0]["record_id"]="calendar-restructure:conversion";
+        franchise::validate_result(calendar_amendment_reply,calendar_amendment_request);
+        auto compact_calendar_request=calendar_amendment_request,compact_calendar_reply=calendar_amendment_reply;
+        compact_calendar_request["receipt_format"]="target_v1";
+        compact_calendar_reply["result"]["receipt_format"]="target_v1";
+        compact_calendar_reply["result"]["restructure"]["cash"]["other_obligations"]=
+            {{"count",0},{"nominal_total",0},{"paid_total",0},{"unpaid_total",0}};
+        franchise::validate_result(compact_calendar_reply,compact_calendar_request);
+        for(int scenario=0;scenario<11;++scenario) {
+            auto bad=calendar_amendment_reply,input=calendar_amendment_request;
+            auto& saved=bad["result"]["restructure"];
+            if(scenario==0) input["calendar_format"]="invented";
+            if(scenario==1) input.erase("generation_id");
+            if(scenario==2) saved["format"]=true;
+            if(scenario==3) saved["league_year"]=2026;
+            if(scenario==4) saved["league_year"]=true;
+            if(scenario==5) saved["generation_id"]="contract-gen:"+std::string(64,'b');
+            if(scenario==6) saved["unexpected"]=0;
+            if(scenario==7) input.erase("calendar_format");
+            if(scenario==8) saved["financial"]["restructures"]["v"]["bonus_layer"]["record_id"]="restructure:conversion";
+            if(scenario==9) saved["financial"]["restructures"]["v"]["scope"]["league_year"]=2026;
+            if(scenario==10) input["scope"]["league_year"]=2031;
+            bool rejected=false;
+            try { franchise::validate_result(bad,input); } catch(const std::exception&) { rejected=true; }
+            if(!rejected) throw std::runtime_error("Corrupt calendar amendment accepted");
+        }
         for (int scenario=0;scenario<5;++scenario) {
             auto bad=generation_reply, input=generation_request;
             if (scenario==0) bad["result"].erase("generation_id");

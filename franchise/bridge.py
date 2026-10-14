@@ -49,19 +49,24 @@ class Bridge:
                 from datetime import date
                 from franchise.cap import money
                 from franchise.restructures import PreseasonRestructureScope
-                if request_fields not in ({'protocol','request_id','operation','team_id','player_id','expected_revision',
-                                    'timeout_ms','decision_mode','scope','converted_base'},
-                                    {'protocol','request_id','operation','team_id','player_id','expected_revision',
-                                    'timeout_ms','decision_mode','scope','converted_base','generation_id'}) or request['decision_mode'] != 'manual':
+                calendar='calendar_format' in request
+                base={'protocol','request_id','operation','team_id','player_id','expected_revision',
+                      'timeout_ms','decision_mode','scope','converted_base'}
+                allowed=(base|{'generation_id','calendar_format'},) if calendar else (base,base|{'generation_id'})
+                if request_fields not in allowed or request['decision_mode'] != 'manual':
                     raise ValueError('Explicit complete manual restructure required')
                 if any(type(request[key]) is not str or not request[key].strip() for key in ('team_id','player_id')):
                     raise ValueError('Stable team and player identities required')
                 if type(request['expected_revision']) is not int or request['expected_revision'] < 0:
                     raise ValueError('Nonnegative integer client revision required')
                 generation_id=request.get('generation_id')
-                if 'generation_id' in request and (type(generation_id) is not str or not generation_id.startswith('contract-gen:')
+                if 'generation_id' in request and not calendar and (type(generation_id) is not str or not generation_id.startswith('contract-gen:')
                         or len(generation_id)!=77 or any(c not in '0123456789abcdef' for c in generation_id[13:])):
                     raise ValueError('Canonical returned agreement identity required')
+                if calendar and (type(generation_id) is not str or not generation_id.strip()):
+                    raise ValueError('Exact calendar amendment generation required')
+                if calendar and request['calendar_format']!='calendar_v1':
+                    raise ValueError('Supported calendar amendment format required')
                 converted = money(request['converted_base'])
                 if converted == 0:
                     raise ValueError('Positive base conversion required')
@@ -95,9 +100,12 @@ class Bridge:
                     return receipt_result({'decision_mode':'manual','team_id':request['team_id'],
                         'player_id':request['player_id'],'restructure':receipt,
                         **({'generation_id':generation_id} if generation_id is not None else {})})
-                receipt = self.store.restructure_preseason_veteran(request['team_id'],request_id,request['player_id'],
+                apply=(self.store.restructure_calendar_preseason_veteran if calendar
+                       else self.store.restructure_preseason_veteran)
+                receipt = apply(request['team_id'],request_id,request['player_id'],
                     scope=PreseasonRestructureScope(**scope),converted_base=converted,
-                    expected_revision=request['expected_revision'],access_check=restructure_access,generation_id=generation_id,require_return_generation_id=True,
+                    expected_revision=request['expected_revision'],access_check=restructure_access,generation_id=generation_id,
+                    **({} if calendar else {'require_return_generation_id':True}),
                     receipt_check=lambda receipt:self._require_frame(request_id,restructure_result(receipt)))
                 return self._reply(request_id,result=restructure_result(receipt))
             if operation == 'manual_trade':

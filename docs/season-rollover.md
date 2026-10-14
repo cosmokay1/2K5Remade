@@ -217,3 +217,11 @@ amended schedule anchors at its actual year; later release/assignment schedules
 use their own years while preserving amendment history. Repeated layered
 conversions remain unsupported and reject before mutation. This is Ledger
 accounting only; durable Store replay and native/game routing remain open.
+
+
+The first calendar-aware amendment now has a distinct format4 Store event and
+an explicit manual_restructure request using calendar_format=calendar_v1 and the
+current generation_id. Its format2 receipt identifies the original league year
+and agreement; retries preserve that historical receipt after later rollover.
+Full and compact native receipts are supported. This remains synthetic sidecar
+integration, with actual game mutation and save/load verification outstanding.

@@ -3003,3 +3003,34 @@ no concrete defect and passed 33 focused checks. Store persistence/replay and
 native calendar amendment routing remain open. Prior 8f7e080 Build 38518353558 and
 FranchiseAI 38518353684 both passed; this Ledger change is a separate revision.
 No actual game/guest save execution is claimed.
+
+
+## October 13, 2026 — Calendar amendment persistence in progress
+
+Published Ledger/model commit 8eb076b after all 513 offline tests passed.
+Build check 38519382382 and Franchise AI checks 38519382379 were confirmed
+in progress for that exact commit; neither is reported as passed yet.
+Parallel implementation is extending Store event/replay and native receipt
+validation. The local sidecar route now selects an explicit calendar_v1 amendment
+with exact generation identity, and a new bridge test covers final-disconnect
+rollback and historical retry. Those new changes remain unvalidated and uncommitted
+until the Store implementation and native checks complete. No game integration
+or playable execution is claimed.
+
+
+## October 13, 2026 — Persistent calendar amendments and client receipts
+
+Added distinct format4 calendar_restructure event and explicit generation-aware
+Store API. Replay checks exact fields and original obligations, financial/cash
+and generation/calendar before/after postings. Stable historical retries return
+original format2 receipts after payment and another rollover. Final receipt and
+connection checks run inside the write transaction before persistence.
+The sidecar supports explicit calendar_v1 manual amendments, and compact receipts
+retain the agreement/year markers. Native validation covers full/compact receipts,
+opening agreement identity, conversion namespace and monetary preservation.
+All 517 offline tests passed; rebuilt portable protocol CTest passed. A portable
+native harness accepted six real Python-generated receipt/context cases across
+2027 and 2028. Added an actual Windows owned-pipe smoke for the same lifecycle;
+that execution remains pending CI. Prior 8eb076b Build 38519382382 passed;
+Franchise AI 38519382379 was last confirmed running. Repeated conversions remain
+unsupported. Actual game/save integration and playable verification remain open.

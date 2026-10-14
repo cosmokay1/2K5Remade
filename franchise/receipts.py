@@ -78,6 +78,14 @@ def compact_lifecycle_result(result,operation):
     elif operation=='manual_restructure':
         expected=_identity_cash(result['generation_id'],player) if 'generation_id' in result else 'contract:'+player
         projected['restructure']=_participant(result['restructure'],player,'restructures','cash_obligation',expected)
+        if 'format' in result['restructure']:
+            receipt=result['restructure']
+            if (type(receipt['format']) is not int or receipt['format']!=2
+                    or type(receipt['league_year']) is not int or not 2020<=receipt['league_year']<=2030
+                    or receipt['generation_id']!=result.get('generation_id')
+                    or expected!=_identity_cash(receipt['generation_id'],player)):
+                raise ValueError('Invalid calendar amendment receipt identity')
+            projected['restructure'].update(format=2,generation_id=receipt['generation_id'],league_year=receipt['league_year'])
     elif operation=='manual_trade':
         seller,buyer=result['seller'],result['buyer']
         if seller==buyer or set(result['trade'])!={seller,buyer}:

@@ -502,6 +502,19 @@ inline void validate_calendar_contract_context(const nlohmann::json& result, con
 }
 inline void validate_restructure(const nlohmann::json& result, const nlohmann::json& request) {
     const bool compact=target_receipt_mode(result,request);
+    const bool calendar=request.contains("calendar_format");
+    const auto& receipt=result.at("restructure");
+    if(calendar) {
+        if(request.at("calendar_format")!="calendar_v1" || !request.contains("generation_id") ||
+            !result.is_object() || result.size()!=(compact ? 6 : 5) || !receipt.is_object() || receipt.size()!=5 ||
+            !receipt.at("format").is_number_integer() || receipt.at("format")!=2 ||
+            receipt.at("generation_id")!=request.at("generation_id"))
+            throw std::runtime_error("Invalid calendar amendment receipt format");
+        integer_money(receipt.at("league_year"));integer_money(request.at("scope").at("league_year"));
+        if(receipt.at("league_year")!=request.at("scope").at("league_year") || receipt.at("league_year")<2020 || receipt.at("league_year")>2030)
+            throw std::runtime_error("Calendar amendment year mismatch");
+    } else if(!receipt.is_object() || receipt.size()!=2 || result.contains("calendar_format"))
+        throw std::runtime_error("Unexpected calendar amendment receipt");
     const auto player=request.at("player_id").get<std::string>();
     if (player.empty() || !request.at("team_id").is_string() || request.at("team_id").get<std::string>().empty() ||
         !request.at("request_id").is_string() || request.at("request_id").get<std::string>().empty() ||
@@ -573,7 +586,7 @@ inline void validate_restructure(const nlohmann::json& result, const nlohmann::j
     if (before!=after) throw std::runtime_error("Response changed unconverted salary or guarantee");
     const auto& layer=archive.at("bonus_layer");
     if (!layer.is_object() || layer.size()!=5 || amended.at("bonus_layers")[0]!=layer ||
-        layer.at("record_id")!="restructure:"+request.at("request_id").get<std::string>() ||
+        layer.at("record_id")!=(calendar ? "calendar-restructure:" : "restructure:")+request.at("request_id").get<std::string>() ||
         layer.at("source")!=scope.at("source")) throw std::runtime_error("Invalid converted bonus identity");
     integer_money(layer.at("amount")); integer_money(layer.at("original_start_index")); integer_money(layer.at("allocation_years"));
     if (layer.at("amount")!=converted || layer.at("original_start_index")!=elapsed ||

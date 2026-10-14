@@ -324,3 +324,10 @@ See docs/cloudflare-tunnel.md. Dedicated tunnel/DNS/TLS route is live; in-game i
 See docs/franchise-creation.md and docs/promise-observations.md. Automatic promise
 mapping now protects team scope and complete-window coverage; actual game counter
 capture and multi-window aggregation remain unverified/unimplemented.
+
+
+Calendar amendment follow-through: Store persistence/replay, explicit sidecar
+routing, full/compact native validation and Windows synthetic pipe smoke are
+implemented for the first supported post-rollover guaranteed-base conversion.
+517 offline tests and portable native checks pass; actual Windows smoke awaits CI.
+Repeated conversions and actual guest mutation/save-load verification remain open.

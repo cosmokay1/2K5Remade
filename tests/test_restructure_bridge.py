@@ -83,3 +83,42 @@ class RestructureBridgeTests(unittest.TestCase):
         self.bridge.access_check = lambda:None
         reply = self.bridge.handle({'protocol':1,'request_id':'hello','operation':'hello'})
         self.assertIn('manual_restructure',reply['result']['operations'])
+
+    def test_calendar_amendment_explicit_route_and_final_disconnect(self):
+        from tests import test_calendar_restructure_store as calendar_fixture
+        fixture=calendar_fixture.CalendarRestructureStoreTests();fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        self.store=fixture.store
+        def forbidden(*_):raise AssertionError('Manual calendar amendment must not call AI')
+        self.bridge=Bridge(self.store,provider=forbidden,access_check=forbidden)
+        ledger=self.store.load_team('a')
+        scope=asdict(fixture.inputs['scope'])
+        scope.update(amended_on=scope['amended_on'].isoformat(),
+            first_regular_season_game=scope['first_regular_season_game'].isoformat(),exclusions=sorted(scope['exclusions']))
+        request={**self.request(),'request_id':'convert-2027','scope':scope,'converted_base':100000,'calendar_format':'calendar_v1',
+            'generation_id':ledger.contract_identity('v').generation_id,'expected_revision':ledger.revision}
+        before=ledger.financial_snapshot()
+        calls=[]
+        def connection():
+            calls.append(1)
+            if len(calls)>1: raise TimeoutError('calendar amendment disconnect')
+        self.bridge.connection_check=connection
+        self.assertEqual(self.bridge.handle(request)['error'],'timeout')
+        self.assertEqual(self.store.load_team('a').financial_snapshot(),before)
+        self.bridge.connection_check=lambda:None
+        result=self.bridge.handle(request)
+        self.assertIsNone(result['error'])
+        receipt=result['result']['restructure']
+        self.assertEqual(receipt['format'],2)
+        self.assertEqual(receipt['league_year'],2027)
+        self.assertEqual(receipt['generation_id'],request['generation_id'])
+        self.assertEqual(self.bridge.handle(request),result)
+        self.assertEqual(receipt['cash']['nominal_total'],9000000)
+        self.assertEqual(receipt['cash']['paid_total'],5000000)
+        compact=self.bridge.handle({**request,'receipt_format':'target_v1'})
+        self.assertIsNone(compact['error'])
+        self.assertEqual(compact['result']['restructure']['format'],2)
+        self.assertEqual(compact['result']['restructure']['league_year'],2027)
+        self.assertEqual(compact['result']['restructure']['generation_id'],fixture.gid)
+        for change in ({'calendar_format':'calendar_v2'},{'generation_id':True},{'generation_id':''}):
+            self.assertIsNotNone(self.bridge.handle({**request,**change})['error'])
