@@ -4875,3 +4875,26 @@ of this newly installed diagnostic remains pending.
 Published3c97f06 Build38629769797 and AI38629769570 passed. Retrieved logs verify
 678 tests on both Windows and Ubuntu. This updates the earlier published676
 baseline; it does not validate the newly authored logging change's hosted CI.
+
+## October14,2026 — Actual game/Windows-sidecar handshake round trip
+
+User launched the same Gaming Mode entry, loaded AIGILDON and opened Trotter's
+offer without submitting. The actual session log records transport owner320,
+Sign Contract descriptor557B2C, Trotter slot1910 and matching biography guard,
+Giants15/mode2 payroll77038/cap80500, and calendar index0/display2004. The real
+pythonw.exe child command uses the cloned ledger, explicit vertex impersonation
+and diagnostic budget scope. After the user backed out/reopened, the actual game
+logged Control handshake reply consumed. No foreign-thread rejection was logged.
+This establishes root-game transport execution and reply consumption; the reply's
+authorization fields were not separately logged and no authenticated AI grant is
+claimed. Explicit missing ADC still denies AI. Read-only budget query reports
+zero model attempts.
+
+Retrieved the private session log and cloned ledger readback. All32 financial
+snapshots match the pre-game clone. Retained safe scoped result in
+.local-runtime/root-transport-diagnostic/game-transport-result.json. No offer
+submission, guest write, source credential distribution or remote control/IAM
+change. Game remains running for the user; actual child cleanup after normal
+game exit, authenticated game authorization, AI decisions, guest commit/recovery
+and save/reload remain pending. Logging source committed/pushed as9537d80;
+its published CI is not yet asserted successful.

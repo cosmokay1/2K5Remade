@@ -171,8 +171,12 @@ its own stdin/stdout and duplicated stderr (NUL if unavailable). No hello or
 AI request is sent automatically. This is lifecycle wiring only: verified
 franchise callbacks still need to consume the handshake, reconcile the ledger
 and guest state, and complete verified save/readback transactions. The shared
-C lifecycle source is compiled by the asset-free Windows fixture. Actual root
-game build and execution remain unverified.
+C lifecycle source is compiled by the asset-free Windows fixture. On October14,
+the privately built Windows root game launched its packaged sidecar on the Deck,
+reached the verified Trotter signing screen, and consumed a hello reply on the
+next FSM transition. This diagnostic deliberately used missing ADC and a cloned
+ledger; zero model attempts were recorded. It verifies transport execution, not
+authenticated AI decisions or guest transaction/save integration.
 
 ## Calendar-aware contract inspection
 
