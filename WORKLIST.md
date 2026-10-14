@@ -355,7 +355,7 @@ verified or the user cancels it.
 ## Steam Deck and draft delivery additions
 
 - [x] Prepare explicit-file local Proton candidate ZIP tooling and runtime requirements.
-- [ ] Build a verified integrated Windows runtime with portable sidecar dependencies.
+- [ ] Build a verified integrated Windows runtime with portable sidecar dependencies. Private CPython and25 hash-pinned Google SDK wheels now pass an actual Proton offline import/client-construction check with retained notices. SDK test wrapper exit remains under inspection; runtime authentication, real-franchise import and game AI integration remain pending.
 - [ ] Validate Proton pipes, controller UI, gameplay, suspend/resume and save/load on Deck.
 - [ ] Package the verified runtime and record tested Proton version and file hashes.
 - [ ] Implement draft choices from observed prospect production, role, personality and evidence uncertainty; exclude hidden ratings. Read-only comparison context and strict model scouting advice now validate sourced evidence, per-candidate cap/pool estimates, shutdown and stale revisions; scouting history now also persists/replays with exact eligible preview checks; durable pick commitments and actual game draft choices remain.

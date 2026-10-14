@@ -4280,3 +4280,29 @@ Nine focused calendar/binding/observer tests passed, including authored divergen
 game/season years, malformed section lengths/modes and season-advance rejection.
 No live calendar read, modern calendar import, automatic companion selection or
 guest write is claimed. The currently installed Deck observer is untouched.
+
+## October14,2026 — Private Windows Google SDK packaging checked
+
+Resolved requirements-google.txt into25 PyPI Windows amd64/CPython3.13 wheels
+and recorded exact versions/SHA256 in requirements-google-windows.lock.
+Offline pip staging with --require-hashes/--no-index succeeded; each wheel
+has included license/notice files retained. Private SDK PROVENANCE.json records
+source index, lock hash and wheel hashes/notice paths. No binaries or credentials
+are committed. A separate private python-3.13.16-google interpreter uses an
+explicit sibling SDK path; the installed game runtime/configuration is unchanged.
+
+tools.check_google_runtime uses explicit anonymous fixture credentials and never
+discovers ADC or submits inference. Actual Deck Proton result artifact verifies
+Python3.13.16, google-genai1.75.0, google-auth2.62.0, pydantic2.14.1/core2.50.1,
+cryptography50.0.2. Compiled SHA256, response schema, actual Vertex client
+construction/close, Requests transport and credential-free control rejection
+passed. Artifact: dependencies/google-proton-result.json in the private build.
+No cloud request, paid model, control enablement or game transaction occurred.
+
+The extraction emitted macOS extended-header warnings; files still extracted
+and imports/checks completed. Test wrapper PID73974/Steam stub73975 remain
+live in do_wait/ntsync after the result was written; launch exit is not yet
+verified. The same session67313 is retained for lifecycle inspection rather
+than restarted. Actual game73738 remains running in its separate prefix.
+Scoped runtime authentication/B05, live control/model checks and real-franchise
+import remain required; SDK packaging alone does not satisfy them.

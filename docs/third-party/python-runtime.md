@@ -29,3 +29,41 @@ Existing destinations reject overwrite. This is interpreter packaging only:
 the game still needs explicit provider/database configuration, authorized runtime
 credentials, a valid remote control grant and verified real-franchise import.
 Running the synthetic native fixture does not establish game AI integration.
+
+## Optional Windows Google SDK
+
+`requirements-google-windows.lock` pins the 25 wheels selected for Windows amd64
+CPython3.13, including google-genai1.75.0 and compiled dependencies. It is separate
+from the general development requirements; do not use these platform hashes for
+another Python/platform. Wheels are obtained from PyPI and installed with their
+dist-info license notices retained. No SDK binaries are committed here.
+
+On a build host with pip, download and stage them in a new private directory:
+
+```sh
+python3 -m pip download --index-url https://pypi.org/simple --require-hashes \
+  --only-binary=:all: --platform win_amd64 --python-version 3.13 \
+  --implementation cp --abi cp313 -r requirements-google-windows.lock \
+  --dest private-wheels
+python3 -m pip install --no-index --find-links private-wheels --require-hashes \
+  --only-binary=:all: --platform win_amd64 --python-version 3.13 \
+  --implementation cp --abi cp313 --no-compile \
+  -r requirements-google-windows.lock --target dependencies/google-windows-sdk
+```
+
+Keep the target absent before staging; retain the wheels' hashes, names and
+included license/notice paths in package provenance. Add the relative SDK folder
+as a separate line in a private interpreter's `python313._pth`, without enabling
+site or user packages. For the example sibling folders this is
+`..\google-windows-sdk`. Test with that Windows interpreter:
+
+```sh
+pythonw.exe -m tools.check_google_runtime --output sdk-check-result.json
+```
+
+The check imports compiled cryptography, validates the response schema,
+constructs/closes the actual Vertex SDK client with explicit anonymous fixture
+credentials, opens/closes the Requests transport and verifies credential-free
+control rejection. It does not discover ADC, contact cloud services, invoke a
+model, renew control or authorize a game transaction. A successful SDK packaging
+check leaves scoped runtime authentication and actual remote execution pending.
