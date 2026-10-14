@@ -711,3 +711,17 @@ legacy database passed Bridge with AI access denied, then the compiled C++
 response decoder/validator. This verifies the serialized Python/native boundary
 on the build host. It is not a request from the running game or a Windows pipe
 transaction. The staged live-calendar probe still needs normal game exit/install.
+
+## History periods are player-relative candidates
+
+The history inspector exposes player+24 bits8..12 as current_period_code_raw.
+calendar_candidates combines that counter with saved display year to propose
+year-current_period+entry_period. Zero/future periods and unknown bit30 retain
+null candidates. Raw modes, deletion and sparse/missing entries are preserved.
+
+Actual Trotter counter7 aligns periods1..6 to1998..2003; McNabb counter6 aligns
+periods1..5 to1999..2003. Trotter games8/16/16/16/12/16 match the
+[NFL career rows](https://www.nfl.com/players/jeremiah-trotter/stats/career).
+These examples support career-relative interpretation, not a universal global
+period-year table. Candidates do not establish full pay, roster category,
+coverage, salary credits or future calendar aging.

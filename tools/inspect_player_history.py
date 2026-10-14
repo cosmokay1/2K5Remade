@@ -31,9 +31,11 @@ def inspect_player_history(payload: bytes, source_slot: int) -> dict:
     player = found[0]
     pointer_field = PLAYER_START + source_slot * PLAYER_STRIDE + 0x2C
     relative = struct.unpack_from('<i', payload, pointer_field)[0]
+    packed = struct.unpack_from('<I', payload, PLAYER_START + source_slot * PLAYER_STRIDE + 0x24)[0]
     report = {'scope': 'original saved history; selected metrics mapped, other codes/calendar/coverage unverified',
               'metric_mapping_source': 'original stat descriptors and McNabb NFL historical corroboration; passing also bound to named live-QB accessor',
               'payload_sha256': roster['payload_sha256'],
+              'current_period_code_raw': (packed >> 8) & 31,
               'source_slot_semantics': roster['source_slot_semantics'],
               **player, 'history_present': relative != 0, 'entries': []}
     if relative == 0:
@@ -65,6 +67,25 @@ def inspect_player_history(payload: bytes, source_slot: int) -> dict:
         if word & 0x80000000:
             return report
     raise ValueError('Player history lacks a terminator inside the declared bank')
+
+
+def calendar_candidates(payload: bytes, source_slot: int) -> dict:
+    """Career-relative alignment candidate, not salary-credit/coverage evidence.
+
+    Corroborated against selected historical players only. Zero/out-of-range
+    periods and unknown bit30 stay unmapped, never become another season.
+    """
+    from tools.inspect_franchise_calendar import inspect_calendar
+    history = inspect_player_history(payload, source_slot)
+    year = inspect_calendar(payload)['display_year']
+    current = history['current_period_code_raw']
+    entries = []
+    for entry in history['entries']:
+        period = entry['period_code_raw']
+        candidate = year - current + period if current and 1 <= period <= current and not entry['bit30_raw'] else None
+        entries.append({**entry, 'candidate_calendar_year': candidate})
+    return {**history, 'saved_display_year': year, 'entries': entries,
+            'calendar_scope': 'candidate career-relative alignment; regular-season/full-pay/coverage unverified'}
 
 
 def main(argv=None):

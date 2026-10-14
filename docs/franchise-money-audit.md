@@ -169,6 +169,15 @@ or assume cash coverage is zero. The private legacy-only32-team database check
 reopens all1697 players with matching IDs/personas/current payroll, but has no
 registered free-agent floors, paid cash, rookie sources or guest authority.
 
+Salary credit must use Article26 section2 of the
+[executed CBA](https://nflpaweb.blob.core.windows.net/website/PDFs/CBA/March-15-2020-NFL-NFLPA-Collective-Bargaining-Agreement-Final-Executed-Copy.pdf)
+(printed174, PDF189). It requires eligible full-pay regular-season games and
+excludes specified exempt/nonfootball-PUP/practice/developmental/IR lists.
+The NFLPA general benefits FAQ uses a different credited-season definition;
+do not substitute it for salary floors. Raw games or a career counter alone
+do not establish pay/list eligibility. Trotter's six corroborated participation
+years are evidence; a sourced salary-credit import remains required.
+
 `tools.inspect_franchise_cap` now derives the franchise tail from the validated
 saved scheduler boundary and reads the league-cap field at tail+15D0. Original
 save/load routines2D0790/2D0CE0 transfer this field to/from globalE3C278. Team

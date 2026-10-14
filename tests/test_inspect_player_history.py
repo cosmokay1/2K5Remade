@@ -4,10 +4,25 @@ import unittest
 
 import test_inspect_franchise_save as save_fixtures
 from tools.inspect_franchise_save import PLAYER_START
-from tools.inspect_player_history import inspect_player_history
+from tools.inspect_player_history import inspect_player_history, calendar_candidates
 
 
 class InspectPlayerHistoryTests(unittest.TestCase):
+    def test_candidate_year_uses_player_period_and_preserves_unknowns(self):
+        payload = self.fixture()
+        payload[0x2E0:0x2E4]=b'ROST'; payload[0x30C:0x310]=b'ROST'
+        struct.pack_into('<I',payload,0x2E4,0x91020)
+        payload[0x91320]=2;payload[0x91323]=32
+        struct.pack_into('<I',payload,PLAYER_START+0x24,7<<8)
+        before=bytes(payload); report=calendar_candidates(before,0)
+        self.assertEqual(report['current_period_code_raw'],7)
+        self.assertEqual(report['entries'][0]['candidate_calendar_year'],1998)
+        self.assertIsNone(report['entries'][1]['candidate_calendar_year'])
+        self.assertTrue(report['entries'][1]['deleted'])
+        self.assertEqual(payload,before)
+        struct.pack_into('<I',payload,PLAYER_START+0x24,0)
+        self.assertTrue(all(e['candidate_calendar_year'] is None for e in calendar_candidates(bytes(payload),0)['entries']))
+
     def fixture(self):
         payload = save_fixtures.InspectFranchiseSaveTests().fixture()
         bank = 0x41D54

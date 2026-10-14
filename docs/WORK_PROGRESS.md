@@ -4525,3 +4525,23 @@ No inferred credited seasons, missing floors, cash or rookie inputs were supplie
 Reserve0 remains provisional; the private database has no guest signing authority
 or runtime configuration. Active calendar/live-save binding, sourced FA minimums
 and actual root signing integration remain required. No game/control change.
+
+## October14,2026 — Career-relative history calendar corroboration
+
+Investigated Trotter salary classification without age/ratings. Actual record
+current-period bits are7 for Trotter,6 for McNabb,11 for Gildon. Trotter history
+periods1..6 match NFL career1998..2003 games; McNabb periods1..5 align1999..2003
+with counter6. Raw period5 therefore cannot represent one calendar year across
+all players. Added the raw current-period field and explicitly scoped
+calendar_candidates, preserving unknown periods/bit30, modes, deletion and
+missing evidence rather than fabricating dates.
+
+Nine focused history/calendar tests passed. Private actual Trotter/McNabb
+candidates produced the expected sequences from saved year2004. This supports
+candidate alignment, not universal season-mode or paid-status verification.
+
+Read official CBA Article26 section2 directly: salary-credit definition differs
+from NFLPA's general benefits FAQ, including IR exclusion. Recorded source/section
+and refused to substitute retirement-credit rules or assume missing pay/list
+eligibility. No credit count/minimum was assigned; Trotter remains pending.
+No database/game writes, model calls or control changes.
