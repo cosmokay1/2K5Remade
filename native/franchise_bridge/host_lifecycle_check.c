@@ -1,6 +1,7 @@
 /* Actual game-host lifecycle against an owned inert peer; no model requests. */
 #include "../../src/nfl2k5_franchise_host.h"
 #include <stdlib.h>
+#include <windows.h>
 
 int wmain(int argc, wchar_t **argv)
 {
@@ -15,6 +16,11 @@ int wmain(int argc, wchar_t **argv)
     if (!nfl2k5_franchise_start()) return 3;
     /* Re-entry must not replace the live child or leak its ownership. */
     if (nfl2k5_franchise_start()) return 4;
+    /* An inert peer cannot complete hello; callback must not wait for it. */
+    DWORD started = GetTickCount();
+    nfl2k5_franchise_on_fsm(0x00557B2C, 1);
+    nfl2k5_franchise_on_fsm(0, 0);
+    if (GetTickCount() - started > 1000) return 20;
     nfl2k5_franchise_stop();
     nfl2k5_franchise_stop();
     if (!nfl2k5_franchise_start()) return 5;

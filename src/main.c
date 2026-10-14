@@ -597,6 +597,9 @@ static bool signing_screen_name(uint32_t address, char out[151])
 
 void nfl2k5_diag_fsm(uint32_t obj, uint32_t desc, int push)
 {
+#ifdef NFL2K5_FRANCHISE_CLIENT
+    nfl2k5_franchise_on_fsm(desc, push);
+#endif
     static unsigned int recorded;
     const char *enabled = getenv("NFL2K5_TRACE_FRANCHISE");
     if (!enabled || strcmp(enabled, "1") || recorded >= 256) return;

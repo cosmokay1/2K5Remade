@@ -24,8 +24,8 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 ## Latest verified state — October 14, 2026
 
-- Latest published verified source: `258c223`. Build `38589604849` and Franchise AI
-  `38589604925` passed. CI checks asset-free runtime and bridge components;
+- Latest published verified source: `16d3c966`. Build `38597224057` and Franchise AI
+  `38597224100` passed. CI checks asset-free runtime and bridge components;
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.
@@ -35,7 +35,9 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   actual readback identifies Jeremiah Trotter at bank slot1910, matching AIBASELIN.
   Gildon offer amount/term/style/bonus readback is calibrated against the UI;
   Gildon signing moves him to the Giants with persisted terms and a$4.766M
-  first-year charge matching displayed cap balances. AI/modern accounting
+  first-year charge matching displayed cap balances. User confirms post-reload
+  Descending annual rows: 2004 salary$3.10M/bonus$1.65M and 2005
+  salary$1.86M/bonus$1.65M. AI/modern accounting
   integration and broader lifecycle/save verification remain pending. The Windows harness portability
   repair passed replacement CI and private MSVC/Wine fixture execution.
 - Request/token ceilings and remote shutdown are sufficient for current work.

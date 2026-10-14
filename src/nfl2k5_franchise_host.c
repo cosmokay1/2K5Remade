@@ -1,10 +1,13 @@
 #include "nfl2k5_franchise_host.h"
 #include "host_client.h"
+#include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
 
 static FranchiseHostClient *franchise_client;
+static volatile LONG franchise_owner_thread;
+static int hello_pending, hello_failed;
 static int positive_limit(const wchar_t *text, unsigned long long *value)
 {
     unsigned long long limit=0;
@@ -19,8 +22,42 @@ static int positive_limit(const wchar_t *text, unsigned long long *value)
 }
 void nfl2k5_franchise_stop(void)
 {
+    InterlockedExchange(&franchise_owner_thread, 0);
+    hello_pending = hello_failed = 0;
     franchise_host_destroy(franchise_client);
     franchise_client = NULL;
+}
+void nfl2k5_franchise_on_fsm(uint32_t descriptor, int push)
+{
+    /* Guest callbacks may run on another host thread. Do not hand a single-owner
+     * client to it, block the callback, or move ownership implicitly. */
+    if ((DWORD)InterlockedCompareExchange(&franchise_owner_thread, 0, 0) != GetCurrentThreadId())
+        return;
+    if (!franchise_client || hello_failed) return;
+    if (hello_pending) {
+        int ready = 0;
+        char response[4096];
+        size_t required = 0;
+        if (franchise_host_ready(franchise_client, &ready) != FRANCHISE_HOST_OK)
+            goto failed;
+        if (!ready) return;
+        if (franchise_host_take(franchise_client, response, sizeof(response), &required) != FRANCHISE_HOST_OK)
+            goto failed;
+        hello_pending = 0;
+        /* Receipt is not authorization. Native submit still rejects AI without
+         * a validated hello grant; the service rechecks remote control per call. */
+        fprintf(stderr, "[FRANCHISE] Control handshake reply consumed.\n");
+    }
+    if (push && descriptor == 0x00557B2Cu) {
+        static const char request[] = "{\"protocol\":1,\"request_id\":\"game-sign-hello\",\"operation\":\"hello\"}";
+        if (franchise_host_submit(franchise_client, request, sizeof(request) - 1) != FRANCHISE_HOST_OK)
+            goto failed;
+        hello_pending = 1;
+    }
+    return;
+failed:
+    hello_failed = 1;
+    fprintf(stderr, "[FRANCHISE] Control handshake transport unavailable; no AI request submitted.\n");
 }
 int nfl2k5_franchise_start(void)
 {
@@ -64,6 +101,8 @@ int nfl2k5_franchise_start(void)
         nfl2k5_franchise_stop();
         return 0;
     }
-    fprintf(stderr, "[FRANCHISE] Transport launched; guest transaction hooks remain unavailable.\n");
+    hello_pending = hello_failed = 0;
+    InterlockedExchange(&franchise_owner_thread, (LONG)GetCurrentThreadId());
+    fprintf(stderr, "[FRANCHISE] Transport launched; signing-screen control handshake available; guest transaction hooks remain unavailable.\n");
     return 1;
 }

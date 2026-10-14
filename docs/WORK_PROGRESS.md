@@ -3929,8 +3929,10 @@ These match exact stored totals72.272M→77.038M and remaining8.228M→3.462M, w
 first-year delta4.766M. UI truncation must not become ledger rounding. A bounded
 read-only /proc/68889/mem check was refused by OS permissions; no debugger attach,
 sudo, elevation or bypass was attempted. Direct live cap-global read is not claimed.
-Individual contract terms after reload await explicit UI readback; saved terms
-and user-reported completion are the evidence available.
+User explicitly confirmed post-reload Descending annual rows: 2004 salary$3.10M
+and bonus$1.65M; 2005 salary$1.86M and bonus$1.65M. This completes this
+original-game contract UI reload check. Displayed rounded/truncated amounts
+are not exact annual ledger values; modern accounting remains unverified.
 
 Implemented small read-only tools.inspect_player_contract for supported observed
 styles and active records, with named-membership validation and no cap/guarantee
@@ -3939,3 +3941,36 @@ malformed/unknown contracts and slots, and CLI byte preservation. Full612-test
 offline suite passed. Actual AIGILDON readback matches the documented deal.
 No AI/game financial write integration is present, and modern lifecycle/posting
 correctness remains open.
+
+
+## October 14, 2026 — Signing-screen control handshake callback
+
+Published16d3c966 passed Build38597224057 and Franchise AI38597224100.
+Added the required-control hello request to the existing observed Sign Contract
+FSM callback (descriptor0x00557B2C), independent of opt-in diagnostic tracing.
+The callback submits/polls without waiting and only on the transport owner
+thread. An outstanding hello is not duplicated; transport/take failures block
+further submissions until explicit host shutdown/restart. Receipt is not
+authorization: the native client still validates grants before any AI operation,
+and the service checks remote control again per request. No control renewal,
+model requests, guest writes or automatic fallback is added. Default provider
+configuration remains disabled.
+
+An authored Windows transport test covers default-disabled behavior, unrelated
+FSM events, foreign-thread rejection, pending/consumed hello, oversized replies
+and explicit stop/restart. Release assertions remain enabled. The private
+licensed MSVC build passed /W4 /WX and the test executed under Wine. Full
+private Windows NFL2K5 target compiled and linked; all612 offline tests passed.
+The actual game has not executed this configured callback yet, so owner-thread
+association and remote hello in the live game remain unverified. Contract
+judgment and financial mutations still use original game logic.
+
+The actual native pipe client and revised lifecycle test also compiled and
+executed against the inert stalled peer under Wine (exit0). Its callback submit
+and immediate poll completed within the1000ms guard. The initial manual
+compile omitted the target's existing NOMINMAX definition; corrected the manual
+command to match CMake, with no source change needed. Staged private next game
+SHA256e6c10393d53b1cc355e981d612779fed96fbeeadd9ef8f7e067014a8a262b9aa.
+Installed executable remains SHA256
+1f1aa6150ba5d2046c4dc4c2067c008db2aab04232ef0bc664aaa1b5d33ab1b3
+and game PID68889 remains active; no game restart or input was sent.
