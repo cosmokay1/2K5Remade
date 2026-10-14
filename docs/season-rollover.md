@@ -173,9 +173,9 @@ Its immutable economic contract and prior amendment/incoming plans remain intact
 the outgoing plan records the advanced original salary-year cursor and sourced
 trade year. Earned prior base remains in seller cash ceilings, transferred future
 base does not, and retained bonus charges start at the actual trade year. This
-path validates before mutation and preserves legacy postroll guards. It is not
-an atomic paired Store trade: paired replay and rollback, native versioned
-accounting/receipts and guest wiring remain open.
+path validates before mutation and preserves legacy postroll guards. Paired Store
+commit/replay is now implemented below; native versioned accounting/receipts and
+guest wiring remain open.
 Store inspection rejects these outgoing archives until that protocol exists.
 
 The receiving Ledger explicitly recalculates the original plan, binds canonical
@@ -186,3 +186,13 @@ assigned agreements remain separate. An expired prior agreement is eligible only
 through the saved view's authoritative exhausted-term/fully allocated settlement
 facts, never merely because its schedule ended. Prior debt/cash is preserved.
 Legacy assignment paths still reject after rollover.
+
+`trade_calendar_preseason_veteran` commits exact seller/buyer generations,
+ownership and both financial/cash/generation/calendar postings in one write
+transaction. Separate calendar trade events and request namespace preserve
+historical retry after another rollover. Replay requires exact shared peer facts,
+both participants' before/after snapshots, canonical types and current-year plans;
+missing peers, downgraded event types and inconsistent postings reject. Receipt
+and final connection gates precede ownership/event writes; failure of the second
+event rolls the entire transaction back. Legacy routes remain guarded, and this
+Store method is not yet a native or actual guest transaction.

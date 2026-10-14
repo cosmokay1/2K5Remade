@@ -2917,3 +2917,21 @@ foreign identity, cap and floor rejection without mutations. Independent review
 found no concrete defect in the buyer path or incremental expiry guard. Atomic
 paired Store calendar events/replay/rollback, native accounting/receipts and actual
 guest trades remain required; no postroll service transaction was opened.
+
+Atomic Store calendar assignments now commit both books and exclusive ownership
+under one BEGIN IMMEDIATE. Explicit current seller/prior-buyer identities, both
+migrated calendars and source year are required. Separate calendar_trade_out/in
+events and calendar-trade request namespace carry exact shared before/after
+financial, cash, generation and calendar snapshots. Replay validates canonical
+formats/revisions, exact participant maps and peer payloads, authoritative source
+obligations and resulting state. Receipt/final connection checks precede ownership
+and both event writes; failure of the second event rolls everything back. Stable
+historical retries after payment/another rollover return the original format2
+receipt. Original seller economics, earned cash, buyer-year anchor, retained debt,
+saved personality and existing per-club relationships persist. Source calendar
+assignment inspection still fails closed pending an explicit native format.
+All 505 offline tests passed; focused tests also reject ten tamper/missing-peer/
+downgrade cases and verify access/receipt/second-insert rollback byte-for-byte.
+Independent review found no concrete defect. No Bridge/native trade route or guest
+writes were opened. Both Build 38515825166 and FranchiseAI 38515825234 passed at
+prior receiving-ledger revision 97553c1; the new paired Store change is separate.

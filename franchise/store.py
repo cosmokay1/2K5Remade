@@ -705,7 +705,7 @@ class FranchiseStore:
                 self._check_cash_components(ledger)
                 if payload['cash_posting'] != ledger.cash_snapshot():
                     raise ValueError('Release cash posting disagrees with replay')
-            elif kind in ('trade_out','trade_in','generation_trade_out','generation_trade_in'):
+            elif kind in ('trade_out','trade_in','generation_trade_out','generation_trade_in','calendar_trade_out','calendar_trade_in'):
                 self._replay_trade(db,ledger,team_id,kind,payload)
             elif kind == "actor":
                 ledger.negotiation_context(payload["player_id"])
@@ -1194,24 +1194,38 @@ class FranchiseStore:
         common=payload['trade']
         fields={'trade_id','seller','buyer','player_id','scope','record_id','expected_revisions',
                 'original_contract','original_cash','before','after'}
-        versioned=kind in ('generation_trade_out','generation_trade_in')
+        calendar=kind in ('calendar_trade_out','calendar_trade_in')
+        versioned=calendar or kind in ('generation_trade_out','generation_trade_in')
         if versioned:
             fields|={'format','seller_generation_id','buyer_generation_id','buyer_previous_generation_id','before_generations','after_generations'}
+        if calendar:
+            fields|={'calendar_format','before_calendars','after_calendars'}
         if (type(common) is not dict or set(common)!=fields or (versioned and
                 (type(common['format']) is not int or common['format']!=1 or db.execute('PRAGMA user_version').fetchone()[0]!=4))):
             raise ValueError('Complete paired trade source required')
         seller,buyer=common['seller'],common['buyer']
         if any(type(value) is not str or not value.strip() for value in (seller,buyer,common['trade_id'],common['player_id'])) or seller == buyer:
             raise ValueError('Distinct identified trade participants required')
-        roles={seller:'generation_trade_out' if versioned else 'trade_out',
-               buyer:'generation_trade_in' if versioned else 'trade_in'}
-        if roles.get(team) != kind or common['record_id'] != 'trade:'+common['trade_id']:
+        prefix='calendar-trade:' if calendar else 'trade:'
+        if calendar:
+            if (type(common['calendar_format']) is not int or common['calendar_format']!=1
+                    or ledger._generation_calendar_anchor is None
+                    or any(type(common[name]) is not dict or set(common[name])!={seller,buyer}
+                           for name in ('expected_revisions','before','after','before_generations','after_generations','before_calendars','after_calendars'))
+                    or any(type(revision) is not int or revision<0 for revision in common['expected_revisions'].values())
+                    or self._checkpoint_hash(common['before_calendars'][team])!=self._checkpoint_hash(self._calendar_posting(ledger))):
+                raise ValueError('Complete current-calendar trade source required')
+        roles={seller:'calendar_trade_out' if calendar else 'generation_trade_out' if versioned else 'trade_out',
+               buyer:'calendar_trade_in' if calendar else 'generation_trade_in' if versioned else 'trade_in'}
+        if roles.get(team) != kind or common['record_id'] != prefix+common['trade_id']:
             raise ValueError('Trade role or obligation identity disagrees')
-        rows=db.execute('SELECT team_id,kind,payload FROM events WHERE request_key=?',('trade:'+common['trade_id'],)).fetchall()
+        rows=db.execute('SELECT team_id,kind,payload FROM events WHERE request_key=?',(prefix+common['trade_id'],)).fetchall()
         if len(rows)!=2 or {participant:role for participant,role,_ in rows} != roles:
             raise ValueError('Exactly one paired trade event per participant required')
         for participant,role,serialized in rows:
             opposite=json.loads(serialized)
+            if calendar and (type(opposite) is not dict or set(opposite)!={'trade','posting','cash_posting'}):
+                raise ValueError('Unexpected paired calendar trade event fields')
             if ((self._checkpoint_hash(opposite.get('trade'))!=self._checkpoint_hash(common) or
                     self._checkpoint_hash(opposite.get('posting'))!=self._checkpoint_hash(common['after'][participant]['financial']) or
                     self._checkpoint_hash(opposite.get('cash_posting'))!=self._checkpoint_hash(common['after'][participant]['cash'])) if versioned else
@@ -1231,24 +1245,29 @@ class FranchiseStore:
         if plan.original_contract.offer.player_id != common['player_id']:
             raise ValueError('Trade and original player identity disagree')
         revision=common['expected_revisions'][team]
-        if kind in ('trade_out','generation_trade_out'):
+        if kind in ('trade_out','generation_trade_out','calendar_trade_out'):
             if versioned and common['seller_generation_id']!=ledger.contract_identity(common['player_id']).generation_id:
                 raise ValueError('Trade seller generation disagrees with source')
             if (ledger.active_contract(common['player_id']) != plan.original_contract or ledger._cash is None
                     or ledger._cash.records.get(plan.original_cash.obligation_id) != plan.original_cash):
                 raise ValueError('Trade original obligations disagree with seller history')
-            ledger.apply_preseason_trade_out(common['player_id'],scope=plan.scope,record_id=common['record_id'],expected_revision=revision,
-                **({'buyer_cash_id':common['buyer_generation_id']} if versioned else {}))
+            outgoing=ledger.apply_calendar_preseason_trade_out if calendar else ledger.apply_preseason_trade_out
+            outgoing(common['player_id'],scope=plan.scope,record_id=common['record_id'],expected_revision=revision,
+                **({'buyer_cash_id':common['buyer_generation_id']} if versioned else {}),
+                **({'generation_id':common['seller_generation_id']} if calendar else {}))
         else:
             if versioned:
                 parent=ledger.contract_identity(common['player_id']).generation_id if common['player_id'] in ledger._contracts else None
                 if parent!=common['buyer_previous_generation_id']:
                     raise ValueError('Trade buyer prior agreement disagrees with source')
-            ledger.apply_preseason_trade_in(plan,expected_revision=revision,
+            incoming=ledger.apply_calendar_preseason_trade_in if calendar else ledger.apply_preseason_trade_in
+            incoming(plan,expected_revision=revision,
                 **({'assignment_request_id':common['trade_id'],'assigned_from_team':seller,
                     'assigned_from_generation_id':common['seller_generation_id']} if versioned else {}))
         if versioned and self._checkpoint_hash(ledger.generation_snapshot())!=self._checkpoint_hash(common['after_generations'][team]):
             raise ValueError('Trade generation resulting state disagrees with replay')
+        if calendar and self._checkpoint_hash(self._calendar_posting(ledger))!=self._checkpoint_hash(common['after_calendars'][team]):
+            raise ValueError('Trade calendar resulting state disagrees with replay')
         self._check_cash_components(ledger)
         after={'financial':ledger.financial_snapshot(),'cash':ledger.cash_snapshot()}
         if (self._checkpoint_hash(after)!=self._checkpoint_hash(common['after'][team]) if versioned else after!=common['after'][team]):
@@ -1256,6 +1275,23 @@ class FranchiseStore:
 
     def trade_preseason_veteran(self,request_id,seller,buyer,player_id,*,scope,seller_revision,buyer_revision,access_check,
                                seller_generation_id=None,buyer_previous_generation_id=None,require_generation_ids=False,include_generation_identity=False,receipt_check=None):
+        return self._trade_preseason_veteran(request_id,seller,buyer,player_id,scope=scope,seller_revision=seller_revision,
+            buyer_revision=buyer_revision,access_check=access_check,seller_generation_id=seller_generation_id,
+            buyer_previous_generation_id=buyer_previous_generation_id,require_generation_ids=require_generation_ids,
+            include_generation_identity=include_generation_identity,receipt_check=receipt_check,calendar_assignment=False)
+
+    def trade_calendar_preseason_veteran(self,request_id,seller,buyer,player_id,*,scope,seller_revision,buyer_revision,
+                                       seller_generation_id,buyer_previous_generation_id,access_check,receipt_check=None):
+        if type(seller_generation_id) is not str or not seller_generation_id.strip():
+            raise Rejected('Exact calendar seller generation required')
+        return self._trade_preseason_veteran(request_id,seller,buyer,player_id,scope=scope,seller_revision=seller_revision,
+            buyer_revision=buyer_revision,access_check=access_check,seller_generation_id=seller_generation_id,
+            buyer_previous_generation_id=buyer_previous_generation_id,require_generation_ids=True,
+            include_generation_identity=True,receipt_check=receipt_check,calendar_assignment=True)
+
+    def _trade_preseason_veteran(self,request_id,seller,buyer,player_id,*,scope,seller_revision,buyer_revision,access_check,
+                               seller_generation_id,buyer_previous_generation_id,require_generation_ids,include_generation_identity,
+                               receipt_check,calendar_assignment):
         from franchise.trades import PreseasonTradeScope
         if receipt_check is not None and not callable(receipt_check):
             raise ValueError('Callable lifecycle receipt validation required')
@@ -1273,12 +1309,13 @@ class FranchiseStore:
         for field in ('traded_on','seller_first_regular_season_game','buyer_first_regular_season_game'):
             scope_data[field]=getattr(scope,field).isoformat()
         scope_data['exclusions']=sorted(scope.exclusions)
+        prefix='calendar-trade:' if calendar_assignment else 'trade:'
         requested={'trade_id':request_id,'seller':seller,'buyer':buyer,'player_id':player_id,'scope':scope_data,
-                   'record_id':'trade:'+request_id,'expected_revisions':{seller:seller_revision,buyer:buyer_revision}}
+                   'record_id':prefix+request_id,'expected_revisions':{seller:seller_revision,buyer:buyer_revision}}
         with self._connection(write=True) as db:
             participants=self._load_teams(db,(seller,buyer))
             source,target=participants[seller],participants[buyer]
-            key='trade:'+request_id
+            key=prefix+request_id
             rows=db.execute('SELECT payload FROM events WHERE request_key=?',(key,)).fetchall()
             if rows:
                 if len(rows)!=2:
@@ -1296,6 +1333,10 @@ class FranchiseStore:
                     receipt_check(receipt)
                 access_check()
                 return receipt
+            if calendar_assignment and (db.execute('PRAGMA user_version').fetchone()[0]!=4
+                    or source._generation_calendar_anchor is None or target._generation_calendar_anchor is None
+                    or source._league_year!=scope.league_year or target._league_year!=scope.league_year):
+                raise Rejected('Both participants require the current migrated league calendar')
             owner=db.execute('SELECT team_id FROM ownership WHERE player_id=?',(player_id,)).fetchone()
             if owner != (seller,):
                 raise Rejected('Seller lacks exclusive player ownership')
@@ -1315,9 +1356,14 @@ class FranchiseStore:
                 destination=assignment_identity(buyer,player_id,request_id)
                 common.update(format=1,seller_generation_id=source_id,buyer_generation_id=destination.generation_id,
                     buyer_previous_generation_id=parent_id,before_generations={seller:source.generation_snapshot(),buyer:target.generation_snapshot()})
-            plan=source.apply_preseason_trade_out(player_id,scope=scope,record_id=key,expected_revision=seller_revision,
-                **({'buyer_cash_id':destination.cash_obligation_id} if versioned else {}))
-            target.apply_preseason_trade_in(plan,expected_revision=buyer_revision,
+            if calendar_assignment:
+                common.update(calendar_format=1,before_calendars={seller:self._calendar_posting(source),buyer:self._calendar_posting(target)})
+            outgoing=source.apply_calendar_preseason_trade_out if calendar_assignment else source.apply_preseason_trade_out
+            plan=outgoing(player_id,scope=scope,record_id=key,expected_revision=seller_revision,
+                **({'buyer_cash_id':destination.cash_obligation_id} if versioned else {}),
+                **({'generation_id':source_id} if calendar_assignment else {}))
+            incoming=target.apply_calendar_preseason_trade_in if calendar_assignment else target.apply_preseason_trade_in
+            incoming(plan,expected_revision=buyer_revision,
                 **({'assignment_request_id':request_id,'assigned_from_team':seller,
                     'assigned_from_generation_id':source_id} if versioned else {}))
             self._check_cash_components(source)
@@ -1328,14 +1374,16 @@ class FranchiseStore:
                        buyer:{'financial':target.financial_snapshot(),'cash':target.cash_snapshot()}})
             if versioned:
                 common['after_generations']={seller:source.generation_snapshot(),buyer:target.generation_snapshot()}
+            if calendar_assignment:
+                common['after_calendars']={seller:self._calendar_posting(source),buyer:self._calendar_posting(target)}
             receipt=self._trade_receipt(common,include_generation_identity)
             if receipt_check is not None:
                 receipt_check(receipt)
             access_check()
             if db.execute('UPDATE ownership SET team_id=? WHERE player_id=? AND team_id=?',(buyer,player_id,seller)).rowcount != 1:
                 raise Rejected('Trade ownership changed')
-            for team,kind in ((seller,'generation_trade_out' if versioned else 'trade_out'),
-                              (buyer,'generation_trade_in' if versioned else 'trade_in')):
+            for team,kind in ((seller,'calendar_trade_out' if calendar_assignment else 'generation_trade_out' if versioned else 'trade_out'),
+                              (buyer,'calendar_trade_in' if calendar_assignment else 'generation_trade_in' if versioned else 'trade_in')):
                 posting=common['after'][team]
                 db.execute('INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,?,?)',
                     (team,key,kind,json.dumps({'trade':common,'posting':posting['financial'],'cash_posting':posting['cash']},allow_nan=False)))
@@ -1346,7 +1394,8 @@ class FranchiseStore:
         if include_identity and common.get('format')==1:
             return {'participants':common['after'],'seller_generation_id':common['seller_generation_id'],
                 'buyer_generation_id':common['buyer_generation_id'],
-                'buyer_previous_generation_id':common['buyer_previous_generation_id']}
+                'buyer_previous_generation_id':common['buyer_previous_generation_id'],
+                **({'format':2,'league_year':common['scope']['league_year']} if common.get('calendar_format')==1 else {})}
         return common['after']
 
     @staticmethod

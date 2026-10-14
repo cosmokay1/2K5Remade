@@ -121,8 +121,10 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       Calendar-aware seller Ledger assignments now preserve economic archives,
       earned prior base and actual-year retained charges. Receiving Ledger now
       enforces current cap/floors and preserves prior closed/settled expired debt,
-      with a new trade-year-anchored agreement. Paired Store/native calendar paths
-      remain open; no postroll trade service route is enabled.
+      with a new trade-year-anchored agreement. Atomic paired Store calendar
+      commits/replay now persist both books and ownership with strict before/after
+      calendar checks and rollback. Native calendar inspection/receipts and game
+      wiring remain open; no postroll trade service route is enabled.
       Supported sourced preseason veteran contract assignments now commit paired
       cash/cap/ownership events with independent league replay. Consideration, rookies,
       unpaid bonus and other trade protections remain; supported assignments now use
