@@ -53,8 +53,34 @@ static bool xbox_guest_memory_read(uintptr_t base, uint64_t addr, void *out, siz
 static void put32(uint32_t address, uint32_t value) { memcpy(ram + address, &value, 4); }
 int main(void) {
     uint32_t slot = 99;
+    uint32_t team_index = 99, team_mode = 99;
     char name[151];
     put32(0xB72918, 0x5000); put32(0x5000, 2); put32(0x5004, 0x6000);
+    put32(0x5018, 52); put32(0x501C, 0x9000);
+    assert(signing_screen_team(0x9000 + 15 * 0x1F4, &team_index, &team_mode));
+    assert(team_index == 15 && team_mode == 0);
+    assert(!signing_screen_team(0x9001, &team_index, &team_mode));
+    assert(!signing_screen_team(0x9000 + 52 * 0x1F4, &team_index, &team_mode));
+    assert(!signing_screen_team(0, &team_index, &team_mode));
+    put32(0x5018, 53); assert(!signing_screen_team(0x9000, &team_index, &team_mode));
+    put32(0x5018, 52); put32(0x501C, UINT32_MAX - 10);
+    assert(!signing_screen_team(UINT32_MAX - 10, &team_index, &team_mode));
+    put32(0x501C, 0x9000);
+    put32(0xE576A0, 1); put32(0xE576AC, 2);
+    put32(0xE5786C, 0x4000); put32(0xE57870, 0x4500);
+    assert(signing_screen_team(0x4500, &team_index, &team_mode));
+    assert(team_index == 1 && team_mode == 1);
+    assert(!signing_screen_team(0x9000, &team_index, &team_mode));
+    put32(0xE576A0, 2);
+    assert(signing_screen_team(0x4000, &team_index, &team_mode));
+    put32(0xE576AC, 53);
+    assert(!signing_screen_team(0x4000, &team_index, &team_mode));
+    put32(0xE576AC, 0);
+    assert(!signing_screen_team(0x4000, &team_index, &team_mode));
+    put32(0xE576AC, 2);
+    put32(0xE576A0, 3);
+    assert(!signing_screen_team(0x4000, &team_index, &team_mode));
+    put32(0xE576A0, 0);
     assert(signing_screen_slot(0x6054, &slot) && slot == 1);
     assert(!signing_screen_slot(0x6055, &slot));
     assert(!signing_screen_slot(0x5FFF, &slot));
@@ -74,7 +100,9 @@ int main(void) {
     assert(!signing_screen_name(0x3000, name));
     assert(!signing_screen_name(sizeof ram - 2, name));
     assert(!signing_screen_read(UINT32_MAX, name, 2));
-    put32(0xCB8C34, 0x1000); put32(0x1000, 0x6054); put32(0x1004, 0x4000);
+    put32(0xCB8C34, 0x1000); put32(0x1000, 0x6054);
+    put32(0x1004, 0x9000 + 15 * 0x1F4);
+    put32(0x9000 + 15 * 0x1F4 + 0x124, 77038); put32(0xE3C278, 80500);
     ram[0x100C] = 0x34; ram[0x100D] = 0x12;
     put32(0x6064, 0x8000); put32(0x6068, 0x8100);
     const uint16_t first[] = {'T','e','s','t',0}, last[] = {'P','l','a','y','e','r',0};
@@ -96,6 +124,12 @@ int main(void) {
     memcpy(contig + 0x1064, &high_first, 4); memcpy(contig + 0x1068, &high_last, 4);
     memcpy(contig + 0x2000, first, sizeof first); memcpy(contig + 0x2100, last, sizeof last);
     put32(0x1000, high_player);
+    put32(0x5018, 2); put32(0x501C, XBOX_CONTIG_BASE + 0x3000);
+    put32(0x1004, XBOX_CONTIG_BASE + 0x31F4);
+    const uint32_t high_payroll = 72272;
+    memcpy(contig + 0x31F4 + 0x124, &high_payroll, sizeof high_payroll);
+    assert(signing_screen_team(XBOX_CONTIG_BASE + 0x31F4, &team_index, &team_mode));
+    assert(team_index == 1 && team_mode == 0);
     memcpy(before, ram, sizeof ram); memcpy(contig_before, contig, sizeof contig);
     assert(signing_screen_slot(high_player, &slot) && slot == 1);
     assert(!signing_screen_read(XBOX_CONTIG_BASE + XBOX_CONTIG_SIZE - 1, name, 2));
@@ -119,3 +153,6 @@ int main(void) {
         self.assertIn('context_0C_word_raw=4660', result.stderr)
         self.assertIn('sign_player_guard bank_slot=1 pbp_photo_raw=1234abcd dob_region_raw=5678ef', result.stderr)
         self.assertEqual(result.stderr.count('sign_player_guard bank_slot=1'), 2)
+        self.assertIn('sign_team table_index=15 table_mode=0 payroll_124_raw=77038 league_cap_raw=80500', result.stderr)
+        self.assertIn('accounting_scope=original_unreconciled', result.stderr)
+        self.assertIn('sign_team table_index=1 table_mode=0 payroll_124_raw=72272 league_cap_raw=80500', result.stderr)

@@ -4214,3 +4214,25 @@ and original signing judgment still runs. Publisheda4e89c1 passed
 Build38606568296 and Franchise AI38606568593;0eb0135 also completed both workflows.
 Published589bea2 Build38611029790 passed; Franchise AI38611029693 is still
 in progress at this check and is not yet claimed successful.
+
+## October14,2026 — Bounded signing team/cap probe installed
+
+Audited original team getter mode at0x00E576A0 and both jump tables in the
+privately supplied executable. Mode0 selects bank+18/+1C with stride1F4;
+mode1/2 selects countE576AC and pointersE5786C. Added opt-in read-only
+association with a52-record bound, validated bank geometry and unknown-mode
+rejection. Matched records expose raw team+124 payroll and globalE3C278 cap.
+They remain current-table locators and original unreconciled accounting;
+no active-franchise identity, adjusted cap room or modern authority is inferred.
+
+Actual observation source compiled with -Wall/-Wextra/-Werror and passed
+authored bank/pointer-table, unsupported-mode/count, malformed-address and
+separate physical-memory tests with byte-preservation assertions. Incremental
+private Windows build compiled main.c and linked NFL2K5.exe successfully.
+User confirmed game closed. The first installation guard matched its own shell
+command filenames and safely refused without mutation; an exact process/launch
+check confirmed no game process and installation then completed. Retained
+runtime/NFL2K5.pre-team-probe.exe as rollback. Installed SHA256
+0783c6e91751e8989d1b6c33720db27df5b6cf93cb72f999c39abcebf1053760.
+Requested the same AIGILDON/Trotter screen without offer submission. Actual
+team/cap readback remains pending; original signing logic is unchanged.

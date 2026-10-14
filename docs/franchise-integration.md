@@ -462,7 +462,13 @@ and0x000C4C50 uses bank+0x1C base with stride0x1F4. Baseline header0x338
 declares52 records and its relative pointer0x33C resolves0x44A8; the current
 roster inspector names only its supported first32 clubs. Do not assert other[0]
 is a stable team ID or derive the live club from a guessed franchise base.
-Current-mode selection and live team-table binding still need evidence.
+The opt-in observer now reads mode0x00E576A0 and follows the original getter's
+mode0 bank/count/stride or mode1/2 pointer-table selection (count0x00E576AC,
+table0x00E5786C). Counts above52, unknown modes, malformed bank geometry and
+unmatched pointers reject association. On a match it reads team+0x124 and
+global0x00E3C278 as raw original accounting values, not modern ledger authority.
+Portable authored low/high-memory tests cover table selection and read-only
+behavior; actual live team/cap matching still needs the installed probe's trace.
 
 
 User-visible Gildon calibration: the current raw offer word829 matches$8.29M,

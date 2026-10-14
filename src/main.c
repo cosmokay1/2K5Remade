@@ -566,6 +566,41 @@ static bool signing_screen_slot(uint32_t player, uint32_t *slot)
     return true;
 }
 
+/* Mirror the observed retail team-table selection (0xC4B80/C4BE0/C4C50),
+ * with a strict bound. This yields a current-table locator, not franchise ID. */
+static bool signing_screen_team(uint32_t team, uint32_t *index, uint32_t *mode)
+{
+    uint32_t count, base, bank;
+    if (!team || !signing_screen_read(0x00E576A0u, mode, sizeof(*mode)) ||
+        *mode > 2u)
+        return false;
+    if (*mode == 0u) {
+        uint32_t header[2];
+        if (!signing_screen_read(0x00B72918u, &bank, sizeof(bank)) ||
+            bank > UINT32_MAX - 0x18u ||
+            !signing_screen_read(bank + 0x18u, header, sizeof(header)))
+            return false;
+        count = header[0]; base = header[1];
+        if (!count || count > 52u ||
+            !signing_screen_range(base, (uint64_t)count * 0x1F4u) ||
+            team < base || (uint64_t)team >= (uint64_t)base + count * 0x1F4u ||
+            (team - base) % 0x1F4u)
+            return false;
+        *index = (team - base) / 0x1F4u;
+        return true;
+    }
+    if (!signing_screen_read(0x00E576ACu, &count, sizeof(count)) ||
+        !count || count > 52u)
+        return false;
+    for (uint32_t i = 0; i < count; ++i) {
+        uint32_t candidate;
+        if (!signing_screen_read(0x00E5786Cu + i * 4u, &candidate, sizeof(candidate)))
+            return false;
+        if (candidate == team) { *index = i; return true; }
+    }
+    return false;
+}
+
 /* Read only relocated UTF-16 names, never guess relative pointers. Reject
  * malformed/unbounded text; a failed name is an unknown identity observation. */
 static bool signing_screen_name(uint32_t address, char out[151])
@@ -641,6 +676,17 @@ void nfl2k5_diag_fsm(uint32_t obj, uint32_t desc, int push)
                 (unsigned int)player_raw[0x1B]);
         } else {
             fprintf(stderr, "[FRANCHISE-TRACE] sign_player identity=unverified\n");
+        }
+        uint32_t team_index, team_mode, payroll_raw, cap_raw;
+        if (signing_screen_team(other, &team_index, &team_mode) &&
+            other <= UINT32_MAX - 0x124u &&
+            signing_screen_read(other + 0x124u, &payroll_raw, sizeof(payroll_raw)) &&
+            signing_screen_read(0x00E3C278u, &cap_raw, sizeof(cap_raw))) {
+            fprintf(stderr, "[FRANCHISE-TRACE] sign_team table_index=%u table_mode=%u payroll_124_raw=%u league_cap_raw=%u identity_scope=current_table_locator accounting_scope=original_unreconciled\n",
+                (unsigned int)team_index, (unsigned int)team_mode,
+                (unsigned int)payroll_raw, (unsigned int)cap_raw);
+        } else {
+            fprintf(stderr, "[FRANCHISE-TRACE] sign_team identity=unverified\n");
         }
         memcpy(&salary_raw, player_raw + 0x0A, sizeof(salary_raw));
         memcpy(&offer_salary_raw, context_raw + 0x0C, sizeof(offer_salary_raw));
