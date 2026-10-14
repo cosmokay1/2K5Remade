@@ -2408,3 +2408,14 @@ Projection review found no concrete defect. Added next-year post-June release
 debt and paired assignment coverage: seller bonus debt remains separate from
 buyer base schedules, with cash and payment rights unchanged. Independent
 layered/elapsed-year examples also passed. All 455 offline tests pass.
+
+### Owner-funded normal payroll policy (2026-10-13)
+
+Recorded user direction in docs/payroll-funding-policy.md: normal payroll uses
+owner funding, requiring no revenue tuning or artificial bank-balance gate.
+Owed/paid cash remains accurate compensation history, separate from cap/rookie
+legality. Exceptional severe-mismanagement distress is explicit optional scope,
+never inferred from losses/missing revenue. Updated negotiation/draft prompts
+and the worklist to preserve this policy through settlement and rollover.
+Current cash ledger has no revenue/bank-balance gate. Provider tests and money
+audit pass; financial transaction code and compensation amounts are unchanged.

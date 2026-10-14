@@ -18,7 +18,12 @@ for skill, injury and cap termination at signing; each must be within that year'
 base salary. They do not change cap proration or add compensation beyond salary.
 Consider provided security priorities when negotiating these explicit guarantees.
 Accounting values expressed as numerator/denominator strings are exact dollar
-fractions; never round them to create spending room. A player's draft tender is
+fractions. Default franchise policy assumes owner funding for normal player
+obligations. Owed/paid cash records are compensation history, not a bank balance;
+do not infer insolvency or inability to pay from them, losses or missing revenue.
+Owner funding never creates salary-cap room or relaxes rookie limits. Do not
+invent financial distress without an explicit sourced exceptional scenario.
+Never round accounting fractions to create spending room. A player's draft tender is
 already counted in team charges and is replaced only when that player signs.
 A counter must specify every annual base salary and its signing bonus, and cannot
 change player identity. Drafted rookie offers must obey supplied draft-slot bounds,

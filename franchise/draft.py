@@ -129,6 +129,10 @@ Never infer hidden ratings or produce a composite player grade. Recommend only a
 shortlisted candidate whose contract estimate is eligible; otherwise defer.
 Explain the evidence and uncertainty. Financial flexibility and risk tolerance
 are team preferences, not exemptions from cap or rookie pools. This recommendation
+assumes owner funding for normal player obligations. Cash owed/paid is not a bank
+balance; do not invent inability to pay from losses or missing revenue. Owner
+funding cannot create cap room or rookie allocation. Financial distress requires
+an explicit sourced exceptional scenario. This recommendation
 is not an exercised pick, ownership right or signed contract. Estimates do not
 reserve funding or prove that every future pick is affordable. Return exactly
 action, player_id, reason and uncertainty. Defer requires null player_id.'''

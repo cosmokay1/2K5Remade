@@ -100,7 +100,7 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
 - [ ] Load annual minimums and draft allotments with recorded source/version.
 - [ ] Separate cash owed/paid, cap charges, guarantees, and management reserves.
       Nominal cash/payment ledger and full base-guarantee terms are implemented;
-      paid guarantee allocation, settlement and management cash budgets remain.
+      paid guarantee allocation and settlement remain. Normal payroll assumes owner funding, not a revenue-dependent cash gate; exceptional severe-mismanagement scenarios are optional future scope. See docs/payroll-funding-policy.md.
 - [ ] Model guarantee protections/vesting and supported bonus components.
 - [ ] Implement releases/retirement and retained obligations/dead charges.
       Supported sourced healthy preseason veteran releases now commit/replay with
