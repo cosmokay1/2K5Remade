@@ -2463,3 +2463,18 @@ context remain guarded unfinished work; no guest gameplay/save proof is claimed.
 Upstream master has three new commits (d76949a,790d064,e3262f4) touching
 main host/recompiler/CI. Preserve this validated source before merging them and
 reapply opt-in host ownership to the refactored entry/cleanup paths.
+
+### Merge three upstream cross-platform commits (2026-10-13)
+
+Fetched and merged upstream master d76949a/790d064/e3262f4 while preserving
+fork ancestry. Resolved the rewritten main.c conflict using upstream's host and
+reapplying our opt-in startup/normal-return/crash cleanup calls. Preserved all
+reviewed franchise work before merging. Recompiler gitlink c0ba4e7 is checked
+out; corrected stale revision-file pin 13175b7 to match it.
+
+Guarded Windows-only root tool targets for the new Linux runtime CI and made
+NFL2K5_BUILD_GAME=OFF explicit with accurate runtime/tool job labels. The Win32
+franchise pipe option fails clearly on native POSIX builds; Proton Windows route
+remains the intended Deck delivery. Actual game compilation/playability and
+Linux runtime CI remain unverified. Runtime symbol check reports33 referenced
+functions resolved; portable protocol CTest and all471 offline tests pass.
