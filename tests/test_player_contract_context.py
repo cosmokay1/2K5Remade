@@ -33,7 +33,8 @@ class PlayerContractContextTests(unittest.TestCase):
             events_before=db.execute('SELECT count(*) FROM events').fetchone()[0]
         context=self.context()
         accounting=context['contract_accounting']
-        self.assertEqual(set(accounting),{'status','charge_scope','annual_charges','contract','cash_obligation','guarantees'})
+        self.assertEqual(set(accounting),{'generation_id','status','charge_scope','annual_charges','contract','cash_obligation','guarantees'})
+        self.assertEqual(accounting['generation_id'],self.store.contract_generations('a')['generations'][0]['generation_id'])
         self.assertEqual(accounting['charge_scope'],'active_contract')
         self.assertFalse(context['initialized'])
         self.assertEqual(accounting['status'],'active')
@@ -56,6 +57,7 @@ class PlayerContractContextTests(unittest.TestCase):
         self.store.record_payment('a','paid','contract:v',4,expected_cash_revision=1,
             source='synthetic payment',payment_reference='receipt-1',component='bonus:restructure:conversion')
         changed=self.context()
+        self.assertEqual(changed['contract_accounting']['generation_id'],accounting['generation_id'])
         self.assertEqual(changed['financial_revision'],3)
         self.assertEqual(changed['contract_accounting']['annual_charges'],accounting['annual_charges'])
         self.assertEqual(changed['contract_accounting']['cash_obligation']['paid'],34)
@@ -63,11 +65,13 @@ class PlayerContractContextTests(unittest.TestCase):
         self.assertEqual(FranchiseStore(self.store.path).player_context('a','v'),changed)
 
     def test_released_status_preserves_layers_retained_debt_and_known_cash(self):
+        original_id=self.context()['contract_accounting']['generation_id']
         self.amend()
         release=test_releases.PreseasonReleaseTests().plan()
         self.store.release_preseason_veteran('a','release','v',scope=release.scope,
             discount=release.discount,payment_year_offsets=(0,)*5,expected_revision=2,access_check=lambda:None)
         accounting=self.context()['contract_accounting']
+        self.assertEqual(accounting['generation_id'],original_id)
         self.assertEqual(accounting['status'],'released')
         self.assertEqual(accounting['annual_charges'],[36])
         self.assertEqual(accounting['contract']['bonus_layers'][0]['amount'],8)
@@ -83,6 +87,7 @@ class PlayerContractContextTests(unittest.TestCase):
             fixture.trade(store)
             seller=store.player_context('a','v')['contract_accounting']
             buyer=store.player_context('b','v')['contract_accounting']
+            self.assertNotEqual(seller['generation_id'],buyer['generation_id'])
             self.assertEqual(seller['status'],'assigned')
             self.assertEqual(seller['charge_scope'],'retained_obligations')
             self.assertEqual(seller['annual_charges'],[9])

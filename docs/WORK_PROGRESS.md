@@ -1755,3 +1755,15 @@ roundtrip or playable game demonstrated.
 User clarified that franchise management does not need a web surface. Removed
 the browser dashboard from the worklist; in-game management remains required.
 Existing HTTPS/API infrastructure remains available for service connectivity.
+
+## October 13, 2026 — Agreement identity on the native pipe
+
+Player contract context now carries the same deterministic agreement identity
+as the league migration inventory. A shared identity function prevents divergent
+derivation. Tests cover persistence after amendment/payment/restart, stability
+through release, and distinct seller/buyer identities. Native decoding preserves
+legacy responses and rejects invalid identity types, length and hex encoding.
+All 350 Python tests and the portable C++ protocol check pass. No game UI or
+multiple-generation contract support claimed. Migration must also replace the
+legacy cash-ID assumptions in release, assignment and restructure calculators
+before return signing can safely create new obligations.

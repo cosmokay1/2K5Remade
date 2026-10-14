@@ -88,7 +88,16 @@ inline void restructure_cash_record(const nlohmann::json& cash) {
 }
 inline void validate_contract_accounting(const nlohmann::json& accounting, const std::string& player) {
     if (accounting.is_null()) return; // Explicitly unavailable, never a zero balance.
-    if (!accounting.is_object() || accounting.size()!=6) throw std::runtime_error("Invalid saved player accounting");
+    if (!accounting.is_object() || !(accounting.size()==6 ||
+        (accounting.size()==7 && accounting.contains("generation_id")))) throw std::runtime_error("Invalid saved player accounting");
+    if (accounting.contains("generation_id")) {
+        if (!accounting.at("generation_id").is_string()) throw std::runtime_error("Invalid saved agreement identity");
+        const auto identity=accounting.at("generation_id").get<std::string>();
+        const std::string prefix="legacy-contract:";
+        if (identity.size()!=prefix.size()+64 || identity.compare(0,prefix.size(),prefix)!=0 ||
+            identity.find_first_not_of("0123456789abcdef",prefix.size())!=std::string::npos)
+            throw std::runtime_error("Invalid saved agreement identity");
+    }
     const auto status=accounting.at("status").get<std::string>();
     if ((status!="active" && status!="released" && status!="assigned") ||
         accounting.at("charge_scope")!=(status=="active" ? "active_contract" : "retained_obligations"))

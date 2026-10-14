@@ -453,7 +453,8 @@ class FranchiseStore:
                 else:
                     raise ValueError('Historical contract has no supported accounting status')
                 cash = ledger._cash.records.get('contract:' + player_id) if ledger._cash is not None else None
-                accounting = {'status':status,'contract':contract.to_dict(),
+                accounting = {'generation_id':self._legacy_generation_id(team_id,player_id),
+                    'status':status,'contract':contract.to_dict(),
                     'annual_charges':[json_amount(value) for value in charges], 'charge_scope':charge_scope,
                     'cash_obligation':cash.to_dict() if cash is not None else None,
                     'guarantees':ledger.guarantee_cash(player_id)}
@@ -480,6 +481,11 @@ class FranchiseStore:
             return self._contract_generations_from_ledger(team_id,self._load(db,team_id))
 
     @staticmethod
+    def _legacy_generation_id(team_id,player_id):
+        identity=json.dumps([team_id,player_id],ensure_ascii=False,separators=(',',':')).encode('utf-8')
+        return 'legacy-contract:' + hashlib.sha256(identity).hexdigest()
+
+    @staticmethod
     def _contract_generations_from_ledger(team_id,ledger):
         def charge_record(record):
             return {'record_id':record.record_id, 'annual_charges':[json_amount(value) for value in record.annual_charges],
@@ -497,9 +503,8 @@ class FranchiseStore:
                 contract, status, retained = plan.original_contract, 'assigned', (plan.retained_bonus,)
             else:
                 raise ValueError('Historical contract has no supported generation status')
-            identity = json.dumps([team_id,player], ensure_ascii=False, separators=(',',':')).encode('utf-8')
             cash = ledger._cash.records.get('contract:' + player) if ledger._cash is not None else None
-            generations.append({'generation_id':'legacy-contract:' + hashlib.sha256(identity).hexdigest(),
+            generations.append({'generation_id':FranchiseStore._legacy_generation_id(team_id,player),
                 'player_id':player, 'status':status, 'contract':contract.to_dict(),
                 'cash_obligation':cash.to_dict() if cash is not None else None,
                 'retained_records':[charge_record(record) for record in retained]})

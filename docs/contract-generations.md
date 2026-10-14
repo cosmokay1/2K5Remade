@@ -79,3 +79,10 @@ backup copy removes only its own partial file. Missing databases are not created
 The source format, configuration, events and ownership are unchanged. This is
 preparation only: it does not migrate to a new format or enable return signings.
 Keep the report and backup private; they contain franchise history.
+
+The native `player_context` response now includes this same `generation_id` in
+non-null contract accounting. It remains stable across amendments, payments and
+release; seller and buyer book identities differ. The C++ decoder accepts legacy
+responses without the field and validates the canonical legacy identity shape
+when present. This exposes agreement identity for in-game inspection without
+requiring a browser. It does not enable multiple agreements or guest writes.

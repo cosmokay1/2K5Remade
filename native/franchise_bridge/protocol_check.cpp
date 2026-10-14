@@ -175,6 +175,18 @@ int main() {
                 {"unpaid_bonus_layers",{{"bonus:restructure:conversion",8}}},{"obligation_source","synthetic paid history"}}}};
         player_reply["result"]["contract_accounting"]=accounting;
         franchise::validate_result(player_reply,player_request);
+        auto identified=accounting;
+        identified["generation_id"]="legacy-contract:"+std::string(64,'a');
+        player_reply["result"]["contract_accounting"]=identified;
+        franchise::validate_result(player_reply,player_request);
+        for (const auto& identity : nlohmann::json::array({nullptr,true,4,"","legacy-contract:abc",
+                "legacy-contract:"+std::string(64,'A'),"legacy-contract:"+std::string(64,'g')})) {
+            auto bad=player_reply;
+            bad["result"]["contract_accounting"]["generation_id"]=identity;
+            bool rejected=false;
+            try { franchise::validate_result(bad,player_request); } catch (const std::exception&) { rejected=true; }
+            if (!rejected) throw std::runtime_error("Invalid agreement identity accepted");
+        }
         auto unknown=accounting;
         unknown["cash_obligation"].erase("paid_components"); unknown["guarantees"]=nullptr;
         player_reply["result"]["contract_accounting"]=unknown;
