@@ -4924,3 +4924,33 @@ contract source rejection. Full offline682 tests pass in24.778s; diff check pass
 Prior9537d80 Build38633164511 and AI38633164597 now completed successfully;
 72443cd Build38633607007 passed while AI38633606823 remains in progress.
 No game installation, model request or control/IAM change in this milestone.
+
+## October14,2026 — Signing checkpoint exposed through service boundary
+
+Added signing_context to Bridge and explicit paired source configuration to the
+sidecar. Service-owned save/bindings are validated once before startup; missing,
+malformed or incomplete configuration cannot generate replacement identities.
+Requests carry complete observations, revision and bounded timeout, never file
+paths. Read-only reconciliation works despite disabled AI, checks connection
+before/after inspection and bounds response framing. Successful hello advertises
+the operation only when configured. It neither bypasses remote AI control nor
+calls the provider.
+
+Native response validation checks canonical UUID/hash, observed team table/slot,
+requested revision, initialized nested player context and explicitly false AI
+and write flags. Authored protocol cases reject authority escalation, mismatched
+identity/team/slot/revision, uninitialized context and extra financial fields.
+Portable protocol compilation/execution passes. Four new service tests include
+an actual subprocess with pinned authored source and missing ADC; full offline
+686 tests pass in29.143s. Diff check passes.
+
+Actual captured Trotter observation also passes through a local sidecar process
+against AIGILDON and the diagnostic ledger; persisted UUID/personality matched,
+pending minimum classification retained and Giants financial snapshot unchanged.
+Private request/reply evidence is service-signing-context.json under the existing
+diagnostic directory. This is local service-process evidence, not a new Windows
+root-game request or signing. No live game source/runtime was overwritten.
+Automatic root-game submission remains the next integration step.
+
+Prior72443cd Build38633607007 and AI38633606823 passed. a124246 Build38634283242
+passed while AI38634283048 remains in progress. New source CI remains required.

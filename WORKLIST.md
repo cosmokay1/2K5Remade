@@ -57,7 +57,9 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   read-only signing checkpoint against AIGILDON and the pinned legacy ledger,
   resolving the persisted UUID/personality at revision0. Changed identity, raw
   cap/calendar inputs, contract provenance and revisions reject. This checkpoint
-  does not authorize AI or writes; automatic game/bridge submission remains pending.
+  does not authorize AI or writes. A configured service signing_context operation
+  and native reply validation now expose that read; automatic game submission
+  remains pending.
 - Actual AI/game/save integration, telemetry capture and final playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 

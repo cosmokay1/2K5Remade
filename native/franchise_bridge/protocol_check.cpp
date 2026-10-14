@@ -651,6 +651,28 @@ int main() {
         auto player_request = franchise::parse_frame(R"({"operation":"player_context","player_id":"v"})");
         auto player_reply = franchise::parse_frame(R"({"error":null,"result":{"player_id":"v","financial_revision":0,"initialized":true,"personality":{},"relationships":{},"agreed_promises":[],"promise_history":[]}})");
         franchise::validate_result(player_reply, player_request);
+        auto signing_request=franchise::parse_frame(R"({"operation":"signing_context","expected_revision":0,"observation":{"biography":{"source_slot":1},"team":{"table_mode":2,"table_index":0}}})");
+        auto signing_player=player_reply["result"]; signing_player["player_id"]=std::string(32,'a');
+        nlohmann::json signing_reply={{"error",nullptr},{"result",{{"player_id",std::string(32,'a')},
+            {"team_id","49ers"},{"financial_revision",0},{"source_slot",1},{"saved_payload_sha256",std::string(64,'b')},
+            {"player_context",signing_player},{"write_authorized",false},{"ai_authorized",false},
+            {"scope","matching saved legacy checkpoint; active franchise selection, cash/rookie obligations and write authorization remain unverified"}}}};
+        franchise::validate_result(signing_reply,signing_request);
+        for (int scenario=0;scenario<9;++scenario) {
+            auto bad=signing_reply;
+            if (scenario==0) bad["result"]["write_authorized"]=true;
+            if (scenario==1) bad["result"]["ai_authorized"]=true;
+            if (scenario==2) bad["result"]["financial_revision"]=1;
+            if (scenario==3) bad["result"]["source_slot"]=0;
+            if (scenario==4) bad["result"]["player_context"]["player_id"]=std::string(32,'c');
+            if (scenario==5) bad["result"]["team_id"]="Giants";
+            if (scenario==6) bad["result"]["saved_payload_sha256"]="unknown";
+            if (scenario==7) bad["result"]["player_context"]["initialized"]=false;
+            if (scenario==8) bad["result"]["charges"]={10};
+            bool rejected=false;
+            try {franchise::validate_result(bad,signing_request);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Corrupt signing checkpoint accepted");
+        }
         auto circumstance_request=player_request; circumstance_request["team_id"]="a";
         auto circumstance_reply=player_reply;
         auto circumstances=franchise::parse_frame(R"({"player_id":"v","team_id":"a","window":"season","mode":"cpu_played","total_games":16,"available_games":12,"injury_unavailable_games":4,"coaching_dnp_games":2,"source":"synthetic report","coverage":"full season","complete_window":true,"unavailable_reason":null})");

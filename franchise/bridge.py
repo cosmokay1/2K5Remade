@@ -15,11 +15,15 @@ class ResponseTooLarge(ValueError):
 
 
 class Bridge:
-    def __init__(self, store, *, provider, access_check, connection_check=lambda: None):
+    def __init__(self, store, *, provider, access_check, connection_check=lambda: None, guest_snapshot=None):
         if not callable(provider) or not callable(access_check):
             raise ValueError("Provider and remote access check required")
         self.store, self.provider, self.access_check = store, provider, access_check
         self.connection_check = connection_check
+        if guest_snapshot is not None and (type(guest_snapshot) is not tuple or len(guest_snapshot) != 2
+                or type(guest_snapshot[0]) is not dict or type(guest_snapshot[1]) is not bytes):
+            raise ValueError('Pinned bindings and saved payload required')
+        self.guest_snapshot = guest_snapshot
 
     def handle(self, request):
         request_id = request.get("request_id") if type(request) is dict else None
@@ -44,7 +48,31 @@ class Bridge:
                 if set(request) != {"protocol", "request_id", "operation"}:
                     raise ValueError("Unexpected handshake fields")
                 self.access_check()
-                return self._reply(request_id, result={"ai_enabled": True, "operations": ["preview", "negotiate", "negotiate_proposal", "manual_sign", "manual_release", "manual_trade", "manual_restructure", "player_context", "contract_context"]})
+                operations = ["preview", "negotiate", "negotiate_proposal", "manual_sign", "manual_release", "manual_trade", "manual_restructure", "player_context", "contract_context"]
+                if self.guest_snapshot is not None:
+                    operations.append('signing_context')
+                return self._reply(request_id, result={"ai_enabled": True, "operations": operations})
+            if operation == 'signing_context':
+                if set(request) != {'protocol', 'request_id', 'operation', 'observation', 'expected_revision', 'timeout_ms'}:
+                    raise ValueError('Complete signing checkpoint request required')
+                timeout = request['timeout_ms']
+                if type(timeout) is not int or not 1 <= timeout <= 60000:
+                    raise ValueError('Bounded signing checkpoint timeout required')
+                if self.guest_snapshot is None:
+                    raise Rejected('Pinned guest snapshot not configured')
+                deadline = time.monotonic() + timeout / 1000
+                self.connection_check()
+                from tools.reconcile_signing_context import reconcile_signing_context
+                try:
+                    result = reconcile_signing_context(*self.guest_snapshot, request['observation'],
+                        self.store, expected_revision=request['expected_revision'])
+                except ValueError as error:
+                    raise Rejected(str(error)) from error
+                self.connection_check()
+                if time.monotonic() >= deadline:
+                    raise TimeoutError('Signing checkpoint expired')
+                self._require_frame(request_id, result)
+                return self._reply(request_id, result=result)
             if operation == 'manual_restructure':
                 from datetime import date
                 from franchise.cap import money

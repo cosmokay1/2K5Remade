@@ -194,6 +194,18 @@ but explicitly grants neither AI nor write permission. Cash/rookie reconciliatio
 active franchise selection and atomic precommit checks remain required. This tool
 is not yet called automatically by the native game bridge.
 
+The sidecar exposes the same read as `signing_context`, with protocol/request_id,
+operation, observation, expected_revision and timeout_ms. Configure both
+`--guest-save`/`--guest-bindings` (or NFL2K5_FRANCHISE_GUEST_SAVE and
+NFL2K5_FRANCHISE_GUEST_BINDINGS) before startup. The service validates and pins
+these files; callers cannot submit replacement file paths. No source configured
+means state_rejected. Complete source validation fails startup instead of creating
+new bindings. This read works with AI disabled and performs no model call.
+Native validation correlates the returned team, bank slot, revision and nested
+persisted player context, requiring canonical UUID/source hashes and explicitly
+false AI/write-authority flags. A matching reply is a read checkpoint, never an
+AI grant or guest commit receipt. Root-game automatic submission remains pending.
+
 contract_context accepts explicit context_format=calendar_v1. This requests
 format2 current calendar accounting alongside a separately labeled economic
 archive. Native validation binds the requested generation/team, original terms

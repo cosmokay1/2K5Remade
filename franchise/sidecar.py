@@ -2,6 +2,7 @@
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import json
+import os
 from pathlib import Path
 import sys
 from threading import Event, Lock
@@ -84,11 +85,25 @@ def main():
     parser.add_argument('--ai-budget-scope', help='Explicit persistent franchise/season budget identity')
     parser.add_argument('--ai-request-limit', type=int, help='Immutable maximum SDK attempts for this scope')
     parser.add_argument('--ai-token-limit', type=int, help='Immutable cumulative reserved input plus generated token ceiling')
+    parser.add_argument('--guest-save', default=os.environ.get('NFL2K5_FRANCHISE_GUEST_SAVE'),
+                        help='Pinned original saved payload for read-only signing reconciliation')
+    parser.add_argument('--guest-bindings', default=os.environ.get('NFL2K5_FRANCHISE_GUEST_BINDINGS'),
+                        help='Existing pinned player bindings; requires --guest-save')
     args = parser.parse_args()
     if args.impersonate_runtime and args.provider != "vertex":
         parser.error("Runtime impersonation applies only to Vertex mode")
     if not Path(args.database).is_file():
         parser.error("An existing verified franchise database is required")
+    guest_snapshot = None
+    if args.guest_save is not None or args.guest_bindings is not None:
+        if not args.guest_save or not args.guest_bindings:
+            parser.error('Both pinned guest save and bindings are required')
+        try:
+            from tools.franchise_snapshot_bindings import resolve_bindings
+            guest_snapshot = (json.loads(Path(args.guest_bindings).read_text()), Path(args.guest_save).read_bytes())
+            resolve_bindings(*guest_snapshot)
+        except (OSError, ValueError):
+            parser.error('Pinned guest snapshot could not be validated')
     sdk_provider = None
     if args.provider == "offline-fixture":
         def provider(_):
@@ -118,7 +133,8 @@ def main():
             provider = access_check = unavailable
             print("AI unavailable: check persistent budget configuration, runtime authentication and optional dependencies.", file=sys.stderr)
     try:
-        serve(Bridge(FranchiseStore(args.database), provider=provider, access_check=access_check), sys.stdin, sys.stdout)
+        serve(Bridge(FranchiseStore(args.database), provider=provider, access_check=access_check,
+                     guest_snapshot=guest_snapshot), sys.stdin, sys.stdout)
     finally:
         if sdk_provider is not None:
             try:

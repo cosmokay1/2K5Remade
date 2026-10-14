@@ -1240,6 +1240,42 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         validate_contract_accounting(accounting,player);
         return;
     }
+    if (operation == "signing_context") {
+        if (!result.is_object() || result.size()!=9 || result.at("write_authorized")!=false ||
+            result.at("ai_authorized")!=false ||
+            result.at("scope")!="matching saved legacy checkpoint; active franchise selection, cash/rookie obligations and write authorization remain unverified")
+            throw std::runtime_error("Invalid signing checkpoint scope or authority");
+        integer_money(request.at("expected_revision"));
+        integer_money(result.at("financial_revision"));
+        integer_money(result.at("source_slot"));
+        if (result.at("financial_revision")!=request.at("expected_revision") ||
+            result.at("source_slot")!=request.at("observation").at("biography").at("source_slot"))
+            throw std::runtime_error("Signing checkpoint locator or revision mismatch");
+        auto canonical_hex=[](const nlohmann::json& value,size_t size) {
+            if (!value.is_string()) return false;
+            const auto text=value.get<std::string>();
+            return text.size()==size && text.find_first_not_of("0123456789abcdef")==std::string::npos;
+        };
+        if (!canonical_hex(result.at("player_id"),32) || !canonical_hex(result.at("saved_payload_sha256"),64))
+            throw std::runtime_error("Invalid signing checkpoint identity or source");
+        static const char* teams[]={"49ers","Bears","Bengals","Bills","Broncos","Browns","Buccaneers","Cardinals",
+            "Chargers","Chiefs","Colts","Cowboys","Dolphins","Eagles","Falcons","Giants","Jaguars","Jets",
+            "Lions","Packers","Panthers","Patriots","Raiders","Rams","Ravens","Redskins","Saints","Seahawks",
+            "Steelers","Texans","Titans","Vikings"};
+        const auto& observed=request.at("observation").at("team");
+        integer_money(observed.at("table_index"));
+        if (observed.at("table_mode")!=2 || observed.at("table_index")>=32 ||
+            result.at("team_id")!=teams[observed.at("table_index").get<size_t>()])
+            throw std::runtime_error("Signing checkpoint team mismatch");
+        const auto& context=result.at("player_context");
+        if (context.at("initialized")!=true || context.at("financial_revision")!=result.at("financial_revision"))
+            throw std::runtime_error("Signing checkpoint context revision or initialization mismatch");
+        auto nested_reply=response; nested_reply["result"]=context;
+        nlohmann::json nested_request={{"operation","player_context"},{"player_id",result.at("player_id")},
+                                      {"team_id",result.at("team_id")}};
+        validate_result(nested_reply,nested_request);
+        return;
+    }
     if (operation == "player_context") {
         if (result.at("player_id") != request.at("player_id") || !result.at("player_id").is_string())
             throw std::runtime_error("Player context identity mismatch");
