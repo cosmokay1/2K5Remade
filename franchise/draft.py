@@ -195,7 +195,10 @@ class DraftScouting:
                             'uncertainty': 'Estimates do not establish future pick affordability.'}
             else:
                 check()
-                decision = json.loads(provider(json.loads(frozen)))
+                from franchise.vertex_provider import VertexProvider
+                response=(provider(json.loads(frozen),before_generate=check)
+                          if isinstance(provider,VertexProvider) else provider(json.loads(frozen)))
+                decision = json.loads(response)
                 if type(decision) is not dict or set(decision) != {'action', 'player_id', 'reason', 'uncertainty'}:
                     raise ValueError('Unexpected draft recommendation fields')
                 if any(type(decision[key]) is not str or not decision[key].strip() for key in ('reason', 'uncertainty')):

@@ -137,7 +137,10 @@ class Negotiation:
                    "history": self.events, "promise_goals": proposed,
                    **({'return_scope':return_scope} if return_scope is not None else {}),
                    **({'observed_efficiency': json.loads(self._efficiency)} if self._efficiency is not None else {})}
-        response = provider(json.loads(json.dumps(context, allow_nan=False)))
+        from franchise.vertex_provider import VertexProvider
+        frozen_context=json.loads(json.dumps(context, allow_nan=False))
+        response = (provider(frozen_context,before_generate=self._access_check)
+                    if isinstance(provider,VertexProvider) else provider(frozen_context))
         decision = Decision.parse(response, self.player_id)
         if proposed and decision.action == "counter" and "promise_goals" not in json.loads(response):
             raise ValueError("Counter must explicitly preserve, change or withdraw promise proposals")

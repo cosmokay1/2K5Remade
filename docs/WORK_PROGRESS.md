@@ -3305,3 +3305,29 @@ ADC and verifies the exact SQLite policy/scope with zero inference attempts.
 Windows execution awaits this commit's CI. Prior a39ff30 Build38527218113 and
 FranchiseAI38527218123 passed all580 offline tests. Token/spending admission and
 actual game/season integration remain open; no paid inference was performed.
+
+
+## October 14, 2026 — Full-request token-count preflight
+
+Live sidecar and private HTTPS runtime now enable a16384 input-token preflight.
+VertexProvider counts the exact serialized contents, instructions and response
+schema/generation settings before reserving a paid generation attempt. Invalid,
+missing or excessive counts and sanitized counting errors reject without
+generation; byte/rate controls still precede counting. Explicit positive integer
+output limits replace the internal literal, retaining4096 for runtime behavior.
+Legacy controlled callers can omit counting; demonstration scripts remain outside
+the production policy. No cumulative token/dollar ceiling is claimed.
+
+Seven new synthetic SDK tests cover complete request identity, exact boundary,
+unknown/invalid/oversize counts, sanitized errors and constructor validation.
+Negotiation and draft calls supply a request-local access callback, rechecking
+deadline/control/disconnection after counting and before paid reservation. A
+real negotiation fixture disabled during count leaves finances unchanged and
+manual signing available. A second check after potentially blocking SQLite
+admission refuses expired generation while retaining the failed reservation.
+All587 offline regression tests passed; no paid calls or cloud counting occurred.
+Prior fbc7da4 Build38528423772 and FranchiseAI38528423925 both passed. The actual
+Windows log confirms plain-C explicit budget launch preserves the configured
+scope across restart and manual reads work with zero paid inference. These remain
+asset-free fixtures, not game execution/save verification. Cumulative token
+reservation and spending admission remain the next budget milestone.

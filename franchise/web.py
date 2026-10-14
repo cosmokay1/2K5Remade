@@ -222,7 +222,7 @@ def main():
             from franchise.control import GoogleControl
             config = json.loads((Path(__file__).resolve().parents[1] / 'config/google.json').read_text())
             provider = VertexProvider(project=config['project'], location=config['location'], model=config['model'],
-                credentials=runtime_credentials(config['project'], config['runtime_service_account']),request_budget=budget)
+                credentials=runtime_credentials(config['project'], config['runtime_service_account']),request_budget=budget,max_input_tokens=16384)
             access_check = GoogleControl(project=config['project'], bucket=config['control_bucket'],
                 object_name=config['control_object'],
                 credentials=runtime_credentials(config['project'], config['runtime_service_account']))

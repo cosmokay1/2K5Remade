@@ -362,5 +362,9 @@ capture and multi-window aggregation remain unverified/unimplemented.
 
 Native budget launch wiring is implemented through a compatible explicit C ABI
 and validated host environment fields. Portable launch/quoting checks pass;
-actual Windows configured-budget smoke is pending CI. Input/output token and
-spending admission, authoritative season scope and measured gameplay costs remain.
+actual Windows configured-budget launch/restart smoke passed in CI38528423925.
+Live runtimes now count the exact contents, instructions and structured response
+schema before generation, rejecting missing/invalid/over-16384 input counts.
+The provider output ceiling is explicitly configurable (runtime4096). Durable
+cumulative token/spending admission, authoritative season scope and measured
+gameplay costs remain.

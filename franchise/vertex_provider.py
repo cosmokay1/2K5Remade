@@ -30,7 +30,8 @@ class VertexProvider:
     def __init__(self, *, project: str, location: str, model: str, client=None,
                  use_gcloud_login: bool = False, credentials=None,
                  instructions=INSTRUCTIONS, response_schema=None, max_context_bytes=1048576,
-                 max_requests_per_minute=20, request_budget=None):
+                 max_requests_per_minute=20, request_budget=None,
+                 max_input_tokens=None, max_output_tokens=4096):
         if not all(type(value) is str and value.strip() for value in (project, location, model)):
             raise ValueError("GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION, and GEMINI_MODEL are required")
         if credentials is not None and use_gcloud_login:
@@ -43,6 +44,12 @@ class VertexProvider:
         if type(max_context_bytes) is not int or max_context_bytes <= 0:
             raise ValueError("Positive integer model context byte limit required")
         self.max_context_bytes = max_context_bytes
+        for name,value in (("max_input_tokens",max_input_tokens),("max_output_tokens",max_output_tokens)):
+            if name=='max_input_tokens' and value is None:continue
+            if type(value) is not int or not 0<value<=2**31-1:
+                raise ValueError('Positive integer model token limit required')
+        self.max_input_tokens=max_input_tokens
+        self.max_output_tokens=max_output_tokens
         if type(max_requests_per_minute) is not int or max_requests_per_minute <= 0:
             raise ValueError("Positive integer inference rate limit required")
         self.max_requests_per_minute = max_requests_per_minute
@@ -85,7 +92,7 @@ class VertexProvider:
         """Last completed call; diagnostic only, not durable billing or deal attribution."""
         return json.loads(json.dumps(self._last_usage))
 
-    def __call__(self, context: dict) -> str:
+    def __call__(self, context: dict, *, before_generate=None) -> str:
         token_fields=("prompt_token_count","candidates_token_count","total_token_count",
                       "cached_content_token_count","thoughts_token_count","tool_use_prompt_token_count")
         usage={"model":self.model,"sdk_invoked":False,"outcome":"preflight_rejected",
@@ -106,16 +113,32 @@ class VertexProvider:
                     raise ValueError("Inference request rate exceeded; no inference submitted")
                 # Failed/blocked calls still consume their attempted SDK slot.
                 self._request_times.append(now)
+            generation_config={"response_mime_type":"application/json",
+                "response_schema":self.response_schema,"max_output_tokens":self.max_output_tokens}
+            if self.max_input_tokens is not None:
+                try:
+                    count=self._client.models.count_tokens(model=self.model,contents=contents,
+                        config={"system_instruction":self.instructions,"generation_config":generation_config})
+                except Exception:
+                    raise RuntimeError('Vertex AI token counting failed; no inference submitted') from None
+                total=getattr(count,'total_tokens',None)
+                if type(total) is not int or not 0<=total<=self.max_input_tokens:
+                    raise ValueError('Model input token count missing or exceeds limit; no inference submitted')
+            # Counting adds a network wait: recheck this request's deadline and
+            # remote grant before authorizing a new paid generation attempt.
+            if before_generate is not None:
+                before_generate()
             if self.request_budget is not None:
                 reservation = self.request_budget.reserve(model=self.model)
+                usage['outcome']='request_failed'
+                # SQLite admission may itself wait for another process.
+                if before_generate is not None:
+                    before_generate()
             usage.update(sdk_invoked=True,outcome="request_failed")
             try:
                 result = self._client.models.generate_content(
                     model=self.model, contents=contents,
-                    config={"system_instruction": self.instructions,
-                            "response_mime_type": "application/json",
-                            "response_schema": self.response_schema,
-                            "max_output_tokens": 4096})
+                    config={"system_instruction": self.instructions,**generation_config})
             except Exception:
                 # Avoid echoing credentials or raw cloud error bodies.
                 raise RuntimeError("Vertex AI request failed; no deal committed") from None

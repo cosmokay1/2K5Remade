@@ -97,4 +97,30 @@ and represent a positive value within INT64_MAX. Missing budget configuration
 retains the previous launch ABI, but the Python runtime keeps AI unavailable while
 manual operations remain usable. No native launch automatically grants AI access,
 selects a new period, or restores budget capacity. Actual Windows budget-launch
-pipe validation awaits CI; no guest/gameplay integration is established.
+pipe validation passed CI38528423925; no guest/gameplay integration is established.
+
+
+## Per-request token preflight
+
+Both live runtime factories enable a 16384 input-token preflight and retain the
+4096 maximum generated-token setting. VertexProvider also accepts explicit
+max_input_tokens and max_output_tokens for controlled callers. Counting submits
+the same serialized contents, system instructions and response schema/config
+used for generation. Count errors, missing/noninteger/negative counts or counts
+above the input limit refuse generation before reserving a durable attempt.
+Negotiation and scouting recheck their request-specific access guard after
+counting, before reservation/generation; a deadline or disabled/disconnected client
+therefore cannot start a new generation following that wait. The guard also runs
+after potentially blocking SQLite reservation; denial retains the spent attempt.
+These count requests consume the rolling API admission slot but are not recorded
+as paid generation attempts. No retry or prompt truncation is introduced.
+
+This is a provider-reported preflight bound, not exact billing or a cumulative
+season dollar guarantee. A production failure to count disables that negotiation;
+manual operations remain available. Cumulative token/spend reservations and real
+gameplay calibration remain outstanding. No live counting/inference was used
+for validation.
+
+References: [CountTokens](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/reference/rest/v1/projects.locations.publishers.models/countTokens),
+[schema token accounting](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output),
+[generated and thinking token limit](https://ai.google.dev/gemini-api/docs/generate-content/thinking).

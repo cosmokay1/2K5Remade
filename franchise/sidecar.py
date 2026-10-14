@@ -105,7 +105,7 @@ def main():
                 from franchise.google_credentials import runtime_credentials
                 credentials = runtime_credentials(config["project"], config["runtime_service_account"])
                 control_credentials = runtime_credentials(config["project"], config["runtime_service_account"])
-            provider = VertexProvider(project=config["project"], location=config["location"], model=config["model"], credentials=credentials,request_budget=budget)
+            provider = VertexProvider(project=config["project"], location=config["location"], model=config["model"], credentials=credentials,request_budget=budget,max_input_tokens=16384)
             access_check = GoogleControl(project=config["project"], bucket=config["control_bucket"], object_name=config["control_object"], credentials=control_credentials)
         except Exception:
             # Financial/manual operations stay authoritative. Never substitute
