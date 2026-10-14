@@ -3089,3 +3089,18 @@ cannot silently omit prior amendments. All 528 offline tests passed, including
 8 new focused model/Ledger checks. Versioned Store persistence/replay and native
 repeated-conversion routing remain next; no durable repeated-write support or
 actual game integration is claimed.
+
+
+## October 13, 2026 — Explicit history-bearing generation snapshots
+
+Ledger.generation_snapshot now accepts exact integer history_format=2, returning
+root format2 and every agreement's detached amendment_history (None without prior
+amendments). Immutable birth/current contracts, all previous/latest plans, current
+ownership, financial and cash fields remain available. Default format1 retains
+its original shape and rejects any history-bearing state. Invalid or boolean
+format values reject. All 531 offline tests passed, including three new snapshot
+checks for explicit first/second-conversion state, mutation isolation and strict
+format selection. Store persistence is in progress: repeated mutation plus later
+payment and season wrappers must bind history-bearing before/after snapshots.
+Native repeated-amendment routing remains outstanding. No guest gameplay or
+actual save/load integration is claimed.

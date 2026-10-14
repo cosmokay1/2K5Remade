@@ -1347,13 +1347,15 @@ class Ledger:
             self.revision+=1
             return receipt
 
-    def generation_snapshot(self):
+    def generation_snapshot(self, *, history_format=1):
+        if type(history_format) is not int or history_format not in (1,2):
+            raise ValueError('Explicit supported integer generation history format required')
         with self._lock:
-            if any(agreement.prior_restructures for agreement in self._generation_agreements.values()):
+            if history_format==1 and any(agreement.prior_restructures for agreement in self._generation_agreements.values()):
                 raise Rejected('Layered amendment history requires versioned generation posting')
             if self._team_identity is None:
                 raise Rejected('Bound team identity required for generation posting')
-            return {'format':1,'team_id':self._team_identity,'financial':self.financial_snapshot(),
+            return {'format':history_format,'team_id':self._team_identity,'financial':self.financial_snapshot(),
                 'current_generation_ids':dict(sorted(self._generation_by_player.items())),
                 'active_generation_ids':dict(sorted(self._active_generation_ids.items())),
                 'agreements':[{'identity':asdict(a.identity),'status':a.status,
@@ -1377,6 +1379,7 @@ class Ledger:
                     'outgoing_trade':self._trade_snapshot(a.outgoing_trade) if a.outgoing_trade is not None else None,
                     'incoming_trade':self._trade_snapshot(a.incoming_trade) if a.incoming_trade is not None else None,
                     'restructure':self._restructure_snapshot(a.restructure) if a.restructure is not None else None,
+                    **({'amendment_history':a.amendment_history_snapshot()} if history_format==2 else {}),
                     'annual_charges':[json_amount(v) for v in a.annual_charges()],
                     'cash_obligation':self.generation_cash(a.identity.generation_id).to_dict() if self.generation_cash(a.identity.generation_id) is not None else None}
                     for a in self.generation_agreements()], 'cash':self.cash_snapshot()}

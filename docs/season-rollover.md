@@ -248,3 +248,11 @@ The explicit Ledger layered calendar API validates this history before mutation.
 The legacy format1 generation snapshot refuses history-bearing state. A versioned
 Store event and snapshot plus native routing must be added before durable repeated
 conversions can be enabled.
+
+
+Explicit Ledger generation_snapshot(history_format=2) now carries a detached
+amendment_history on every agreement and root format2. Default format1 continues
+to reject history-bearing state. The next Store event must use explicit format2
+before and after snapshots even when its opening agreement has only one amendment.
+Subsequent payment and rollover wrappers must also preserve and validate this
+history; old format1 events remain replayable before repeated conversion.
