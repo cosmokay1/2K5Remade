@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from franchise.trades import TradePlan
     from franchise.restructures import RestructurePlan
     from franchise.returns import PreseasonReturnScope
+    from franchise.cash import CashObligation
 
 
 @dataclass(frozen=True)
@@ -163,3 +164,80 @@ class GenerationAgreement:
             for i in range(self.contract.elapsed_years, len(guarantees)):
                 ceilings['base:' + str(i)] = guarantees[i] if self.status == 'released' else 0
         return ceilings
+
+
+@dataclass(frozen=True)
+class GenerationCalendarView:
+    """A calendar cursor over immutable economic terms and lifecycle records.
+
+    This view grants no transaction or ownership authority. Scheduled exhaustion
+    is distinct from expiry explicitly authorized by a future durable transition.
+    The optional expiry facts must assert eligibility and prove allocated cash
+    settlement; source authentication remains the transition caller's obligation.
+    """
+    agreement: GenerationAgreement
+    anchor_year: int
+    current_year: int
+    expiry_eligible: bool | None = None
+    expiry_cash: "CashObligation | None" = None
+    expiry_source: str | None = None
+
+    def __post_init__(self):
+        if (not isinstance(self.agreement,GenerationAgreement)
+                or type(self.anchor_year) is not int or type(self.current_year) is not int
+                or not 2020 <= self.anchor_year <= self.current_year <= 2030):
+            raise ValueError('Typed agreement and explicit current/future anchored calendar required')
+        facts=(self.expiry_eligible,self.expiry_cash,self.expiry_source)
+        if not any(value is not None for value in facts):
+            return
+        from franchise.cash import CashObligation
+        if (self.expiry_eligible is not True or not isinstance(self.expiry_cash,CashObligation)
+                or type(self.expiry_source) is not str or not self.expiry_source.strip()
+                or self.agreement.status!='active' or not self.scheduled_term_complete):
+            raise ValueError('Explicit eligible, settled, sourced scheduled expiry facts required')
+        cash=self.expiry_cash
+        if (cash.obligation_id!=self.agreement.identity.cash_obligation_id
+                or cash.player_id!=self.agreement.identity.player_id
+                or cash.amount!=self.agreement.contract.nominal_cash or cash.paid!=cash.amount
+                or cash.paid_components is None):
+            raise ValueError('Expiry requires complete matching allocated nominal cash settlement')
+        ceilings=self.agreement.payment_ceilings()
+        paid_components=dict(cash.paid_components)
+        if (any(key not in ceilings for key in paid_components)
+                or any(paid_components.get(key,0)!=amount for key,amount in ceilings.items())):
+            raise ValueError('Expiry payment allocations disagree with economic agreement')
+
+    @property
+    def years_forward(self):
+        return self.current_year-self.anchor_year
+
+    @property
+    def scheduled_term_complete(self):
+        return (self.agreement.status=='active' and
+            self.agreement.contract.elapsed_years+self.years_forward>=len(self.agreement.contract.offer.salaries))
+
+    @property
+    def authoritative_expired(self):
+        return self.expiry_source is not None
+
+    @property
+    def status(self):
+        return 'expired' if self.authoritative_expired else self.agreement.status
+
+    @property
+    def current_contract(self):
+        from dataclasses import replace
+        if self.agreement.status!='active' or self.scheduled_term_complete:
+            return None
+        return replace(self.agreement.contract,
+            elapsed_years=self.agreement.contract.elapsed_years+self.years_forward)
+
+    def annual_charges(self):
+        return self.agreement.annual_charges()[self.years_forward:]
+
+    def payment_ceilings(self):
+        return self.agreement.payment_ceilings()
+
+    def to_projection(self):
+        # Preserve the existing public projection shape and its explicit scope.
+        return project_agreement(self.agreement,years_forward=self.years_forward)

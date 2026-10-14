@@ -13,6 +13,24 @@ from franchise.store import FranchiseStore
 
 
 class CalendarProjectionTests(unittest.TestCase):
+    def test_closing_inspection_keeps_unknown_cash_unknown_and_paid_expiry_unapproved(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = FranchiseStore(Path(directory)/'closing.sqlite')
+            contract = ActiveContract(Offer('p',(10,),0),'synthetic one-year agreement')
+            store.create_team('a',Ledger.from_opening(OpeningBooks(contracts=(contract,)),
+                cap=100,roster_reserve=0,max_bonus_years=5,veteran_minimums={'p':(1,)}))
+            store.anchor_calendar(request_id='year',league_year=2026,source='synthetic year',expected_revisions={'a':0})
+            unknown = store.calendar_closing_state('a')['agreements'][0]
+            self.assertIsNone(unknown['recorded_base_settled'])
+            self.assertIsNone(unknown['unpaid_nominal_cash'])
+            self.assertTrue(unknown['scheduled_term_ends_after_year'])
+            store.initialize_cash('a',(CashObligation('contract:p','p',10,10,'synthetic payroll',(('base:0',10),)),),source='synthetic complete cash')
+            paid = store.calendar_closing_state('a')['agreements'][0]
+            self.assertTrue(paid['recorded_base_settled'])
+            self.assertTrue(paid['all_nominal_cash_recorded_paid'])
+            self.assertFalse(paid['expiry_authorized'])
+            self.assertIn('p',store.load_team('a').financial_snapshot()['signed_players'])
+
     def contract(self):
         return ActiveContract(Offer('p',(10,20,30),9,(5,10,0)), 'synthetic agreement',
             bonus_layers=(BonusLayer('conversion',6,1,2,'synthetic original layer'),))
@@ -28,6 +46,12 @@ class CalendarProjectionTests(unittest.TestCase):
             revision = store.load_team('a').revision
             store.anchor_calendar(request_id='year',league_year=2026,source='synthetic year',expected_revisions={'a':revision})
             raw = path.read_bytes()
+            closing = store.calendar_closing_state('a')
+            self.assertFalse(closing['revenue_gate'])
+            self.assertTrue(closing['normal_payroll_owner_funded'])
+            self.assertFalse(closing['agreements'][0]['recorded_base_settled'])
+            self.assertEqual(closing['agreements'][0]['required_past_and_outgoing_base'],{'base:0':10})
+            self.assertFalse(closing['agreements'][0]['expiry_authorized'])
             projected = store.calendar_projection('a',target_year=2027)
             self.assertEqual(projected['modeled_remaining_charges'],[23,33])
             self.assertEqual(projected['agreements'][0]['remaining_charges'],[23,33])

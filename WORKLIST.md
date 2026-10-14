@@ -118,7 +118,7 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       repeated conversions, game/UI controls and actual guest transactions remain.
 - [ ] Implement offseason/regular-season accounting and roster-status costs.
 - [ ] Implement dated June-1 treatment, supported tenders/tags and salary benefits.
-- [ ] Implement incentive settlement, cap adjustments, carryover and year rollover. Atomic initial calendar anchoring now validates all teams, revisions, source years and exact postings across restart/migration; actual advancement remains open. Source/schema review identified generation projection, expiry and cohort dependencies; follow docs/season-rollover.md for the durable league-wide transition work.
+- [ ] Implement incentive settlement, cap adjustments, carryover and year rollover. Atomic initial calendar anchoring now validates all teams, revisions, source years and exact postings across restart/migration; typed current contract views and closing settlement inspection preserve original plans/cash without a revenue gate. Actual advancement remains open. Source/schema review identified generation projection, expiry and cohort dependencies; follow docs/season-rollover.md for the durable league-wide transition work.
 - [ ] Complete drafted/undrafted rookie rules, pool accounting, option exercise,
       and performance escalators; never auto-exercise a fifth year.
 - [ ] Re-audit money using independent expected examples from primary rule sources.

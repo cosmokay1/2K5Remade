@@ -2429,3 +2429,17 @@ requirements: there is no revenue gate, but funding cannot silently become
 allocated paid salary. Unpaid cash must survive source reconciliation.
 Parallel implementation is preparing typed current contract views around
 immutable agreement schedules; authoritative expiry/rollover remain open.
+
+### Typed agreement calendar views and closing inspection (2026-10-13)
+
+Parallel implementation added a frozen calendar view separating immutable
+agreement economics from a derived active contract cursor. Schedule completion
+alone is not authoritative expiry; explicit eligible sourced full allocated cash
+settlement is required even for a validation view. Root calendar_projection now
+consumes the typed view, preserving its legacy output. Added closing inspection
+for recorded outgoing-year bases/unpaid cash with no revenue gate, invented
+payment or ownership grant. All 462 offline tests pass.
+Stabilized parallel source includes component-by-component expiry settlement
+checks and six focused immutable-view tests. Additional stored closing coverage
+keeps unknown allocations unknown and fully paid scheduled expiry unapproved.
+Actual atomic season advancement remains unimplemented.

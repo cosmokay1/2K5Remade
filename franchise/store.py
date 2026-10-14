@@ -377,7 +377,7 @@ class FranchiseStore:
 
     def calendar_projection(self, team_id, *, target_year):
         """Project recorded schedules only; no future cap, settlement or ownership grant."""
-        from franchise.generations import project_agreement
+        from franchise.generations import GenerationCalendarView
         if type(target_year) is not int or not 2020 <= target_year <= 2030:
             raise ValueError('Explicit published-CBA projection year required')
         with self._connection() as db:
@@ -390,9 +390,41 @@ class FranchiseStore:
                     'recorded_league_year':anchor['league_year'],'target_year':target_year,
                     'calendar_source':anchor['source'],
                     'modeled_remaining_charges':[json_amount(value) for value in ledger.charges[offset:]],
-                    'agreements':[project_agreement(item,years_forward=offset) for item in ledger.generation_agreements()],
+                    'agreements':[GenerationCalendarView(item,anchor['league_year'],target_year).to_projection()
+                                  for item in ledger.generation_agreements()],
                     'unchanged_cash':ledger.cash_snapshot(),
                     'season_advanced':False,'ownership_changed':False,'future_cap':None}
+
+    def calendar_closing_state(self, team_id):
+        """Inspect recorded settlement needs; owner funding is not a paid record."""
+        with self._connection() as db:
+            anchor = self._calendar_anchor(db)
+            if anchor is None:
+                raise Rejected('Anchored league calendar required for closing inspection')
+            ledger = self._load(db, team_id)
+            agreements = []
+            for agreement in ledger.generation_agreements():
+                cash = ledger.generation_cash(agreement.identity.generation_id)
+                allocations = dict(cash.paid_components) if cash is not None and cash.paid_components is not None else None
+                active = agreement.status == 'active'
+                index = agreement.contract.elapsed_years
+                required = {'base:'+str(i):amount for i,amount in enumerate(agreement.contract.offer.salaries) if i <= index} if active else None
+                settled = None if allocations is None or required is None else all(allocations.get(key,0) == amount for key,amount in required.items())
+                term_ends = active and index + 1 == len(agreement.contract.offer.salaries)
+                all_paid = None if allocations is None else cash.paid == cash.amount
+                agreements.append({'generation_id':agreement.identity.generation_id,
+                    'recorded_status':agreement.status,
+                    'outgoing_year_original_index':index if active else None,
+                    'required_past_and_outgoing_base':required,
+                    'recorded_base_settled':settled,
+                    'scheduled_term_ends_after_year':term_ends,
+                    'all_nominal_cash_recorded_paid':all_paid,
+                    'unpaid_nominal_cash':cash.amount-cash.paid if cash is not None else None,
+                    'expiry_authorized':False})
+            return {'team_id':team_id,'financial_revision':ledger.revision,
+                    'league_year':anchor['league_year'],'agreements':agreements,
+                    'normal_payroll_owner_funded':True,'revenue_gate':False,
+                    'season_advanced':False,'scope':'recorded settlement inspection; actual closing facts and transition required'}
 
     @staticmethod
     def _franchise_origin(db):

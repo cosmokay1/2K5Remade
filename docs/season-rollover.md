@@ -85,3 +85,18 @@ threshold is required. Closing-year settlement still requires recorded allocated
 payments or explicit sourced settlement facts. Owner funding is not a payment
 record; unpaid nominal obligations must survive. This keeps liquidity gameplay
 separate from cap legality and compensation-history reconciliation.
+
+## Typed calendar views and closing inspection
+
+GenerationCalendarView keeps immutable agreement terms/plans separate from the
+current contract cursor. Unfinished active terms expose a derived ActiveContract;
+term completion alone grants no ownership expiry. Explicit expiry facts require
+eligibility, sourced matching fully paid component-allocated cash and scheduled
+completion. That view is validation only; the durable transition must establish
+the facts and publish ownership changes atomically. Existing public schedule
+projections retain their exact shape.
+
+FranchiseStore.calendar_closing_state reports recorded outgoing/past active base
+settlement and outstanding nominal cash. Unknown allocation stays unknown; owner
+funding creates neither a revenue gate nor a paid record. The inspection never
+authorizes expiry or advances a season.
