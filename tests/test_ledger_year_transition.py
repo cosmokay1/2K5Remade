@@ -1,13 +1,58 @@
 from dataclasses import replace
 from fractions import Fraction
+from datetime import date
 import unittest
 from franchise.books import ActiveContract,OpeningBooks,ChargeRecord
 from franchise.cap import Ledger,Offer,Rejected
 from franchise.cash import CashBook,CashObligation
 from franchise.salary_rules import VeteranMinimumProfile
+from franchise.releases import PreseasonReleaseScope,EXCLUDED_LIABILITIES
+from franchise.guarantees import DiscountProfile
 
 
 class LedgerYearTransitionTests(unittest.TestCase):
+    def release_inputs(self,ledger,**changes):
+        inputs=dict(generation_id=ledger.contract_identity('v').generation_id,
+            scope=PreseasonReleaseScope(2027,date(2027,7,1),date(2027,9,10),EXCLUDED_LIABILITIES,
+                True,True,0,'synthetic verified healthy release'),
+            discount=DiscountProfile(2027,Fraction(0),'synthetic discount'),payment_year_offsets=(0,1),
+            record_id='calendar-release',expected_revision=1)
+        inputs.update(changes);return inputs
+
+    def test_calendar_release_uses_current_cursor_and_retained_charges_age_once(self):
+        ledger=self.ledger();gid=ledger.contract_identity('v').generation_id
+        economic=ledger.generation_accounting(gid)
+        self.transition(ledger)
+        ledger._last_transaction_date=date(2026,6,1)
+        plan=ledger.apply_calendar_preseason_release('v',**self.release_inputs(ledger))
+        self.assertEqual(plan.original_contract.elapsed_years,1)
+        archive=ledger.generation_accounting(gid)
+        self.assertIs(archive.contract,economic.contract)
+        self.assertEqual(archive.release_calendar_year,2027)
+        self.assertEqual(archive.payment_ceilings()['base:0'],2000000)
+        self.assertEqual(ledger.charges,(Fraction(1000011),Fraction(1000013)))
+        self.assertEqual(ledger.cash_snapshot()['paid_total'],5000000)
+        self.assertEqual(ledger.cash_snapshot()['unpaid_total'],0)
+        self.assertNotIn('v',ledger._players)
+        self.transition(ledger,from_year=2027,to_year=2028,expected_revision=2,
+            next_minimum_profile=VeteranMinimumProfile(2028,(('v',(7,7),('active_inactive',)*2),)))
+        self.assertEqual(ledger.charges,(Fraction(1000013),))
+        self.assertEqual(ledger.generation_calendar_view(gid).annual_charges(),plan.charges()[1:])
+
+    def test_invalid_calendar_release_cannot_change_financial_or_cash_state(self):
+        for changes in ({'generation_id':'foreign'},{'generation_id':True},{'expected_revision':True},
+                        {'payment_year_offsets':(0,)}, {'record_id':''}):
+            ledger=self.ledger();self.transition(ledger)
+            before=ledger.generation_snapshot();calendar=ledger.generation_calendar_snapshot()
+            with self.subTest(changes=changes),self.assertRaises((Rejected,ValueError)):
+                ledger.apply_calendar_preseason_release('v',**self.release_inputs(ledger,**changes))
+            self.assertEqual(ledger.generation_snapshot(),before)
+            self.assertEqual(ledger.generation_calendar_snapshot(),calendar)
+        ledger=self.ledger();self.transition(ledger)
+        with self.assertRaises(Rejected):
+            ledger.apply_preseason_release('v',**{key:value for key,value in self.release_inputs(ledger).items()
+                                                if key!='generation_id'})
+
     def ledger(self,term=3):
         contract=ActiveContract(Offer('v',(2000000,)*term,3000000),'synthetic economic terms')
         ledger=Ledger.from_opening(OpeningBooks(contracts=(contract,),retained=(ChargeRecord('debt',(7,11,13),'synthetic retained'),)),

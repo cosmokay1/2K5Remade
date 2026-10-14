@@ -7,7 +7,7 @@ Other release protections, trade consideration, restructures and game-save write
 Offers use integer dollars; internal allocations use exact rational dollars. Only the current cap is binding; future charges
 are reported without assuming future league caps.
 """
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from fractions import Fraction
 from threading import RLock
 from typing import TYPE_CHECKING
@@ -493,6 +493,20 @@ class Ledger:
 
     def apply_preseason_release(self, player_id, *, scope, discount, payment_year_offsets,
                                record_id, expected_revision):
+        return self._apply_preseason_release(player_id,scope=scope,discount=discount,
+            payment_year_offsets=payment_year_offsets,record_id=record_id,
+            expected_revision=expected_revision,calendar_generation_id=None)
+
+    def apply_calendar_preseason_release(self, player_id, *, generation_id,scope,discount,
+                                        payment_year_offsets,record_id,expected_revision):
+        if type(generation_id) is not str or not generation_id.strip():
+            raise Rejected('Exact calendar release generation required')
+        return self._apply_preseason_release(player_id,scope=scope,discount=discount,
+            payment_year_offsets=payment_year_offsets,record_id=record_id,
+            expected_revision=expected_revision,calendar_generation_id=generation_id)
+
+    def _apply_preseason_release(self, player_id, *, scope,discount,payment_year_offsets,
+                                record_id,expected_revision,calendar_generation_id):
         """Replace one supported veteran's active obligations, preserving debt."""
         from franchise.releases import calculate_preseason_release
         with self._lock:
@@ -503,13 +517,23 @@ class Ledger:
             if player_id in self._released or player_id not in self._players:
                 raise Rejected('Player has no active owned contract to release')
             contract = self.active_contract(player_id)
+            previous=None
+            if calendar_generation_id is not None:
+                if (self._generation_calendar_anchor is None
+                        or self._active_generation_ids.get(player_id) != calendar_generation_id):
+                    raise Rejected('Current owned advanced-calendar agreement required')
+                previous=self.generation_accounting(calendar_generation_id)
+                view=self.generation_calendar_view(calendar_generation_id)
+                if view.current_contract != contract or view.current_year != self._league_year:
+                    raise Rejected('Release cursor disagrees with authoritative calendar view')
             cash_id = self.contract_cash_id(player_id)
             if self._cash is None or cash_id not in self._cash.records:
                 raise Rejected('Allocated original cash required for release')
             cash = self._cash.records[cash_id]
             plan = calculate_preseason_release(contract, cash, scope=scope, discount=discount,
                 payment_year_offsets=payment_year_offsets, record_id=record_id, expected_cash_id=cash_id)
-            self._check_transaction_date(scope.league_year,scope.removed_on)
+            self._check_transaction_date(scope.league_year,scope.removed_on,
+                calendar_release=calendar_generation_id is not None)
             existing_ids = self._retained_record_ids()
             if any(record.record_id in existing_ids for record in plan.retained):
                 raise Rejected('Release retained-record identity already exists')
@@ -523,6 +547,11 @@ class Ledger:
                             + (retained[i] if i < len(retained) else Fraction(0)) for i in range(years))
             if any(value < 0 for value in charges):
                 raise Rejected('Release credits exceed recorded obligations')
+            updated=None
+            if previous is not None:
+                from franchise.generations import GenerationCalendarView
+                updated=replace(previous,release=plan,release_calendar_year=scope.league_year)
+                updated_view=GenerationCalendarView(updated,scope.league_year,scope.league_year)
             # Acceleration may exceed the cap. Subsequent signing checks remain
             # binding; an overage does not erase a valid retained obligation.
             self._charges = charges
@@ -534,11 +563,19 @@ class Ledger:
             self._cash.records[cash.obligation_id] = plan.cash_obligation
             self._cash.revision += 1
             self.revision += 1
-            self._refresh_generation_agreement(player_id)
+            if updated is not None:
+                self._generation_agreements[calendar_generation_id]=updated
+                self._generation_calendar_views[calendar_generation_id]=updated_view
+            else:
+                self._refresh_generation_agreement(player_id)
             return plan
 
-    def _check_transaction_date(self,year,on):
-        self._require_pretransition_operations()
+    def _check_transaction_date(self,year,on,*,calendar_release=False):
+        if calendar_release:
+            if self._generation_calendar_anchor is None or self._league_year != year:
+                raise Rejected('Release year must match the advanced league calendar')
+        else:
+            self._require_pretransition_operations()
         known_years=[]
         if getattr(self, '_league_year', None) is not None:
             known_years.append(self._league_year)
@@ -547,7 +584,8 @@ class Ledger:
         if self._rookie_pool_opening is not None:
             known_years.append(self._rookie_pool_opening.league_year)
         if self._last_transaction_date is not None:
-            known_years.append(self._last_transaction_date.year)
+            if not calendar_release:
+                known_years.append(self._last_transaction_date.year)
             if on < self._last_transaction_date:
                 raise Rejected('Dated transaction precedes established franchise chronology')
         if any(known != year for known in known_years):

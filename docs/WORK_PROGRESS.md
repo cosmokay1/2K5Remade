@@ -2770,3 +2770,24 @@ incoming-assignment cases plus malformed markers/cursors pass; all483 offline
 tests pass. Independent review found no concrete representation defect. Ledger,
 Store and native transaction guards remain: exact authoritative cursor binding,
 versioned atomic replay and native receipts are still required before enablement.
+
+### Linux framebuffer type include and calendar-release Ledger transaction (2026-10-13)
+
+User reported newest Linux failure. Verified run38512107234 at889b940: Windows
+runtime/tools passed; Linux renderer/fault prerequisite step passed, decoder REG
+errors disappeared, full runtime then failed in video/fb_present.c missing ptrdiff_t.
+Dependency1b0f3d6 adds explicit stddef.h. Actual offline Linux ARM64 source syntax
+passes with one existing unrelated implicit framebuffer-dump declaration warning;
+new exact x86-64 full-runtime CI is still needed.
+
+Ledger.apply_calendar_preseason_release now requires the exact current owned
+generation and authoritative current contract/year. It computes the full existing
+healthy veteran release plan, cash/charge replacements, immutable calendar archive
+and reanchored view before mutation. Prior-year transaction dates remain valid
+chronological history; wrong current year still rejects. Legacy release API still
+rejects advanced-calendar mutation. Tests preserve earned base indices, nominal
+cash, archived terms and one-time dead-charge aging across a subsequent rollover,
+plus reject malformed/stale/foreign inputs without changing snapshots. Independent
+review found no concrete Ledger defect; all485 offline tests pass. Store atomic
+calendar-release events/replay and native receipt formats remain unimplemented;
+this method is not yet exposed through the game/service transaction path.
