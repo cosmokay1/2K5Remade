@@ -77,6 +77,68 @@ class CalendarRestructureStoreTests(unittest.TestCase):
             self.store.restructure_preseason_veteran('a','ordinary','v',**{k:v for k,v in self.inputs.items() if k!='generation_id'})
         self.assertEqual(self.path.read_bytes(),raw)
 
+    def test_later_release_retains_both_bonus_layers_paid_indices_and_historical_amendment(self):
+        from franchise.guarantees import DiscountProfile
+        from franchise.releases import PreseasonReleaseScope,EXCLUDED_LIABILITIES
+        amendment_receipt=self.amend()
+        amended=self.store.load_team('a').generation_accounting(self.gid)
+        self.fixture.pay('a','bonus:calendar-restructure:convert-2027',100000)
+        self.fixture.pay('a','base:1',1900000)
+        self.fixture.roll(('a',),2027)
+        ledger=self.store.load_team('a')
+        cash_before=ledger.generation_cash(self.gid)
+        release_inputs=dict(generation_id=self.gid,
+            scope=PreseasonReleaseScope(2028,date(2028,5,1),date(2028,9,10),EXCLUDED_LIABILITIES,
+                True,True,0,'synthetic healthy final-year release'),
+            discount=DiscountProfile(2028,Fraction(0),'synthetic zero rate'),payment_year_offsets=(0,),
+            expected_revision=ledger.revision,access_check=lambda:None)
+        released_receipt=self.store.release_calendar_preseason_veteran('a','release-2028','v',**release_inputs)
+        self.store=FranchiseStore(self.path);ledger=self.store.load_team('a')
+        archived=ledger.generation_accounting(self.gid)
+        self.assertEqual(archived.original_contract,amended.original_contract)
+        self.assertEqual(archived.contract,amended.contract)
+        self.assertEqual(archived.restructure,amended.restructure)
+        self.assertEqual(archived.restructure_calendar_year,2027)
+        self.assertEqual(archived.release_calendar_year,2028)
+        self.assertEqual(archived.contract.elapsed_years,1)
+        self.assertEqual(archived.release.original_contract.elapsed_years,2)
+        self.assertEqual(archived.release.original_contract.bonus_layers,amended.contract.bonus_layers)
+        # Original bonus has one $1m year left; the conversion has one $50k
+        # year left. The unpaid, unprotected final $2m salary is cancelled.
+        self.assertEqual(ledger.charges,(Fraction(1050000),))
+        self.assertEqual(archived.release.retained[0].annual_charges,(Fraction(1050000),))
+        self.assertEqual(archived.release.cancelled_unearned_base,2000000)
+        cash=ledger.generation_cash(self.gid)
+        self.assertEqual((cash.amount,cash.paid),(7000000,7000000))
+        self.assertEqual(cash.paid_components,cash_before.paid_components)
+        self.assertEqual(dict(cash.paid_components)['base:0'],2000000)
+        self.assertEqual(dict(cash.paid_components)['base:1'],1900000)
+        self.assertNotIn('base:2',dict(cash.paid_components))
+        self.assertEqual(archived.payment_ceilings()['base:1'],1900000)
+        self.assertEqual(archived.payment_ceilings()['base:2'],0)
+        self.assertEqual(ledger.financial_snapshot()['signed_players'],[])
+        with closing(sqlite3.connect(self.path)) as db:
+            self.assertIsNone(db.execute("SELECT 1 FROM ownership WHERE player_id='v'").fetchone())
+        # The next league close slices cap debt without rewriting either plan
+        # or its original base-payment indices.
+        from franchise.salary_rules import VeteranMinimumProfile
+        self.store.advance_league_year(request_id='roll-2028',from_year=2028,to_year=2029,
+            source='synthetic common reconciled closing',teams={'a':dict(expected_revision=ledger.revision,
+                next_cap=20000000,next_cap_source='synthetic next budget',roster_reserve=0,
+                reserve_source='synthetic reserve',next_minimum_profile=VeteranMinimumProfile(2029,
+                    (('v',(7,7),('active_inactive','active_inactive')),)).to_dict(),
+                expired_generation_ids=[],exclusions=sorted(FranchiseStore.YEAR_TRANSITION_EXCLUSIONS),
+                source='synthetic reconciled closing')})
+        final=FranchiseStore(self.path).load_team('a')
+        self.assertEqual(final.charges,(Fraction(0),))
+        self.assertEqual(final.generation_accounting(self.gid),archived)
+        self.assertEqual(final.generation_cash(self.gid),cash)
+        self.assertEqual(final.generation_calendar_view(self.gid).annual_charges(),())
+        raw=self.path.read_bytes()
+        self.assertEqual(self.amend(),amendment_receipt)
+        self.assertEqual(self.store.release_calendar_preseason_veteran('a','release-2028','v',**release_inputs),released_receipt)
+        self.assertEqual(self.path.read_bytes(),raw)
+
     def test_replay_rejects_changed_calendar_original_cash_or_extra_fields(self):
         self.amend()
         for field in ('before_calendar','after_calendar','original_contract','original_cash','cash_type','extra','date'):

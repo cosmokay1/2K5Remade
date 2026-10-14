@@ -137,15 +137,16 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
 - [ ] Implement extensions/restructures without erasing existing bonus layers.
       First calendar-aware Ledger conversions now preserve immutable original
       terms and paid indices, reanchor the amended schedule and retain both bonus
-      schedules through later rollover/release. Store replay and native calendar
-      amendment routing remain open.
+      schedules through later rollover/release. Store replay, explicit sidecar routing
+      and native full/compact calendar amendment receipts are implemented at 2f5ffda;
+      actual Windows pipe verification is pending CI.
       Pure sourced preseason guaranteed-base conversion and immutable bonus layers now
       preserve exact old/new schedules. Supported amendment cash, replay and subsequent release/trade commits now retain
       all layers. Strict local protocol/native validation is implemented. Extensions,
       repeated conversions, game/UI controls and actual guest transactions remain.
 - [ ] Implement offseason/regular-season accounting and roster-status costs.
 - [ ] Implement dated June-1 treatment, supported tenders/tags and salary benefits.
-- [ ] Implement incentive settlement, cap adjustments, carryover and year rollover. Atomic initial calendar anchoring now validates all teams, revisions, source years and exact postings across restart/migration; typed current contract views and closing settlement inspection preserve original plans/cash without a revenue gate. A scoped veteran-only atomic league transition now advances sourced schedules and eligible settled expiry with exact all-team replay; postroll contract mutations, rookie/cohort rules, native calendar context and actual game advancement remain open. Source/schema review identified generation projection, expiry and cohort dependencies; follow docs/season-rollover.md for the durable league-wide transition work.
+- [ ] Implement incentive settlement, cap adjustments, carryover and year rollover. Atomic initial calendar anchoring now validates all teams, revisions, source years and exact postings across restart/migration; typed current contract views and closing settlement inspection preserve original plans/cash without a revenue gate. A scoped veteran-only atomic league transition now advances sourced schedules and eligible settled expiry with exact all-team replay; supported postroll veteran sign/release/trade/first-amendment mutations and native calendar context are implemented; rookie/cohort rules and actual game advancement remain open. Source/schema review identified generation projection, expiry and cohort dependencies; follow docs/season-rollover.md for the durable league-wide transition work.
 - [ ] Complete drafted/undrafted rookie rules, pool accounting, option exercise,
       and performance escalators; never auto-exercise a fifth year.
 - [ ] Re-audit money using independent expected examples from primary rule sources.

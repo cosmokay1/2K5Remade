@@ -3034,3 +3034,23 @@ native harness accepted six real Python-generated receipt/context cases across
 that execution remains pending CI. Prior 8eb076b Build 38519382382 passed;
 Franchise AI 38519382379 was last confirmed running. Repeated conversions remain
 unsupported. Actual game/save integration and playable verification remain open.
+
+
+## October 13, 2026 — Amended release and assignment lifecycle regression
+
+Added permanent Store amendment/payment/rollover/release/restart/rollover checks:
+original and converted bonus debt total $1.05 million at final-year release;
+$7 million settled nominal cash and original salary-payment indices survive
+cancellation of $2 million unprotected salary. Both historical receipts remain
+unchanged after another rollover, when current cap debt ages to zero.
+Added an independent two-team amendment/bonus-payment/trade/buyer-payment/rollover/
+release chain with full/compact sidecar receipts. Seller retains immutable birth
+and amendment archives, both bonus schedules and $5.1 million paid cash; buyer
+gets separate $3.9 million salary cash without inherited bonus layers. Historical
+trade receipts survive release/restart without database writes. No source defect
+was found. All 519 offline tests passed. Worklist stale amendment-routing and
+post-rollover mutation descriptions were corrected in place.
+Prior 8eb076b Build 38519382382 and Franchise AI 38519382379 passed.
+Current 2f5ffda Build 38519720719 and Franchise AI 38519720705 were last confirmed
+running; actual new Windows amendment pipe execution remains pending.
+No guest execution, actual save integration or playable delivery is claimed.
