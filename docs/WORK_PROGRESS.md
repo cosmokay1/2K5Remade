@@ -2557,3 +2557,12 @@ penalty disposition; it is insufficient for franchise attribution. No pressure
 or hit field exists in that boundary, which does not establish engine absence.
 Added docs/pressure-investigation.md with concrete contact, overlap, nullification,
 mode-coverage and save/load capture requirements. No counters or offsets invented.
+
+### Linux regression link repair (2026-10-13)
+
+Build run 38508724986 stopped while linking the POSIX condition regression:
+feclearexcept required libm. Dependency 11c7dea propagates libm from the platform
+target; local configure/build/CTest passes. Full Linux runtime was not reached.
+Separate local pushbuffer inspection found a Windows-only include, missing barrier
+and three SEH guards; its experimental include/atomic publication changes remain
+uncommitted pending a genuine POSIX fault-handling solution and full validation.
