@@ -31,8 +31,8 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   Signing still uses the original game logic; the AI transaction hook is pending.
 - Current delivered local suite: **609 tests passed**. Actual AIBASELIN parsing
   resolves 1937 roster/free-agent members. This does not prove contract/save
-  round-trip integration. The read-only signing observer includes bounded bank-slot/name reads and is compiled and staged;
-  runtime observation awaits a safe game exit. The Windows harness portability
+  round-trip integration. The read-only signing observer includes bounded bank-slot/name reads and is compiled and installed after confirmed exit;
+  actual selected-player readback remains pending. The Windows harness portability
   repair passed replacement CI and private MSVC/Wine fixture execution.
 - Request/token ceilings and remote shutdown are sufficient for current work.
   Additional dollar-policy machinery is deferred at the user's direction.
@@ -62,7 +62,7 @@ steps, rather than expand the already substantial standalone engine.
 |---|---|---|---|
 | B01 | User-supplied Xbox executable/disc now extracted; title/hash checked | Static intake resolved; runtime field/call verification remains | Private executable analysis and native build |
 | B02 | AIBASELIN FXG baseline and companion files captured; controlled transaction pairs pending | Contract decoding, reconciliation and save round trips | Synthetic import fixtures, read-only diff tooling, state schema |
-| B03 | Current game remains active; staged bank/name observer awaits normal exit. Standard Windows build renders franchise UI in Deck Gaming Mode; actual transaction/save accounting pending | Actual franchise execution, save/reload and delivery acceptance | Private local build environment and read-only signing-path analysis |
+| B03 | Bank/name observer installed after confirmed normal exit; selected-player readback pending. Standard Windows build renders franchise UI in Deck Gaming Mode; actual transaction/save accounting pending | Actual franchise execution, save/reload and delivery acceptance | Private local build environment and read-only signing-path analysis |
 | B04 | Written upstream/third-party permission or suitable licenses | Redistribution of modified binaries and affected bundled components | Original source development, attribution, permission-request drafts |
 | B05 | Explicit approval for scoped runtime impersonation delegation | Live runtime-identity read/inference verification | Offline/native recovery and financial implementation |
 

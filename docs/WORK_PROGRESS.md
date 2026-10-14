@@ -3762,3 +3762,19 @@ unachieved: no AI/game transaction, durable story/save integration, supported
 modern accounting in the game or live required-control acceptance is verified.
 Further standalone layers do not resolve this runtime gate. No force-close,
 restart, guest/save writes or live executable replacement occurred.
+
+
+## October 14, 2026 — Observer installed after user-confirmed exit
+
+User reported the game closed; read-only pgrep confirmed no NFL2K5.exe process.
+Verified staged SHA256df1c0158a4325710bcddcb8740feda6501462581b9e30174b0a3956cd68ee07d,
+backed up the previous executable and launch log privately, then checked exit
+again before atomically replacing runtime/NFL2K5.exe. Installed hash matches.
+AIBASELIN SAVEGAME.DAT still hashes
+2f82cfd9c608411c40b006db10f1e6dc6dfe46b187dd50c1ae94dd6341fd3dd2.
+No save writes, control changes or game launch were performed.
+
+Next runtime action: launch the existing Steam Gaming Mode entry, load AIBASELIN,
+open a player's Sign Contract screen without submitting an offer, and compare
+actual observer bank/name readback with that visible player. Selected identity,
+contract units and controlled transaction/save reload still remain unverified.
