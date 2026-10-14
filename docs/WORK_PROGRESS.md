@@ -2838,3 +2838,20 @@ Windows fixture now executes/retries the release before reading contexts and
 saved personality; that execution awaits CI. Actual guest release hooks remain
 open. Prior revision ee92067 Windows/Linux Build38513985206 passed; its Windows
 FranchiseAI38513985171 was still active at last inspection.
+
+Added whole-Store calendar release history tests rather than only constructing
+agreement representations. One chain converts guaranteed base into a separately
+indexed bonus, explicitly pays the conversion and earned base, anchors/migrates,
+rolls, releases, reopens and rolls again. Original amendment/contract archives,
+exact Fraction bonus charges and nominal paid history survive unchanged. Another
+chain assigns a contract between teams, pays earned buyer base, rolls and releases
+while seller bonus debt stays separate. It distinguishes accelerated guarantee
+cap charges from nominal future cash: after explicit current-year payment and
+another rollover, cap charges age to zero while the remaining $1 million future guarantee
+is still unpaid. Actual Python layered/assigned release receipts and later-year
+calendar_v2 contexts passed C++ validation. All 493 offline tests passed.
+Prior ee92067 FranchiseAI38513985171 passed Windows native released/expired
+contract/player inspection and restart with saved personality (verified log).
+dcea1b2 Build38514505332 passed both platform runtime builds; its native transaction
+FranchiseAI38514505285 remains active at last inspection. None of this establishes
+actual guest save/game execution.

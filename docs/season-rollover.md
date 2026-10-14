@@ -158,3 +158,10 @@ rejects these releases. Explicit manual native requests require calendar_format
 and exact generation identity; full/compact receipts bind year, allocated cash
 and revision. Receipt capacity and final connection checks run before commit.
 Actual guest transactions remain pending.
+
+Whole-Store history tests cover actual guaranteed-base conversion and incoming
+assignment before anchoring/rollover/release/restart/another rollover. Conversion
+bonus indices and original amendment plans remain immutable. Seller bonus debt
+and buyer base guarantees stay separate. Accelerated guarantee cap charges may
+age out while unpaid nominal future guarantee cash remains recorded; cap timing
+must never erase cash liability. These are synthetic histories, not decoded saves.
