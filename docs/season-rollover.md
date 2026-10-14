@@ -291,3 +291,16 @@ Full/compact native validation and replay bind this history to the actual trade
 year, terms, source cash and paired ownership/postings. Existing buyer histories
 remain archived independently. Actual Windows layered assignment pipe execution
 awaits CI; real guest transactions and save/load evidence remain absent.
+
+
+Explicit context_format=calendar_v4 now returns format5 with immutable
+original_contract and amendment_history alongside the existing archived economic
+terms and current calendar accounting. The full history includes a single first
+conversion or every prior/latest conversion; null means no amendment. First
+conversion original terms may advance only their elapsed index relative to birth
+terms; an absent original birth year is not inferred. Client validation retains
+existing closed/expired liability rules and binds the new history to current
+identity, effective terms, original-year indices and sourced chronology.
+Player reads select this format explicitly and keep team/player scope. Previous
+formats remain unchanged. Windows owned-pipe read coverage is implemented and
+awaits CI; actual game/save integration remains open.

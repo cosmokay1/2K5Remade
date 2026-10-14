@@ -693,6 +693,41 @@ def main():
         finally:trade_history_fixture.doCleanups()
         print("Native Windows layered assignment full/compact history, separate buyer payroll/release and rollover restart verified (synthetic).")
 
+        from tests import test_calendar_history_bridge
+        history_read_fixture=test_calendar_history_bridge.CalendarHistoryBridgeTests()
+        history_read_fixture.setUp()
+        try:
+            requests=[history_read_fixture.contract,history_read_fixture.player,
+                {**history_read_fixture.player,'request_id':'scoped-b-history','team_id':'b'}]
+            payload=''.join(json.dumps(item,separators=(',',':'))+'\n' for item in requests)
+            saved_history=None
+            for phase in ('active','expired'):
+                if phase=='expired':history_read_fixture.fixture.expire()
+                unchanged=history_read_fixture.fixture.path.read_bytes()
+                previous=None
+                for attempt in range(2):
+                    result=subprocess.run([sys.argv[1],sys.executable,str(history_read_fixture.fixture.path),'--calendar-history'],
+                        input=payload,text=True,capture_output=True,timeout=30,check=True)
+                    replies=[json.loads(line) for line in result.stdout.splitlines()]
+                    assert len(replies)==3 and all(reply['error'] is None for reply in replies)
+                    assert replies==[history_read_fixture.bridge.handle(item) for item in requests]
+                    context=replies[0]['result']
+                    assert context['format']==5 and context['original_contract']['elapsed_years']==0
+                    assert len(context['amendment_history']['prior_restructures'])==1
+                    assert replies[1]['result']['personality']=={'money':0.8}
+                    assert replies[2]['result']['calendar_contract_context'] is None
+                    assert replies[2]['result']['personality'] is None
+                    if phase=='active':saved_history=context['amendment_history']
+                    else:
+                        assert context['calendar_accounting']['status']=='expired'
+                        assert context['amendment_history']==saved_history
+                        assert context['economic_archive']['cash_obligation']['paid']==9000000
+                    if attempt:assert replies==previous
+                    previous=replies
+                    assert history_read_fixture.fixture.path.read_bytes()==unchanged
+        finally:history_read_fixture.doCleanups()
+        print("Native Windows calendar-v4 immutable history and scoped player reads survive expiry/restart without writes (synthetic).")
+
         if len(sys.argv)>2:
             c_path=Path(directory)/'C host ownership.sqlite'
             c_store=FranchiseStore(c_path)

@@ -8,6 +8,7 @@
 #include <map>
 
 namespace franchise {
+inline const nlohmann::json& validate_amendment_history(const nlohmann::json&,const std::string&,const std::string&,bool allow_empty_prior=false);
 inline void promise_goals(const nlohmann::json& goals) {
     if (!goals.is_array()) throw std::runtime_error("Invalid promise terms");
     std::set<std::string> ids;
@@ -355,6 +356,44 @@ inline void validate_assigned_calendar_cash(const nlohmann::json& archive, int64
 }
 inline void validate_calendar_contract_context(const nlohmann::json& result, const nlohmann::json& request,
                                               int64_t assigned_cursor=-1) {
+    if(request.at("context_format")=="calendar_v4") {
+        if(!result.is_object() || result.size()!=11 || !result.at("format").is_number_integer() || result.at("format")!=5)
+            throw std::runtime_error("Invalid immutable contract calendar context");
+        auto normalized=result;normalized.erase("original_contract");normalized.erase("amendment_history");normalized["format"]=4;
+        auto expected=request;expected["context_format"]="calendar_v3";
+        validate_calendar_contract_context(normalized,expected);
+        const auto& archive=result.at("economic_archive");const auto& birth=result.at("original_contract");
+        const auto& history=result.at("amendment_history");
+        if(history.is_null()) {
+            if(birth.dump()!=archive.at("contract").dump()) throw std::runtime_error("Missing economic amendment history");
+        } else {
+            const auto player=archive.at("contract").at("offer").at("player_id").get<std::string>();
+            const auto& cash=archive.at("cash_obligation");
+            if(cash.is_null()) throw std::runtime_error("Amendment cash provenance unavailable");
+            const auto& latest=validate_amendment_history(history,player,cash.at("obligation_id").get<std::string>(),true);
+            const auto& first=history.at("prior_restructures").empty()?latest:history.at("prior_restructures").at(0);
+            auto original=birth;
+            integer_money(original.at("elapsed_years"));
+            if(first.at("original_contract").at("elapsed_years")<original.at("elapsed_years")) throw std::runtime_error("Amendment predates economic birth");
+            original["elapsed_years"]=first.at("original_contract").at("elapsed_years");
+            if(original.dump()!=first.at("original_contract").dump() || latest.at("contract").dump()!=archive.at("contract").dump())
+                throw std::runtime_error("Immutable birth or effective amendment changed");
+            const auto amendment_year=latest.at("scope").at("league_year").get<int64_t>();
+            if(amendment_year>result.at("league_year").get<int64_t>() ||
+                (archive.at("status")=="active" && result.at("calendar_accounting").at("anchor_year")!=amendment_year))
+                throw std::runtime_error("Economic amendment calendar anchor changed");
+            const auto& prior=latest.at("cash_obligation");
+            std::map<std::string,int64_t> paid;
+            for(const auto& row:cash.at("paid_components")) paid[row.at(0).get<std::string>()]=row.at(1).get<int64_t>();
+            for(const auto& row:prior.at("paid_components")) if(paid[row.at(0).get<std::string>()]<row.at(1).get<int64_t>())
+                throw std::runtime_error("Archived amendment payment disappeared");
+            if(archive.at("status")=="active") {
+                if(cash.at("amount")!=prior.at("amount") || cash.at("source")!=prior.at("source"))
+                    throw std::runtime_error("Active amendment cash provenance changed");
+            }
+        }
+        return;
+    }
     if(request.at("context_format")=="calendar_v3") {
         if(!result.is_object() || result.size()!=9 || !result.at("format").is_number_integer() || result.at("format")!=4)
             throw std::runtime_error("Invalid assignment calendar context format");
@@ -606,9 +645,9 @@ inline void validate_amendment_history_plan(const nlohmann::json& plan,const std
     }
 }
 
-inline const nlohmann::json& validate_amendment_history(const nlohmann::json& history,const std::string& player,const std::string& cash_id) {
+inline const nlohmann::json& validate_amendment_history(const nlohmann::json& history,const std::string& player,const std::string& cash_id,bool allow_empty_prior) {
     if(!history.is_object() || history.size()!=3 || !history.at("format").is_number_integer() || history.at("format")!=1 ||
-        !history.at("prior_restructures").is_array() || history.at("prior_restructures").empty())
+        !history.at("prior_restructures").is_array() || (!allow_empty_prior && history.at("prior_restructures").empty()))
         throw std::runtime_error("Missing immutable prior amendment history");
     auto plans=history.at("prior_restructures");plans.push_back(history.at("latest_restructure"));
     std::set<std::string> ids;const nlohmann::json* previous=nullptr;
@@ -1208,7 +1247,7 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         if (request.contains("context_format")) {
             if (!request.at("context_format").is_string() ||
                 (request.at("context_format")!="calendar_v1" && request.at("context_format")!="calendar_v2" &&
-                 request.at("context_format")!="calendar_v3") ||
+                 request.at("context_format")!="calendar_v3" && request.at("context_format")!="calendar_v4") ||
                 result.at("context_format")!=request.at("context_format") ||
                 !result.at("contract_accounting").is_null())
                 throw std::runtime_error("Invalid calendar player context format");

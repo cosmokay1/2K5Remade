@@ -3227,3 +3227,24 @@ is local/unpublished: all 565 offline tests passed, seven new Store/Bridge tests
 cover scoped history reads, and native validation accepted 18 actual responses.
 Publication and actual Windows v4 pipe coverage remain the immediate work.
 Game/save integration and playable acceptance remain unverified.
+
+
+## October 13, 2026 — Full-history client inspection ready for Windows CI
+
+Added explicit calendar_v4 contract context format5: immutable original contract,
+complete first/prior/latest amendment history, archived economic terms and separate
+current calendar accounting. Never-amended agreements use null history; first
+amendments retain a latest plan with empty prior list. Earlier context formats
+keep their original response shapes. Scoped player reads preserve personalities,
+relationships and goal history without exposing another team's actor or agreement.
+Store tests cover active/released/assigned/expired contracts, current cash, immutable
+terms, detached response data, restart and unchanged database bytes. Native checks
+bind full history to the immutable original economics and effective archive,
+exact later source-year/cursor continuity, current anchor, identities and cash
+ceilings; first amendment birth year is not invented when absent from the source.
+All 565 offline tests passed. Rebuilt portable CTest passed with 14 history and
+8 no-history corruption cases; all 18 actual contract/player sidecar responses
+validated. Added actual Windows owned-pipe reads across active/expired state,
+scoped player contexts and restart, requiring unchanged DB bytes. Python smoke
+compilation passed; its Windows execution awaits this commit's CI. Actual game
+save/load and playable Windows/Steam Deck delivery remain unverified.

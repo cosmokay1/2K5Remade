@@ -222,7 +222,7 @@ class Bridge:
                 fields = {'protocol','request_id','operation','team_id','generation_id','timeout_ms'}
                 if set(request) not in (fields,fields | {'context_format'}):
                     raise ValueError('Unexpected contract context fields')
-                if 'context_format' in request and request['context_format'] not in ('calendar_v1','calendar_v2','calendar_v3'):
+                if 'context_format' in request and request['context_format'] not in ('calendar_v1','calendar_v2','calendar_v3','calendar_v4'):
                     raise ValueError('Unsupported contract context format')
                 if any(type(request[key]) is not str or not request[key].strip() for key in ('team_id','generation_id')):
                     raise ValueError('Stable team and agreement identities required')
@@ -245,7 +245,7 @@ class Bridge:
                 fields = {'protocol','request_id','operation','team_id','player_id','timeout_ms'}
                 if set(request) not in (fields,fields | {'context_format'}):
                     raise ValueError('Unexpected player context fields')
-                if 'context_format' in request and request['context_format'] not in ('calendar_v1','calendar_v2','calendar_v3'):
+                if 'context_format' in request and request['context_format'] not in ('calendar_v1','calendar_v2','calendar_v3','calendar_v4'):
                     raise ValueError('Unsupported player context format')
                 if type(request['team_id']) is not str or not request['team_id'].strip():
                     raise ValueError('Stable team required')

@@ -24,15 +24,16 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 ## Latest verified state — October 13, 2026
 
-- Published source: `212b037`. Linux/Windows Build `38523844512` and Franchise AI
+- Prior verified source: `212b037`. Linux/Windows Build `38523844512` and Franchise AI
   `38523844441` passed. The Windows log confirms actual synthetic owned-pipe
   history-aware trades, separate buyer payroll/release and rollover retries.
 - History-aware releases passed Windows pipe checks at `f7d9ad9`, run
   `38522825921`; repeated amendments passed at `048a8e6`, run `38522299444`.
 - Current local suite: **565 tests passed**. Calendar-v4 full-history inspection
   also passes portable native checks and 18 actual sidecar response validations.
-- In progress: publish calendar-v4 inspection and add/verify its Windows pipe
-  coverage. These read-only changes are currently local and unpublished.
+- Calendar-v4 inspection and its Windows pipe smoke are implemented; actual
+  Windows execution awaits this source revision's CI. Continue with the next
+  supported lifecycle/integration work while those checks run.
 - Actual game/save integration, telemetry capture, in-game controls and playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 
