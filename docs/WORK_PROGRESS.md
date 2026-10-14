@@ -5063,3 +5063,22 @@ guarded installation passed with staged root SHA256 a47435e9...a7bd28, backup
 e18edc0d...bd1c4 and unchanged launcher1f2771c2...7acce. Requested normal launch,
 AIGILDON load and Trotter offer left open without submission. Actual same-screen
 reply collection remains pending; source committed/pushed asfbde4cc.
+
+## October14,2026 — Actual same-screen reply collection verified
+
+User launched AIGILDON and left Trotter's offer open without submitting. Actual
+root log shows Sign Contract push at line910, hello collected916 and successful
+game-sign-context-1 reply920, with no intervening FSM push/pop. This verifies
+the existing guest input callback executes the owner-thread poll and fresh context
+capture while that screen remains open. Exactly one context reply appears;
+it resolves the same UUID/Giants/revision0 and persisted fictional personality,
+with classification still pending and AI/write authority=false.
+
+Remote read-only budget query reports zero attempts. Retrieved private session
+log and cloned ledger; all32 financial snapshots and full returned actor context
+match the pre-game persisted store. Evidence is
+.local-runtime/same-screen-context-proof/result.json. User remains in the offer
+screen; no contract submitted, model/control/IAM request or salary credit assigned.
+Polling build installation is recorded in a102d38; actual execution closes this
+polling verification gap, not AI/financial/save integration or active-franchise
+selection. Same-screen UI rendering and accepted/counteroffer transactions remain.

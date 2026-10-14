@@ -216,11 +216,13 @@ or malformed configuration rejects startup. After collecting hello, subsequent
 Sign Contract pushes capture fresh bounded live fields and submit signing_context
 on the existing transport owner. Busy/foreign-thread callbacks cannot submit.
 Later FSM transitions collect the reply, logged at most16 times without retaining
-a transaction grant. The next staged build also polls at the existing guest
+a transaction grant. The installed build also polls at the existing guest
 XInputGetState callback: only the transport owner can collect a ready reply or
 capture a fresh active-screen context. No callback waits for the service. One
 request is sent per screen entry; idle polls do not repeat it, and closed-screen
-observations cannot submit. Actual same-screen execution still requires validation.
+observations cannot submit. Actual Deck execution received Trotter's context after
+opening the offer, with no intervening FSM transition, one reply, unchanged32
+financial snapshots and zero model attempts. This verifies polling, not AI decisions.
 This inspection does not depend on trace logging, change
 guest memory, assign salary floors or call AI. Without inspection configuration,
 the prior signing-screen hello behavior is preserved. New financial state or a
