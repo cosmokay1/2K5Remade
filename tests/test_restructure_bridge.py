@@ -52,7 +52,7 @@ class RestructureBridgeTests(unittest.TestCase):
         scope = original['scope']
         changes = ({'decision_mode':'ai'},{'expected_revision':True},{'expected_revision':0},
                    {'converted_base':True},{'converted_base':8.0},{'converted_base':'8'},{'converted_base':0},
-                   {'converted_base':-1},{'timeout_ms':True},{'timeout_ms':60001},{'extra':1},
+                   {'converted_base':-1},{'generation_id':None},{'generation_id':True},{'generation_id':''},{'timeout_ms':True},{'timeout_ms':60001},{'extra':1},
                    {'scope':{**scope,'extra':True}},{'scope':{**scope,'amended_on':'20260601'}},
                    {'scope':{**scope,'first_regular_season_game':'20260910'}},
                    {'scope':{**scope,'exclusions':scope['exclusions']+[scope['exclusions'][0]]}},

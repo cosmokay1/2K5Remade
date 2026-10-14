@@ -38,7 +38,7 @@ class ReturnSigningLedgerTests(unittest.TestCase):
         self.assertEqual(ledger.return_sign('return',offer,-1,scope=self.scope()),receipt)
         with self.assertRaises(Rejected):ledger.return_sign('return',offer,2,scope=replace(self.scope(),source='changed'))
         with self.assertRaises(Rejected):ledger.apply_preseason_trade_out('v',scope=None,record_id='x',expected_revision=2)
-        with self.assertRaises(Rejected):ledger.apply_preseason_restructure('v',scope=None,converted_base=2,record_id='x',expected_revision=2)
+        with self.assertRaises(ValueError):ledger.apply_preseason_restructure('v',scope=None,converted_base=2,record_id='x',expected_revision=2)
         before=copy.deepcopy(ledger.generation_snapshot())
         with self.assertRaisesRegex(Rejected,'identity already exists'):
             ledger.apply_preseason_release('v',scope=plan.scope,discount=plan.discount,

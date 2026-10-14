@@ -43,6 +43,26 @@ int main() {
         auto& restructure_archive=restructure_reply["result"]["restructure"]["financial"]["restructures"]["v"];
         restructure_reply["result"]["restructure"]["cash"]["obligations"].push_back(restructure_archive["cash_obligation"]);
         franchise::validate_result(restructure_reply,restructure_request);
+        auto generation_request=restructure_request, generation_reply=restructure_reply;
+        const auto generation_id="contract-gen:"+std::string(64,'c');
+        generation_request["generation_id"]=generation_id;
+        generation_reply["result"]["generation_id"]=generation_id;
+        auto& generation_archive=generation_reply["result"]["restructure"]["financial"]["restructures"]["v"];
+        generation_archive["original_cash"]["obligation_id"]=generation_id;
+        generation_archive["cash_obligation"]["obligation_id"]=generation_id;
+        generation_reply["result"]["restructure"]["cash"]["obligations"][0]["obligation_id"]=generation_id;
+        franchise::validate_result(generation_reply,generation_request);
+        for (int scenario=0;scenario<5;++scenario) {
+            auto bad=generation_reply, input=generation_request;
+            if (scenario==0) bad["result"].erase("generation_id");
+            if (scenario==1) bad["result"]["generation_id"]="contract-gen:"+std::string(64,'d');
+            if (scenario==2) input["generation_id"]=true;
+            if (scenario==3) bad["result"]["restructure"]["financial"]["restructures"]["v"]["original_cash"]["obligation_id"]="contract:v";
+            if (scenario==4) input.erase("generation_id");
+            bool rejected=false;
+            try { franchise::validate_result(bad,input); } catch (const std::exception&) { rejected=true; }
+            if (!rejected) throw std::runtime_error("Amendment agreement substitution accepted");
+        }
         for (int scenario=0;scenario<31;++scenario) {
             auto bad=restructure_reply, bad_request=restructure_request;
             auto& financial=bad["result"]["restructure"]["financial"];

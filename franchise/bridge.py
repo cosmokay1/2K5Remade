@@ -34,13 +34,19 @@ class Bridge:
                 from datetime import date
                 from franchise.cap import money
                 from franchise.restructures import PreseasonRestructureScope
-                if set(request) != {'protocol','request_id','operation','team_id','player_id','expected_revision',
-                                    'timeout_ms','decision_mode','scope','converted_base'} or request['decision_mode'] != 'manual':
+                if set(request) not in ({'protocol','request_id','operation','team_id','player_id','expected_revision',
+                                    'timeout_ms','decision_mode','scope','converted_base'},
+                                    {'protocol','request_id','operation','team_id','player_id','expected_revision',
+                                    'timeout_ms','decision_mode','scope','converted_base','generation_id'}) or request['decision_mode'] != 'manual':
                     raise ValueError('Explicit complete manual restructure required')
                 if any(type(request[key]) is not str or not request[key].strip() for key in ('team_id','player_id')):
                     raise ValueError('Stable team and player identities required')
                 if type(request['expected_revision']) is not int or request['expected_revision'] < 0:
                     raise ValueError('Nonnegative integer client revision required')
+                generation_id=request.get('generation_id')
+                if 'generation_id' in request and (type(generation_id) is not str or not generation_id.startswith('contract-gen:')
+                        or len(generation_id)!=77 or any(c not in '0123456789abcdef' for c in generation_id[13:])):
+                    raise ValueError('Canonical returned agreement identity required')
                 converted = money(request['converted_base'])
                 if converted == 0:
                     raise ValueError('Positive base conversion required')
@@ -72,9 +78,10 @@ class Bridge:
                     scope[field] = parsed
                 receipt = self.store.restructure_preseason_veteran(request['team_id'],request_id,request['player_id'],
                     scope=PreseasonRestructureScope(**scope),converted_base=converted,
-                    expected_revision=request['expected_revision'],access_check=restructure_access)
+                    expected_revision=request['expected_revision'],access_check=restructure_access,generation_id=generation_id,require_return_generation_id=True)
                 return self._reply(request_id,result={'decision_mode':'manual','team_id':request['team_id'],
-                    'player_id':request['player_id'],'restructure':receipt})
+                    'player_id':request['player_id'],'restructure':receipt,
+                    **({'generation_id':generation_id} if generation_id is not None else {})})
             if operation == 'manual_trade':
                 from datetime import date
                 from franchise.trades import PreseasonTradeScope

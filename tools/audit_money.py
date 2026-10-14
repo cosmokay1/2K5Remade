@@ -258,10 +258,12 @@ def main():
                           "roster": "Read-only sourced top-51 and regular-season supported salary/bonus projections; not complete Team Salary or a phase transition.",
                           "termination": "Supported sourced healthy preseason veteran release with retained bonus/guarantee debt and nominal cash; other release liabilities remain unsupported.",
                           "assignment": "Atomic sourced preseason veteran contract assignment; seller bonus debt and buyer base/guarantees retained; consideration and other trade rules unsupported.",
+                          "restructure": "Atomic sourced first guaranteed-base conversion, including returned agreements; other amendments remain unsupported.",
+                          "returns": "Sourced same-year veteran return agreements preserve older cash and cap debt; no implicit season rollover.",
                           "draft": "Durable ordered rights and management funding reservations; actual game pick/contract posting remains unverified.",
                       },
                       "unimplemented_accounting": ["complete cash settlement and guarantee protections/vesting", "complete releases and trades",
-                          "extensions and durable restructures", "complete Team Salary and roster-phase transitions", "season rollover and carryover",
+                          "extensions and repeated/other restructure terms", "complete Team Salary and roster-phase transitions", "season rollover and carryover",
                           "complete rookie options/escalators", "verified game import/posting"],
                       "bonus_conservation_cases_verified": verified}, indent=2, default=json_amount))
 

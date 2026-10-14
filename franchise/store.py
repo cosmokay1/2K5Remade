@@ -411,18 +411,30 @@ class FranchiseStore:
                 ledger.revision += 1
                 if payload["cash_posting"] != ledger.cash_snapshot():
                     raise ValueError("Cash payment posting disagrees with replay")
-            elif kind == 'restructure':
-                if set(payload) != {'player_id','scope','converted_base','record_id','expected_revision',
+            elif kind in ('restructure','generation_restructure'):
+                extra=set()
+                if kind=='generation_restructure':
+                    extra={'format','generation_id','before_generation_posting','generation_posting'}
+                    if (db.execute('PRAGMA user_version').fetchone()[0]!=4
+                            or type(payload.get('format')) is not int or payload['format']!=1
+                            or payload.get('generation_id')!=ledger.contract_identity(payload['player_id']).generation_id
+                            or self._checkpoint_hash(payload.get('before_generation_posting'))!=self._checkpoint_hash(ledger.generation_snapshot())):
+                        raise ValueError('Generation restructure opening state disagrees with replay')
+                elif ledger.contract_identity(payload['player_id']).generation_id.startswith('contract-gen:'):
+                    raise ValueError('Return agreement restructure requires versioned generation event')
+                if set(payload) != extra | {'player_id','scope','converted_base','record_id','expected_revision',
                     'before_posting','before_cash','original_contract','original_cash','posting','cash_posting'}:
                     raise ValueError('Unexpected restructure event fields')
-                if (payload['original_contract'] != ledger.active_contract(payload['player_id']).to_dict()
-                        or ledger._cash is None or payload['original_cash'] != ledger._cash.records[ledger.contract_cash_id(payload['player_id'])].to_dict()):
+                if (self._checkpoint_hash(payload['original_contract']) != self._checkpoint_hash(ledger.active_contract(payload['player_id']).to_dict())
+                        or ledger._cash is None or self._checkpoint_hash(payload['original_cash']) != self._checkpoint_hash(ledger._cash.records[ledger.contract_cash_id(payload['player_id'])].to_dict())):
                     raise ValueError('Restructure original obligations disagree with replay')
-                if payload['before_posting'] != ledger.financial_snapshot() or payload['before_cash'] != ledger.cash_snapshot():
+                if self._checkpoint_hash(payload['before_posting']) != self._checkpoint_hash(ledger.financial_snapshot()) or self._checkpoint_hash(payload['before_cash']) != self._checkpoint_hash(ledger.cash_snapshot()):
                     raise ValueError('Restructure opening state disagrees with replay')
                 self._apply_restructure_payload(ledger,payload)
                 self._check_cash_components(ledger)
-                if payload['cash_posting'] != ledger.cash_snapshot():
+                if kind=='generation_restructure' and self._checkpoint_hash(payload['posting']) != self._checkpoint_hash(ledger.financial_snapshot()):
+                    raise ValueError('Generation restructure financial posting disagrees with replay')
+                if self._checkpoint_hash(payload['cash_posting']) != self._checkpoint_hash(ledger.cash_snapshot()):
                     raise ValueError('Restructure cash posting disagrees with replay')
             elif kind in ('release','generation_release'):
                 if kind=='release' and ledger.contract_identity(payload['player_id']).generation_id.startswith('contract-gen:'):
@@ -500,7 +512,7 @@ class FranchiseStore:
                 ledger.update_budget(**{key: payload[key] for key in ("cap", "roster_reserve", "expected_revision")})
             else:
                 raise ValueError("Unknown financial event; refusing to reconstruct state")
-            if kind in ('return_sign','generation_release') or (kind=='cash_payment' and self._has_new_generations(ledger)):
+            if kind in ('return_sign','generation_release','generation_restructure') or (kind=='cash_payment' and self._has_new_generations(ledger)):
                 if ('generation_posting' not in payload or type(payload.get('format')) is not int or payload['format']!=1 or
                         db.execute('PRAGMA user_version').fetchone()[0]!=4 or
                         self._checkpoint_hash(payload['generation_posting'])!=self._checkpoint_hash(ledger.generation_snapshot())):
@@ -932,14 +944,20 @@ class FranchiseStore:
         from franchise.restructures import PreseasonRestructureScope
         scope=dict(payload['scope'])
         for field in ('amended_on','first_regular_season_game'):
-            scope[field]=date.fromisoformat(scope[field])
+            value=scope[field]
+            if type(value) is not str:
+                raise ValueError('Canonical restructure date required')
+            parsed=date.fromisoformat(value)
+            if parsed.isoformat()!=value:
+                raise ValueError('Canonical restructure date required')
+            scope[field]=parsed
         scope['exclusions']=FranchiseStore._scope_exclusions(scope['exclusions'])
         return ledger.apply_preseason_restructure(payload['player_id'],scope=PreseasonRestructureScope(**scope),
             converted_base=payload['converted_base'],record_id=payload['record_id'],
             expected_revision=payload['expected_revision'])
 
     def restructure_preseason_veteran(self,team_id,request_id,player_id,*,scope,converted_base,
-                                      expected_revision,access_check):
+                                      expected_revision,access_check,generation_id=None,require_return_generation_id=False):
         from franchise.restructures import PreseasonRestructureScope
         if any(type(value) is not str or not value.strip() for value in (request_id,player_id)) or not callable(access_check):
             raise ValueError('Stable amendment identities and final access check required')
@@ -947,6 +965,10 @@ class FranchiseStore:
             raise ValueError('Typed sourced amendment scope required')
         if type(expected_revision) is not int or expected_revision < 0:
             raise ValueError('Integer amendment revision required')
+        if type(require_return_generation_id) is not bool:
+            raise ValueError('Explicit agreement requirement flag required')
+        if generation_id is not None and (type(generation_id) is not str or not generation_id.strip()):
+            raise ValueError('Explicit agreement identity required')
         money(converted_base)
         scope_data=asdict(scope)
         scope_data.update(amended_on=scope.amended_on.isoformat(),
@@ -959,24 +981,42 @@ class FranchiseStore:
             row=db.execute('SELECT payload FROM events WHERE team_id=? AND request_key=?',(team_id,key)).fetchone()
             if row:
                 previous=json.loads(row[0])
+                if require_return_generation_id and generation_id is None and 'generation_id' in previous:
+                    raise ValueError('Returned amendment retry requires explicit generation identity')
+                if generation_id is not None and previous.get('generation_id') != generation_id:
+                    raise Rejected('Amendment request targets a different generation')
                 if any(previous[field] != payload[field] for field in payload):
                     raise Rejected('Amendment request already recorded differently')
                 access_check()
                 return {'financial':previous['posting'],'cash':previous['cash_posting']}
+            if (require_return_generation_id and generation_id is None
+                    and ledger.contract_identity(player_id).generation_id.startswith('contract-gen:')):
+                raise ValueError('Returned agreement requires explicit generation identity')
+            if generation_id is not None and ledger.contract_identity(player_id).generation_id != generation_id:
+                raise Rejected('Amendment targets a different current generation')
             if db.execute('SELECT team_id FROM ownership WHERE player_id=?',(player_id,)).fetchone() != (team_id,):
                 raise Rejected('Amendment requires exclusive player ownership')
             cash_id = ledger.contract_cash_id(player_id)
             if ledger._cash is None or cash_id not in ledger._cash.records:
                 raise Rejected('Allocated contract cash required for amendment')
+            kind='restructure'
+            if ledger.contract_identity(player_id).generation_id.startswith('contract-gen:'):
+                if db.execute('PRAGMA user_version').fetchone()[0]!=4:
+                    raise Rejected('Generation restructure requires format4')
+                kind='generation_restructure'
+                payload.update(format=1,generation_id=ledger.contract_identity(player_id).generation_id,
+                    before_generation_posting=ledger.generation_snapshot())
             payload.update(before_posting=ledger.financial_snapshot(),before_cash=ledger.cash_snapshot(),
                 original_contract=ledger.active_contract(player_id).to_dict(),
                 original_cash=ledger._cash.records[cash_id].to_dict())
             self._apply_restructure_payload(ledger,payload)
             self._check_cash_components(ledger)
             payload.update(posting=ledger.financial_snapshot(),cash_posting=ledger.cash_snapshot())
+            if kind=='generation_restructure':
+                payload['generation_posting']=ledger.generation_snapshot()
             access_check()
-            db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,'restructure',?)",
-                       (team_id,key,json.dumps(payload,allow_nan=False)))
+            db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,?,?)",
+                       (team_id,key,kind,json.dumps(payload,allow_nan=False)))
             return {'financial':payload['posting'],'cash':payload['cash_posting']}
 
     def release_preseason_veteran(self,team_id,request_id,player_id,*,scope,discount,payment_year_offsets,

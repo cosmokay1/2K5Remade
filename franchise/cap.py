@@ -440,8 +440,6 @@ class Ledger:
                 raise Rejected('Supported veteran classification required for restructure')
             if player_id not in self._players:
                 raise Rejected('Player has no active owned contract to restructure')
-            if self._team_identity is not None and self.generation_accounting(self.contract_identity(player_id).generation_id).return_request_id is not None:
-                raise Rejected('Returned generation requires unsupported versioned amendment/assignment')
             contract = self.active_contract(player_id)
             cash_id = self.contract_cash_id(player_id)
             cash = self._cash.records.get(cash_id) if self._cash is not None else None
@@ -455,7 +453,8 @@ class Ledger:
             if (self._veteran_minimum_profile is not None
                     and scope.minimum_source != self._veteran_minimum_profile.source):
                 raise Rejected('Restructure minimum source disagrees with salary profile')
-            layer_ids = {prior.bonus_layer.record_id for prior in self._restructures.values()}
+            layer_ids = {layer.record_id for agreement in self._generation_agreements.values() for layer in agreement.contract.bonus_layers}
+            layer_ids.update(prior.bonus_layer.record_id for prior in self._restructures.values())
             for active in self._active_contracts.values():
                 layer_ids.update(layer.record_id for layer in active.bonus_layers)
             for prior in (*self._released.values(), *self._traded_out.values(), *self._traded_in.values()):

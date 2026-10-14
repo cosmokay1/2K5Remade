@@ -111,3 +111,8 @@ class ReturnNegotiationTests(unittest.TestCase):
         self.assertEqual(self.contexts,[])
         changed={**manual,'return_scope':{**self.scope,'source':'changed'}}
         self.assertEqual(self.bridge.handle(changed)['error'],'state_rejected')
+
+    def test_historical_no_story_return_is_not_narrated(self):
+        self.fixture.sign()
+        self.assertEqual(self.store.stories('a'),[])
+        self.assertEqual(self.store.negotiation_history('a','v'),[])

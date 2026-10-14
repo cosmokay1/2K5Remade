@@ -68,3 +68,23 @@ Replay recomputes from actual prior state and rejects original/posting corruptio
 Reused layer identities, stale revisions, unsupported terms and repeated layered
 conversions reject before mutation. Liability exclusions must be canonical unique
 serialized lists; dictionary values are never discarded during reconstruction.
+
+## Returned agreements
+
+The same supported first-conversion operation now applies to a returned veteran
+agreement in format4. Its original signing bonus must already be fully paid;
+only unpaid, already fully guaranteed current base above its recorded floor can
+convert. The amendment uses the new agreement's cash ID and preserves every
+older closed contract, payment history and retained charge.
+
+Native manual_restructure requests on returned agreements require generation_id
+from player/contract context. The response echoes that exact identity and its
+cash records must match. Omitted IDs remain valid for legacy operations/retries;
+present null/invalid IDs reject before changing money. Historical returned
+amendment retries use their original identity even after later closure.
+
+New generation_restructure events include format1, agreement identity and full
+before/after generational postings. Replay checks source contracts, allocated
+cash, canonical dates, numerical types and archived obligations. Layer IDs cannot
+collide with earlier closed agreements. Repeated layered conversions, extensions,
+other compensation and actual guest posting remain unsupported.

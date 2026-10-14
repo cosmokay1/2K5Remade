@@ -87,8 +87,9 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       events and superseded lookup now support explicit healthy same-year veteran
       return signing and subsequent release/payment. Native service preview, AI
       negotiation and manual signing accept explicit return_scope with stories
-      and promises. Actual guest entry, returned-player trades/amendments and
-      season rollover remain pending.
+      and promises. Returned first restructures use exact agreement IDs and versioned
+      postings. Actual guest entry, returned-player trades and season rollover
+      remain pending.
       See docs/contract-generations.md; current ownership now controls free-agent
       negotiation availability without deleting historical receipts.
 

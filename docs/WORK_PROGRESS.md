@@ -1907,3 +1907,35 @@ awaits CI. Fixed its exact Fraction(0) discount input before push. Exact prior
 
 Actual game hook/screens and guest save/load remain unverified. Returned-player
 trade/restructure and season progression remain unsupported.
+
+## October 13, 2026 — Returned-agreement first restructure
+
+The supported first fully-guaranteed-base conversion now applies to returned
+agreement generations. New generation_restructure records contain exact agreement
+identity and complete before/after generation postings; legacy receipts/events
+retain their original view. The old closed agreement's cash, birth terms and cap
+debt are untouched. Bonus-layer collision checks include every archived agreement.
+Canonical dates/types, floors, chronology and final access checks remain binding.
+
+Native manual_restructure requires an explicit generation_id on returned
+agreements, resolved inside the transaction after historical receipt lookup. The
+response echoes that ID and C++ validates matching original/amended cash records.
+Legacy retries remain valid after a later return. Review found present-null IDs
+could commit legacy operations before native rejection; field-presence validation
+now rejects null/boolean/empty inputs without changing state.
+
+All 403 Python tests and portable C++ build/CTest pass. Exact example: old retained
+charge39 plus new5/5/5 base+bonus3, after paying the newbonus3 and converting4,
+team charges become127/3,22/3,22/3. Oldcash39paid9 and newnominal18paid3 remain.
+Tests and independent audit verify partial convertedbonus payment/release, source
+corruption, duplicate oldlayerID rejection, rollback, restart and old retries.
+Raw Windows fixture requests/bootstrap pass in-process with AI disabled; native
+Windows execution for this new amendment fixture awaits CI. Synthetic money
+audit passes 5,050 bonus-conservation cases; its scope labels no longer call all
+durable restructures unimplemented.
+
+Prior 80f73ab passed both workflows. Franchise CI38495870335 logs confirm397tests
+on Windows/Ubuntu and actual asset-free native Windows return preview/agreement/
+old debt/restart fixture success. This is pipe/runtime evidence, not game evidence.
+Actual guest hooks/assets/save/load, returned-player trades, other amendments and
+season progression remain unfinished.

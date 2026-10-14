@@ -197,6 +197,27 @@ def main():
             assert responses[-2]['result']['outcome']=='signed'
             assert responses[-2]['result']['return_scope']['source']=='synthetic Windows return'
         print("Native Windows return preview, agreement, old debt and restart retry verified (synthetic).")
+        returned=returns.load_team('a')
+        gid=returned.contract_identity('v').generation_id
+        returns.record_payment('a','returned-bonus',gid,3,expected_cash_revision=returned.cash_snapshot()['revision'],
+            source='synthetic bank',payment_reference='returned bonus receipt',component='signing_bonus')
+        amended_reply=None
+        for attempt in range(2):
+            result=subprocess.run([sys.argv[1],sys.executable,str(return_path),'--returned-restructure'],
+                text=True,capture_output=True,timeout=20,check=True)
+            responses=[json.loads(line) for line in result.stdout.splitlines()]
+            assert len(responses)==2 and all(r['error'] is None for r in responses)
+            if amended_reply is None:amended_reply=responses
+            else:assert responses==amended_reply
+            current=returns.load_team('a')
+            assert [str(v) for v in current.charges]==['127/3','22/3','22/3']
+            assert current.revision==5 and current.generation_cash(old_id).amount==39
+            assert current.generation_cash(old_id).paid==9
+            assert current.generation_cash(gid).amount==18 and current.generation_cash(gid).paid==3
+            assert responses[0]['result']['generation_id']==gid
+            assert responses[1]['result']==returns.player_context('a','v')
+        print("Native Windows returned agreement restructure, old debt and restart retry verified (synthetic).")
+
 
 
 

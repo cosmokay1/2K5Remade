@@ -86,18 +86,21 @@ inline void restructure_cash_record(const nlohmann::json& cash) {
     }
     if (paid!=cash.at("paid").get<int64_t>()) throw std::runtime_error("Amendment payments disagree");
 }
+inline std::string generation_cash_identity(const nlohmann::json& value, const std::string& player) {
+    if (!value.is_string()) throw std::runtime_error("Invalid saved agreement identity");
+    const auto identity=value.get<std::string>();
+    const std::string prefix=identity.rfind("contract-gen:",0)==0 ? "contract-gen:" : "legacy-contract:";
+    if (identity.size()!=prefix.size()+64 || identity.compare(0,prefix.size(),prefix)!=0 ||
+        identity.find_first_not_of("0123456789abcdef",prefix.size())!=std::string::npos)
+        throw std::runtime_error("Invalid saved agreement identity");
+    return prefix=="contract-gen:" ? identity : "contract:"+player;
+}
 inline void validate_contract_accounting(const nlohmann::json& accounting, const std::string& player) {
     if (accounting.is_null()) return; // Explicitly unavailable, never a zero balance.
     if (!accounting.is_object() || !(accounting.size()==6 ||
         (accounting.size()==7 && accounting.contains("generation_id")))) throw std::runtime_error("Invalid saved player accounting");
-    if (accounting.contains("generation_id")) {
-        if (!accounting.at("generation_id").is_string()) throw std::runtime_error("Invalid saved agreement identity");
-        const auto identity=accounting.at("generation_id").get<std::string>();
-        const std::string prefix=identity.rfind("contract-gen:",0)==0 ? "contract-gen:" : "legacy-contract:";
-        if (identity.size()!=prefix.size()+64 || identity.compare(0,prefix.size(),prefix)!=0 ||
-            identity.find_first_not_of("0123456789abcdef",prefix.size())!=std::string::npos)
-            throw std::runtime_error("Invalid saved agreement identity");
-    }
+    const auto expected_cash=accounting.contains("generation_id") ?
+        generation_cash_identity(accounting.at("generation_id"),player) : "contract:"+player;
     const auto status=accounting.at("status").get<std::string>();
     if ((status!="active" && status!="released" && status!="assigned") ||
         accounting.at("charge_scope")!=(status=="active" ? "active_contract" : "retained_obligations"))
@@ -140,9 +143,7 @@ inline void validate_contract_accounting(const nlohmann::json& accounting, const
     const auto& cash=accounting.at("cash_obligation");
     if (!cash.is_null()) {
         if (!cash.is_object() || !(cash.size()==5 || (cash.size()==6 && cash.contains("paid_components"))) ||
-            cash.at("player_id")!=player || cash.at("obligation_id")!=(accounting.contains("generation_id") &&
-                accounting.at("generation_id").get<std::string>().rfind("contract-gen:",0)==0 ?
-                accounting.at("generation_id").get<std::string>() : "contract:"+player) ||
+            cash.at("player_id")!=player || cash.at("obligation_id")!=expected_cash ||
             !cash.at("source").is_string() || cash.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
             throw std::runtime_error("Invalid saved cash identity");
         integer_money(cash.at("amount")); integer_money(cash.at("paid"));
@@ -208,6 +209,12 @@ inline void validate_restructure(const nlohmann::json& result, const nlohmann::j
         request.at("decision_mode")!="manual" || result.at("decision_mode")!="manual" ||
         result.at("team_id")!=request.at("team_id") || result.at("player_id")!=player)
         throw std::runtime_error("Invalid manual amendment identity");
+    auto expected_cash="contract:"+player;
+    if (request.contains("generation_id")) {
+        expected_cash=generation_cash_identity(request.at("generation_id"),player);
+        if (!result.contains("generation_id") || result.at("generation_id")!=request.at("generation_id"))
+            throw std::runtime_error("Amendment changed agreement identity");
+    } else if (result.contains("generation_id")) throw std::runtime_error("Unexpected amendment generation");
     const auto& financial=result.at("restructure").at("financial");
     const auto& cash=result.at("restructure").at("cash");
     integer_money(request.at("expected_revision")); integer_money(financial.at("revision"));
@@ -279,7 +286,7 @@ inline void validate_restructure(const nlohmann::json& result, const nlohmann::j
     const auto& original_cash=archive.at("original_cash");
     const auto& amended_cash=archive.at("cash_obligation");
     restructure_cash_record(original_cash); restructure_cash_record(amended_cash);
-    if (original_cash.at("player_id")!=player || original_cash.at("obligation_id")!="contract:"+player ||
+    if (original_cash.at("player_id")!=player || original_cash.at("obligation_id")!=expected_cash ||
         amended_cash.at("player_id")!=player || amended_cash.at("obligation_id")!=original_cash.at("obligation_id") ||
         amended_cash.at("amount")!=original_cash.at("amount") || amended_cash.at("paid")!=original_cash.at("paid") ||
         amended_cash.at("paid_components")!=original_cash.at("paid_components"))
