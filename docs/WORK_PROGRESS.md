@@ -2321,3 +2321,13 @@ beyond the five-second response deadline, then verifies owned child exit.
 This validates shutdown ordering; it does not yet validate the later
 HANDLE_LIST sentinel or lifecycle source introduced in fb11725. That exact
 revision is running in 38504026771; keep polling the same job.
+
+### Host source and handle isolation verified on Windows (2026-10-13)
+
+Exact revision fb11725 passed run 38504026771 on Windows and Ubuntu.
+Windows compiled the actual shared lifecycle C source, passed both native
+CTest cases (including inherited-event exclusion and blocked-write shutdown),
+and completed the plain-C adapter/configuration checks and durable synthetic
+restart fixtures. Marked transport shutdown complete; root lifecycle integration
+remains open until an actual game build/execution is verified. No game assets,
+guest save transactions or paid inference were involved.
