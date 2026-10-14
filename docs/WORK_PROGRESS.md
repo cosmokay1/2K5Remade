@@ -2331,3 +2331,12 @@ and completed the plain-C adapter/configuration checks and durable synthetic
 restart fixtures. Marked transport shutdown complete; root lifecycle integration
 remains open until an actual game build/execution is verified. No game assets,
 guest save transactions or paid inference were involved.
+
+### Positive host lifecycle regression (2026-10-13)
+
+Added a Windows CTest using the actual game-host startup/cleanup C source
+and an inert owned executable in place of Python. Explicit vertex-mode
+configuration starts the child, a second start refuses replacement, repeated
+stop is safe, and a later start/stop succeeds. This performs no handshake,
+model request, game memory access or paid inference. Portable protocol checks
+pass; the new Windows lifecycle execution is pending CI.
