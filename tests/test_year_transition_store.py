@@ -38,6 +38,28 @@ class StoredYearTransitionTests(unittest.TestCase):
                 expired_generation_ids=[self.store.load_team(team).contract_identity(team).generation_id] if team=='b' else [],
                 exclusions=sorted(FranchiseStore.YEAR_TRANSITION_EXCLUSIONS),source='synthetic explicit eligibility and closing exclusions')
 
+    def test_versioned_player_context_tracks_calendar_without_relabeling_archive(self):
+        before=self.store.player_context('a','a')
+        self.store.advance_league_year(**self.inputs)
+        for team in ('a','b'):
+            context=self.store.player_context(team,team,context_format='calendar_v1')
+            self.assertIsNone(context['contract_accounting'])
+            nested=context['calendar_contract_context']
+            self.assertEqual(nested['financial_revision'],context['financial_revision'])
+            self.assertEqual(nested['league_year'],2027)
+            self.assertEqual(nested['economic_archive']['contract']['elapsed_years'],0)
+            self.assertEqual(nested,self.store.calendar_contract_context(team,nested['generation_id']))
+            self.assertEqual(nested['calendar_accounting']['ownership_current'],team=='a')
+            with self.assertRaises(Rejected): self.store.player_context(team,team)
+        after=self.store.player_context('a','a',context_format='calendar_v1')
+        for field in ('personality','relationships','promise_history','negotiation_history'):
+            self.assertEqual(after[field],before[field])
+        unknown=self.store.player_context('a','new',context_format='calendar_v1')
+        self.assertIsNone(unknown['calendar_contract_context'])
+        for value in (True,False,1,{},'unknown',''):
+            with self.assertRaises(ValueError):
+                self.store.player_context('a','a',context_format=value)
+
     def test_atomic_two_seasons_preserve_cash_archives_expiry_and_retries(self):
         before={team:self.store.load_team(team).cash_snapshot() for team in ('a','b')}
         receipt=self.store.advance_league_year(**self.inputs)

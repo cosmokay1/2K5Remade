@@ -2621,3 +2621,16 @@ merely suppressing a numeric-handle false positive. Control-process observation,
 termination on timeout and handle cleanup are bounded. Independent read-only
 review found no concrete API/lifecycle defect. Local portable protocol CTest
 passes; this Windows-only control still requires exact-revision CI execution.
+
+### Versioned calendar player snapshot store support (2026-10-13)
+
+Store.player_context now accepts explicit calendar_v1 and returns the existing
+format2 calendar contract envelope from the same loaded ledger as personality,
+relationships and histories. Legacy contract_accounting remains null in this
+format; archived economics and current elapsed/charges/ownership stay distinct.
+Legacy callers remain unchanged and still reject stale post-roll accounting.
+Expired latest generations retain sourced expiry; classified never-held players
+receive null contract context. A shared single-snapshot helper also serves the
+existing calendar contract endpoint. Focused two-team rollover tests and all479
+offline tests pass. Bridge request handling and strict native validation are not
+yet wired for this player format; actual game UI/save capture remain pending.
