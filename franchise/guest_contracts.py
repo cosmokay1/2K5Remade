@@ -7,7 +7,7 @@ Cap/minimum/rookie validation, identity binding and commit recovery are separate
 """
 from dataclasses import dataclass
 
-from franchise.cap import Offer
+from franchise.cap import Offer, Rejected
 from franchise.legacy_contracts import original_annual_rows
 
 
@@ -91,3 +91,29 @@ def guest_terms_for_offer(offer: Offer) -> GuestContractTerms:
         if decoded.salaries == offer.salaries and decoded.signing_bonus == offer.signing_bonus:
             return terms
     raise ValueError('Modern offer has no exact guest contract schedule')
+
+
+def preview_guest_offer(store, team_id, player_id, *, amount_word, flags_word, expected_revision):
+    """Inspect exact new free-agent terms, never sign or reserve cap room.
+
+    Format rejection is separate from authoritative ownership/minimum/cap
+    rejection. Existing contracts retain their legacy schedules elsewhere.
+    """
+    if type(amount_word) is not int or not 0 <= amount_word <= 65535:
+        raise ValueError('Unsigned guest offer amount word required')
+    if type(flags_word) is not int or not 0 <= flags_word <= 0xFFFFFFFF:
+        raise ValueError('Unsigned guest offer flags required')
+    if type(expected_revision) is not int or expected_revision < 0:
+        raise ValueError('Explicit nonnegative financial revision required')
+    result = {'amount_word': amount_word, 'flags_word': flags_word,
+              'outcome': None, 'offer': None, 'preview': None, 'reason': None}
+    try:
+        offer = GuestContractTerms.from_context(amount_word, flags_word).to_offer(player_id)
+    except ValueError as error:
+        return {**result, 'outcome': 'format_rejected', 'reason': str(error)}
+    result['offer'] = offer.to_dict()
+    try:
+        preview = store.preview_offer(team_id, offer, expected_revision)
+    except Rejected as error:
+        return {**result, 'outcome': 'accounting_rejected', 'reason': str(error)}
+    return {**result, 'outcome': 'eligible_preview', 'preview': preview}

@@ -12,6 +12,7 @@ void nfl2k5_franchise_poll(void);
 void nfl2k5_franchise_guest_poll(void);
 typedef struct {
     uint32_t slot, team_index, payroll, cap, team_flag, accumulator;
+    uint32_t offer_amount, offer_flags;
     uint32_t calendar[7]; /* phase1, phase2, team count, step4, step5, season, counter */
     char first_name[151], last_name[151], photo[9], dob[7];
 } FranchiseSigningObservation;

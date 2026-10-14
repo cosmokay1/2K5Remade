@@ -72,6 +72,11 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   service checks return six game entries/four sack entries; Windows build/runtime
   checks pass. The new game/service package is staged for actual game validation,
   and is not yet installed. Targets, pressures and QB hits remain unmapped.
+- Opt-in live offer capture/precheck is now authored and privately compiled.
+  Exact guest-format compatibility and stored ownership/minimum/cap checks produce
+  advisory rejection or preview, with no model call or financial mutation. The
+  captured Trotter six-year bonus offer rejects incompatible modern allocation.
+  Actual game execution/enforcement of this new check remains pending.
 - Actual AI/game/save integration, telemetry capture and final playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 

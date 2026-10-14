@@ -63,6 +63,22 @@ class SigningContextBridgeTests(unittest.TestCase):
         self.assertEqual(self.bridge.handle({**request,'performance_format':'live'})['error'],'invalid_request')
         self.provider.assert_not_called(); self.access.assert_not_called()
 
+    def test_live_guest_terms_reject_modern_horizon_and_missing_minimum_without_model(self):
+        before=self.fixture.store.load_team('49ers').financial_snapshot()
+        request={**self.request,'guest_offer':{'amount_word':1949,'flags_word':(2<<29)|(6<<16)|4}}
+        reply=self.bridge.handle(request)
+        self.assertIsNone(reply['error'])
+        self.assertEqual(reply['result']['offer_context']['outcome'],'format_rejected')
+        self.assertIn('five-year',reply['result']['offer_context']['reason'])
+        request['guest_offer']={'amount_word':600,'flags_word':(2<<29)|(3<<16)}
+        reply=self.bridge.handle(request)
+        self.assertIsNone(reply['error'])
+        self.assertEqual(reply['result']['offer_context']['outcome'],'accounting_rejected')
+        self.assertIsNone(reply['result']['offer_context']['preview'])
+        self.assertFalse(reply['result']['write_authorized'])
+        self.assertEqual(before,self.fixture.store.load_team('49ers').financial_snapshot())
+        self.provider.assert_not_called(); self.access.assert_not_called()
+
     def test_actual_process_uses_server_pinned_snapshot_despite_missing_adc(self):
         root = Path(self.fixture.temporary.name)
         save, bindings = root / 'authored.dat', root / 'bindings.json'

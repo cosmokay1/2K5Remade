@@ -54,7 +54,8 @@ class Bridge:
                 return self._reply(request_id, result={"ai_enabled": True, "operations": operations})
             if operation == 'signing_context':
                 fields = {'protocol', 'request_id', 'operation', 'observation', 'expected_revision', 'timeout_ms'}
-                if set(request) not in (fields, fields | {'performance_format'}):
+                optional = {'performance_format', 'guest_offer'}
+                if not fields <= set(request) or set(request) - fields - optional:
                     raise ValueError('Complete signing checkpoint request required')
                 if 'performance_format' in request and request['performance_format'] != 'saved_history_v1':
                     raise ValueError('Unsupported saved performance format')
@@ -75,6 +76,13 @@ class Bridge:
                         if performance['player_id'] != result['player_id']:
                             raise ValueError('Saved performance identity differs from signing checkpoint')
                         result['performance_context'] = performance
+                    if 'guest_offer' in request:
+                        raw=request['guest_offer']
+                        if type(raw) is not dict or set(raw)!={'amount_word','flags_word'}:
+                            raise ValueError('Complete raw guest offer required')
+                        from franchise.guest_contracts import preview_guest_offer
+                        result['offer_context']=preview_guest_offer(self.store,result['team_id'],result['player_id'],
+                            **raw,expected_revision=request['expected_revision'])
                 except ValueError as error:
                     raise Rejected(str(error)) from error
                 self.connection_check()

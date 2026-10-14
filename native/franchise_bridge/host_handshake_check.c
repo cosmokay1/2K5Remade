@@ -80,6 +80,7 @@ int main(void)
     _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_BINDINGS", L"");
     _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_REVISION", L"");
     _wputenv_s(L"NFL2K5_FRANCHISE_SAVED_PERFORMANCE", L"");
+    _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_OFFER", L"");
     assert(nfl2k5_franchise_start());
     nfl2k5_franchise_on_fsm(0x557B2C, 1); assert(!submissions);
     _wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER", L"vertex");
@@ -114,11 +115,15 @@ int main(void)
     _wputenv_s(L"NFL2K5_FRANCHISE_SAVED_PERFORMANCE", L"unknown");
     assert(!nfl2k5_franchise_start());
     _wputenv_s(L"NFL2K5_FRANCHISE_SAVED_PERFORMANCE", L"1");
+    _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_OFFER", L"unknown");
+    assert(!nfl2k5_franchise_start());
+    _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_OFFER", L"1");
     assert(nfl2k5_franchise_start());
     FranchiseSigningObservation observation={0};
     strcpy(observation.first_name,"Authored"); strcpy(observation.last_name,"Player");
     strcpy(observation.photo,"00000000"); strcpy(observation.dob,"000000");
     observation.slot=1; observation.payroll=4766; observation.cap=80500;
+    observation.offer_amount=1949; observation.offer_flags=0x4D060004;
     nfl2k5_franchise_signing_context(&observation); assert(submissions==3);
     nfl2k5_franchise_on_fsm(0x557B2C,1); assert(submissions==4);
     nfl2k5_franchise_signing_context(&observation); assert(submissions==4);
@@ -131,6 +136,7 @@ int main(void)
     nfl2k5_franchise_signing_context(&observation); assert(submissions==5);
     assert(strstr(last_request,"\"operation\":\"signing_context\""));
     assert(strstr(last_request,"\"performance_format\":\"saved_history_v1\""));
+    assert(strstr(last_request,"\"guest_offer\":{\"amount_word\":1949,\"flags_word\":1292238852}"));
     assert(strstr(last_request,"\"expected_revision\":0"));
     assert(strstr(last_request,"\"display_year\":2004"));
     nfl2k5_franchise_signing_context(&observation); assert(submissions==5);

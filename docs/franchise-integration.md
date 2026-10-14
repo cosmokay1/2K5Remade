@@ -213,6 +213,19 @@ requests keep their previous response shape. NFL2K5_FRANCHISE_SAVED_PERFORMANCE=
 opts the root inspector into this format, requiring pinned source configuration;
 unset/0 leaves it off and other values reject startup. This new format is staged,
 not yet verified through the actual game.
+
+Optional guest_offer={amount_word,flags_word} adds offer_context to the same
+checkpoint. It decodes exact new free-agent terms before calling the existing
+stored preview, retaining global ownership/draft-right, minimum and cap checks.
+format_rejected means guest rounding/allocation cannot represent the modern deal;
+accounting_rejected retains the decoded offer and a rejection reason, with no
+eligible preview. eligible_preview is advisory, never reservation/write authority.
+Existing contracts remain legacy and are not reinterpreted. Native validation
+correlates raw words, subject, term/nominal bonus and zero guest base guarantees,
+and reuses preview revision/charge validation. NFL2K5_FRANCHISE_GUEST_OFFER=1
+opts into capturing the observed context+0C amount/context+8 flags; it requires
+pinned source configuration. Unset/0 leaves it off; other values reject startup.
+This new read is compiled/fixture-tested but not yet executed in the actual game.
 Native validation correlates the returned team, bank slot, revision and nested
 persisted player context, requiring canonical UUID/source hashes and explicitly
 false AI/write-authority flags. A matching reply is a read checkpoint, never an

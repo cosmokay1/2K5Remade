@@ -1243,9 +1243,10 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
     }
     if (operation == "signing_context") {
         const bool performance=request.contains("performance_format");
+        const bool guest_offer=request.contains("guest_offer");
         if (performance && request.at("performance_format")!="saved_history_v1")
             throw std::runtime_error("Unsupported saved performance format");
-        if (!result.is_object() || result.size()!=(performance?10:9) || result.at("write_authorized")!=false ||
+        if (!result.is_object() || result.size()!=9+performance+guest_offer || result.at("write_authorized")!=false ||
             result.at("ai_authorized")!=false ||
             result.at("scope")!="matching saved legacy checkpoint; active franchise selection, cash/rookie obligations and write authorization remain unverified")
             throw std::runtime_error("Invalid signing checkpoint scope or authority");
@@ -1278,6 +1279,41 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         nlohmann::json nested_request={{"operation","player_context"},{"player_id",result.at("player_id")},
                                       {"team_id",result.at("team_id")}};
         validate_result(nested_reply,nested_request);
+        if (guest_offer) {
+            const auto& raw=request.at("guest_offer");
+            if (!raw.is_object() || raw.size()!=2) throw std::runtime_error("Invalid raw guest offer");
+            integer_money(raw.at("amount_word")); integer_money(raw.at("flags_word"));
+            if (raw.at("amount_word")>65535 || raw.at("flags_word")>4294967295ULL)
+                throw std::runtime_error("Guest offer words out of range");
+            const auto& terms=result.at("offer_context");
+            if (!terms.is_object() || terms.size()!=6 || terms.at("amount_word")!=raw.at("amount_word") ||
+                terms.at("flags_word")!=raw.at("flags_word")) throw std::runtime_error("Guest offer preview changed raw terms");
+            const auto outcome=terms.at("outcome").get<std::string>();
+            if (outcome=="format_rejected") {
+                if (!terms.at("offer").is_null() || !terms.at("preview").is_null())
+                    throw std::runtime_error("Rejected guest format cannot expose an eligible offer");
+            } else {
+                const auto offer=canonical_offer(terms.at("offer"));
+                const auto flags=raw.at("flags_word").get<uint32_t>();
+                const auto years=(flags>>16)&15u, bonus=flags&15u;
+                if (offer.at("player_id")!=result.at("player_id") || !years || bonus>10 ||
+                    (bonus && years>5) || offer.at("salaries").size()!=years ||
+                    offer.at("signing_bonus")!=raw.at("amount_word").get<int64_t>()*bonus*1000)
+                    throw std::runtime_error("Decoded guest offer identity, term or bonus mismatch");
+                for(const auto& guarantee:offer.at("guaranteed_salaries"))
+                    if(guarantee!=0) throw std::runtime_error("Guest format cannot encode base guarantees");
+                if(outcome=="eligible_preview") {
+                    if(!terms.at("reason").is_null()) throw std::runtime_error("Eligible guest preview carries rejection");
+                    nlohmann::json preview_request={{"operation","preview"},{"offer",offer},{"expected_revision",result.at("financial_revision")}};
+                    nlohmann::json preview_reply={{"error",nullptr},{"result",terms.at("preview")}};
+                    validate_result(preview_reply,preview_request);
+                } else if(outcome!="accounting_rejected" || !terms.at("preview").is_null())
+                    throw std::runtime_error("Unknown guest offer preview outcome");
+            }
+            if(outcome!="eligible_preview" && (!terms.at("reason").is_string() ||
+                terms.at("reason").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos))
+                throw std::runtime_error("Rejected guest offer needs a reason");
+        } else if(result.contains("offer_context")) throw std::runtime_error("Unrequested guest offer preview");
         if (performance) {
             const auto& evidence=result.at("performance_context");
             integer_money(evidence.at("saved_display_year"));

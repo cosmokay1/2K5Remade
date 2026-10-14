@@ -673,6 +673,36 @@ int main() {
             try {franchise::validate_result(bad,signing_request);}catch(const std::exception&){rejected=true;}
             if(!rejected) throw std::runtime_error("Corrupt signing checkpoint accepted");
         }
+        auto guest_request=signing_request;
+        guest_request["guest_offer"]={{"amount_word",829},{"flags_word",0x20020004}};
+        auto guest_reply=signing_reply;
+        guest_reply["result"]["offer_context"]={{"amount_word",829},{"flags_word",0x20020004},
+            {"outcome","eligible_preview"},{"reason",nullptr},
+            {"offer",{{"player_id",std::string(32,'a')},{"salaries",{3108000,1865000}},{"signing_bonus",3316000}}},
+            {"preview",{{"revision",0},{"contract_charges",{4766000,3523000}},{"room_after",5234000}}}};
+        franchise::validate_result(guest_reply,guest_request);
+        auto rejected_guest=guest_reply;
+        rejected_guest["result"]["offer_context"]["outcome"]="accounting_rejected";
+        rejected_guest["result"]["offer_context"]["preview"]=nullptr;
+        rejected_guest["result"]["offer_context"]["reason"]="Minimum classification missing";
+        franchise::validate_result(rejected_guest,guest_request);
+        rejected_guest["result"]["offer_context"]["outcome"]="format_rejected";
+        rejected_guest["result"]["offer_context"]["offer"]=nullptr;
+        franchise::validate_result(rejected_guest,guest_request);
+        for(int scenario=0;scenario<7;++scenario) {
+            auto bad=guest_reply;
+            auto& terms=bad["result"]["offer_context"];
+            if(scenario==0) terms["outcome"]="signed";
+            if(scenario==1) terms["amount_word"]=828;
+            if(scenario==2) terms["offer"]["player_id"]=std::string(32,'c');
+            if(scenario==3) terms["offer"]["signing_bonus"]=3315000;
+            if(scenario==4) terms["offer"]["guaranteed_salaries"]={1,0};
+            if(scenario==5) terms["preview"]["revision"]=1;
+            if(scenario==6) terms["outcome"]="format_rejected";
+            bool rejected=false;
+            try{franchise::validate_result(bad,guest_request);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Corrupt guest offer preview accepted");
+        }
         auto performance_request=signing_request;
         performance_request["performance_format"]="saved_history_v1";
         performance_request["observation"]["calendar"]["display_year"]=2004;

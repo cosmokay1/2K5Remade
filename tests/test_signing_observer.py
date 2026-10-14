@@ -164,6 +164,7 @@ int main(void) {
     assert(!strcmp(captured.first_name,"Test") && !strcmp(captured.last_name,"Player"));
     assert(!strcmp(captured.photo,"00000000") && !strcmp(captured.dob,"000000"));
     assert(captured.payroll==72272 && captured.cap==80500 && captured.accumulator==500);
+    assert(captured.offer_amount==4660 && captured.offer_flags==0);
     assert(captured.calendar[5]==2 && captured.calendar[6]==99 && captured.team_flag==1);
     assert(!memcmp(before,ram,sizeof ram) && !memcmp(contig_before,contig,sizeof contig));
     put32(0xE576B8,256);

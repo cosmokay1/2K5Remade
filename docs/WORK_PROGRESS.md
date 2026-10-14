@@ -5115,3 +5115,35 @@ Prepared hash-guarded backup/install script and requested normal exit before
 replacing game/launcher. Fresh process check found game80919 running. Actual
 installation and game receipt of this new format remain pending user exit/launch;
 the currently installed same-screen personality path remains intact.
+
+## October14,2026 — Live offer format and financial precheck prepared
+
+Added a raw guest_offer option to signing_context, after the existing pinned
+identity/team/calendar/legacy-book checkpoint. Exact GuestContractTerms decoding
+rejects incompatible new-deal bonus horizons/rounding before financial preview.
+Successful decoding uses FranchiseStore.preview_offer, retaining global ownership,
+draft-right, minimum/revision and cap enforcement. Outcomes distinguish format
+rejection, accounting rejection and advisory eligibility; no reservation, model
+request, signing, salary classification or guest write occurs. Legacy schedules
+remain unchanged. Root flag NFL2K5_FRANCHISE_GUEST_OFFER=1 explicitly opts into
+bounded context amount/flag capture; invalid source/flag config rejects startup.
+
+Four new helper tests cover exact Gildon charges, incompatible horizons/rounding,
+unknown minimum, overcap, stale revision, owned player and malformed raw words.
+Bridge test keeps actor access while rejecting unsupported/missing-minimum offers.
+Full offline692 tests pass in19.237s; portable native protocol and strict actual
+reader/C11 checks pass. The captured actual Trotter raw1949/4D060004 offer returns
+format_rejected/five-year allocation reason through a local actual sidecar, with
+personality/history still readable. Recompiled an older ad hoc validator before
+using it on the extended reply; that exact new reply then passes native validation.
+
+Actual private MSVC game/host/protocol builds and Windows fixture execution pass.
+New staged game hash e88e74d864f8f587263f9c0922d20f4b469cff82c200420fc452e0616298aa51.
+No installed game/service was replaced: fresh check still found game80919 and
+child80962. Preserved the earlier validated performance EXE separately at
+saved-performance-stage/NFL2K5.validated.exe (556016fa...1c537), and rebound its
+pending installer to that frozen file so later builds cannot change its artifact.
+User exit request for that performance update remains pending, without repeating
+it. Actual new offer-format request/reply, UI enforcement, AI decisions, commit
+recovery and save/load remain unverified. No cloud/control/IAM change or asset
+publication occurred.

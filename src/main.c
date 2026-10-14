@@ -638,8 +638,9 @@ static void signing_screen_context(void)
     uint32_t context, player, team, mode, first, last;
     uint8_t record[0x28];
     uint16_t accumulator;
+    uint16_t offer_amount;
     if (!signing_screen_read(0x00CB8C34u,&context,sizeof(context)) ||
-        !signing_screen_read(context,&player,sizeof(player)) || context > UINT32_MAX-4u ||
+        !signing_screen_read(context,&player,sizeof(player)) || context > UINT32_MAX-0x0Cu ||
         !signing_screen_read(context+4u,&team,sizeof(team)) ||
         !signing_screen_read(player,record,sizeof(record)) ||
         !signing_screen_slot(player,&observation.slot) ||
@@ -652,8 +653,11 @@ static void signing_screen_context(void)
         !signing_screen_read(0x00E576A4u,observation.calendar,sizeof(observation.calendar)) ||
         observation.calendar[5]>255u ||
         !signing_screen_read(0x00E5775Cu+observation.team_index*4u,&observation.team_flag,sizeof(observation.team_flag)) ||
-        !signing_screen_read(team+0x19Cu,&accumulator,sizeof(accumulator))) return;
+        !signing_screen_read(team+0x19Cu,&accumulator,sizeof(accumulator)) ||
+        !signing_screen_read(context+0x0Cu,&offer_amount,sizeof(offer_amount)) ||
+        !signing_screen_read(context+8u,&observation.offer_flags,sizeof(observation.offer_flags))) return;
     observation.accumulator=accumulator;
+    observation.offer_amount=offer_amount;
     snprintf(observation.photo,sizeof(observation.photo),"%02x%02x%02x%02x",
         (unsigned)record[4],(unsigned)record[5],(unsigned)record[6],(unsigned)record[7]);
     snprintf(observation.dob,sizeof(observation.dob),"%02x%02x%02x",
