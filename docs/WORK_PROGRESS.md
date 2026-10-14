@@ -4048,3 +4048,23 @@ ratings, save edits, game inputs or model requests were added. Targets, pressure
 and QB-hit names/coverage remain unresolved; this bank is a source to investigate,
 not permission to invent those counters. Prior839b986 passed Build38601670012
 and Franchise AI38601670196;283b0e9 also completed both workflows successfully.
+
+
+## October14,2026 — Five passing-history counters mapped
+
+Read original A8A510 descriptor table (stride1C, offset0C history code).
+Named live-QB fields04/23/4C/40/16 map to saved7/6/8/9/10. History reader
+now labels pass attempts, completions, passing yards, passing touchdowns and
+interceptions thrown, retaining raw code/period/mode/deleted/end fields.
+Sparse missing metrics are not synthesized as zero, and no raw mode is
+converted to played/CPU/fast-sim. No PerformanceEvidence or model submission
+is created before coverage and identity binding are resolved.
+
+Actual McNabb slot1146 period5/mode0 independently corroborates all five mapped
+values against [NFL's career statistics](https://www.nfl.com/players/donovan-mcnabb/stats/career):
+478/275/3216/16/11 for the2003 passing row. Private named readback retained in
+analysis/AIBASELIN/mcnabb-passing-history.json; unchanged baseline SHA256.
+General calendar assignment and simulated/played history remain unverified;
+defensive candidates cannot be named from plausible values alone. Five focused
+history tests passed, adding metric mapping with raw-key retention and missing
+metric behavior. No hidden ratings, paid calls or game/save writes occurred.

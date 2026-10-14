@@ -220,7 +220,7 @@ invent future published NFL values: separate verified inputs from simulation pol
 - [x] Add offer previews using the same financial validation as final commits.
       Durable previews also check league ownership; previews do not reserve room.
 - [ ] Add player/agent and team/GM priorities with persistence and bounded updates. Source-backed immutable GM profiles now persist with original team configuration and feed private draft context; player priorities and bounded relationship updates already persist. GM evolution and actual CPU team strategy remain.
-- [ ] Feed actual statistics, roles and relationship history; label missing evidence. Actual AIBASELIN history bank now has bounded raw-code extraction: 1325 player lists partition36866 entries without gaps/overlaps;612 members have no history pointer and remain unknown. Metric names/units, period calendars and actual model consumption remain pending.
+- [ ] Feed actual statistics, roles and relationship history; label missing evidence. Actual AIBASELIN history bank now has bounded raw-code extraction: 1325 player lists partition36866 entries without gaps/overlaps;612 members have no history pointer and remain unknown. Passing codes6..10 now have descriptor-backed names/count-or-yard units corroborated by NFL McNabb history; other metric names/units, period calendars, observation modes and actual model consumption remain pending.
 - [ ] Evaluate production with opportunities/context: targets/snaps, efficiency,
       drops, opponents/scheme, health, recency and sample size where available.
       Five exact sourced opportunity/yardage ratios now feed negotiation and draft

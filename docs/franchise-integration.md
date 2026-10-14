@@ -561,3 +561,25 @@ they are not zero performance. Output retains raw statistic/period/mode codes
 and flags with explicit unverified metric/calendar/units scope. No hidden
 ratings or model inputs are produced. Verified names/units and controlled
 played/CPU/fast-sim changes are still required before negotiation consumption.
+
+
+## Named passing-history metrics
+
+The private original descriptor table atA8A510 has stride1C; offset0C maps
+current-match stat fields to saved history codes. Existing named live-QB
+accessor fields04/23/4C/40/16 map to7/6/8/9/10 respectively. Thus history
+codes6..10 represent pass attempts, completions, passing yards, passing
+touchdowns and interceptions thrown. The history reader adds these names and
+count/yard units while retaining raw codes, periods, modes and flags. Passing
+touchdowns and interceptions thrown are specifically named to avoid combining
+them with rushing/receiving touchdowns or defensive interceptions.
+
+Independent corroboration: AIBASELIN McNabb slot1146 period5/mode0 contains
+478 attempts,275 completions,3216 yards,16 passing touchdowns and11 interceptions,
+matching [NFL's 2003 McNabb row](https://www.nfl.com/players/donovan-mcnabb/stats/career).
+The selected source period matches that historical row; this does not establish
+a general calendar conversion or played/CPU/fast-sim classification. Sparse
+missing entries remain absent, deleted entries remain marked, and no complete
+window or zero count is invented. These are built-in historical game records;
+future simulated-season and live observations still require controlled pairs.
+Other statistic codes and defensive units remain unverified.

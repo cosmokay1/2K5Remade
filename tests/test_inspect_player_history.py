@@ -37,6 +37,18 @@ class InspectPlayerHistoryTests(unittest.TestCase):
         self.assertEqual(report['entries'], [])
         self.assertIn('do not infer zero', report['missing_evidence'])
 
+    def test_passing_mapping_retains_raw_mode_period_and_missing_fields(self):
+        payload = self.fixture()
+        struct.pack_into('<II', payload, 0x41D54, (1 << 23) | (6 << 16) | 478,
+                         0x80000000 | (1 << 23) | (8 << 16) | 3216)
+        report = inspect_player_history(bytes(payload), 0)
+        self.assertEqual([(e['mapped_metric_name'], e['mapped_unit'], e['signed_value_raw'])
+                          for e in report['entries']], [('pass_attempts', 'count', 478), ('passing_yards', 'yards', 3216)])
+        self.assertEqual([e['statistic_code_raw'] for e in report['entries']], [6, 8])
+        self.assertEqual([e['period_code_raw'] for e in report['entries']], [1, 1])
+        self.assertEqual([e['mode_code_raw'] for e in report['entries']], [0, 0])
+        self.assertFalse(any(e.get('mapped_metric_name') == 'completions' for e in report['entries']))
+
     def test_outside_unaligned_or_unterminated_history_rejects(self):
         for case in range(6):
             payload = self.fixture()

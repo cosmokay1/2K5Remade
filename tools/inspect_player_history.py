@@ -1,4 +1,4 @@
-"""Inspect packed original player history; metric names/units remain unverified.
+"""Inspect packed original player history with verified passing-code mappings.
 
 Static E5E70 relocates player+0x2C; E8A0/E800 and EE40 in the 0x14xxxx
 region establish traversal, filter fields and signed values. No ratings read.
@@ -9,6 +9,13 @@ from pathlib import Path
 import struct
 
 from tools.inspect_franchise_save import inspect_save, PLAYER_START, PLAYER_STRIDE
+
+# A8A510 descriptor+0x0C maps named current-match fields to history codes.
+# Corroborated against McNabb's baseline period5 and NFL's 2003 passing row.
+# Unknown codes remain raw; a missing sparse entry never becomes an observed0.
+PASSING_METRICS = {6: ('pass_attempts', 'count'), 7: ('completions', 'count'),
+                   8: ('passing_yards', 'yards'), 9: ('passing_touchdowns', 'count'),
+                   10: ('interceptions_thrown', 'count')}
 
 
 def inspect_player_history(payload: bytes, source_slot: int) -> dict:
@@ -22,7 +29,8 @@ def inspect_player_history(payload: bytes, source_slot: int) -> dict:
     player = found[0]
     pointer_field = PLAYER_START + source_slot * PLAYER_STRIDE + 0x2C
     relative = struct.unpack_from('<i', payload, pointer_field)[0]
-    report = {'scope': 'packed original history; statistic names, calendar periods and units unverified',
+    report = {'scope': 'original saved history; passing metrics mapped, other codes/calendar/coverage unverified',
+              'metric_mapping_source': 'original descriptor table and named live-QB accessor; NFL 2003 McNabb corroboration',
               'payload_sha256': roster['payload_sha256'],
               'source_slot_semantics': roster['source_slot_semantics'],
               **player, 'history_present': relative != 0, 'entries': []}
@@ -41,13 +49,17 @@ def inspect_player_history(payload: bytes, source_slot: int) -> dict:
     for offset in range(start, end, 4):
         word = struct.unpack_from('<I', payload, offset)[0]
         value = struct.unpack_from('<h', payload, offset)[0]
-        report['entries'].append({'statistic_code_raw': (word >> 16) & 127,
-                                  'period_code_raw': (word >> 23) & 31,
-                                  'signed_value_raw': value,
-                                  'deleted': bool(word & 0x10000000),
-                                  'mode_code_raw': (word >> 29) & 1,
-                                  'bit30_raw': (word >> 30) & 1,
-                                  'last_entry': bool(word & 0x80000000)})
+        code = (word >> 16) & 127
+        entry = {'statistic_code_raw': code,
+                 'period_code_raw': (word >> 23) & 31,
+                 'signed_value_raw': value,
+                 'deleted': bool(word & 0x10000000),
+                 'mode_code_raw': (word >> 29) & 1,
+                 'bit30_raw': (word >> 30) & 1,
+                 'last_entry': bool(word & 0x80000000)}
+        if code in PASSING_METRICS:
+            entry['mapped_metric_name'], entry['mapped_unit'] = PASSING_METRICS[code]
+        report['entries'].append(entry)
         if word & 0x80000000:
             return report
     raise ValueError('Player history lacks a terminator inside the declared bank')
