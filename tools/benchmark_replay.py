@@ -18,6 +18,7 @@ def main():
     parser.add_argument('--teams',type=int,default=32)
     parser.add_argument('--stories-per-team',type=int,default=20)
     parser.add_argument('--recorded-context',action='store_true',help='Use scripted negotiation evidence and promise proposals; no cloud calls')
+    parser.add_argument('--generation-checkpoint',action='store_true',help='Migrate the synthetic fixture to format4 before measuring reads')
     args=parser.parse_args()
     if not 2 <= args.teams <= 64 or not 0 <= args.stories_per_team <= 1000:
         parser.error('Use 2–64 teams and 0–1000 stories per team')
@@ -54,6 +55,8 @@ def main():
                                  True,0,True,True,'synthetic benchmark assignment')
         original_receipt=store.trade_preseason_veteran('assignment',names[0],names[1],'v',scope=scope,
                                      seller_revision=1,buyer_revision=1,access_check=lambda:None)
+        if args.generation_checkpoint:
+            FranchiseStore.migrate_generations(store.path)
         elapsed=[]
         for _ in range(5):
             started=perf_counter()
@@ -70,6 +73,7 @@ def main():
         count=sum(len(store.negotiation_history(team,'n')) for team in names)
         assert count==args.teams*args.stories_per_team
         print(json.dumps({'scope':'Synthetic local SQLite replay; not game, Windows or Deck acceptance',
+            'database_format':4 if args.generation_checkpoint else 3,
             'teams':args.teams,'dialogue_events':count,'read_samples_ms':elapsed,'median_ms':median(elapsed),
             'max_ms':max(elapsed),'all_team_replay_enabled':True,'records_verified':True,
             'paired_retry_samples_ms':retry_elapsed,'paired_retry_median_ms':median(retry_elapsed),

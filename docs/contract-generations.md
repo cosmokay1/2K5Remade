@@ -122,6 +122,28 @@ return a bounded error. This is an inspection boundary for future in-game
 screens; it is not a completed game screen or guest hook.
 
 The legacy player-keyed posting view and return guards still remain. Archives
-are rebuilt from source history, not a new persistent format. Supporting a
-second agreement requires versioned events, migration and generation-specific
+are rebuilt from source history. Format4 now persists and validates their
+migration checkpoint. Supporting a second agreement requires versioned events
+and generation-specific
 ownership/history lookup before these guards can be lifted.
+
+## Explicit format4 migration
+
+`python3 -m tools.prepare_generation_migration /path/to/franchise.sqlite --migrate`
+commits the backed-up format3→4 migration. Default invocation remains preflight
+only. Both modes reserve the source snapshot through backup and reconciliation.
+Migration records one checkpoint containing the old event boundary, source row
+identities/hash and every team's financial, cash, birth/effective agreement and
+retained-charge state. Existing config and event JSON stays byte-for-byte intact.
+
+Every format4 connection validates the checkpoint before reads or writes, including
+bootstrap writes and constructors. Historical prefix/config changes, duplicate
+manifest keys and accounting type swaps reject. Subsequent valid events and new
+teams are allowed; their current state still passes normal replay checks. Failed
+installation rolls back to format3 and retains its backup. The returned report
+provides the private backup path and SHA-256. Repeating migration rejects without
+creating another backup. Keep the backup and report together for recovery.
+
+Format4 currently continues the legacy posting view. It does not yet support
+new agreement generations or return signings. Those require versioned event
+payloads and superseded-agreement lookup. Real guest saves remain unverified.

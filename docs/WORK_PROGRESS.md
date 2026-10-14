@@ -1820,3 +1820,33 @@ No new database format or former-club return signing enabled yet. Superseded
 agreement lookup, versioned posting migration and atomic return signing remain
 required. Actual guest hooks/screens, legal assets/save evidence and playability
 remain unverified.
+
+## October 13, 2026 — Backed-up format4 generation checkpoint migration
+
+Implemented explicit format3→4 migration under the same write reservation used
+for private consistent backup and whole-league preflight. A singleton checkpoint
+anchors exact historical config/metadata/draft-order/event rows and captures
+financial/cash state plus generation identities, birth/effective terms and
+retained records. Old events/config JSON are unchanged. Every connection validates
+source-prefix hashes and strict boundary replay before reads/writes/constructors.
+New valid events/teams remain supported; constructor preserves4 rather than
+downgrading it. Install failure rolls back to3, retaining its private backup.
+
+Added opt-in --migrate to tools.prepare_generation_migration; default remains
+preflight-only. CLI tests verify the backup hash/version and exact old events,
+reopening4 and repeated-migration refusal. Migration regressions cover corrupt
+prefix/manifest types/duplicate keys, failed-install rollback, bootstrap write
+bypass prevention, missing-checkpoint refusal, later release/payments and signing
+by a newly added team. All 377 Python tests pass. Independent review also verified
+integer/bool/float distinctions and subsequent signing/restart. Exact prior
+d0395c4 passed both remote workflows; this change remote CI awaits push.
+
+Extended the synthetic replay benchmark with --generation-checkpoint. On this
+Mac, 32 teams/640 recorded evidence stories: format3 median read60.68ms and paired
+retry62.71ms; format4 read131.81ms/max135.49ms, retry130.81ms. Checkpoint validation
+adds historical replay cost; no persistent state cache or timing-test threshold
+introduced. These measurements are not Windows/Deck/game acceptance evidence.
+
+Format4 continues legacy event posting semantics. Versioned new-generation events,
+superseded agreement lookup and return signing remain unfinished. Actual game
+hooks, legal assets and save/load/runtime evidence remain external gates.

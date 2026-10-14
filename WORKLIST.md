@@ -83,7 +83,8 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       tools.prepare_generation_migration does not advance the format.
       Accounting now consumes immutable legacy identities and a cash resolver;
       typed generation archives now drive payment ceilings and native inspection;
-      versioned persistence/migration and actual return signing remain pending.
+      backed-up format4 checkpoint migration is implemented. Versioned new-generation
+      events, superseded-agreement lookup and actual return signing remain pending.
       See docs/contract-generations.md; current ownership now controls free-agent
       negotiation availability without deleting historical receipts.
 

@@ -59,7 +59,7 @@ class FranchiseStore:
             raise ValueError("Durable franchise state requires a database file")
         with self._connection(write=True) as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version not in (0, 3):
+            if version not in (0, 3, 4):
                 raise ValueError("Unsupported franchise database version")
             db.execute("CREATE TABLE IF NOT EXISTS teams (id TEXT PRIMARY KEY, config TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS ownership (player_id TEXT PRIMARY KEY, team_id TEXT NOT NULL REFERENCES teams(id))")
@@ -67,10 +67,12 @@ class FranchiseStore:
             db.execute("CREATE TABLE IF NOT EXISTS draft_orders (id TEXT PRIMARY KEY, league_year INTEGER UNIQUE NOT NULL, config TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS draft_picks (draft_id TEXT NOT NULL REFERENCES draft_orders(id), overall_pick INTEGER NOT NULL, player_id TEXT UNIQUE NOT NULL, team_id TEXT NOT NULL REFERENCES teams(id), PRIMARY KEY(draft_id,overall_pick))")
             db.execute("CREATE TABLE IF NOT EXISTS franchise_metadata (key TEXT PRIMARY KEY,value TEXT NOT NULL)")
-            db.execute("PRAGMA user_version=3")
+            if version == 0:
+                db.execute("PRAGMA user_version=3")
 
     @classmethod
-    def prepare_generation_migration(cls, path):
+    @contextmanager
+    def _generation_reservation(cls, path):
         """Back up and verify format 3 without migrating or rewriting its data."""
         path = Path(path).absolute()
         if not path.is_file():
@@ -116,8 +118,94 @@ class FranchiseStore:
                     'contracts':instance._contract_generations_from_ledger(team,ledger)} for team,ledger in ledgers.items()}
             except Exception as exc:
                 raise GenerationPreflightError(backup, checksum) from exc
-            return {'format':1, 'status':'preflight_only', 'source_database_version':3,
+            report = {'format':1, 'status':'preflight_only', 'source_database_version':3,
                     'backup_path':str(backup), 'backup_sha256':checksum, 'teams':teams}
+            try:
+                yield instance, db, report, ledgers
+            except Exception as exc:
+                raise GenerationPreflightError(backup, checksum) from exc
+
+    @classmethod
+    def prepare_generation_migration(cls, path):
+        with cls._generation_reservation(path) as (_, _, report, _):
+            return report
+
+    @staticmethod
+    def _checkpoint_team(ledger):
+        return {'financial':ledger.financial_snapshot(), 'cash':ledger.cash_snapshot(),
+            'agreements':[{'identity':asdict(a.identity), 'status':a.status,
+                'original_contract':a.original_contract.to_dict(), 'contract':a.contract.to_dict(),
+                'retained_records':[{'record_id':r.record_id, 'source':r.source,
+                    'annual_charges':[json_amount(v) for v in r.annual_charges]} for r in a.retained_records]}
+                for a in ledger.generation_agreements()]}
+
+    @staticmethod
+    def _checkpoint_source(db, anchor, keys=None):
+        tables={'teams':('id','SELECT id,config FROM teams ORDER BY id'),
+            'franchise_metadata':('key','SELECT key,value FROM franchise_metadata ORDER BY key'),
+            'draft_orders':('id','SELECT id,league_year,config FROM draft_orders ORDER BY id')}
+        data={}
+        for table,(_,query) in tables.items():
+            rows=db.execute(query).fetchall()
+            data[table]=[list(row) for row in rows if keys is None or row[0] in keys[table]]
+        data['events']=[list(row) for row in db.execute(
+            'SELECT id,team_id,request_key,kind,payload FROM events WHERE id<=? ORDER BY id',(anchor,))]
+        return data
+
+    @staticmethod
+    def _checkpoint_hash(value):
+        return hashlib.sha256(json.dumps(value,ensure_ascii=False,sort_keys=True,
+            separators=(',',':')).encode('utf-8')).hexdigest()
+
+    @classmethod
+    def migrate_generations(cls,path):
+        with cls._generation_reservation(path) as (instance,db,report,ledgers):
+            anchor=db.execute('SELECT COALESCE(MAX(id),0) FROM events').fetchone()[0]
+            source=instance._checkpoint_source(db,anchor)
+            manifest={'format':1,'anchor_event_id':anchor,
+                'source_keys':{table:[row[0] for row in source[table]] for table in
+                    ('teams','franchise_metadata','draft_orders')},
+                'source_sha256':instance._checkpoint_hash(source),
+                'teams':{team:instance._checkpoint_team(ledger) for team,ledger in ledgers.items()}}
+            db.execute('CREATE TABLE generation_checkpoint (id INTEGER PRIMARY KEY CHECK(id=1), manifest TEXT NOT NULL)')
+            db.execute('INSERT INTO generation_checkpoint VALUES(1,?)',
+                (json.dumps(manifest,ensure_ascii=False,sort_keys=True,separators=(',',':')),))
+            db.execute('PRAGMA user_version=4')
+            instance._validate_generation_checkpoint(db)
+            return {**report,'status':'migrated','database_version':4,'target_database_version':4,'anchor_event_id':anchor}
+
+    def _validate_generation_checkpoint(self,db):
+        if db.execute('PRAGMA user_version').fetchone()[0] != 4:
+            return
+        rows=db.execute('SELECT id,manifest FROM generation_checkpoint').fetchall()
+        if len(rows)!=1 or rows[0][0]!=1:
+            raise ValueError('Generation checkpoint singleton required')
+        def unique_object(pairs):
+            result={}
+            for key,value in pairs:
+                if key in result:
+                    raise ValueError('Duplicate generation checkpoint key')
+                result[key]=value
+            return result
+        manifest=json.loads(rows[0][1],object_pairs_hook=unique_object)
+        if (type(manifest) is not dict or set(manifest) !=
+                {'format','anchor_event_id','source_keys','source_sha256','teams'}
+                or type(manifest['format']) is not int or manifest['format']!=1
+                or type(manifest['anchor_event_id']) is not int or manifest['anchor_event_id']<0):
+            raise ValueError('Invalid generation checkpoint manifest')
+        keys=manifest['source_keys']
+        if (type(keys) is not dict or set(keys)!={'teams','franchise_metadata','draft_orders'}
+                or any(type(values) is not list or any(type(v) is not str for v in values)
+                    or len(values)!=len(set(values)) for values in keys.values())
+                or type(manifest['teams']) is not dict or set(manifest['teams'])!=set(keys['teams'])):
+            raise ValueError('Invalid generation checkpoint source identities')
+        source=self._checkpoint_source(db,manifest['anchor_event_id'],keys)
+        if self._checkpoint_hash(source)!=manifest['source_sha256']:
+            raise ValueError('Generation checkpoint source history changed')
+        for team,expected in manifest['teams'].items():
+            ledger=self._load_one(db,team,through_event_id=manifest['anchor_event_id'])
+            if self._checkpoint_hash(self._checkpoint_team(ledger))!=self._checkpoint_hash(expected):
+                raise ValueError('Generation checkpoint accounting disagrees with replay')
 
     @classmethod
     def migrate_v2(cls, path: str | Path, books_by_team: dict[str, OpeningBooks]) -> Path:
@@ -164,6 +252,7 @@ class FranchiseStore:
             db.execute("PRAGMA foreign_keys=ON")
             db.execute("PRAGMA synchronous=FULL")
             db.execute("BEGIN IMMEDIATE" if write else "BEGIN")
+            self._validate_generation_checkpoint(db)
             yield db
             db.commit()
         except BaseException:
@@ -245,7 +334,7 @@ class FranchiseStore:
                     self._load_one(db,other)
         return ledgers
 
-    def _load_one(self, db, team_id) -> Ledger:
+    def _load_one(self, db, team_id, *, through_event_id=None) -> Ledger:
         row = db.execute("SELECT config FROM teams WHERE id=?", (team_id,)).fetchone()
         if row is None:
             raise Rejected("Unknown team")
@@ -257,7 +346,7 @@ class FranchiseStore:
         relationship_sources = set()
         payment_references = set()
         efficiency_cache = {}  # Keep only the last derivation within this chronological read.
-        for event_id, kind, serialized in db.execute("SELECT id, kind, payload FROM events WHERE team_id=? ORDER BY id", (team_id,)):
+        for event_id, kind, serialized in db.execute("SELECT id, kind, payload FROM events WHERE team_id=? AND (? IS NULL OR id<=?) ORDER BY id", (team_id,through_event_id,through_event_id)):
             payload = json.loads(serialized)
             if kind == "sign":
                 self._validate_story_evidence(payload["story"], efficiency_cache=efficiency_cache)
@@ -385,6 +474,8 @@ class FranchiseStore:
                 raise ValueError("Recorded financial posting disagrees with replay")
         if origin is not None and set(ledger._actors) != ledger._veteran_minimums.keys() | ledger._rookies.keys():
             raise ValueError('Initialized player personality coverage is incomplete')
+        if through_event_id is not None:
+            return ledger
         owned = {player for (player,) in db.execute("SELECT player_id FROM ownership WHERE team_id=?", (team_id,))}
         if owned != set(ledger.financial_snapshot()["signed_players"]):
             raise ValueError("Ownership records disagree with contract history")
