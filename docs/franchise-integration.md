@@ -216,5 +216,16 @@ new release archives instead of silently changing its format.
 Both contract and player inspection support this version without inference or
 financial writes. Actual Python replies passed the portable C++ validator. A new
 Windows fixture reads released/expired agreements and personalities across two
-sidecar launches; its CI execution is pending. This does not expose a native
-calendar-release transaction or establish guest gameplay/save integration.
+sidecar launches; its CI execution is pending. Inspection alone grants no release
+authority and does not establish guest gameplay/save integration.
+
+Manual release now accepts explicit `calendar_format=calendar_v1` plus
+`generation_id` to select the calendar-aware Store transaction. Legacy requests
+keep their existing guards. Full and target_v1 compact receipts retain format2,
+agreement ID and league year; native checks bind these facts, revision, allocated
+cash and prior salary settlement. The connection/deadline and encoded receipt
+capacity are checked within the atomic transaction before commit. AI may be off
+for this manual action. The synthetic Windows fixture now performs and retries
+the transaction across processes, then reads its archives and personality;
+execution of this new transaction fixture is pending. Actual guest writes and
+in-game release interaction remain unimplemented.

@@ -19,6 +19,59 @@ from franchise.guarantees import DiscountProfile
 
 
 class StoredYearTransitionTests(unittest.TestCase):
+    def calendar_release_request(self):
+        inputs=self.calendar_release_inputs()
+        from dataclasses import asdict
+        scope=asdict(inputs['scope']);scope.update(exclusions=sorted(scope['exclusions']),
+            removed_on=scope['removed_on'].isoformat(),first_regular_season_game=scope['first_regular_season_game'].isoformat())
+        return dict(protocol=1,request_id='bridge-calendar-release',operation='manual_release',
+            team_id='a',player_id='a',expected_revision=inputs['expected_revision'],timeout_ms=1000,
+            decision_mode='manual',calendar_format='calendar_v1',generation_id=inputs['generation_id'],
+            scope=scope,discount=dict(league_year=2027,annual_rate=0,rate_source='synthetic discount'),
+            payment_year_offsets=list(inputs['payment_year_offsets']))
+
+    def test_calendar_release_bridge_is_explicit_manual_and_retryable_with_ai_off(self):
+        self.store.advance_league_year(**self.inputs)
+        def forbidden(_):raise AssertionError('Manual release invoked inference')
+        def disabled():raise AccessDisabled('synthetic shutdown')
+        bridge=Bridge(self.store,provider=forbidden,access_check=disabled)
+        request=self.calendar_release_request()
+        before=self.path.read_bytes()
+        for changes in ({'calendar_format':True},{'generation_id':'foreign'},{'expected_revision':True}):
+            self.assertIsNotNone(bridge.handle({**request,**changes})['error'])
+            self.assertEqual(self.path.read_bytes(),before)
+        legacy={key:value for key,value in request.items() if key not in ('calendar_format','generation_id')}
+        self.assertIsNotNone(bridge.handle(legacy)['error'])
+        self.assertEqual(self.path.read_bytes(),before)
+        reply=bridge.handle(request)
+        self.assertIsNone(reply['error'])
+        self.assertEqual(reply['result']['release']['generation_id'],request['generation_id'])
+        self.assertEqual(reply['result']['release']['format'],2)
+        self.assertEqual(reply['result']['release']['league_year'],2027)
+        self.assertEqual(reply['result']['release']['financial']['signed_players'],[])
+        compact={**request,'receipt_format':'target_v1'}
+        compact_reply=Bridge(FranchiseStore(self.path),provider=forbidden,access_check=disabled).handle(compact)
+        self.assertIsNone(compact_reply['error'])
+        self.assertEqual(compact_reply['result']['release']['generation_id'],request['generation_id'])
+        self.assertEqual(compact_reply['result']['release']['league_year'],2027)
+        self.assertEqual(bridge.handle(request),reply)
+
+    def test_calendar_release_bridge_disconnect_and_oversized_receipt_rollback(self):
+        self.store.advance_league_year(**self.inputs)
+        request=self.calendar_release_request();before=self.path.read_bytes();calls=[]
+        def disconnect():
+            calls.append(1)
+            if len(calls)>1:raise TimeoutError('synthetic disconnect')
+        bridge=Bridge(self.store,provider=lambda _:None,access_check=lambda:None,connection_check=disconnect)
+        self.assertEqual(bridge.handle(request)['error'],'timeout')
+        self.assertEqual(self.path.read_bytes(),before)
+        from unittest.mock import patch
+        from franchise.bridge import ResponseTooLarge
+        bridge.connection_check=lambda:None
+        with patch.object(bridge,'_require_frame',side_effect=ResponseTooLarge('synthetic full frame')):
+            self.assertIsNotNone(bridge.handle(request)['error'])
+        self.assertEqual(self.path.read_bytes(),before)
+
     def calendar_release_inputs(self):
         return dict(generation_id=self.store.load_team('a').contract_identity('a').generation_id,
             scope=PreseasonReleaseScope(2027,date(2027,7,1),date(2027,9,10),EXCLUDED_LIABILITIES,

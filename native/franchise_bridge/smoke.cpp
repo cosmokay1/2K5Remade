@@ -6,6 +6,7 @@ int wmain(int argc, wchar_t** argv) {
     const bool promise_context = argc == 4 && std::wstring(argv[3]) == L"--promise-context";
     const bool calendar_context = argc == 4 && std::wstring(argv[3]) == L"--calendar-context";
     const bool calendar_release_context = argc == 4 && std::wstring(argv[3]) == L"--calendar-release-context";
+    const bool calendar_release = argc == 4 && std::wstring(argv[3]) == L"--calendar-release";
     const bool replay = argc == 4 && std::wstring(argv[3]) == L"--replay";
     const bool abrupt = argc == 4 && std::wstring(argv[3]) == L"--abrupt";
     const bool compact_release = argc == 4 && std::wstring(argv[3]) == L"--compact-release";
@@ -17,10 +18,15 @@ int wmain(int argc, wchar_t** argv) {
     const bool return_replay = argc == 4 && std::wstring(argv[3]) == L"--return-replay";
     const bool returned_amendment = argc == 4 && std::wstring(argv[3]) == L"--returned-restructure";
     const bool generation_trade = argc == 4 && std::wstring(argv[3]) == L"--generation-trade";
-    if (argc == 4 && !calendar_context && !calendar_release_context && !promise_context && !compact_release && !capacity && !generation_trade && !returned_amendment && !replay && !abrupt && !release && !assignment && !restructure && !returning) return 2;
+    if (argc == 4 && !calendar_context && !calendar_release_context && !calendar_release && !promise_context && !compact_release && !capacity && !generation_trade && !returned_amendment && !replay && !abrupt && !release && !assignment && !restructure && !returning) return 2;
     try {
         franchise::PipeClient client(argv[1], argv[2], franchise::ServiceMode::OfflineFixture);
-        if (calendar_context || calendar_release_context) {
+        if (calendar_context || calendar_release_context || calendar_release) {
+            if (calendar_release) {
+                client.submit(R"({"protocol":1,"request_id":"calendar-release","operation":"manual_release","team_id":"a","player_id":"a","expected_revision":3,"timeout_ms":5000,"decision_mode":"manual","calendar_format":"calendar_v1","generation_id":"legacy-contract:6a82e497f58043c0c18152df7d39335462babd6c6f98b619af8d6f03f0f77ec2","scope":{"league_year":2027,"removed_on":"2027-07-01","first_regular_season_game":"2027-09-10","exclusions":["additional_termination_pay","early_june1_designation","grievance","guarantee_offsets","guarantee_voids","injury_liability","other_compensation","waiver_transfer"],"covered_guarantees":true,"healthy":true,"current_year_earned_base":0,"source":"synthetic Windows calendar release"},"discount":{"league_year":2027,"annual_rate":0,"rate_source":"synthetic discount"},"payment_year_offsets":[0,1]})");
+                while (!client.ready()) std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                std::cout << client.take() << std::endl;
+            }
             const char* requests[] = {
                 R"({"protocol":1,"request_id":"calendar-current","operation":"contract_context","team_id":"a","generation_id":"legacy-contract:6a82e497f58043c0c18152df7d39335462babd6c6f98b619af8d6f03f0f77ec2","timeout_ms":5000,"context_format":"calendar_v1"})",
                 R"({"protocol":1,"request_id":"calendar-expired","operation":"contract_context","team_id":"b","generation_id":"legacy-contract:66c0244076e7869a68431355e9e1f6bedced76f2ae8afb3d1907b327a65a252b","timeout_ms":5000,"context_format":"calendar_v1"})",
@@ -29,7 +35,7 @@ int wmain(int argc, wchar_t** argv) {
             };
             for (const auto* request : requests) {
                 auto parsed=nlohmann::json::parse(request);
-                if (calendar_release_context) parsed["context_format"]="calendar_v2";
+                if (calendar_release_context || calendar_release) parsed["context_format"]="calendar_v2";
                 client.submit(parsed.dump());
                 while (!client.ready()) std::this_thread::sleep_for(std::chrono::milliseconds(2));
                 std::cout << client.take() << std::endl;

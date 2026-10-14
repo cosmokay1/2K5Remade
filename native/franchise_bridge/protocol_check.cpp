@@ -452,6 +452,45 @@ int main() {
             {"current_contract",nullptr},{"annual_charges",{3,8}},
             {"ownership_current",false},{"expiry_source",nullptr}};
         franchise::validate_result(calendar_release_reply,calendar_release_request);
+        auto calendar_write_request=release_request;
+        calendar_write_request["calendar_format"]="calendar_v1";
+        calendar_write_request["generation_id"]=identified["generation_id"];
+        calendar_write_request["scope"]["league_year"]=2027;
+        auto calendar_write_reply=release_reply;
+        auto& write_receipt=calendar_write_reply["result"]["release"];
+        write_receipt["format"]=2;write_receipt["generation_id"]=identified["generation_id"];
+        write_receipt["league_year"]=2027;
+        auto& write_archive=write_receipt["financial"]["released_contracts"]["v"];
+        write_archive["original_contract"]=released_archive["contract"];
+        write_archive["original_contract"]["elapsed_years"]=1;
+        write_archive["scope"]=calendar_write_request["scope"];
+        std::sort(write_archive["scope"]["exclusions"].begin(),write_archive["scope"]["exclusions"].end());
+        write_archive["cash_obligation"]=released_archive["cash_obligation"];
+        write_archive["original_cash"]=released_archive["cash_obligation"];
+        write_archive["original_cash"]["amount"]=69;
+        write_receipt["cash"]={{"revision",1},{"nominal_total",24},{"paid_total",19},{"unpaid_total",5},
+            {"obligations",nlohmann::json::array({write_archive["cash_obligation"]})}};
+        franchise::validate_result(calendar_write_reply,calendar_write_request);
+        auto calendar_compact_request=calendar_write_request,calendar_compact_reply=calendar_write_reply;
+        calendar_compact_request["receipt_format"]="target_v1";
+        calendar_compact_reply["result"]["receipt_format"]="target_v1";
+        calendar_compact_reply["result"]["release"]["cash"]["other_obligations"]=
+            {{"count",0},{"nominal_total",0},{"paid_total",0},{"unpaid_total",0}};
+        franchise::validate_result(calendar_compact_reply,calendar_compact_request);
+        for(int scenario=0;scenario<8;++scenario) {
+            auto bad=calendar_write_reply;auto& receipt=bad["result"]["release"];
+            if(scenario==0) receipt["format"]=true;
+            if(scenario==1) receipt["generation_id"]="legacy-contract:"+std::string(64,'b');
+            if(scenario==2) receipt["league_year"]=2026;
+            if(scenario==3) receipt["cash"]["obligations"]=nlohmann::json::array();
+            if(scenario==4) receipt["cash"]["obligations"][0]["source"]="changed";
+            if(scenario==5) receipt["financial"]["released_contracts"]["v"]["original_contract"]["elapsed_years"]=0;
+            if(scenario==6) receipt.erase("format");
+            if(scenario==7) receipt["financial"]["released_contracts"]["v"]["cash_obligation"]["amount"]=25;
+            bool rejected=false;
+            try{franchise::validate_result(bad,calendar_write_request);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Corrupt calendar release write receipt accepted");
+        }
         auto legacy_release=calendar_release_reply;
         legacy_release["result"]["release_calendar"]=nullptr;
         legacy_release["result"]["economic_archive"]["contract"]["elapsed_years"]=1;

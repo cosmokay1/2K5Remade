@@ -65,6 +65,13 @@ def compact_lifecycle_result(result,operation):
         if original.player_id!=player or original.paid_components is None:
             raise ValueError('Allocated original release cash required')
         projected['release']=_participant(result['release'],player,'released_contracts','cash_obligation',original.obligation_id)
+        if 'format' in result['release']:
+            receipt=result['release']
+            if type(receipt['format']) is not int or receipt['format']!=2 or type(receipt['league_year']) is not int:
+                raise ValueError('Invalid calendar release receipt')
+            if original.obligation_id!=_identity_cash(receipt['generation_id'],player):
+                raise ValueError('Calendar release cash identity mismatch')
+            projected['release'].update(format=2,generation_id=receipt['generation_id'],league_year=receipt['league_year'])
         target=CashObligation.from_dict(projected['release']['cash']['obligations'][0])
         if target.paid!=original.paid or target.paid_components!=original.paid_components or target.amount>original.amount:
             raise ValueError('Release changed settled cash or increased nominal liability')

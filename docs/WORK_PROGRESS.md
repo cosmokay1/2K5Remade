@@ -2822,3 +2822,19 @@ All489 offline tests passed, including inspection after another rollover without
 archive changes. Windows pipe fixtures now query released/expired generations
 and saved personalities twice with identical database bytes; CI execution remains
 pending. No calendar-release service write route or real guest hook is claimed.
+
+Added explicit manual_release calendar_format=calendar_v1 plus generation_id.
+The Bridge chooses the calendar-aware Store path only for this exact request;
+legacy postroll calls remain rejected. Full and compact receipts preserve format2,
+generation and league-year metadata. Native checks bind requested identity/year,
+revision, original allocated cash, retained nominal compensation, prior earned
+salary settlement and complete cash coverage. Encoded frame capacity and final
+connection/deadline checks remain before the atomic commit. Manual releases
+continue to work with AI disabled without calling a model. All491 offline tests
+pass, including disconnect/capacity rollback and stable retry. Portable CTest
+passes malformed write receipt cases. Exact Windows smoke request facts matched
+its actual Python fixture database; full/compact Python receipts passed C++.
+Windows fixture now executes/retries the release before reading contexts and
+saved personality; that execution awaits CI. Actual guest release hooks remain
+open. Prior revision ee92067 Windows/Linux Build38513985206 passed; its Windows
+FranchiseAI38513985171 was still active at last inspection.

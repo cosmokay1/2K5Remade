@@ -113,8 +113,10 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       and start dead-charge aging at the release year. Immutable restructuring and
       assignment archives remain. Explicit calendar_v2 native inspection now
       separates release-year cursor from archived terms and validates allocated
-      retained cash; actual Windows pipe execution is pending. Native write receipts and
-      service/game transaction wiring are pending; legacy post-roll APIs remain guarded.
+      retained cash. Explicit manual calendar-format requests now route to the
+      atomic Store release with bound full/compact native receipts; Windows pipe
+      transaction execution is pending. Actual game wiring remains open and legacy
+      post-roll APIs remain guarded.
 - [ ] Implement atomic trades with both teams' obligations and ownership.
       Supported sourced preseason veteran contract assignments now commit paired
       cash/cap/ownership events with independent league replay. Consideration, rookies,

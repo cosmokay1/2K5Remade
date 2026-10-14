@@ -654,6 +654,19 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
     }
     if (operation == "manual_release") {
         const bool compact=target_receipt_mode(result,request);
+        const auto& receipt=result.at("release");
+        const bool calendar=request.contains("calendar_format");
+        if (calendar) {
+            if (request.at("calendar_format")!="calendar_v1" || !receipt.is_object() || receipt.size()!=5 ||
+                !receipt.at("format").is_number_integer() || receipt.at("format")!=2 ||
+                receipt.at("generation_id")!=request.at("generation_id") ||
+                receipt.at("league_year")!=request.at("scope").at("league_year"))
+                throw std::runtime_error("Invalid calendar release receipt identity");
+            integer_money(receipt.at("league_year"));
+            if (receipt.at("league_year")<2020 || receipt.at("league_year")>2030)
+                throw std::runtime_error("Invalid calendar release year");
+        } else if (receipt.contains("format") || receipt.contains("generation_id") || receipt.contains("league_year"))
+            throw std::runtime_error("Unrequested calendar release receipt");
         if (result.at("decision_mode") != "manual" || result.at("player_id") != request.at("player_id"))
             throw std::runtime_error("Invalid manual release identity");
         const auto& financial=result.at("release").at("financial");
@@ -668,6 +681,53 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
             if (!player.is_string() || player == request.at("player_id")) throw std::runtime_error("Released player remains owned");
         for (const auto& charge : financial.at("charges")) exact_money(charge);
         const auto& archive=financial.at("released_contracts").at(request.at("player_id").get<std::string>());
+        if (calendar) {
+            const auto player=request.at("player_id").get<std::string>();
+            const auto identity=generation_cash_identity(request.at("generation_id"),player);
+            compact_release_cash(archive,player);
+            if (archive.at("cash_obligation").at("obligation_id")!=identity)
+                throw std::runtime_error("Calendar release belongs to another agreement");
+            const auto& original=archive.at("original_contract");
+            const auto offer=canonical_offer(original.at("offer"));
+            integer_money(original.at("elapsed_years"));
+            const auto cursor=original.at("elapsed_years").get<int64_t>();
+            if (cursor>=static_cast<int64_t>(offer.at("salaries").size())) throw std::runtime_error("Invalid calendar release salary cursor");
+            std::map<std::string,int64_t> ceilings{{"signing_bonus",offer.at("signing_bonus").get<int64_t>()}};
+            for(size_t i=0;i<offer.at("salaries").size();++i)
+                ceilings["base:"+std::to_string(i)]=(static_cast<int64_t>(i)<cursor ? offer.at("salaries")[i] : offer.at("guaranteed_salaries")[i]).get<int64_t>();
+            if(original.contains("bonus_layers")) for(const auto& layer:original.at("bonus_layers")) {
+                const auto key="bonus:"+layer.at("record_id").get<std::string>();
+                integer_money(layer.at("amount"));
+                if(!ceilings.emplace(key,layer.at("amount").get<int64_t>()).second) throw std::runtime_error("Duplicate calendar release bonus");
+            }
+            int64_t nominal=0;for(const auto& component:ceilings) nominal=checked_money_sum(nominal,component.second);
+            const auto& target=archive.at("cash_obligation");
+            if(target.at("amount")!=nominal) throw std::runtime_error("Calendar release changed retained nominal cash");
+            std::map<std::string,int64_t> allocated;
+            for(const auto& row:target.at("paid_components")) {
+                const auto key=row[0].get<std::string>();auto found=ceilings.find(key);
+                if(found==ceilings.end() || row[1]>found->second) throw std::runtime_error("Calendar release payment exceeds liability");
+                allocated[key]=row[1].get<int64_t>();
+            }
+            for(int64_t i=0;i<cursor;++i) if(allocated["base:"+std::to_string(i)]!=ceilings.at("base:"+std::to_string(i)))
+                throw std::runtime_error("Calendar release has unpaid prior salary");
+            if (!compact) {
+                if (!cash.at("obligations").is_array()) throw std::runtime_error("Missing calendar release cash records");
+                std::set<std::string> identities;int64_t nominal=0,paid=0;bool found=false;
+                for (const auto& row:cash.at("obligations")) {
+                    restructure_cash_record(row);
+                    const auto key=row.at("obligation_id").get<std::string>();
+                    if (!identities.insert(key).second) throw std::runtime_error("Duplicate calendar release cash record");
+                    nominal=checked_money_sum(nominal,row.at("amount"));paid=checked_money_sum(paid,row.at("paid"));
+                    if (key==identity) {
+                        if (row.dump()!=archive.at("cash_obligation").dump()) throw std::runtime_error("Calendar release cash differs from archive");
+                        found=true;
+                    }
+                }
+                if (!found || cash.at("nominal_total")!=nominal || cash.at("paid_total")!=paid)
+                    throw std::runtime_error("Calendar release cash coverage mismatch");
+            }
+        }
         if (compact) {
             target_financial(financial,"released_contracts",request.at("player_id").get<std::string>());
             compact_release_cash(archive,request.at("player_id").get<std::string>());

@@ -154,5 +154,7 @@ healthy preseason scope still excludes unresolved liabilities.
 
 Explicit `calendar_v2` inspection reports the release cursor separately, checks
 retained allocated cash, and preserves the archived contract. Legacy inspection
-rejects these releases. Native write receipts and actual guest transactions remain
-pending; inspection alone grants no game-side release authority.
+rejects these releases. Explicit manual native requests require calendar_format
+and exact generation identity; full/compact receipts bind year, allocated cash
+and revision. Receipt capacity and final connection checks run before commit.
+Actual guest transactions remain pending.

@@ -156,9 +156,14 @@ class Bridge:
                 from franchise.releases import PreseasonReleaseScope
                 from franchise.guarantees import DiscountProfile
                 from franchise.books import parse_amount
-                if request_fields != {'protocol','request_id','operation','team_id','player_id','expected_revision','timeout_ms',
-                                    'decision_mode','scope','discount','payment_year_offsets'} or request['decision_mode'] != 'manual':
+                fields={'protocol','request_id','operation','team_id','player_id','expected_revision','timeout_ms',
+                        'decision_mode','scope','discount','payment_year_offsets'}
+                calendar='calendar_format' in request
+                if request_fields != fields | ({'calendar_format','generation_id'} if calendar else set()) or request['decision_mode'] != 'manual':
                     raise ValueError('Explicit complete manual release request required')
+                if calendar and (request['calendar_format']!='calendar_v1' or type(request['generation_id']) is not str
+                                 or not request['generation_id'].strip()):
+                    raise ValueError('Explicit calendar release format and generation required')
                 if type(request['team_id']) is not str or not request['team_id'].strip():
                     raise ValueError('Stable team required')
                 timeout=request['timeout_ms']
@@ -187,11 +192,12 @@ class Bridge:
                 discount['annual_rate']=parse_amount(discount['annual_rate'])
                 def release_result(receipt):
                     return receipt_result({'decision_mode':'manual','player_id':request['player_id'],'release':receipt})
-                receipt=self.store.release_preseason_veteran(request['team_id'],request_id,request['player_id'],
+                release=self.store.release_calendar_preseason_veteran if calendar else self.store.release_preseason_veteran
+                receipt=release(request['team_id'],request_id,request['player_id'],
                     scope=PreseasonReleaseScope(**scope),discount=DiscountProfile(**discount),
                     payment_year_offsets=tuple(request['payment_year_offsets']),expected_revision=request['expected_revision'],
                     access_check=release_access,receipt_check=lambda receipt:self._require_frame(request_id,
-                        release_result(receipt)))
+                        release_result(receipt)),**({'generation_id':request['generation_id']} if calendar else {}))
                 return self._reply(request_id,result=release_result(receipt))
             if operation == 'contract_context':
                 fields = {'protocol','request_id','operation','team_id','generation_id','timeout_ms'}
