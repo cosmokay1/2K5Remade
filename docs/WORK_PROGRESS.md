@@ -3792,3 +3792,36 @@ remote file or process state is claimed. No game/save writes, model requests,
 cloud changes or binary publication were performed. Resume with a read-only
 connection/log check when Deck access returns, then verify selected-player/UI
 readback before any negotiation interception or financial mapping.
+
+
+## October 14, 2026 — Actual Trotter-screen physical pointers
+
+Deck access restored and user confirmed Jeremiah Trotter on Sign Contract.
+Actual game stderr is redirected into the private Proton prefix's local
+NFL2K5-PC/logs/session.log; the launcher log alone lacked all FSM traces.
+The session log captured descriptor557B2C at sequences18/20 and rejected
+player pointers811FCCE8/811FF3A0 with team811D3054 because the observer initially
+allowed only low RAM. Thus no player identity was verified by that observation.
+Read-only baseline inspection locates Jeremiah Trotter in free agents at slot1910;
+that is an independent save locator, not yet a verified runtime association.
+
+Confirmed runtime source maps the80000000 contiguous window to separate storage.
+Repaired observer ranges to admit bounded original physical addresses without
+masking them into low RAM; full bank ranges and overflow guards are checked.
+Authored fixtures exercise both separate regions, wrong alignment, crossing the
+physical-window end and oversized reads, plus unchanged low/physical memory.
+Full609-test offline suite passed. Full private Windows game rebuilt successfully.
+User closed normally; pgrep verified absence, prior executable/session log were
+backed up, and an intermediate build installed with AIBASELIN hash unchanged.
+Completing the same update's full raw offer word/packed flags before the next
+launch; its focused high-byte readback fixture passes. Final installed hash and
+actual selected-player/UI verification follow below when available. No offer
+was submitted by the agent and no game save was written.
+
+Final full Windows game rebuild linked successfully. Installed observer SHA256
+1f1aa6150ba5d2046c4dc4c2067c008db2aab04232ef0bc664aaa1b5d33ab1b3
+after rechecking no game process before atomic replacement. AIBASELIN remains
+2f82cfd9c608411c40b006db10f1e6dc6dfe46b187dd50c1ae94dd6341fd3dd2.
+The complete-offer-word fixture passed after the small logging addition; no
+production acceptance or financial write behavior changed. Actual readback of
+Trotter, financial units and controlled save/reload remain pending.

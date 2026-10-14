@@ -527,13 +527,22 @@ void recomp_flags_fallback_hit(uint32_t address) { (void)address; }
 void recomp_icall_hist(uint32_t va) { (void)va; }
 void recomp_unresolved_hit(uint32_t address) { (void)address; }
 void recomp_todo_hit(uint32_t address) { (void)address; }
-/* Signing-screen observation only: restrict every complete read to this
- * run's ordinary guest RAM, then use the runtime's fault-safe copy leaf. */
+/* Signing-screen observation only: ordinary RAM and the runtime's separate
+ * contiguous window. Never mask physical pointers into the low RAM mapping. */
+static bool signing_screen_range(uint32_t address, uint64_t size)
+{
+    if (!address || size > UINT64_C(0x100000000) - address)
+        return false;
+    uint64_t end = (uint64_t)address + size;
+    return ((size_t)address < g_xbox_total_ram && end <= g_xbox_total_ram) ||
+        (address >= XBOX_CONTIG_BASE &&
+         end <= (uint64_t)XBOX_CONTIG_BASE + XBOX_CONTIG_SIZE);
+}
+
 static bool signing_screen_read(uint32_t address, void *out, size_t size)
 {
     uintptr_t base = (uintptr_t)xbox_GetMemoryOffset();
-    if (!base || !address || (size_t)address >= g_xbox_total_ram ||
-        size > g_xbox_total_ram - (size_t)address)
+    if (!base || !signing_screen_range(address, size))
         return false;
     return xbox_guest_memory_read(base, address, out, size);
 }
@@ -549,7 +558,8 @@ static bool signing_screen_slot(uint32_t player, uint32_t *slot)
         !header[0] || header[0] > INT32_MAX || !header[1])
         return false;
     end = (uint64_t)header[1] + (uint64_t)header[0] * 0x54u;
-    if (end > g_xbox_total_ram || player < header[1] ||
+    if (!signing_screen_range(header[1], (uint64_t)header[0] * 0x54u) ||
+        player < header[1] ||
         (uint64_t)player + 0x54u > end || (player - header[1]) % 0x54u)
         return false;
     *slot = (player - header[1]) / 0x54u;
@@ -596,7 +606,8 @@ void nfl2k5_diag_fsm(uint32_t obj, uint32_t desc, int push)
     if (push && desc == 0x00557B2Cu) {
         uint32_t context = 0, player = 0, other = 0, other_raw = 0;
         uint8_t context_raw[16], player_raw[0x28];
-        uint16_t salary_raw;
+        uint16_t salary_raw, offer_salary_raw;
+        uint32_t offer_flags_raw;
         if (!signing_screen_read(0x00CB8C34u, &context, sizeof(context)) ||
             !signing_screen_read(context, context_raw, sizeof(context_raw))) {
             fprintf(stderr, "[FRANCHISE-TRACE] sign_screen unreadable_context\n");
@@ -623,10 +634,13 @@ void nfl2k5_diag_fsm(uint32_t obj, uint32_t desc, int push)
             fprintf(stderr, "[FRANCHISE-TRACE] sign_player identity=unverified\n");
         }
         memcpy(&salary_raw, player_raw + 0x0A, sizeof(salary_raw));
-        fprintf(stderr, "[FRANCHISE-TRACE] sign_screen context=0x%08X player=0x%08X other=0x%08X context_08_raw=0x%02X context_09_raw=0x%02X context_0A_raw=0x%02X context_0C_raw=0x%02X player_salary_0A_raw=%u units=unverified player_profile_26_raw=0x%02X player_term_27_raw=0x%02X identity=unverified\n",
+        memcpy(&offer_salary_raw, context_raw + 0x0C, sizeof(offer_salary_raw));
+        memcpy(&offer_flags_raw, context_raw + 8, sizeof(offer_flags_raw));
+        fprintf(stderr, "[FRANCHISE-TRACE] sign_screen context=0x%08X player=0x%08X other=0x%08X context_08_raw=0x%02X context_09_raw=0x%02X context_0A_raw=0x%02X context_0C_raw=0x%02X context_08_word_raw=0x%08X context_0C_word_raw=%u player_salary_0A_raw=%u units=unverified player_profile_26_raw=0x%02X player_term_27_raw=0x%02X identity=unverified\n",
             (unsigned int)context, (unsigned int)player, (unsigned int)other,
             (unsigned int)context_raw[8], (unsigned int)context_raw[9],
             (unsigned int)context_raw[10], (unsigned int)context_raw[12],
+            (unsigned int)offer_flags_raw, (unsigned int)offer_salary_raw,
             (unsigned int)salary_raw, (unsigned int)player_raw[0x26],
             (unsigned int)player_raw[0x27]);
     }

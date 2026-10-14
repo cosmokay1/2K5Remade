@@ -414,7 +414,7 @@ staged until it can be applied safely after exit.
 
 The opt-in signing observer now resolves global0x00B72918 as a count/base bank
 and accepts the selected pointer only on a complete, aligned0x54-byte record
-inside ordinary RAM. It reads bounded relocated first/last UTF16 pointers and
+inside ordinary RAM or the runtime's separate contiguous window. It reads bounded relocated first/last UTF16 pointers and
 logs bank_slot and names separately from unverified financial units. Slot/name
 readback remains a current-bank locator, not a durable identity. Malformed,
 unreadable, unterminated and unsupported surrogate names report identity unknown;
@@ -438,3 +438,18 @@ conditional RNG call in0x003232A0 advances shared random state. The future AI
 path must supply its own performance/personality decision, avoiding these ratings
 as valuation inputs, while explicitly preserving the surrounding score/status
 interface and deciding RNG sequencing. The current observer exposes no ratings.
+
+
+Actual Trotter-screen execution reached the observer but reported unreadable
+records at physical pointers0x811FCCE8/0x811FF3A0 and team0x811D3054. Those
+pointers lie in the runtime's separately backed contiguous window, not low RAM
+aliases. The observer now validates complete reads and the full bank against
+either declared region using overflow-safe arithmetic, then copies the original
+guest address through the fault-safe leaf. Never strip0x80000000 to read low RAM.
+The trace includes the complete raw context+0x0C word and context+8 packed dword
+for later UI comparison; units remain unverified.
+
+Gaming Mode sends startup output to runtime-logs/steam-launch.log but actual
+game stderr is redirected to the private prefix's
+pfx/drive_c/users/steamuser/AppData/Local/NFL2K5-PC/logs/session.log. Read that
+file for signing observations; absence from the launcher log proves nothing.
