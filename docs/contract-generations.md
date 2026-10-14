@@ -86,3 +86,20 @@ release; seller and buyer book identities differ. The C++ decoder accepts legacy
 responses without the field and validates the canonical legacy identity shape
 when present. This exposes agreement identity for in-game inspection without
 requiring a browser. It does not enable multiple agreements or guest writes.
+
+## Consumed accounting identity foundation
+
+The ledger binds its team identity during durable replay, then tracks immutable
+agreement/player/cash identities and the current active mapping. Closing an
+agreement removes its active mapping without discarding its historical identity.
+The cash resolver is used by accounting, lifecycle calculations, payment checks
+and inspection. Standalone first-agreement ledgers retain the legacy cash IDs.
+Existing serialized financial postings and receipts do not gain identity fields.
+
+Release, assignment and restructure calculators accept an explicitly expected
+cash ID; omission means the original `contract:player` identity. They still check
+player identity, compensation totals and allocated payments. Assignment can
+identify the receiving book's cash obligation separately. Cash creation refuses
+ID collisions without replacing an earlier obligation. These mechanisms do not
+by themselves authorize a second agreement: player-keyed lifecycle archives and
+versioned replay/migration must change before former-club guards are lifted.

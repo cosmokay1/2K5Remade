@@ -57,7 +57,7 @@ class TradePlan:
     assigned_base: int
 
 
-def calculate_preseason_trade(contract, cash, *, scope, record_id):
+def calculate_preseason_trade(contract, cash, *, scope, record_id, expected_cash_id=None, buyer_cash_id=None):
     """Assign remaining bases and their guarantees; retain paid bonus history.
 
 No covered-release present-value acceleration applies here. The supported scope
@@ -69,8 +69,14 @@ responsibilities; this plan does not validate trade consideration or guest state
         raise ValueError('Typed original contract, allocated cash and trade scope required')
     if type(record_id) is not str or not record_id.strip():
         raise ValueError('Stable trade calculation identity required')
+    expected_cash_id = 'contract:' + contract.offer.player_id if expected_cash_id is None else expected_cash_id
+    if type(expected_cash_id) is not str or not expected_cash_id.strip():
+        raise ValueError('Explicit expected cash identity required')
+    buyer_cash_id = expected_cash_id if buyer_cash_id is None else buyer_cash_id
+    if type(buyer_cash_id) is not str or not buyer_cash_id.strip():
+        raise ValueError('Explicit buyer cash identity required')
     offer = contract.offer
-    if (cash.obligation_id != 'contract:' + offer.player_id or cash.player_id != offer.player_id
+    if (cash.obligation_id != expected_cash_id or cash.player_id != offer.player_id
             or cash.amount != contract.nominal_cash or cash.paid_components is None):
         raise ValueError('Allocated original nominal contract cash required')
     paid = dict(cash.paid_components)
@@ -99,7 +105,7 @@ responsibilities; this plan does not validate trade consideration or guest state
     buyer_contract = ActiveContract(Offer(offer.player_id, salaries, 0, guarantees),
         contract.source + provenance + '; original signing bonus remains with assigning club',
         bonus_years=contract.bonus_years)
-    buyer_cash = CashObligation(cash.obligation_id, cash.player_id, assigned, 0,
+    buyer_cash = CashObligation(buyer_cash_id, cash.player_id, assigned, 0,
                                 cash.source + provenance + '; assigned remaining base', ())
     if seller_cash.amount + buyer_cash.amount != cash.amount:
         raise ValueError('Assigned and retained nominal cash do not reconcile')

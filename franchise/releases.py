@@ -65,7 +65,7 @@ class ReleasePlan:
                           if i < len(record.annual_charges)), Fraction(0)) for i in range(years))
 
 
-def calculate_preseason_release(contract, cash, *, scope, discount, payment_year_offsets, record_id):
+def calculate_preseason_release(contract, cash, *, scope, discount, payment_year_offsets, record_id, expected_cash_id=None):
     """Retain original bonus layers and protected cash; cancel unearned bases.
 
 Current/future base payments and unsettled prior bases are unsupported. Payment
@@ -80,8 +80,11 @@ veteran classification before applying this plan to durable state.
         raise ValueError('Identified release calculation required')
     if scope.league_year != discount.league_year:
         raise ValueError('Release and discount league years disagree')
+    expected_cash_id = 'contract:' + contract.offer.player_id if expected_cash_id is None else expected_cash_id
+    if type(expected_cash_id) is not str or not expected_cash_id.strip():
+        raise ValueError('Explicit expected cash identity required')
     offer = contract.offer
-    if (cash.player_id != offer.player_id or cash.obligation_id != 'contract:' + offer.player_id
+    if (cash.player_id != offer.player_id or cash.obligation_id != expected_cash_id
             or cash.amount != contract.nominal_cash or cash.paid_components is None):
         raise ValueError('Allocated original nominal contract cash required')
     paid = dict(cash.paid_components)

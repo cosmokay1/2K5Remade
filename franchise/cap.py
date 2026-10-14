@@ -128,6 +128,10 @@ class Ledger:
         self._traded_out = {}
         self._traded_in = {}
         self._restructures = {}
+        self._team_identity = None
+        self._generation_identities = {}
+        self._generation_by_player = {}
+        self._active_generation_ids = {}
         self._cash = None
         if type(max_bonus_years) is not int or not 1 <= max_bonus_years <= 5:
             raise ValueError("Bonus allocation limit must be between one and five years")
@@ -248,6 +252,63 @@ class Ledger:
                 raise Rejected("Original active contract and elapsed years unavailable")
             return self._active_contracts[player_id]
 
+    def bind_team_identity(self, team_id):
+        from franchise.generations import legacy_identity
+        if type(team_id) is not str or not team_id.strip():
+            raise ValueError('Stable team identity required')
+        with self._lock:
+            if self._team_identity is not None:
+                if self._team_identity != team_id:
+                    raise Rejected('Contract generation team identity cannot change')
+                expected = {player:legacy_identity(team_id,player) for player in self._contracts}
+                if (set(self._generation_by_player) != set(expected)
+                        or set(self._generation_identities) != {item.generation_id for item in expected.values()}
+                        or set(self._active_generation_ids) != self._players):
+                    raise Rejected('Existing contract generation mapping is inconsistent')
+                for player, identity in expected.items():
+                    if self.contract_identity(player) != identity:
+                        raise Rejected('Contract generation identity cannot change')
+                return
+            if not self._players <= self._contracts.keys():
+                raise Rejected('Original contracts required to bind owned generations')
+            identities = {player:legacy_identity(team_id,player) for player in self._contracts}
+            self._team_identity = team_id
+            self._generation_identities = {item.generation_id:item for item in identities.values()}
+            self._generation_by_player = {player:item.generation_id for player,item in identities.items()}
+            self._active_generation_ids = {player:identities[player].generation_id for player in self._players}
+
+    def contract_identity(self, player_id):
+        from franchise.generations import GenerationIdentity, legacy_identity
+        with self._lock:
+            if player_id not in self._contracts:
+                raise Rejected('Known historical contract required')
+            if self._team_identity is None:
+                return None
+            generation_id = self._generation_by_player.get(player_id)
+            if generation_id is None or generation_id not in self._generation_identities:
+                raise Rejected('Contract generation identity is unavailable')
+            identity = self._generation_identities[generation_id]
+            if (not isinstance(identity, GenerationIdentity) or identity.generation_id != generation_id
+                    or identity != legacy_identity(self._team_identity,player_id)):
+                raise Rejected('Contract generation identity disagrees with source team/player')
+            if player_id in self._players and self._active_generation_ids.get(player_id) != generation_id:
+                raise Rejected('Active contract generation disagrees with ownership')
+            if player_id not in self._players and player_id in self._active_generation_ids:
+                raise Rejected('Closed contract still has an active generation')
+            return identity
+
+    def contract_cash_id(self, player_id):
+        identity = self.contract_identity(player_id)
+        return identity.cash_obligation_id if identity is not None else 'contract:' + player_id
+
+    def _register_contract_identity(self, player_id):
+        if self._team_identity is not None:
+            from franchise.generations import legacy_identity
+            identity = legacy_identity(self._team_identity,player_id)
+            self._generation_identities[identity.generation_id] = identity
+            self._generation_by_player[player_id] = identity.generation_id
+            self._active_generation_ids[player_id] = identity.generation_id
+
     def apply_preseason_release(self, player_id, *, scope, discount, payment_year_offsets,
                                record_id, expected_revision):
         """Replace one supported veteran's active obligations, preserving debt."""
@@ -260,11 +321,12 @@ class Ledger:
             if player_id in self._released or player_id not in self._players:
                 raise Rejected('Player has no active owned contract to release')
             contract = self.active_contract(player_id)
-            if self._cash is None or 'contract:' + player_id not in self._cash.records:
+            cash_id = self.contract_cash_id(player_id)
+            if self._cash is None or cash_id not in self._cash.records:
                 raise Rejected('Allocated original cash required for release')
-            cash = self._cash.records['contract:' + player_id]
+            cash = self._cash.records[cash_id]
             plan = calculate_preseason_release(contract, cash, scope=scope, discount=discount,
-                payment_year_offsets=payment_year_offsets, record_id=record_id)
+                payment_year_offsets=payment_year_offsets, record_id=record_id, expected_cash_id=cash_id)
             self._check_transaction_date(scope.league_year,scope.removed_on)
             existing_ids = self._retained_record_ids()
             if any(record.record_id in existing_ids for record in plan.retained):
@@ -286,6 +348,7 @@ class Ledger:
             self._last_transaction_date=scope.removed_on
             del self._active_contracts[player_id]
             self._players.remove(player_id)
+            self._active_generation_ids.pop(player_id,None)
             self._cash.records[cash.obligation_id] = plan.cash_obligation
             self._cash.revision += 1
             self.revision += 1
@@ -321,13 +384,14 @@ class Ledger:
             if player_id not in self._players:
                 raise Rejected('Player has no active owned contract to restructure')
             contract = self.active_contract(player_id)
-            cash = self._cash.records.get('contract:' + player_id) if self._cash is not None else None
+            cash_id = self.contract_cash_id(player_id)
+            cash = self._cash.records.get(cash_id) if self._cash is not None else None
             if cash is None:
                 raise Rejected('Allocated original cash required for restructure')
             years = len(contract.offer.salaries) - contract.elapsed_years
             minimums = self._veteran_minimums[player_id][:years]
             plan = calculate_preseason_restructure(contract, cash, scope=scope, converted_base=converted_base,
-                annual_minimums=minimums, record_id=record_id)
+                annual_minimums=minimums, record_id=record_id, expected_cash_id=cash_id)
             self._check_transaction_date(scope.league_year, scope.amended_on)
             if (self._veteran_minimum_profile is not None
                     and scope.minimum_source != self._veteran_minimum_profile.source):
@@ -379,10 +443,11 @@ class Ledger:
             if player_id not in self._players or player_id in self._traded_out:
                 raise Rejected('Player has no active owned contract to trade')
             contract = self.active_contract(player_id)
-            cash = self._cash.records.get('contract:' + player_id) if self._cash is not None else None
+            cash_id = self.contract_cash_id(player_id)
+            cash = self._cash.records.get(cash_id) if self._cash is not None else None
             if cash is None:
                 raise Rejected('Allocated original cash required for trade')
-            plan = calculate_preseason_trade(contract, cash, scope=scope, record_id=record_id)
+            plan = calculate_preseason_trade(contract, cash, scope=scope, record_id=record_id, expected_cash_id=cash_id)
             self._check_transaction_date(scope.league_year,scope.traded_on)
             if plan.retained_bonus.record_id in self._retained_record_ids():
                 raise Rejected('Trade retained-record identity already exists')
@@ -401,6 +466,7 @@ class Ledger:
             self._last_transaction_date=scope.traded_on
             del self._active_contracts[player_id]
             self._players.remove(player_id)
+            self._active_generation_ids.pop(player_id,None)
             self._cash.records[cash.obligation_id] = plan.seller_cash
             self._cash.revision += 1
             self.revision += 1
@@ -408,21 +474,27 @@ class Ledger:
 
     def apply_preseason_trade_in(self, plan, *, expected_revision):
         from franchise.trades import TradePlan, calculate_preseason_trade
-        from franchise.books import ChargeRecord
+        from franchise.books import ChargeRecord, ActiveContract
         with self._lock:
             if type(expected_revision) is not int or expected_revision != self.revision:
                 raise Rejected('Trade used stale franchise state')
-            if not isinstance(plan, TradePlan) or not isinstance(plan.retained_bonus, ChargeRecord):
+            if (not isinstance(plan, TradePlan) or not isinstance(plan.retained_bonus, ChargeRecord)
+                    or not isinstance(plan.buyer_contract, ActiveContract)):
                 raise ValueError('Typed sourced trade plan required')
             suffix = ':seller-bonus'
             if not plan.retained_bonus.record_id.endswith(suffix):
                 raise ValueError('Trade record identity is invalid')
+            player = plan.buyer_contract.offer.player_id
+            from franchise.generations import legacy_identity
+            expected_buyer_cash = legacy_identity(self._team_identity,player).cash_obligation_id if self._team_identity is not None else 'contract:' + player
             recalculated = calculate_preseason_trade(plan.original_contract, plan.original_cash,
-                scope=plan.scope, record_id=plan.retained_bonus.record_id[:-len(suffix)])
+                scope=plan.scope, record_id=plan.retained_bonus.record_id[:-len(suffix)],
+                expected_cash_id=plan.original_cash.obligation_id,buyer_cash_id=expected_buyer_cash)
             if recalculated != plan:
                 raise ValueError('Trade plan disagrees with original obligations')
             self._check_transaction_date(plan.scope.league_year,plan.scope.traded_on)
-            player = plan.buyer_contract.offer.player_id
+            if plan.buyer_cash.obligation_id != expected_buyer_cash:
+                raise Rejected('Incoming contract cash identity disagrees with receiving team')
             if player in self._rookies or player not in self._veteran_minimums:
                 raise Rejected('Supported veteran classification required for trade')
             if player in self._contracts or player in self._traded_out:
@@ -435,6 +507,7 @@ class Ledger:
             _, _, charges, scale = self._validate_offer(plan.buyer_contract.offer, expected_revision)
             if scale is not None:
                 raise Rejected('Rookie assignment is unsupported')
+            self._register_contract_identity(player)
             self._charges = charges
             self._contracts[player] = plan.buyer_contract.offer
             self._active_contracts[player] = plan.buyer_contract
@@ -510,7 +583,7 @@ class Ledger:
                         'unpaid_signing_bonus': 0,
                         **({'unpaid_original_signing_bonus': 0,
                             'unpaid_bonus_layers': {layer.cash_component: 0 for layer in layers}} if layers else {})}
-            record = self._cash.records.get("contract:" + player_id) if self._cash is not None else None
+            record = self._cash.records.get(self.contract_cash_id(player_id)) if self._cash is not None else None
             if record is None or record.paid_components is None:
                 return None
             paid = dict(record.paid_components)
@@ -821,6 +894,7 @@ class Ledger:
             return prior
         charges, tender, updated, scale = self._validate_offer(offer, expected_revision)
         receipt = Signing(request_id, offer, charges, self.revision + 1)
+        self._register_contract_identity(offer.player_id)
         self._charges = updated
         self._players.add(offer.player_id)
         self._contracts[offer.player_id] = offer

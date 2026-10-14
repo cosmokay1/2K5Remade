@@ -53,20 +53,23 @@ class RestructurePlan:
     cash_obligation: CashObligation
 
 
-def calculate_preseason_restructure(contract, cash, *, scope, converted_base, annual_minimums, record_id):
+def calculate_preseason_restructure(contract, cash, *, scope, converted_base, annual_minimums, record_id, expected_cash_id=None):
     if not isinstance(contract, ActiveContract) or not isinstance(cash, CashObligation) or not isinstance(scope, PreseasonRestructureScope):
         raise ValueError('Typed original contract, allocated cash and amendment scope required')
     if contract.bonus_layers:
         raise ValueError('Repeated layered restructure requires separate reconciliation')
     if type(record_id) is not str or not record_id.strip() or money(converted_base) == 0:
         raise ValueError('Identified positive base conversion required')
+    expected_cash_id = 'contract:' + contract.offer.player_id if expected_cash_id is None else expected_cash_id
+    if type(expected_cash_id) is not str or not expected_cash_id.strip():
+        raise ValueError('Explicit expected cash identity required')
     offer, elapsed = contract.offer, contract.elapsed_years
     remaining = len(offer.salaries) - elapsed
     if scope.league_year + remaining - 1 > 2030:
         raise ValueError('Cross-final-CBA-year amendment is unsupported')
     if type(annual_minimums) is not tuple or len(annual_minimums) != remaining or any(money(value) == 0 for value in annual_minimums):
         raise ValueError('Explicit positive annual floors for all remaining years required')
-    if (cash.player_id != offer.player_id or cash.obligation_id != 'contract:' + offer.player_id
+    if (cash.player_id != offer.player_id or cash.obligation_id != expected_cash_id
             or cash.amount != sum(offer.salaries) + offer.signing_bonus or cash.paid_components is None):
         raise ValueError('Allocated original nominal contract cash required')
     paid = dict(cash.paid_components)

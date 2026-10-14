@@ -17,6 +17,7 @@ from franchise.cap import Ledger, Offer, Rejected, json_amount, money
 from franchise.rookie import RookieScale, UndraftedScale
 from franchise.books import OpeningBooks, parse_amount
 from franchise.cash import CashBook, CashObligation
+from franchise.generations import legacy_identity
 
 
 class GenerationPreflightError(ValueError):
@@ -250,6 +251,7 @@ class FranchiseStore:
         if row is None:
             raise Rejected("Unknown team")
         ledger = from_config(json.loads(row[0]))
+        ledger.bind_team_identity(team_id)
         ledger._actors = {}
         ledger._scouting = []
         origin = self._franchise_origin(db)
@@ -264,7 +266,8 @@ class FranchiseStore:
                 receipt = ledger.sign(payload["request_id"], Offer.from_dict(data), payload["expected_revision"])
                 self._remember_promises(ledger,payload)
                 if ledger._cash is not None:
-                    ledger._cash.add_contract(receipt.offer, "sign:" + payload["request_id"], track_components=payload.get("cash_components", False))
+                    ledger._cash.add_contract(receipt.offer, "sign:" + payload["request_id"], track_components=payload.get("cash_components", False),
+                        obligation_id=ledger.contract_cash_id(receipt.offer.player_id))
                     if payload.get("cash_posting") != ledger.cash_snapshot():
                         raise ValueError("Recorded signing cash disagrees with replay")
                 if payload.get("contract_charges") != [json_amount(value) for value in receipt.charges]:
@@ -302,7 +305,7 @@ class FranchiseStore:
                     'before_posting','before_cash','original_contract','original_cash','posting','cash_posting'}:
                     raise ValueError('Unexpected restructure event fields')
                 if (payload['original_contract'] != ledger.active_contract(payload['player_id']).to_dict()
-                        or ledger._cash is None or payload['original_cash'] != ledger._cash.records['contract:'+payload['player_id']].to_dict()):
+                        or ledger._cash is None or payload['original_cash'] != ledger._cash.records[ledger.contract_cash_id(payload['player_id'])].to_dict()):
                     raise ValueError('Restructure original obligations disagree with replay')
                 if payload['before_posting'] != ledger.financial_snapshot() or payload['before_cash'] != ledger.cash_snapshot():
                     raise ValueError('Restructure opening state disagrees with replay')
@@ -452,8 +455,8 @@ class FranchiseStore:
                     status, charge_scope = 'assigned', 'retained_obligations'
                 else:
                     raise ValueError('Historical contract has no supported accounting status')
-                cash = ledger._cash.records.get('contract:' + player_id) if ledger._cash is not None else None
-                accounting = {'generation_id':self._legacy_generation_id(team_id,player_id),
+                cash = ledger._cash.records.get(ledger.contract_cash_id(player_id)) if ledger._cash is not None else None
+                accounting = {'generation_id':ledger.contract_identity(player_id).generation_id,
                     'status':status,'contract':contract.to_dict(),
                     'annual_charges':[json_amount(value) for value in charges], 'charge_scope':charge_scope,
                     'cash_obligation':cash.to_dict() if cash is not None else None,
@@ -482,8 +485,7 @@ class FranchiseStore:
 
     @staticmethod
     def _legacy_generation_id(team_id,player_id):
-        identity=json.dumps([team_id,player_id],ensure_ascii=False,separators=(',',':')).encode('utf-8')
-        return 'legacy-contract:' + hashlib.sha256(identity).hexdigest()
+        return legacy_identity(team_id,player_id).generation_id
 
     @staticmethod
     def _contract_generations_from_ledger(team_id,ledger):
@@ -503,13 +505,16 @@ class FranchiseStore:
                 contract, status, retained = plan.original_contract, 'assigned', (plan.retained_bonus,)
             else:
                 raise ValueError('Historical contract has no supported generation status')
-            cash = ledger._cash.records.get('contract:' + player) if ledger._cash is not None else None
-            generations.append({'generation_id':FranchiseStore._legacy_generation_id(team_id,player),
+            identity = ledger.contract_identity(player)
+            if identity is None or identity != legacy_identity(team_id,player):
+                raise ValueError('Contract generation identity disagrees with source team')
+            cash = ledger._cash.records.get(ledger.contract_cash_id(player)) if ledger._cash is not None else None
+            generations.append({'generation_id':identity.generation_id,
                 'player_id':player, 'status':status, 'contract':contract.to_dict(),
                 'cash_obligation':cash.to_dict() if cash is not None else None,
                 'retained_records':[charge_record(record) for record in retained]})
         books = ledger._opening_books
-        linked_cash_ids = {'contract:'+player for player in ledger._contracts}
+        linked_cash_ids = {ledger.contract_cash_id(player) for player in ledger._contracts}
         return {'format':1, 'team_id':team_id, 'financial_revision':ledger.revision,
             'cash_revision':ledger._cash.revision if ledger._cash is not None else None,
             'generations':generations,
@@ -614,7 +619,7 @@ class FranchiseStore:
         if ledger._cash is None:
             return
         for player, offer in ledger._contracts.items():
-            record = ledger._cash.records["contract:" + player]
+            record = ledger._cash.records[ledger.contract_cash_id(player)]
             if record.paid_components is None:
                 continue
             contract = ledger._active_contracts.get(player)
@@ -643,7 +648,7 @@ class FranchiseStore:
     def _check_opening_cash(ledger, records):
         by_id = {record.obligation_id: record for record in records}
         for player, offer in ledger._contracts.items():
-            record = by_id.get("contract:" + player)
+            record = by_id.get(ledger.contract_cash_id(player))
             if record is None or record.player_id != player or record.amount != sum(offer.salaries) + offer.signing_bonus:
                 raise ValueError("Opening cash must reconcile every original active contract")
 
@@ -859,11 +864,12 @@ class FranchiseStore:
                 return {'financial':previous['posting'],'cash':previous['cash_posting']}
             if db.execute('SELECT team_id FROM ownership WHERE player_id=?',(player_id,)).fetchone() != (team_id,):
                 raise Rejected('Amendment requires exclusive player ownership')
-            if ledger._cash is None or 'contract:'+player_id not in ledger._cash.records:
+            cash_id = ledger.contract_cash_id(player_id)
+            if ledger._cash is None or cash_id not in ledger._cash.records:
                 raise Rejected('Allocated contract cash required for amendment')
             payload.update(before_posting=ledger.financial_snapshot(),before_cash=ledger.cash_snapshot(),
                 original_contract=ledger.active_contract(player_id).to_dict(),
-                original_cash=ledger._cash.records['contract:'+player_id].to_dict())
+                original_cash=ledger._cash.records[cash_id].to_dict())
             self._apply_restructure_payload(ledger,payload)
             self._check_cash_components(ledger)
             payload.update(posting=ledger.financial_snapshot(),cash_posting=ledger.cash_snapshot())
@@ -953,7 +959,7 @@ class FranchiseStore:
             receipt = ledger.sign(request_id, offer, expected_revision, access_check=access_check)
             self._remember_promises(ledger,payload)
             if ledger._cash is not None:
-                ledger._cash.add_contract(offer, "sign:" + request_id)
+                ledger._cash.add_contract(offer, "sign:" + request_id, obligation_id=ledger.contract_cash_id(offer.player_id))
                 payload["cash_components"] = True
                 payload["cash_posting"] = ledger.cash_snapshot()
             payload["posting"] = ledger.financial_snapshot()

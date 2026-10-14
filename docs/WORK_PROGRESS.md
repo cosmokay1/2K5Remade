@@ -1767,3 +1767,27 @@ All 350 Python tests and the portable C++ protocol check pass. No game UI or
 multiple-generation contract support claimed. Migration must also replace the
 legacy cash-ID assumptions in release, assignment and restructure calculators
 before return signing can safely create new obligations.
+
+## October 13, 2026 — Consumed immutable accounting identities
+
+Durable ledger replay now binds the team and reconstructs immutable agreement,
+player and cash identities with a separate active pointer. Signing and incoming
+assignment register identities; release/outgoing assignment close the active
+pointer and retain historical identity. Payments, guarantees, lifecycle math,
+cash creation, source reconciliation and inspection consume the cash resolver.
+Team rebinding and inconsistent mappings reject without repair. Calculator
+inputs require an explicit matching expected cash identity; assignment can
+identify destination cash separately. Old IDs and serialization remain unchanged.
+
+All 361 Python tests pass. Seven identity tests cover immutable binding, closure,
+corruption, atomic invalid-input rejection, incoming cash mismatch and durable
+restart. Four calculator/cash tests cover strict identity checks, distinct records
+and conservation. An independent isolated HEAD/current comparison found exact
+equality of financial/cash snapshots and stored config/event JSON through
+sign/release/payments/trade chains/restructure/restart. The synthetic money audit
+also passed 5,050 bonus-conservation cases. Both GitHub workflows passed exact
+prior heads 850ea16 and 1e59328; this change's remote CI awaits push.
+
+This remains the legacy identity foundation. Database format3, player-keyed
+archives and former-club return guards remain; actual multiple agreements need
+versioned archives/migration. No guest writes or playable build demonstrated.

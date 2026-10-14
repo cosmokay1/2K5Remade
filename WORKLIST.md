@@ -81,6 +81,8 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       reconciliation inspection through authenticated /api/contracts.
       Backup/replay preflight now checks whole-league integrity before migration;
       tools.prepare_generation_migration does not advance the format.
+      Accounting now consumes immutable legacy identities and a cash resolver;
+      versioned archives and actual return signing remain pending.
       See docs/contract-generations.md; current ownership now controls free-agent
       negotiation availability without deleting historical receipts.
 

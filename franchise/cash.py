@@ -61,8 +61,10 @@ class CashBook:
             raise ValueError("Duplicate cash obligations")
         self.revision = 0
 
-    def add_contract(self, offer, source, *, track_components=True):
-        key = "contract:" + offer.player_id
+    def add_contract(self, offer, source, *, track_components=True, obligation_id=None):
+        key = "contract:" + offer.player_id if obligation_id is None else obligation_id
+        if type(key) is not str or not key.strip():
+            raise ValueError("Explicit contract cash identity required")
         if key in self.records:
             raise Rejected("Contract cash already registered")
         self.records[key] = CashObligation(key, offer.player_id, sum(offer.salaries) + offer.signing_bonus, 0, source, () if track_components else None)
