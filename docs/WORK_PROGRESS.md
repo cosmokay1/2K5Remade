@@ -4567,3 +4567,24 @@ approval remains pending. Built-in Token Creator includes token creation/signing
 not just reading control. No automatic renewal or expiry extension is proposed.
 Independent game/book work remains available; the overall goal is not blocked
 or complete solely because live scoped-runtime verification awaits this input.
+
+
+## October14,2026 — Approved temporary runtime delegation verified
+
+Applied the explicitly approved Token Creator binding only on the configured
+runtime service account for the existing administrator. Independent policy read
+verified the exact role/member, one direct conditional binding and unchanged
+fixed expiry2026-10-15T19:10:27Z (October15,12:10:27PM PDT). No renewal is authorized.
+
+Explicit CLI impersonation successfully read ai-control.json under the runtime
+identity. Safe parsed evidence: protocol1, enabled=true, existing control expiry
+2026-10-20T19:20:26.943409+00:00; library validate_control allowed it. No token was
+printed, control changed or model/count request made. This resolves the direct
+IAM permission gate for that CLI read; it does not prove inference or game access.
+
+Actual sidecar runtime_credentials/GoogleControl verification refused before
+object access. Follow-up identified DefaultCredentialsError: local application-
+default credentials are unavailable. CLI authentication is a different source.
+No owner fallback, credential copy, key creation or login mutation. B05 now tracks
+runtime authentication instead of pending delegation approval. Game signing and
+Deck integration remain unchanged and unverified.

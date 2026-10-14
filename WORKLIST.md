@@ -87,7 +87,7 @@ steps, rather than expand the already substantial standalone engine.
 | B02 | AIBASELIN baseline, AICNTRL control and AIGILDON signing captured; original-game Gildon contract/roster/cap readback verified; broader pairs and lifecycle reload pending | Contract decoding, reconciliation and save round trips | Synthetic import fixtures, read-only diff tooling, state schema |
 | B03 | Deck access restored; corrected observer identifies Trotter at bank slot1910. AIGILDON persists observed Gildon terms and Giants ownership; saved salary totals match user-reported cap UI. AI transaction integration remains pending. Standard Windows build renders franchise UI in Deck Gaming Mode; actual transaction/save accounting pending | Actual franchise execution, save/reload and delivery acceptance | Private local build environment and read-only signing-path analysis |
 | B04 | Written upstream/third-party permission or suitable licenses | Redistribution of modified binaries and affected bundled components | Original source development, attribution, permission-request drafts |
-| B05 | Explicit approval for scoped runtime impersonation delegation | Live runtime-identity read/inference verification | Offline/native recovery and financial implementation |
+| B05 | Approved temporary delegation applied, expiring2026-10-15T19:10:27Z; explicit CLI runtime control read verified. Sidecar local ADC unavailable | Runtime sidecar/Deck authentication and live inference verification | Offline/native recovery and financial implementation |
 
 User-supplied Xbox assets and the AIBASELIN franchise baseline are present
 locally; controlled transaction and unchanged-save pairs remain pending. The Steam Deck is reachable over project-key SSH with Proton installed.

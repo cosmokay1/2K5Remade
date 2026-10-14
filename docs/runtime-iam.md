@@ -27,7 +27,8 @@ when runtime credentials are selected.
 Do not distribute owner credentials or service-account keys. Local administrative
 `gcloud` demo access remains distinct from the future runtime authentication path.
 The service identity's existence does not authorize arbitrary end users to
-impersonate it; token-creator/federation grants were not added.
+impersonate it. The one explicitly approved temporary delegation is recorded below;
+no federation grants or distributed runtime credentials were added.
 
 Primary references:
 [Vertex AI access control](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/access-control)
@@ -36,8 +37,8 @@ and [Cloud Storage IAM roles](https://docs.cloud.google.com/storage/docs/access-
 Control refresh HTTP calls use a 15-second timeout and reject expired credentials
 even after refresh. Reusing a valid token never reuses the remote enabled grant:
 each handshake fetches the switch again. Offline tests cover disable/unavailability
-with cached tokens and failed refresh without owner ADC fallback. Effective live
-identity access remains unverified.
+with cached tokens and failed refresh without owner ADC fallback. Effective model access remains unverified. The scoped runtime object read was
+subsequently verified as recorded below; the sidecar ADC path remains unavailable.
 
 ## Live source-permission gate
 
@@ -64,6 +65,30 @@ binding change. The built-in role permits short-lived access/ID token creation
 and signing; it is not merely object-read permission. No project-wide delegation,
 keys, paid request, AI enablement or control renewal is proposed. No automatic
 grant renewal or extending the reviewable expiry is authorized.
+
+
+## Approved temporary delegation — October 14, 2026
+
+The user explicitly approved the proposed service-account-only Token Creator
+binding for the existing administrator. Applied it and independently reread the
+policy: one direct binding, the exact approved member/role, policy version3,
+and condition `request.time < timestamp("2026-10-15T19:10:27Z")`.
+The fixed expiry is October15 at12:10:27PM PDT. No automatic renewal or extension
+is authorized.
+
+A GCS object read using explicit CLI runtime impersonation succeeded. Parsed
+control protocol1, enabled=true, expiry2026-10-20T19:20:26.943409+00:00;
+`validate_control` allowed the existing grant. The control object was not changed,
+no bearer token printed and no model/count request made. This proves effective
+object-read access through the CLI source login, not effective inference access
+or game/Deck authentication.
+
+The actual `runtime_credentials`/`GoogleControl` sidecar path still refused before
+object access. A bounded follow-up found `DefaultCredentialsError`: local ADC is
+unavailable, despite an authenticated administrative CLI login. No owner-CLI
+fallback, login mutation, credential distribution or key creation was attempted.
+An approved runtime authentication setup remains necessary before the sidecar can
+use this identity. The temporary IAM grant alone does not enable the game AI.
 
 
 ## Required persistent request and token budget
