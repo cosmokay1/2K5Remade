@@ -3573,3 +3573,65 @@ The optimized full-game rebuild is actively compiling generated code in
 2k5-parity-build; log is under the Deck's private 2k5-franchise-build directory.
 Its eventual boot/frontend outcome is not yet known. Do not restart this build
 solely because a status observation times out; inspect the container/log first.
+
+
+## October 14, 2026 — Rendered franchise baseline and Steam Deck controls
+
+The existing optimized standard build completed without restart and passed
+Proton --validate. Executable SHA256:
+c1855b735ad382393866aba33a3ad94612a5ee9936c7f685527a48499426d5c1.
+With the inherited standard compatibility flags and app-local Microsoft shader
+compiler, a private screenshot now shows the actual Franchise Options screen.
+Renderer logs record successful draws/texture uploads. Failed tiled mapping
+remains a known limitation; visible UI does not prove every rendering path.
+
+The user attempted a negotiation and reported immediate acceptance. The same
+private runtime log records Sign Contract FSM push descriptor 00557B2C,
+sequence 28. This verifies the menu boundary, not player identity, contract
+units, transaction mutation or AI behavior. The vanilla handler remains active;
+no personality/performance negotiation hook has been connected to this screen.
+That limitation was explicitly explained to the user.
+
+The first controlled runs ended via their deliberate 120-second timeout, rather
+than an observed new crash. A later 600-second test also ended with status 124.
+User reported Deck desktop-mode trigger mapping. Staged a dedicated untimed
+launcher preserving SteamAppId/SteamGameId, installed a desktop entry and used
+Valve's installed steamos-add-to-steam helper. Steam persisted appid 3759717425
+with name "2K5 Remade (Test Build)" and the expected script path. Its controller
+log records XInput configuration activation. The user confirms launch from
+Gaming Mode and that both LT/RT now work correctly. Only the private game's
+controls.ini was adjusted (Xbox prompts and mouse-as-controller off); no global
+desktop control layout was edited. Current Steam-launched session is untimed.
+
+Current save intake contains only VIP1/USR payloads (20720 bytes), no franchise
+save yet. Requested a user-created AI-BASELINE franchise save for verification.
+Next work is narrow read-only signing readback and save-based field validation,
+then actual negotiation interception; no guessed financial writes are authorized
+by these baseline observations. Proprietary files and screenshots stay private.
+
+
+## October 14, 2026 — AIBASELIN intake and compiled signing observer
+
+User saved the actual franchise as AIBASELIN. Captured five companion/payload
+files in private ignored original/saves/AIBASELIN-baseline after checking that
+source sizes/mtimes did not change during copy. TYPE is FXG; logical franchise
+payload matches UDATA container 8323F40E9258. SAVEGAME.DAT is 720044 bytes,
+SHA256 2f82cfd9c608411c40b006db10f1e6dc6dfe46b187dd50c1ae94dd6341fd3dd2.
+This resolves the missing baseline input; contract decoding and controlled
+transaction pairs are still required. No franchise load/round-trip is claimed.
+
+Added a narrow read-only observer to the existing optional FSM probe for the
+observed 00557B2C signing screen. It follows the statically identified CB8C34
+context candidate, validates complete reads against this run's ordinary guest
+RAM, and uses the existing fault-safe copy leaf. It logs raw context bytes and
+player salary/profile/term candidates with units and identity explicitly
+unverified. The existing opt-in and 256-event limit remain; no guest writes or
+AI requests were added. Extracted actual-function checks passed disabled/pop
+behavior, valid capture, failing reads and boundary rejection. Full standard
+Windows target compiled/linked with the observer. Current user game remains on
+the earlier executable; observer runtime verification waits for a safe restart.
+
+Steam launch remains confirmed by the user in Gaming Mode, with both triggers
+working. The untimed launcher preserves Steam's game identity. User baseline
+contract acceptance remains original game behavior until the negotiation engine
+is actually connected; do not present this build as completed Franchise AI.

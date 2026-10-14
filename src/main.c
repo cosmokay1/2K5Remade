@@ -31,6 +31,7 @@
 
 #include "kernel.h"
 #include "xbox_memory_layout.h"
+#include "platform/guest_memory.h"
 #include "apu.h"
 #include "recomp_icall_feedback.h"
 #include "nfl2k5_presentation.h"
@@ -526,14 +527,50 @@ void recomp_flags_fallback_hit(uint32_t address) { (void)address; }
 void recomp_icall_hist(uint32_t va) { (void)va; }
 void recomp_unresolved_hit(uint32_t address) { (void)address; }
 void recomp_todo_hit(uint32_t address) { (void)address; }
+/* Signing-screen observation only: restrict every complete read to this
+ * run's ordinary guest RAM, then use the runtime's fault-safe copy leaf. */
+static bool signing_screen_read(uint32_t address, void *out, size_t size)
+{
+    uintptr_t base = (uintptr_t)xbox_GetMemoryOffset();
+    if (!base || !address || (size_t)address >= g_xbox_total_ram ||
+        size > g_xbox_total_ram - (size_t)address)
+        return false;
+    return xbox_guest_memory_read(base, address, out, size);
+}
+
 void nfl2k5_diag_fsm(uint32_t obj, uint32_t desc, int push)
 {
     static unsigned int recorded;
     const char *enabled = getenv("NFL2K5_TRACE_FRANCHISE");
     if (!enabled || strcmp(enabled, "1") || recorded >= 256) return;
-    /* Existing FSM probes only: no guest reads/writes or guessed screen IDs. */
+    /* Existing FSM probes only: no guest writes or guessed screen IDs. */
     fprintf(stderr, "[FRANCHISE-TRACE] fsm_%s sequence=%u object=0x%08X descriptor=0x%08X\n",
         push ? "push" : "pop", ++recorded, (unsigned int)obj, (unsigned int)desc);
+    if (push && desc == 0x00557B2Cu) {
+        uint32_t context = 0, player = 0, other = 0, other_raw = 0;
+        uint8_t context_raw[16], player_raw[0x28];
+        uint16_t salary_raw;
+        if (!signing_screen_read(0x00CB8C34u, &context, sizeof(context)) ||
+            !signing_screen_read(context, context_raw, sizeof(context_raw))) {
+            fprintf(stderr, "[FRANCHISE-TRACE] sign_screen unreadable_context\n");
+            return;
+        }
+        memcpy(&player, context_raw, sizeof(player));
+        memcpy(&other, context_raw + 4, sizeof(other));
+        if (!signing_screen_read(player, player_raw, sizeof(player_raw)) ||
+            !signing_screen_read(other, &other_raw, sizeof(other_raw))) {
+            fprintf(stderr, "[FRANCHISE-TRACE] sign_screen unreadable_records context=0x%08X player=0x%08X other=0x%08X\n",
+                (unsigned int)context, (unsigned int)player, (unsigned int)other);
+            return;
+        }
+        memcpy(&salary_raw, player_raw + 0x0A, sizeof(salary_raw));
+        fprintf(stderr, "[FRANCHISE-TRACE] sign_screen context=0x%08X player=0x%08X other=0x%08X context_08_raw=0x%02X context_09_raw=0x%02X context_0A_raw=0x%02X context_0C_raw=0x%02X player_salary_0A_raw=%u units=unverified player_profile_26_raw=0x%02X player_term_27_raw=0x%02X identity=unverified\n",
+            (unsigned int)context, (unsigned int)player, (unsigned int)other,
+            (unsigned int)context_raw[8], (unsigned int)context_raw[9],
+            (unsigned int)context_raw[10], (unsigned int)context_raw[12],
+            (unsigned int)salary_raw, (unsigned int)player_raw[0x26],
+            (unsigned int)player_raw[0x27]);
+    }
 }
 void nfl2k5_diag_texzero(uint32_t tex, uint32_t ret) { (void)tex; (void)ret; }
 void nfl2k5_diag_reg(uint32_t fn, uint32_t edx_, uint32_t a0, uint32_t a1, uint32_t obj) { (void)fn; (void)edx_; (void)a0; (void)a1; (void)obj; }

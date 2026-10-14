@@ -27,14 +27,14 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 - Latest published verified source: `38fcc2d`. Build `38532242341` and Franchise AI
   `38532242330` passed. These checks compile/test asset-free runtime and bridge
   components; the actual game target is excluded. The opt-in FSM logger body also
-  passed its portable C checks. No franchise screen/signing hook is verified.
+  passed its portable C checks. The standard game build now renders Franchise Options; the signing FSM has been observed, but its transaction hook remains unimplemented.
 - Current delivered local suite: **603 tests passed**. All bridge fixtures remain
   asset-free; they do not prove guest/gameplay integration.
 - Request/token ceilings and remote shutdown are sufficient for current work.
   Additional dollar-policy machinery is deferred at the user's direction.
 - Xbox asset intake and Steam Deck SSH are now verified. Static analysis located
   the actual Sign Contract FSM descriptor0x00557B2C and message11 callback,
-  but runtime navigation, units, selected-player identity and signing remain unverified.
+  and that descriptor has now been observed during a user signing attempt. Units, durable selected-player identity and transaction readback remain unverified.
 - Actual game/save integration, telemetry capture, in-game controls and playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 
@@ -57,8 +57,8 @@ steps, rather than expand the already substantial standalone engine.
 | ID | Input / status | What it blocks | Independent work that continues |
 |---|---|---|---|
 | B01 | User-supplied Xbox executable/disc now extracted; title/hash checked | Static intake resolved; runtime field/call verification remains | Private executable analysis and native build |
-| B02 | Raw franchise saves and companion metadata; controlled transaction pairs | Contract decoding, reconciliation and save round trips | Synthetic import fixtures, read-only diff tooling, state schema |
-| B03 | Full Windows game build and four Proton asset-validation runs passed; black-screen boot under investigation | Actual franchise execution, save/reload and delivery acceptance | Private local build environment and read-only signing-path analysis |
+| B02 | AIBASELIN FXG baseline and companion files captured; controlled transaction pairs pending | Contract decoding, reconciliation and save round trips | Synthetic import fixtures, read-only diff tooling, state schema |
+| B03 | Standard Windows build validates and renders franchise UI in Deck Gaming Mode; actual transaction/save accounting pending | Actual franchise execution, save/reload and delivery acceptance | Private local build environment and read-only signing-path analysis |
 | B04 | Written upstream/third-party permission or suitable licenses | Redistribution of modified binaries and affected bundled components | Original source development, attribution, permission-request drafts |
 | B05 | Explicit approval for scoped runtime impersonation delegation | Live runtime-identity read/inference verification | Offline/native recovery and financial implementation |
 
@@ -277,10 +277,10 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
 
 - [x] Fix native client shutdown ordering so a sidecar that stops reading cannot leave destruction waiting on a blocked pipe write; add a Windows stalled-peer regression. Shutdown now stops the owned sidecar before joining its worker; the strengthened stalled-write CTest passed Windows run 38503835760. Inherited-handle isolation and stalled-write cleanup passed Windows run 38504026771.
 - [ ] Link the reusable C-compatible franchise client into the actual root game host with explicit opt-in lifecycle ownership; validate host transport separately from guest transactions. OFF-by-default root target linkage and explicit vertex-only startup/cleanup are implemented; The shared lifecycle source and negative configuration cases passed Windows run 38504026771; actual root game execution remains pending.
-- [ ] Establish a baseline game build and franchise behavior with the legal game.
+- [x] Establish a baseline game build and franchise behavior with the supplied game. Standard optimized build passes Proton validation and renders Franchise Options; user tested the vanilla Sign Contract path. This is baseline behavior only, not AI integration or full gameplay acceptance.
 - [ ] Map contract records, cap/tender fields, player identity, statistics and save data.
 - [ ] Trace signing, extension, release, trade, draft and year-transition functions.
-- [ ] Trace CPU-controlled paths as well as user menu paths; avoid double decisions. Existing FSM push/pop probes now have an explicit read-only 256-event trace (NFL2K5_TRACE_FRANCHISE=1); actual franchise descriptors and signing callbacks still require runtime evidence.
+- [ ] Trace CPU-controlled paths as well as user menu paths; avoid double decisions. Existing FSM push/pop probes have an opt-in 256-event trace; actual Sign Contract descriptor 00557B2C was observed during the user test. CPU paths and callback/transaction readback remain pending.
 - [ ] Intercept a single verified free-agent signing through existing patch conventions.
 - [ ] Commit legal terms to the actual game and verify readback/save/reload.
 - [ ] Integrate all supported roster transactions and season advancement.
