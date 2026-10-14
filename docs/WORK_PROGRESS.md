@@ -4124,3 +4124,32 @@ Published bd180f8 passed Build38603293266 and Franchise AI38603293274.
 Successful bd180f8 job logs independently confirm625 full-suite tests passed
 on both Ubuntu and Windows. New binding tests are focused local validation;
 the new revision's full CI is not yet claimed.
+
+
+## October14,2026 — Signing biography candidate boundary
+
+Extended the existing bounded observer to emit raw04..07/19..1B bytes after
+validated bank-slot/name readback. Uses the already read player prefix and
+keeps trace opt-in/event limits; no guest writes or hidden ratings reads.
+Factored the same canonical guard digest into file and observation matching.
+New resolve_signing_candidate requires all typed fields and returns a candidate
+UUID only; active franchise, calendar and financial state remain unconfirmed.
+No live bridge operation or model request is added.
+
+Actual observer C compiled with -Wall/-Wextra/-Werror against authored low-RAM
+and separately backed physical-memory fixtures and passed byte-preservation
+checks. Six binding tests passed, including altered/missing guard rejection,
+wrong player slot and explicit non-authorizing candidate scope. Existing private
+1937-member companion still resolves unchanged after the guard refactor.
+
+The first private-build SSH attempt failed DNS resolution (exit255) while
+source transfer session95526 was pending. The user restored Deck reachability;
+that transfer completed successfully without restart. Local/remote main.c hashes
+matchce717c2763d6a5bf9b54a2873d0d7926fae8201a02d01e15c04e726581384411.
+The existing incremental private Windows build then compiled main.c and linked
+NFL2K5.exe successfully. Process check confirmed the game stopped; retained
+the prior executable as runtime/NFL2K5.pre-guard.exe and atomically installed
+new SHA256a4648f45882f48ac12a322f7f7221585710a783fd89ddb91585262d9a0e4d67c.
+Requested a read-only AIGILDON/Trotter offer-screen observation without submitting
+an offer. Until its new trace is inspected, live guard matching remains unverified.
+Published712582b passed Build38605154365 and Franchise AI38605154405.

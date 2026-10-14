@@ -633,6 +633,12 @@ void nfl2k5_diag_fsm(uint32_t obj, uint32_t desc, int push)
             signing_screen_name(last_pointer, last_name)) {
             fprintf(stderr, "[FRANCHISE-TRACE] sign_player bank_slot=%u first_name=\"%s\" last_name=\"%s\" identity_scope=current_bank_locator\n",
                 (unsigned int)slot, first_name, last_name);
+            fprintf(stderr, "[FRANCHISE-TRACE] sign_player_guard bank_slot=%u pbp_photo_raw=%02x%02x%02x%02x dob_region_raw=%02x%02x%02x identity_scope=unbound_snapshot_guard\n",
+                (unsigned int)slot,
+                (unsigned int)player_raw[4], (unsigned int)player_raw[5],
+                (unsigned int)player_raw[6], (unsigned int)player_raw[7],
+                (unsigned int)player_raw[0x19], (unsigned int)player_raw[0x1A],
+                (unsigned int)player_raw[0x1B]);
         } else {
             fprintf(stderr, "[FRANCHISE-TRACE] sign_player identity=unverified\n");
         }

@@ -24,8 +24,8 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 ## Latest verified state — October 14, 2026
 
-- Latest published verified source: `bd180f8`. Build `38603293266` and Franchise AI
-  `38603293274` passed. CI checks asset-free runtime and bridge components;
+- Latest published verified source: `712582b`. Build `38605154365` and Franchise AI
+  `38605154405` passed. CI checks asset-free runtime and bridge components;
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.
@@ -48,7 +48,7 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   the actual Sign Contract FSM descriptor0x00557B2C and message11 callback,
   and that descriptor has now been observed during a user signing attempt. Current
   bank/name readback is verified for Trotter; Gildon terms, saved ownership and first-year cap readback are verified; durable
-  pinned same-year UUID bindings now preserve1937 IDs/initial profiles across baseline/control/signing snapshots; identity across rebuilds and AI/modern transaction integration remain unverified.
+  pinned same-year UUID bindings now preserve1937 IDs/initial profiles across baseline/control/signing snapshots. Guard bytes are emitted by the privately compiled/installed observer; actual new-screen matching is pending; identity across rebuilds and AI/modern transaction integration remain unverified.
 - Actual AI/game/save integration, telemetry capture and final playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 

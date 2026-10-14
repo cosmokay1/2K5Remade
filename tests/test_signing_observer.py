@@ -79,6 +79,8 @@ int main(void) {
     put32(0x6064, 0x8000); put32(0x6068, 0x8100);
     const uint16_t first[] = {'T','e','s','t',0}, last[] = {'P','l','a','y','e','r',0};
     memcpy(ram + 0x8000, first, sizeof first); memcpy(ram + 0x8100, last, sizeof last);
+    ram[0x6058] = 0x12; ram[0x6059] = 0x34; ram[0x605A] = 0xAB; ram[0x605B] = 0xCD;
+    ram[0x606D] = 0x56; ram[0x606E] = 0x78; ram[0x606F] = 0xEF;
     memcpy(before, ram, sizeof ram);
     reads = 0; trace_env = NULL;
     nfl2k5_diag_fsm(1, 0x557B2C, 1); assert(reads == 0);
@@ -115,3 +117,5 @@ int main(void) {
         self.assertIn('identity_scope=current_bank_locator', result.stderr)
         self.assertIn('sign_player identity=unverified', result.stderr)
         self.assertIn('context_0C_word_raw=4660', result.stderr)
+        self.assertIn('sign_player_guard bank_slot=1 pbp_photo_raw=1234abcd dob_region_raw=5678ef', result.stderr)
+        self.assertEqual(result.stderr.count('sign_player_guard bank_slot=1'), 2)

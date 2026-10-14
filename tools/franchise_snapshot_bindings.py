@@ -17,6 +17,12 @@ from tools.inspect_franchise_save import inspect_save, PLAYER_START, PLAYER_STRI
 VERSION = 'original-save-bindings-v1'
 
 
+def _identity_guard(first_name, last_name, pbp_photo_raw, dob_region_raw):
+    material = json.dumps([first_name, last_name, pbp_photo_raw, dob_region_raw],
+                          ensure_ascii=False, separators=(',', ':')).encode('utf-8')
+    return hashlib.sha256(material).hexdigest()
+
+
 def _members(payload, roster):
     result = {}
     for team, players in [*roster['teams'].items(), ('free_agents', roster['free_agents'])]:
@@ -25,12 +31,11 @@ def _members(payload, roster):
             record = PLAYER_START + slot * PLAYER_STRIDE
             # Name plus raw PBP/photo and DOB-region bytes. No birthdays or
             # real-world uniqueness are inferred from these packed bytes.
-            guard = json.dumps([player['first_name'], player['last_name'],
-                                payload[record+4:record+8].hex(),
-                                payload[record+0x19:record+0x1C].hex()],
-                               ensure_ascii=False, separators=(',', ':')).encode('utf-8')
             result[slot] = {**player, 'team': team,
-                            'identity_guard_sha256': hashlib.sha256(guard).hexdigest()}
+                            'identity_guard_sha256': _identity_guard(
+                                player['first_name'], player['last_name'],
+                                payload[record+4:record+8].hex(),
+                                payload[record+0x19:record+0x1C].hex())}
     return result
 
 
@@ -81,6 +86,30 @@ def initial_profiles(bindings: dict, payload: bytes) -> dict:
     """Bootstrap previews only; ongoing relationships belong to FranchiseStore."""
     return {player['player_id']: initial_actor(bindings['personality_seed'], player['player_id'])
             for player in resolve_bindings(bindings, payload).values()}
+
+
+def resolve_signing_candidate(bindings: dict, payload: bytes, observation: dict) -> dict:
+    """Match read-only live biography to a pinned snapshot, never authorize writes.
+
+    Active game/franchise selection, calendar and financial revision still need
+    independent reconciliation. A matching name or slot alone is insufficient.
+    """
+    if type(observation) is not dict or set(observation) != {
+            'source_slot', 'first_name', 'last_name', 'pbp_photo_raw', 'dob_region_raw'}:
+        raise ValueError('Complete signing biography observation required')
+    slot = observation['source_slot']
+    if type(slot) is not int or type(observation['first_name']) is not str or type(observation['last_name']) is not str:
+        raise ValueError('Typed signing identity required')
+    if not _hex(observation['pbp_photo_raw'], 8) or not _hex(observation['dob_region_raw'], 6):
+        raise ValueError('Complete raw signing biography bytes required')
+    members = resolve_bindings(bindings, payload)
+    player = members.get(slot)
+    guard = _identity_guard(observation['first_name'], observation['last_name'],
+                            observation['pbp_photo_raw'], observation['dob_region_raw'])
+    if player is None or guard != player['identity_guard_sha256']:
+        raise ValueError('Live signing biography does not match pinned player')
+    return {'candidate_player_id': player['player_id'], 'source_slot': slot,
+            'scope': 'matching pinned biography; active franchise/calendar/financial state unconfirmed'}
 
 
 def main(argv=None):

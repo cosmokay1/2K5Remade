@@ -10,7 +10,7 @@ import unittest
 
 import test_inspect_franchise_save as save_fixtures
 from tools.inspect_franchise_save import PLAYER_START, PLAYER_STRIDE
-from tools.franchise_snapshot_bindings import create_bindings, resolve_bindings, initial_profiles, main
+from tools.franchise_snapshot_bindings import create_bindings, resolve_bindings, initial_profiles, main, resolve_signing_candidate
 
 
 class SnapshotBindingsTests(unittest.TestCase):
@@ -80,3 +80,18 @@ class SnapshotBindingsTests(unittest.TestCase):
             self.assertEqual(error.exception.code, 2)
             self.assertEqual(registry.read_bytes(), before)
             self.assertEqual(save.read_bytes(), self.fixture())
+
+    def test_signing_candidate_requires_all_guard_fields_and_never_authorizes(self):
+        payload = bytes(self.fixture()); bindings = create_bindings(payload)
+        observation = {'source_slot': 0, 'first_name': 'Synthetic', 'last_name': 'Starter',
+                       'pbp_photo_raw': '00000000', 'dob_region_raw': '000000'}
+        candidate = resolve_signing_candidate(bindings, payload, observation)
+        self.assertEqual(candidate['candidate_player_id'], resolve_bindings(bindings, payload)[0]['player_id'])
+        self.assertIn('unconfirmed', candidate['scope'])
+        for field, value in (('source_slot', 1), ('source_slot', False), ('first_name', 'Other'),
+                             ('pbp_photo_raw', '01000000'), ('dob_region_raw', '000001'), ('dob_region_raw', '')):
+            bad = {**observation, field: value}
+            with self.subTest(field=field, value=value), self.assertRaises(ValueError):
+                resolve_signing_candidate(bindings, payload, bad)
+        incomplete = dict(observation); del incomplete['dob_region_raw']
+        with self.assertRaises(ValueError): resolve_signing_candidate(bindings, payload, incomplete)

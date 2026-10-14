@@ -620,3 +620,17 @@ controlled same-year snapshots, not bank rebuilds, draft intake, season advancem
 or live memory binding. Pair each franchise with its own companion: an otherwise
 identical copied roster does not prove that two saves are the same franchise.
 No modern ledger, live contract decision or game mutation is performed by this tool.
+
+
+The existing Sign Contract observer now emits the seven raw guard bytes only
+after bounded bank-slot and relocated-name validation. This uses the already
+read player prefix; no new guest pointer or ratings read is introduced.
+`resolve_signing_candidate` matches the full typed name/slot/raw guard to the
+pinned companion using the same canonical digest as save inspection. Missing
+bytes, changed names/guards and unsupported slots reject a candidate.
+
+A match returns candidate_player_id, never signing permission. Active franchise
+selection, runtime calendar and financial revision must still reconcile before
+using it for a transaction. Raw fields remain uninterpreted and the trace says
+unbound_snapshot_guard. Actual configured live binding and Vertex sidecar
+execution remain unverified; the helper is not yet called by the game bridge.
