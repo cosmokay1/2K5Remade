@@ -3974,3 +3974,23 @@ SHA256e6c10393d53b1cc355e981d612779fed96fbeeadd9ef8f7e067014a8a262b9aa.
 Installed executable remains SHA256
 1f1aa6150ba5d2046c4dc4c2067c008db2aab04232ef0bc664aaa1b5d33ab1b3
 and game PID68889 remains active; no game restart or input was sent.
+
+
+## October 14, 2026 — Original annual rounding reconciled
+
+Extended the read-only contract decoder with supported original Descending
+and Balanced annual rows. Static E6020/E6040 evidence establishes integer bonus
+allocation, float32 store/conversion boundaries and final salary truncation;
+private image jump-table and constants confirm code1/code2 dispatch. No original
+code bytes or disassembly are published. Gildon reconstructs salary3108K/1865K
+and allocated bonus1658K each year. Year0 charge4766K equals the controlled
+saved team delta. Both rows match user-confirmed UI after reload. Summed original
+postings8289K differ from offered8290K; the decoder exposes rather than repairs
+that residual. Modern engine bonus conservation remains unchanged.
+
+Five focused tests passed, including actual-observed terms, unchanged payload,
+rounding residuals, Balanced truncation, one-year/zero/full-bonus endpoints and
+unsupported inputs. Actual AIGILDON private readback was regenerated without
+editing the save; payload hash remainsac16245c5fcd743f3cc9e6aa37d76de72424238782de353765c758d242c6bc7d.
+Later-year exact postings remain static reconstruction until season advancement
+evidence exists. No AI judgment or guest financial write was added.

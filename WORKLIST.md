@@ -35,7 +35,9 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   actual readback identifies Jeremiah Trotter at bank slot1910, matching AIBASELIN.
   Gildon offer amount/term/style/bonus readback is calibrated against the UI;
   Gildon signing moves him to the Giants with persisted terms and a$4.766M
-  first-year charge matching displayed cap balances. User confirms post-reload
+  first-year charge matching displayed cap balances. The read-only decoder now
+  calculates original Descending/Balanced annual rows with guest rounding;
+  those rows do not establish modern-rule compliance or season aging. User confirms post-reload
   Descending annual rows: 2004 salary$3.10M/bonus$1.65M and 2005
   salary$1.86M/bonus$1.65M. AI/modern accounting
   integration and broader lifecycle/save verification remain pending. The Windows harness portability

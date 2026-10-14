@@ -470,11 +470,11 @@ context+0x0A=2 matches2years, context+8 low byte4 matches40%bonus and bits29..31
 value1 matchesDescending. The displayed total is an offer total, not an annual
 cap charge. Display helpers multiply the word by10 (0x000E5FF0), then
 0x0031E580 formats thousands/millions; this supports$10000 per raw offer-word
-unit for this verified signing path. Save persistence, annual allocations and
-rounding remain unverified. Earlier Trotter word1949 versus user report$19.9M
+unit for this verified signing path. The completed controlled signing below
+verifies persistence and the first-year charge; broader styles/aging remain open. Earlier Trotter word1949 versus user report$19.9M
 remains unresolved; do not silently reinterpret it as verified$19.49M.
 
-Next controlled-save sequence: preserve AIBASELIN; save a separate unchanged
+Completed controlled-save sequence: preserved AIBASELIN; save a separate unchanged
 copy as AICNTRL without submitting an offer; capture payload and companions;
 reload AIBASELIN before one documented Gildon signing; save its result separately
 as AIGILDON and reload for contract readback. Record visible terms/cap before
@@ -499,5 +499,24 @@ original first-year charge delta$4.766M, not modern proration/guarantee correctn
 reads supported named active contract records without writing or reading ratings.
 It exposes calibrated game total/style/bonus and both raw term nibbles, refusing
 unsupported codes or missing terms. Only observed Descending/Balanced styles are
-interpreted. It provides no modern cap allocations, guarantees, annual salaries
-or persistent IDs. Original-field aging still needs controlled season evidence.
+interpreted. It now exposes annual rows calculated from original static rules
+for those two styles; these are not modern cap allocations or guarantees.
+Original-field aging still needs controlled season evidence, and slot is not a
+persistent ID.
+
+
+Original annual calculation evidence: E6020 computes allocated bonus in whole
+thousands as floor(amount_word * bonus_code / original_years). E6040 first
+truncates a float32(total_thousands / original_years), then subtracts allocated
+bonus. Balanced (table code2) returns that salary directly. Descending (code1)
+uses the half-salary integer and a float32 year-position fraction, then truncates
+the final float32 salary. Verified jump-table entries and constants0.5/1.0
+were read from the private supplied image; no binary or disassembly is bundled.
+
+The decoder preserves this rounding rather than repairing the residual: Gildon
+year0 salary3108K + bonus1658K =4766K; year1 salary1865K + bonus1658K =3523K.
+Total original postings are8289K versus the displayed8290K offer. Year0 matches
+the exact controlled team charge; both annual rows match the user's post-reload
+UI (3.10M/1.65M and1.86M/1.65M). Year1 exact native charge is a static
+reconstruction, not a verified subsequent-season posting. This read-only
+calculation does not modify the modern engine's exact bonus conservation.

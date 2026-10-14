@@ -71,8 +71,8 @@ game transaction. Jason Gildon moves from free agents to Giants; saved salary
 word829 and packed word0x02410BA2 retain the observed$8.29M/2year/Descending/40%
 terms. Both signature companions match the runtime implementation and the signed
 payload matches its UDATA mirror. User reported completion of the instructed
-save/reload sequence; individual post-reload contract UI terms are not yet
-independently read. No AI interception or modern financial posting occurred.
+save/reload sequence and explicitly confirmed Descending annual rows:
+2004 salary$3.10M/bonus$1.65M; 2005 salary$1.86M/bonus$1.65M. No AI interception or modern financial posting occurred.
 
 The control changes14405 bytes but no candidate contract fields across2479
 records or1937 memberships. The signed result adds22 transaction-only bytes.

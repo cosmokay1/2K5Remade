@@ -1,4 +1,4 @@
-"""Read observed original-game contract fields; never infer modern cap charges.
+"""Read original-game contract fields and supported static annual calculations.
 
 Field evidence: controlled AIGILDON signing, runtime mutation audit and the
 Gildon offer UI. Slot identifies this snapshot only. Assets are not bundled.
@@ -9,6 +9,35 @@ from pathlib import Path
 import struct
 
 from tools.inspect_franchise_save import inspect_save, PLAYER_START, PLAYER_STRIDE
+
+
+def _float32(value):
+    return struct.unpack('<f', struct.pack('<f', value))[0]
+
+
+def original_annual_rows(amount_word: int, bonus_code: int, shape_code: int, years: int) -> list:
+    """Original E6020/E6040 rules in whole thousands, not modern accounting.
+
+    Descending/Balanced only. Explicit float stores and final truncation match
+    the guest's x87/SSE conversion boundaries. No rounding residual is repaired.
+    """
+    if any(type(value) is not int for value in (amount_word, bonus_code, shape_code, years)):
+        raise ValueError('Original contract inputs must be integers')
+    if not 1 <= amount_word <= 65535 or not 0 <= bonus_code <= 10 or shape_code not in (1, 2) or not 1 <= years <= 15:
+        raise ValueError('Unsupported original contract inputs')
+    average = int(_float32(amount_word * 10 / years))
+    bonus = amount_word * bonus_code // years
+    base = average - bonus
+    rows = []
+    for index in range(years):
+        salary = base
+        if shape_code == 1:
+            fraction = _float32(2 * ((index + 0.5) / years) - 1)
+            salary = int(_float32(base - (base // 2) * fraction))
+        rows.append({'contract_year_index': index, 'salary_dollars': salary * 1000,
+                     'allocated_bonus_dollars': bonus * 1000,
+                     'original_game_charge_dollars': (salary + bonus) * 1000})
+    return rows
 
 
 def inspect_player_contract(payload: bytes, source_slot: int) -> dict:
@@ -43,6 +72,8 @@ def inspect_player_contract(payload: bytes, source_slot: int) -> dict:
         'term_low_nibble_raw': term_low, 'term_high_nibble_raw': term_high,
         'amount_word_raw': amount, 'bonus_code_raw': bonus_code,
         'shape_code_raw': shape_code, 'packed_contract_word_raw': packed,
+        'original_annual_rows': original_annual_rows(amount, bonus_code, shape_code, term_high),
+        'annual_rows_scope': 'static original-game calculation; no modern guarantees or calendar-aging verification',
     }
 
 
