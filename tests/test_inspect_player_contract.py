@@ -49,10 +49,20 @@ class InspectPlayerContractTests(unittest.TestCase):
         for bonus in (0, 10):
             self.assertEqual(original_annual_rows(100, bonus, 1, 1), original_annual_rows(100, bonus, 2, 1))
         self.assertEqual(original_annual_rows(100, 10, 1, 1)[0]['salary_dollars'], 0)
-        for args in ((True, 4, 1, 2), (829, 4, 0, 2), (829, 4, 1, 0),
+        for args in ((True, 4, 1, 2), (829, 4, 8, 2), (829, 4, 1, 0),
                      (65536, 4, 1, 2), (829, 11, 1, 2)):
             with self.subTest(args=args), self.assertRaises(ValueError):
                 original_annual_rows(*args)
+
+    def test_raw_schedule_codes_preserve_midpoints_and_direction(self):
+        expected = {0: [1200000, 1000000, 800000], 1: [1333000, 1000000, 666000],
+                    2: [1000000] * 3, 3: [833000, 1500000, 833000],
+                    4: [1166000, 500000, 1166000], 5: [1200000, 800000, 1200000],
+                    6: [666000, 1000000, 1333000], 7: [800000, 1000000, 1200000]}
+        for code, salaries in expected.items():
+            with self.subTest(code=code):
+                self.assertEqual([row['salary_dollars'] for row in original_annual_rows(300, 0, code, 3)], salaries)
+                self.assertEqual(original_annual_rows(100, 0, code, 1)[0]['salary_dollars'], 1000000)
 
     def test_unsupported_contracts_and_slots_do_not_invent_obligations(self):
         for word in (0, 0x00410BA2, 0x02410BA3, 0x02F10BA2, 0x02400BA2, 0x02470BA2):

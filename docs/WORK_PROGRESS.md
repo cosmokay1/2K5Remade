@@ -3994,3 +3994,30 @@ unsupported inputs. Actual AIGILDON private readback was regenerated without
 editing the save; payload hash remainsac16245c5fcd743f3cc9e6aa37d76de72424238782de353765c758d242c6bc7d.
 Later-year exact postings remain static reconstruction until season advancement
 evidence exists. No AI judgment or guest financial write was added.
+
+
+## October 14, 2026 — Full original roster payroll reconciled
+
+Extended the original static annual calculator to raw codes0..7 without adding
+unverified UI names. E6380 selects the year index from original minus remaining
+terms; C3F00 skips zero remaining terms and sums salary/allocated bonus. Added
+tools.reconcile_franchise_payroll to read all32 clubs, reject unsupported active
+fields and return exit3 on any stored/reconstructed difference. This is read-only
+original payroll evidence, not a modern ledger import or cap authorization.
+Additional246F20 mode-specific obligations remain undecoded; differences are
+reported rather than guessed away.
+
+The actual AIBASELIN, unchanged AICNTRL and signed AIGILDON each match all32
+stored team+0x124 totals exactly. Active contract counts1696/1696/1697 and Giants
+72272K/72272K/77038K agree with independent stored quantities. All prior payload
+hashes remain unchanged; complete private reports retained in analysis/AIBASELIN.
+Eleven focused tests passed across contract/payroll readers: all schedule
+directions/midpoints, one-year endpoints, known signing, term-index selection,
+inactive records, malformed active fields, mismatch exit and byte preservation.
+No ratings, guest writes, paid calls or modern accounting changes were added.
+
+Handshake revisiond61427b passed both workflows: Build38600646883 and Franchise
+AI38600646884, including Windows native callback and lifecycle checks. Annual
+revision283b0e9 Build38601087383 passed; Franchise AI38601087366 was still in
+progress at inspection. Actual configured hello execution and AI signing remain
+unverified.

@@ -18,12 +18,13 @@ def _float32(value):
 def original_annual_rows(amount_word: int, bonus_code: int, shape_code: int, years: int) -> list:
     """Original E6020/E6040 rules in whole thousands, not modern accounting.
 
-    Descending/Balanced only. Explicit float stores and final truncation match
+    Raw schedule codes0..7. Only codes1/2 have calibrated UI style names.
+    Explicit float stores and final truncation match
     the guest's x87/SSE conversion boundaries. No rounding residual is repaired.
     """
     if any(type(value) is not int for value in (amount_word, bonus_code, shape_code, years)):
         raise ValueError('Original contract inputs must be integers')
-    if not 1 <= amount_word <= 65535 or not 0 <= bonus_code <= 10 or shape_code not in (1, 2) or not 1 <= years <= 15:
+    if not 1 <= amount_word <= 65535 or not 0 <= bonus_code <= 10 or not 0 <= shape_code <= 7 or not 1 <= years <= 15:
         raise ValueError('Unsupported original contract inputs')
     average = int(_float32(amount_word * 10 / years))
     bonus = amount_word * bonus_code // years
@@ -31,9 +32,25 @@ def original_annual_rows(amount_word: int, bonus_code: int, shape_code: int, yea
     rows = []
     for index in range(years):
         salary = base
-        if shape_code == 1:
+        position, midpoint = index + 0.5, years * 0.5
+        if shape_code in (0, 7):
+            factor = 12 if position < midpoint else 8 if position > midpoint else 10
+            if shape_code == 7:
+                factor = 20 - factor
+            salary = base * factor // 10
+        elif shape_code in (1, 6):
             fraction = _float32(2 * ((index + 0.5) / years) - 1)
-            salary = int(_float32(base - (base // 2) * fraction))
+            direction = -1 if shape_code == 1 else 1
+            salary = int(_float32(base + direction * (base // 2) * fraction))
+        elif shape_code in (3, 4) and years > 1:
+            offset = position if position <= midpoint else position - midpoint
+            fraction = _float32(2 * offset / midpoint - 1)
+            direction = 1 if position <= midpoint else -1
+            if shape_code == 4:
+                direction = -direction
+            salary = int(_float32(base + direction * (base // 2) * fraction))
+        elif shape_code == 5 and years > 1:
+            salary = base * (12 if index % 2 == 0 else 8) // 10
         rows.append({'contract_year_index': index, 'salary_dollars': salary * 1000,
                      'allocated_bonus_dollars': bonus * 1000,
                      'original_game_charge_dollars': (salary + bonus) * 1000})

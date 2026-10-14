@@ -82,7 +82,13 @@ match exact saved totals$72.272M→$77.038M and room$8.228M→$3.462M. Display
 truncation explains why subtracting displayed cap and team numbers differs by
 $10000 from displayed room. Use underlying monetary quantities for accounting.
 
-This validates the original first-year posting only. Subsequent annual charges,
+Read-only original payroll reconstruction now matches all32 teams in baseline,
+unchanged control and signed saves, covering1696/1696/1697 active contracts.
+Static raw schedule codes0..7 and original-minus-remaining term indices explain
+the current stored totals without ratings. Mismatches and malformed active
+contracts fail reconciliation; no unknown debt or tender is assumed zero.
+
+This validates current original roster charges. Subsequent annual charges,
 term aging, long-contract bonus limits, releases, retained debt, guarantees and
 modern-rule/game posting consistency remain unverified. No completed modern
 franchise money system is claimed.
