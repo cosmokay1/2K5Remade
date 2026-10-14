@@ -1,9 +1,9 @@
 # Contract generations: next franchise lifecycle prerequisite
 
-General signing and incoming assignment retain their former-club guards. An
-explicit supported same-year veteran return operation now creates a separate
-agreement while preserving old debt. General AI negotiation, incoming return
-trades and multi-season delivery still require further integration.
+General signing retains its former-club guard. Explicit same-year veteran returns
+and generation-aware assignments create separate agreements and preserve old
+debt. The native service supports return negotiation and assignment back to
+former clubs. Actual guest and multi-season delivery require further integration.
 
 Player identity and exclusive ownership remain stable. Contract identity identifies
 one team-book agreement, its effective terms, cash obligation, and closed status.
@@ -101,7 +101,7 @@ cash ID; omission means the original `contract:player` identity. They still chec
 player identity, compensation totals and allocated payments. Assignment can
 identify the receiving book's cash obligation separately. Cash creation refuses
 ID collisions without replacing an earlier obligation. The explicit return operation now supplies versioned records and archived
-lookup for a second agreement. General signing and incoming-trade guards remain.
+lookup for a second agreement. General signing remains explicit; versioned assignment also supports former clubs.
 
 ## Agreement archives and native inspection
 
@@ -122,8 +122,8 @@ screens; it is not a completed game screen or guest hook.
 
 The legacy financial posting view remains for historical replay. Archives are
 rebuilt from source history; format4 persists their migration checkpoint.
-Explicit return records below support later agreements. General signing,
-returned-player assignment and amendment still require further integration.
+Explicit return records below support later agreements. Returned-player assignment and first amendment now use versioned records.
+Actual guest entry and broader lifecycle rules still require further integration.
 
 ## Explicit format4 migration
 

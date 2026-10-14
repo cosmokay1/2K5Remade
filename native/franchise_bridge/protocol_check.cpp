@@ -134,6 +134,33 @@ int main() {
         trade_reply["result"]["trade"]["a"]["financial"]["outgoing_trades"]={{"v",assignment_archive}};
         trade_reply["result"]["trade"]["b"]["financial"]["incoming_trades"]={{"v",assignment_archive}};
         franchise::validate_result(trade_reply,trade_request);
+        auto generational_trade_request=trade_request, generational_trade_reply=trade_reply;
+        const auto from_id="contract-gen:"+std::string(64,'e'), to_id="contract-gen:"+std::string(64,'f');
+        generational_trade_request["seller_generation_id"]=from_id;
+        generational_trade_request["buyer_previous_generation_id"]=nullptr;
+        generational_trade_reply["result"]["seller_generation_id"]=from_id;
+        generational_trade_reply["result"]["buyer_previous_generation_id"]=nullptr;
+        generational_trade_reply["result"]["buyer_generation_id"]=to_id;
+        auto linked_archive=assignment_archive;
+        linked_archive["original_cash"]={{"obligation_id",from_id},{"player_id","v"},{"amount",69},{"paid",9},{"source","fixture"},{"paid_components",nlohmann::json::array({nlohmann::json::array({"signing_bonus",9})})}};
+        linked_archive["seller_cash"]=linked_archive["original_cash"];linked_archive["seller_cash"]["amount"]=9;
+        linked_archive["buyer_cash"]={{"obligation_id",to_id},{"player_id","v"},{"amount",60},{"paid",0},{"source","fixture"},{"paid_components",nlohmann::json::array()}};
+        generational_trade_reply["result"]["trade"]["a"]["financial"]["outgoing_trades"]["v"]=linked_archive;
+        generational_trade_reply["result"]["trade"]["b"]["financial"]["incoming_trades"]["v"]=linked_archive;
+        franchise::validate_result(generational_trade_reply,generational_trade_request);
+        for (int scenario=0;scenario<7;++scenario) {
+            auto bad=generational_trade_reply,input=generational_trade_request;
+            if (scenario==0) bad["result"]["seller_generation_id"]=to_id;
+            if (scenario==1) bad["result"]["buyer_previous_generation_id"]=true;
+            if (scenario==2) bad["result"]["buyer_generation_id"]=nullptr;
+            if (scenario==3) bad["result"]["trade"]["b"]["financial"]["incoming_trades"]["v"]["buyer_cash"]["obligation_id"]=from_id;
+            if (scenario==4) input.erase("seller_generation_id");
+            if (scenario==5) bad["result"]["trade"]["a"]["financial"]["outgoing_trades"]["v"]["original_cash"]["paid"]=true;
+            if (scenario==6) input["seller_generation_id"]=nullptr;
+            bool rejected=false;
+            try { franchise::validate_result(bad,input); } catch (const std::exception&) { rejected=true; }
+            if (!rejected) throw std::runtime_error("Versioned trade agreement substitution accepted");
+        }
         for (int scenario=0;scenario<6;++scenario) {
             auto bad=trade_reply;
             if (scenario==0) bad["result"]["trade"]["a"]["financial"]["signed_players"]={"v"};

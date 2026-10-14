@@ -11,13 +11,26 @@ int wmain(int argc, wchar_t** argv) {
     const bool returning = argc == 4 && (std::wstring(argv[3]) == L"--return" || std::wstring(argv[3]) == L"--return-replay");
     const bool return_replay = argc == 4 && std::wstring(argv[3]) == L"--return-replay";
     const bool returned_amendment = argc == 4 && std::wstring(argv[3]) == L"--returned-restructure";
-    if (argc == 4 && !returned_amendment && !replay && !abrupt && !release && !assignment && !restructure && !returning) return 2;
+    const bool generation_trade = argc == 4 && std::wstring(argv[3]) == L"--generation-trade";
+    if (argc == 4 && !generation_trade && !returned_amendment && !replay && !abrupt && !release && !assignment && !restructure && !returning) return 2;
     try {
         franchise::PipeClient client(argv[1], argv[2], franchise::ServiceMode::OfflineFixture);
         if (abrupt) {
             std::cout << client.process_id() << std::endl;
             std::cin.get();
             ExitProcess(0);  // Deliberately bypass all client destructors.
+        }
+        if (generation_trade) {
+            const char* requests[] = {
+                R"({"protocol":1,"request_id":"native-generation-assignment","operation":"manual_trade","seller":"a","buyer":"b","player_id":"v","seller_revision":6,"buyer_revision":1,"seller_generation_id":"contract-gen:b1b0159b144a9d2dc7ba7aac3130c7c6a15318dbf98792c08a728f646158bdc2","buyer_previous_generation_id":null,"timeout_ms":5000,"decision_mode":"manual","scope":{"league_year":2026,"traded_on":"2026-06-01","seller_first_regular_season_game":"2026-09-10","buyer_first_regular_season_game":"2026-09-10","exclusions":["conditional_consideration","early_june1_designation","grievance","guarantee_offsets","guarantee_voids","injury_liability","other_compensation","seller_retained_guarantees","unpaid_or_deferred_bonus","waiver_transfer"],"healthy":true,"current_year_earned_base":0,"assignment_consent":true,"transaction_eligible":true,"source":"synthetic Windows generation assignment"}})",
+                R"({"protocol":1,"request_id":"generation-buyer","operation":"player_context","team_id":"b","player_id":"v","timeout_ms":5000})"
+            };
+            for (const auto* request : requests) {
+                client.submit(request);
+                while (!client.ready()) std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                std::cout << client.take() << std::endl;
+            }
+            return 0;
         }
         if (returned_amendment) {
             const char* requests[] = {

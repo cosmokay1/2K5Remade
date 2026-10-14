@@ -1939,3 +1939,39 @@ on Windows/Ubuntu and actual asset-free native Windows return preview/agreement/
 old debt/restart fixture success. This is pipe/runtime evidence, not game evidence.
 Actual guest hooks/assets/save/load, returned-player trades, other amendments and
 season progression remain unfinished.
+
+## October 13, 2026 — General generation-aware assignments
+
+Supported sourced preseason trades now move returned/assigned agreements and
+receive players back at a former club. Each versioned receiver gets an assignment
+identity from a distinct tagged four-element hash input, with immutable source
+club/agreement ancestry. Both clubs keep prior cash, terms and retained debt.
+New assignment origins support subsequent first restructure/release/payment and
+canonical historical lookup. Custom source transfers require explicit destination
+cash identity before mutation. Legacy snapshots and requests stay compatible.
+
+Paired generation_trade_out/in records validate full before/after generation
+postings and source/current/previous receiving identities. Two journals and
+ownership commit atomically; affordability, final access and second-insert
+failures preserve both books. Native manual_trade binds explicit source/previous
+IDs, echoes the new receiver ID, and C++ checks matching cash, paired plans and
+nominal conservation. Review caught explicit legacy→virgin IDs committing a
+legacy receipt; explicit identity mode now creates a versioned receipt and retries
+identically. Null source and malformed parent IDs reject before money changes.
+
+All 415 Python tests and portable C++ build/CTest pass. A release39→return18→B→A
+sequence conserves57 combined nominal cash, retains oldcash39 and settledreturn3,
+and adds receivingbase15; final A charges47,5,5. Subsequent conversion/release
+retains both older debts. Independent audit verifies paired source tampering,
+atomic rollback/ancestry and historical retry nonmutation.
+
+New Windows fixture trades the paid/converted return agreement: oldcash39paid9
+remains, paid sourcebonus7 stays with seller, receiverbase11 is unpaid, and total
+nominalcash remains57. Exact raw bootstrap/requests pass in-process with AI off
+and retry; actual native Windows execution for this trade fixture awaits CI.
+Fixed a C++ synthetic payment-array initializer before delivery. Prior11a36be
+passed both workflows; CI38496520586 confirms403tests on Windows/Ubuntu and
+actual native returned-restructure/olddebt/restart fixture execution.
+
+Actual game hooks/assets/save/load, consideration and unsupported trade/contract
+protections, season progression and final playable delivery remain unfinished.

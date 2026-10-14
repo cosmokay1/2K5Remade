@@ -85,9 +85,21 @@ class Bridge:
             if operation == 'manual_trade':
                 from datetime import date
                 from franchise.trades import PreseasonTradeScope
-                if set(request) != {'protocol','request_id','operation','seller','buyer','player_id','seller_revision',
-                                    'buyer_revision','timeout_ms','decision_mode','scope'} or request['decision_mode'] != 'manual':
+                base={'protocol','request_id','operation','seller','buyer','player_id','seller_revision',
+                      'buyer_revision','timeout_ms','decision_mode','scope'}
+                if set(request) not in (base,base|{'seller_generation_id','buyer_previous_generation_id'}) or request['decision_mode']!='manual':
                     raise ValueError('Explicit complete manual assignment required')
+                seller_generation=request.get('seller_generation_id')
+                buyer_previous=request.get('buyer_previous_generation_id')
+                if 'seller_generation_id' in request:
+                    for role,value in (('seller',seller_generation),('buyer',buyer_previous)):
+                        if value is None and role=='buyer':
+                            continue
+                        if type(value) is not str:
+                            raise ValueError('Canonical trade agreement identities required')
+                        prefix='contract-gen:' if value.startswith('contract-gen:') else 'legacy-contract:'
+                        if not value.startswith(prefix) or len(value)!=len(prefix)+64 or any(c not in '0123456789abcdef' for c in value[len(prefix):]):
+                            raise ValueError('Canonical trade agreement identities required')
                 timeout=request['timeout_ms']
                 if type(timeout) is not int or not 1 <= timeout <= 60000:
                     raise ValueError('Timeout must be 1-60000 milliseconds')
@@ -112,9 +124,11 @@ class Bridge:
                     scope[field]=parsed
                 receipt=self.store.trade_preseason_veteran(request_id,request['seller'],request['buyer'],request['player_id'],
                     scope=PreseasonTradeScope(**scope),seller_revision=request['seller_revision'],buyer_revision=request['buyer_revision'],
-                    access_check=trade_access)
+                    access_check=trade_access,seller_generation_id=seller_generation,
+                    buyer_previous_generation_id=buyer_previous,require_generation_ids=True,include_generation_identity=True)
+                identity={key:receipt[key] for key in ('seller_generation_id','buyer_generation_id','buyer_previous_generation_id')} if len(receipt)>2 else {}
                 return self._reply(request_id,result={'decision_mode':'manual','player_id':request['player_id'],
-                    'seller':request['seller'],'buyer':request['buyer'],'trade':receipt})
+                    'seller':request['seller'],'buyer':request['buyer'],'trade':receipt['participants'] if identity else receipt,**identity})
             if operation == 'manual_release':
                 from datetime import date
                 from franchise.releases import PreseasonReleaseScope

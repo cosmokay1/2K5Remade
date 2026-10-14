@@ -217,6 +217,32 @@ def main():
             assert responses[0]['result']['generation_id']==gid
             assert responses[1]['result']==returns.player_context('a','v')
         print("Native Windows returned agreement restructure, old debt and restart retry verified (synthetic).")
+        amended=returns.load_team('a')
+        returns.record_payment('a','converted-bonus',gid,4,expected_cash_revision=amended.cash_snapshot()['revision'],
+            source='synthetic bank',payment_reference='converted bonus receipt',component='bonus:restructure:return-conversion')
+        returns.create_team('b',Ledger.from_opening(OpeningBooks(),cap=200,roster_reserve=0,
+            max_bonus_years=5,veteran_minimums={'v':(1,)*3}))
+        returns.initialize_cash('b',(),source='synthetic new receiver cash')
+        traded_reply=None
+        for attempt in range(2):
+            result=subprocess.run([sys.argv[1],sys.executable,str(return_path),'--generation-trade'],
+                text=True,capture_output=True,timeout=20,check=True)
+            responses=[json.loads(line) for line in result.stdout.splitlines()]
+            assert len(responses)==2 and all(r['error'] is None for r in responses)
+            if traded_reply is None:traded_reply=responses
+            else:assert responses==traded_reply
+            source,buyer=returns.load_team('a'),returns.load_team('b')
+            buyer_id=buyer.contract_identity('v').generation_id
+            assert buyer_id!=gid and buyer_id.startswith('contract-gen:')
+            assert source.charges==(46,0,0) and buyer.charges==(1,5,5)
+            assert source.generation_cash(old_id).amount==39 and source.generation_cash(old_id).paid==9
+            assert source.generation_cash(gid).amount==7 and source.generation_cash(gid).paid==7
+            assert buyer.generation_cash(buyer_id).amount==11 and buyer.generation_cash(buyer_id).paid==0
+            assert source.cash_snapshot()['nominal_total']+buyer.cash_snapshot()['nominal_total']==57
+            assert responses[0]['result']['buyer_generation_id']==buyer_id
+            assert responses[1]['result']==returns.player_context('b','v')
+        print("Native Windows generation assignment, separate receiver agreement, retained debt and restart retry verified (synthetic).")
+
 
 
 

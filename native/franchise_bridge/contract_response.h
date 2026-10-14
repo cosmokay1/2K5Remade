@@ -346,6 +346,33 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         if (seller.empty() || buyer.empty() || seller == buyer || result.at("decision_mode") != "manual" ||
             result.at("seller") != seller || result.at("buyer") != buyer || result.at("player_id") != request.at("player_id"))
             throw std::runtime_error("Invalid manual assignment identity");
+        if (request.contains("seller_generation_id")) {
+            const auto source_cash=generation_cash_identity(request.at("seller_generation_id"),request.at("player_id").get<std::string>());
+            if (!request.at("buyer_previous_generation_id").is_null())
+                generation_cash_identity(request.at("buyer_previous_generation_id"),request.at("player_id").get<std::string>());
+            if (!result.contains("seller_generation_id") || result.at("seller_generation_id")!=request.at("seller_generation_id") ||
+                !result.contains("buyer_previous_generation_id") || result.at("buyer_previous_generation_id").dump()!=request.at("buyer_previous_generation_id").dump())
+                throw std::runtime_error("Trade changed agreement participants");
+            const auto destination_cash=generation_cash_identity(result.at("buyer_generation_id"),request.at("player_id").get<std::string>());
+            if (result.at("buyer_generation_id").get<std::string>().rfind("contract-gen:",0)!=0)
+                throw std::runtime_error("Trade failed to create destination agreement");
+            const auto& outgoing=result.at("trade").at(seller).at("financial").at("outgoing_trades").at(request.at("player_id").get<std::string>());
+            const auto& incoming=result.at("trade").at(buyer).at("financial").at("incoming_trades").at(request.at("player_id").get<std::string>());
+            for (const auto* name : {"original_cash","seller_cash","buyer_cash"}) {
+                restructure_cash_record(outgoing.at(name));
+                if (outgoing.at(name).at("player_id")!=request.at("player_id"))
+                    throw std::runtime_error("Trade cash belongs to another player");
+            }
+            if (checked_money_sum(outgoing.at("seller_cash").at("amount").get<int64_t>(),outgoing.at("buyer_cash").at("amount"))!=outgoing.at("original_cash").at("amount").get<int64_t>() ||
+                outgoing.at("seller_cash").at("amount")!=outgoing.at("seller_cash").at("paid") ||
+                outgoing.at("seller_cash").at("paid")!=outgoing.at("original_cash").at("paid") ||
+                outgoing.at("buyer_cash").at("paid")!=0)
+                throw std::runtime_error("Trade cash does not reconcile");
+            if (outgoing.dump()!=incoming.dump() || outgoing.at("original_cash").at("obligation_id")!=source_cash ||
+                outgoing.at("seller_cash").at("obligation_id")!=source_cash || outgoing.at("buyer_cash").at("obligation_id")!=destination_cash)
+                throw std::runtime_error("Trade changed agreement cash identity");
+        } else if (result.contains("seller_generation_id") || result.contains("buyer_generation_id") || result.contains("buyer_previous_generation_id"))
+            throw std::runtime_error("Unexpected versioned trade mode");
         const auto& postings=result.at("trade");
         if (!postings.is_object() || postings.size()!=2) throw std::runtime_error("Invalid paired assignment postings");
         auto scope=request.at("scope");

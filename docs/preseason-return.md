@@ -37,7 +37,8 @@ and cap checks run before acceptance commits.
 
 Returned agreements now support the same first guaranteed-base conversion
 through versioned manual_restructure with an explicit generation_id. See
-[preseason-restructure.md](preseason-restructure.md). Returned-player trades
-remain unsupported. Season progression, guarantee offsets, real guest hooks and game save/load remain
+[preseason-restructure.md](preseason-restructure.md). Generation-aware trades now
+preserve these agreements when assigning to another or former club; see
+[preseason-trade.md](preseason-trade.md). Season progression, guarantee offsets, real guest hooks and game save/load remain
 unfinished. Tests
 use synthetic accounting sources and do not prove actual game integration.

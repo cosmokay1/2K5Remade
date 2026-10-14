@@ -40,6 +40,14 @@ def generation_identity(team_id, player_id, request_id):
     return GenerationIdentity(generation_id,player_id,generation_id)
 
 
+def assignment_identity(team_id, player_id, request_id):
+    if any(type(value) is not str or not value.strip() for value in (team_id,player_id,request_id)):
+        raise ValueError('Stable assignment team, player and request identities required')
+    material=json.dumps(['assignment',team_id,player_id,request_id],ensure_ascii=False,separators=(',',':')).encode('utf-8')
+    generation_id='contract-gen:' + hashlib.sha256(material).hexdigest()
+    return GenerationIdentity(generation_id,player_id,generation_id)
+
+
 @dataclass(frozen=True)
 class GenerationAgreement:
     """One immutable agreement version; cash settlement stays in its cash book."""
@@ -52,9 +60,18 @@ class GenerationAgreement:
     restructure: "RestructurePlan | None" = None
     return_request_id: str | None = None
     return_scope: "PreseasonReturnScope | None" = None
+    assignment_request_id: str | None = None
+    assigned_from_team: str | None = None
+    assigned_from_generation_id: str | None = None
 
     def __post_init__(self):
         from franchise.books import ActiveContract
+        assignment=(self.assignment_request_id,self.assigned_from_team,self.assigned_from_generation_id)
+        if any(value is not None for value in assignment):
+            if (any(type(value) is not str or not value.strip() for value in assignment)
+                    or self.incoming_trade is None or self.return_request_id is not None or self.return_scope is not None):
+                raise ValueError('Complete sourced assignment metadata and incoming plan required')
+
         from franchise.returns import PreseasonReturnScope
         if ((self.return_request_id is None) != (self.return_scope is None)
                 or (self.return_scope is not None and not isinstance(self.return_scope,PreseasonReturnScope))):
@@ -75,12 +92,31 @@ class GenerationAgreement:
                            (self.incoming_trade, TradePlan), (self.restructure, RestructurePlan)):
             if plan is not None and not isinstance(plan, kind):
                 raise ValueError('Typed generation lifecycle plan required')
+        if self.assignment_request_id is not None:
+            source=legacy_identity(self.assigned_from_team,self.identity.player_id)
+            if self.assigned_from_generation_id==source.generation_id:
+                source_cash=source.cash_obligation_id
+            elif (self.assigned_from_generation_id.startswith('contract-gen:')
+                    and len(self.assigned_from_generation_id)==77
+                    and all(c in '0123456789abcdef' for c in self.assigned_from_generation_id[13:])):
+                source_cash=self.assigned_from_generation_id
+            else:
+                raise ValueError('Canonical assignment source generation required')
+            if self.incoming_trade.original_cash.obligation_id != source_cash:
+                raise ValueError('Incoming plan cash disagrees with assignment source')
         if ((self.release is not None and self.release.original_contract != self.contract)
                 or (self.outgoing_trade is not None and self.outgoing_trade.original_contract != self.contract)
                 or (self.restructure is not None and (self.restructure.contract != self.contract
                     or self.restructure.original_contract != self.original_contract))
                 or (self.incoming_trade is not None and self.incoming_trade.buyer_contract != self.original_contract)):
             raise ValueError('Generation lifecycle plan disagrees with agreement')
+
+    def canonical_identity(self, team_id):
+        if self.assignment_request_id is not None:
+            return assignment_identity(team_id,self.identity.player_id,self.assignment_request_id)
+        if self.return_request_id is not None:
+            return generation_identity(team_id,self.identity.player_id,self.return_request_id)
+        return legacy_identity(team_id,self.identity.player_id)
 
     @property
     def status(self):

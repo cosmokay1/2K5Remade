@@ -75,12 +75,13 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
 
 ## M2 — Modern contract and season lifecycle
 
-- [ ] Add immutable contract generations, backed-up format migration and separate
+- [x] Add immutable contract generations, backed-up format migration and separate
       retained cash/debt histories before enabling former-club return signings.
       Read-only legacy identities and explicit unmatched obligations now support
       reconciliation inspection through authenticated /api/contracts.
       Backup/replay preflight now checks whole-league integrity before migration;
-      tools.prepare_generation_migration does not advance the format.
+      tools.prepare_generation_migration defaults to preflight; --migrate explicitly
+      commits the backed-up format4 checkpoint.
       Accounting now consumes immutable legacy identities and a cash resolver;
       typed generation archives now drive payment ceilings and native inspection;
       backed-up format4 checkpoint migration is implemented. Versioned new-generation
@@ -88,7 +89,8 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       return signing and subsequent release/payment. Native service preview, AI
       negotiation and manual signing accept explicit return_scope with stories
       and promises. Returned first restructures use exact agreement IDs and versioned
-      postings. Actual guest entry, returned-player trades and season rollover
+      postings. Generation-aware assignments preserve both clubs' older cash/debt,
+      including trade back to a former club. Actual guest entry and season rollover
       remain pending.
       See docs/contract-generations.md; current ownership now controls free-agent
       negotiation availability without deleting historical receipts.
@@ -107,7 +109,8 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
 - [ ] Implement atomic trades with both teams' obligations and ownership.
       Supported sourced preseason veteran contract assignments now commit paired
       cash/cap/ownership events with independent league replay. Consideration, rookies,
-      unpaid bonus, return-contract generations and other trade protections remain.
+      unpaid bonus and other trade protections remain; supported assignments now use
+      separate receiving generations when returning to a former club.
 - [ ] Implement extensions/restructures without erasing existing bonus layers.
       Pure sourced preseason guaranteed-base conversion and immutable bonus layers now
       preserve exact old/new schedules. Supported amendment cash, replay and subsequent release/trade commits now retain
