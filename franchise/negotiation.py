@@ -84,7 +84,6 @@ class Negotiation:
         self._actor = json.dumps({**actor, "performance": performance}, allow_nan=False)
         self._events: list[dict] = ledger.negotiation_history(player_id)
         self._replies: dict[str, tuple[Offer, dict]] = {}
-        self._signed = any(event["outcome"] == "signed" for event in self._events)
         self._lock = RLock()
 
     @property
@@ -118,17 +117,15 @@ class Negotiation:
             self._replies[request_id] = (offer, recorded)
             if not any(event["request_id"] == request_id for event in self._events):
                 self._events.append(recorded)
-            self._signed = self._signed or recorded["outcome"] == "signed"
             return json.loads(json.dumps(recorded))
         fresh = self.ledger.negotiation_history(self.player_id)
         if fresh:
             self._events = fresh
-            self._signed = any(event["outcome"] == "signed" for event in fresh)
-        if self._signed:
-            raise ValueError("Negotiation is already signed")
         actor = json.loads(self._actor)
         refreshed = self.ledger.bind_actor(self.player_id, actor["personality"], actor["relationships"], access_check=self._access_check)
         refreshed, snapshot = self.ledger.negotiation_inputs(self.player_id, refreshed)
+        if snapshot["current_contract_owned"]:
+            raise ValueError("Player is currently signed; extensions are unsupported")
         self._actor = json.dumps({**refreshed, "performance": actor["performance"]}, allow_nan=False)
         if expected_revision is not None and (type(expected_revision) is not int or expected_revision != snapshot["revision"]):
             raise Rejected("Offer was based on stale client franchise state")
@@ -162,7 +159,6 @@ class Negotiation:
             else:
                 event["outcome"] = "signed"
                 event["charges"] = [json_amount(value) for value in receipt.charges]
-                self._signed = True
         elif decision.action == "counter":
             event["outcome"] = "counteroffer"
             try:

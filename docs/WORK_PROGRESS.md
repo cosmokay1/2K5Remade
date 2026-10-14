@@ -1709,3 +1709,17 @@ tests and diff checks pass. No retail assets, game runtime, release ZIP or
 Proton execution supplied; this improves candidate tooling without claiming
 playable delivery. b4e0d77 CI passed38490590450/38490590375; latest999f884 CI
 38490946024/38490945988 remained running at inspection.
+
+## October 13, 2026 — Current ownership versus lifetime negotiation history
+
+Audit reproduced a released player's former-club dialogue blocked forever by an
+old signed story. Removed lifetime terminal flags; fresh negotiation input now
+reads current ownership (league-wide in durable store) in the same snapshot. Old
+receipt retries return historical results without closing later dialogues; active
+owned players reject new free-agent inference even without a recorded signed story.
+Return-signing generation guards remain to protect prior debt/cash.332 full tests
+and corrected benchmark fixture pass; the fixture now negotiates an actually
+unowned player separately from its assigned contract. Parallel generation audit
+documented ordered immutable identity/cash/archive/migration prerequisites and
+acceptance cases. No actual game/save or generation migration claimed.999f884
+passed CI38490946024/38490945988; current packaging CI remained running.

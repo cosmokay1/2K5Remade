@@ -27,7 +27,7 @@ def main():
         original=ActiveContract(Offer('v',(10,20,30),9,(0,20,10)),'synthetic benchmark contract')
         for index,team in enumerate(names):
             store.create_team(team,Ledger.from_opening(OpeningBooks(contracts=(original,)) if index==0 else OpeningBooks(),
-                cap=1000,roster_reserve=0,max_bonus_years=5,veteran_minimums={'v':(1,)*3}))
+                cap=1000,roster_reserve=0,max_bonus_years=5,veteran_minimums={'v':(1,)*3,'n':(1,)*3}))
             records=(CashObligation('contract:v','v',69,9,'synthetic complete bank',(('signing_bonus',9),)),) if index==0 else ()
             store.initialize_cash(team,records,source='synthetic benchmark cash')
             session=None
@@ -36,19 +36,19 @@ def main():
                 from franchise.store import StoredLedger
                 from franchise.performance import PerformanceEvidence,Observation
                 from franchise.promises import PromiseGoal
-                evidence=PerformanceEvidence('v','synthetic season','cpu_played',(
+                evidence=PerformanceEvidence('n','synthetic season','cpu_played',(
                     Observation('receptions',50,'synthetic fixture'),
                     Observation('targets',None,'synthetic fixture','Not measured'),
                     Observation('pressures',None,'synthetic fixture','Not measured')),'Synthetic benchmark coverage')
-                session=Negotiation(StoredLedger(store,team),player_id='v',personality={'money':0.7},
+                session=Negotiation(StoredLedger(store,team),player_id='n',personality={'money':0.7},
                     performance=evidence.to_context(),relationships={'trust':0.5},access_check=lambda:None)
             for story in range(args.stories_per_team):
                 if session is not None:
-                    session.respond('story-'+str(story),Offer('v',(10,),0),lambda _:json.dumps({
+                    session.respond('story-'+str(story),Offer('n',(10,),0),lambda _:json.dumps({
                         'action':'reject','reason':'Scripted benchmark decision','salaries':None,'signing_bonus':None}),
                         expected_revision=1,promise_goals=(PromiseGoal('starts','starts',8,80,'synthetic season','synthetic proposal'),))
                 else:
-                    store.record_negotiation(team,{'request_id':'story-'+str(story),'offer':Offer('v',(10,),0).to_dict(),
+                    store.record_negotiation(team,{'request_id':'story-'+str(story),'offer':Offer('n',(10,),0).to_dict(),
                         'action':'reject','reason':'Synthetic benchmark dialogue','counter':None,'outcome':'player_rejected'},access_check=lambda:None)
         scope=PreseasonTradeScope(2026,date(2026,6,1),date(2026,9,10),date(2026,9,11),EXCLUDED_TRADE_LIABILITIES,
                                  True,0,True,True,'synthetic benchmark assignment')
@@ -67,7 +67,7 @@ def main():
                 seller_revision=1,buyer_revision=1,access_check=lambda:None)
             retry_elapsed.append((perf_counter()-started)*1000)
             assert receipt==original_receipt
-        count=sum(len(store.negotiation_history(team,'v')) for team in names)
+        count=sum(len(store.negotiation_history(team,'n')) for team in names)
         assert count==args.teams*args.stories_per_team
         print(json.dumps({'scope':'Synthetic local SQLite replay; not game, Windows or Deck acceptance',
             'teams':args.teams,'dialogue_events':count,'read_samples_ms':elapsed,'median_ms':median(elapsed),

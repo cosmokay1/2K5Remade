@@ -75,6 +75,11 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
 
 ## M2 — Modern contract and season lifecycle
 
+- [ ] Add immutable contract generations, backed-up format migration and separate
+      retained cash/debt histories before enabling former-club return signings.
+      See docs/contract-generations.md; current ownership now controls free-agent
+      negotiation availability without deleting historical receipts.
+
 - [ ] Define verified league-year rules; explicitly choose economic treatment
       for historical start years rather than silently combining incompatible eras.
 - [ ] Load annual minimums and draft allotments with recorded source/version.

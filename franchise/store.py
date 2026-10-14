@@ -934,7 +934,8 @@ class FranchiseStore:
             ledger = self._load(db, team)
             if player not in ledger._actors:
                 raise Rejected("Registered actor required")
-            return ledger._actors[player], ledger.negotiation_context(player)
+            return ledger._actors[player], {**ledger.negotiation_context(player),
+                                           "current_contract_owned": db.execute("SELECT 1 FROM ownership WHERE player_id=?", (player,)).fetchone() is not None}
 
     def update_relationship(self, team, request_id, player, relationship, delta, *, source_request_id, expected_revision):
         for value in (request_id, player, relationship, source_request_id):

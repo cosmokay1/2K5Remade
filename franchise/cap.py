@@ -672,7 +672,8 @@ class Ledger:
 
     def negotiation_inputs(self, player_id, actor):
         with self._lock:
-            return actor, self.negotiation_context(player_id)
+            return actor, {**self.negotiation_context(player_id),
+                           "current_contract_owned": player_id in self._players}
 
     def negotiation_history(self, player_id: str):
         return []
