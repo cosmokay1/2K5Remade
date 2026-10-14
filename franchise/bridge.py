@@ -29,6 +29,17 @@ class Bridge:
             if type(request.get("protocol")) is not int or request["protocol"] != PROTOCOL:
                 return self._reply(request_id, error="protocol_mismatch")
             operation = request.get("operation")
+            compact='receipt_format' in request
+            if compact:
+                from franchise.receipts import TARGET_FORMAT
+                if operation not in ('manual_release','manual_trade','manual_restructure') or request['receipt_format']!=TARGET_FORMAT:
+                    raise ValueError('Unsupported lifecycle receipt format')
+            request_fields=set(request)-({'receipt_format'} if compact else set())
+            def receipt_result(result):
+                if compact:
+                    from franchise.receipts import compact_lifecycle_result
+                    return compact_lifecycle_result(result,operation)
+                return result
             if operation == "hello":
                 if set(request) != {"protocol", "request_id", "operation"}:
                     raise ValueError("Unexpected handshake fields")
@@ -38,7 +49,7 @@ class Bridge:
                 from datetime import date
                 from franchise.cap import money
                 from franchise.restructures import PreseasonRestructureScope
-                if set(request) not in ({'protocol','request_id','operation','team_id','player_id','expected_revision',
+                if request_fields not in ({'protocol','request_id','operation','team_id','player_id','expected_revision',
                                     'timeout_ms','decision_mode','scope','converted_base'},
                                     {'protocol','request_id','operation','team_id','player_id','expected_revision',
                                     'timeout_ms','decision_mode','scope','converted_base','generation_id'}) or request['decision_mode'] != 'manual':
@@ -81,9 +92,9 @@ class Bridge:
                         raise ValueError('Canonical YYYY-MM-DD restructure dates required')
                     scope[field] = parsed
                 def restructure_result(receipt):
-                    return {'decision_mode':'manual','team_id':request['team_id'],
+                    return receipt_result({'decision_mode':'manual','team_id':request['team_id'],
                         'player_id':request['player_id'],'restructure':receipt,
-                        **({'generation_id':generation_id} if generation_id is not None else {})}
+                        **({'generation_id':generation_id} if generation_id is not None else {})})
                 receipt = self.store.restructure_preseason_veteran(request['team_id'],request_id,request['player_id'],
                     scope=PreseasonRestructureScope(**scope),converted_base=converted,
                     expected_revision=request['expected_revision'],access_check=restructure_access,generation_id=generation_id,require_return_generation_id=True,
@@ -94,7 +105,7 @@ class Bridge:
                 from franchise.trades import PreseasonTradeScope
                 base={'protocol','request_id','operation','seller','buyer','player_id','seller_revision',
                       'buyer_revision','timeout_ms','decision_mode','scope'}
-                if set(request) not in (base,base|{'seller_generation_id','buyer_previous_generation_id'}) or request['decision_mode']!='manual':
+                if request_fields not in (base,base|{'seller_generation_id','buyer_previous_generation_id'}) or request['decision_mode']!='manual':
                     raise ValueError('Explicit complete manual assignment required')
                 seller_generation=request.get('seller_generation_id')
                 buyer_previous=request.get('buyer_previous_generation_id')
@@ -131,9 +142,9 @@ class Bridge:
                     scope[field]=parsed
                 def trade_result(receipt):
                     identity={key:receipt[key] for key in ('seller_generation_id','buyer_generation_id','buyer_previous_generation_id')} if len(receipt)>2 else {}
-                    return {'decision_mode':'manual','player_id':request['player_id'],
+                    return receipt_result({'decision_mode':'manual','player_id':request['player_id'],
                         'seller':request['seller'],'buyer':request['buyer'],
-                        'trade':receipt['participants'] if identity else receipt,**identity}
+                        'trade':receipt['participants'] if identity else receipt,**identity})
                 receipt=self.store.trade_preseason_veteran(request_id,request['seller'],request['buyer'],request['player_id'],
                     scope=PreseasonTradeScope(**scope),seller_revision=request['seller_revision'],buyer_revision=request['buyer_revision'],
                     access_check=trade_access,seller_generation_id=seller_generation,
@@ -145,7 +156,7 @@ class Bridge:
                 from franchise.releases import PreseasonReleaseScope
                 from franchise.guarantees import DiscountProfile
                 from franchise.books import parse_amount
-                if set(request) != {'protocol','request_id','operation','team_id','player_id','expected_revision','timeout_ms',
+                if request_fields != {'protocol','request_id','operation','team_id','player_id','expected_revision','timeout_ms',
                                     'decision_mode','scope','discount','payment_year_offsets'} or request['decision_mode'] != 'manual':
                     raise ValueError('Explicit complete manual release request required')
                 if type(request['team_id']) is not str or not request['team_id'].strip():
@@ -174,12 +185,14 @@ class Bridge:
                     scope[field]=parsed
                 discount=dict(request['discount'])
                 discount['annual_rate']=parse_amount(discount['annual_rate'])
+                def release_result(receipt):
+                    return receipt_result({'decision_mode':'manual','player_id':request['player_id'],'release':receipt})
                 receipt=self.store.release_preseason_veteran(request['team_id'],request_id,request['player_id'],
                     scope=PreseasonReleaseScope(**scope),discount=DiscountProfile(**discount),
                     payment_year_offsets=tuple(request['payment_year_offsets']),expected_revision=request['expected_revision'],
                     access_check=release_access,receipt_check=lambda receipt:self._require_frame(request_id,
-                        {'decision_mode':'manual','player_id':request['player_id'],'release':receipt}))
-                return self._reply(request_id,result={'decision_mode':'manual','player_id':request['player_id'],'release':receipt})
+                        release_result(receipt)))
+                return self._reply(request_id,result=release_result(receipt))
             if operation == 'contract_context':
                 if set(request) != {'protocol','request_id','operation','team_id','generation_id','timeout_ms'}:
                     raise ValueError('Unexpected contract context fields')

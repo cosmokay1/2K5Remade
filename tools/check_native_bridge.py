@@ -269,6 +269,45 @@ def main():
             assert responses[1]['result']==returns.player_context('b','v')
         print("Native Windows generation assignment, separate receiver agreement, retained debt and restart retry verified (synthetic).")
 
+        compact_path=Path(directory)/'long franchise compact receipt.sqlite'
+        compact_store=FranchiseStore(compact_path)
+        players=['v']+['player-'+str(i) for i in range(1,53)]
+        contracts=tuple(ActiveContract(Offer(player,(1000000,)*3,9000000,(0,1000000,1000000)),
+            'synthetic original contract') for player in players)
+        compact_store.create_team('a',Ledger.from_opening(OpeningBooks(contracts=contracts),cap=600000000,
+            roster_reserve=0,max_bonus_years=5,veteran_minimums={player:(1,)*3 for player in players}))
+        compact_store.initialize_cash('a',tuple(CashObligation('contract:'+player,player,12000000,9000000,
+            'synthetic original payment',(('signing_bonus',9000000),)) for player in players),source='synthetic complete cash')
+        for i in range(1,31):
+            compact_store.release_preseason_veteran('a','prior-'+str(i),players[i],
+                scope=PreseasonReleaseScope(2026,date(2026,6,1),date(2026,9,10),EXCLUDED_LIABILITIES,
+                    True,True,0,'synthetic prior release'),discount=DiscountProfile(2026,Fraction(0),'synthetic zero rate'),
+                payment_year_offsets=(0,1,2),expected_revision=i,access_check=lambda:None)
+        original=None
+        for attempt in range(2):
+            result=subprocess.run([sys.argv[1],sys.executable,str(compact_path),'--compact-release'],
+                text=True,capture_output=True,timeout=20,check=True)
+            responses=[json.loads(line) for line in result.stdout.splitlines()]
+            assert len(responses)==1 and responses[0]['error'] is None
+            reply=responses[0]
+            assert reply['result']['receipt_format']=='target_v1'
+            assert len(result.stdout.encode('utf-8'))<65536
+            if original is None:original=reply
+            else:assert reply==original
+            current=compact_store.load_team('a')
+            posting=reply['result']['release']
+            assert current.revision==32 and current.charges==(429000000,88000000,88000000)
+            assert posting['financial']['charges']==[429000000,88000000,88000000]
+            assert list(posting['financial']['released_contracts'])==['v']
+            assert 'v' not in posting['financial']['signed_players']
+            assert posting['cash']['nominal_total']==605000000 and posting['cash']['paid_total']==477000000
+            assert posting['cash']['other_obligations']==dict(count=52,nominal_total=594000000,
+                paid_total=468000000,unpaid_total=126000000)
+            assert len(posting['cash']['obligations'])==1
+            assert len(json.dumps(dict(financial=current.financial_snapshot(),cash=current.cash_snapshot())).encode('utf-8'))>65536
+        print("Native Windows compact long-franchise receipt, reconciled cash and restart verified (synthetic).")
+
+
 
 
 

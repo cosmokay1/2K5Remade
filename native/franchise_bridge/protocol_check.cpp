@@ -134,6 +134,64 @@ int main() {
         trade_reply["result"]["trade"]["a"]["financial"]["outgoing_trades"]={{"v",assignment_archive}};
         trade_reply["result"]["trade"]["b"]["financial"]["incoming_trades"]={{"v",assignment_archive}};
         franchise::validate_result(trade_reply,trade_request);
+        auto released_cash=franchise::parse_frame(R"({"obligation_id":"contract:v","player_id":"v","amount":39,"paid":9,"source":"synthetic release settlement","paid_components":[["signing_bonus",9]]})");
+        auto seller_cash=franchise::parse_frame(R"({"obligation_id":"contract:v","player_id":"v","amount":9,"paid":9,"source":"synthetic assigned paid history","paid_components":[["signing_bonus",9]]})");
+        auto buyer_cash=franchise::parse_frame(R"({"obligation_id":"contract:v","player_id":"v","amount":60,"paid":0,"source":"synthetic assigned bases","paid_components":[]})");
+        auto compact_release=release_reply,compact_trade=trade_reply,compact_restructure=restructure_reply;
+        compact_release["result"]["release"]["financial"]["released_contracts"]["v"]["cash_obligation"]=released_cash;
+        for (const auto& team : {std::string("a"),std::string("b")}) {
+            auto& archive=compact_trade["result"]["trade"][team]["financial"][team=="a" ? "outgoing_trades" : "incoming_trades"]["v"];
+            archive["seller_cash"]=seller_cash;archive["buyer_cash"]=buyer_cash;
+        }
+        auto summarize=[](nlohmann::json& cash,const nlohmann::json& target) {
+            const auto nominal=target.at("amount").get<int64_t>(),paid=target.at("paid").get<int64_t>();
+            cash={{"revision",1},{"nominal_total",nominal+11},{"paid_total",paid+3},{"unpaid_total",nominal-paid+8},
+                {"obligations",nlohmann::json::array({target})},
+                {"other_obligations",{{"count",1},{"nominal_total",11},{"paid_total",3},{"unpaid_total",8}}}};
+        };
+        summarize(compact_release["result"]["release"]["cash"],released_cash);
+        summarize(compact_trade["result"]["trade"]["a"]["cash"],seller_cash);
+        summarize(compact_trade["result"]["trade"]["b"]["cash"],buyer_cash);
+        summarize(compact_restructure["result"]["restructure"]["cash"],restructure_archive["cash_obligation"]);
+        for (const auto& operation : {std::string("manual_release"),std::string("manual_trade"),std::string("manual_restructure")}) {
+            auto compact=operation=="manual_release" ? compact_release : operation=="manual_trade" ? compact_trade : compact_restructure;
+            auto submitted=operation=="manual_release" ? release_request : operation=="manual_trade" ? trade_request : restructure_request;
+            submitted["receipt_format"]="target_v1";compact["result"]["receipt_format"]="target_v1";
+            franchise::validate_result(compact,submitted);
+            for (int scenario=0;scenario<16;++scenario) {
+                auto bad=compact,bad_request=submitted;
+                auto& posted=operation=="manual_release" ? bad["result"]["release"] :
+                    operation=="manual_trade" ? bad["result"]["trade"]["a"] : bad["result"]["restructure"];
+                auto& cash=posted["cash"];
+                auto& financial=posted["financial"];
+                const auto map=operation=="manual_release" ? "released_contracts" : operation=="manual_trade" ? "outgoing_trades" : "restructures";
+                if (scenario==0) bad["result"].erase("receipt_format");
+                if (scenario==1) bad_request.erase("receipt_format");
+                if (scenario==2) bad["result"]["receipt_format"]="target_v2";
+                if (scenario==3) cash["other_obligations"].erase("count");
+                if (scenario==4) cash["other_obligations"]["count"]=true;
+                if (scenario==5) cash["other_obligations"]["count"]=0;
+                if (scenario==6) cash["other_obligations"]["unpaid_total"]=7;
+                if (scenario==7) cash["nominal_total"]=0;
+                if (scenario==8) cash["obligations"][0]["source"]="changed from archive";
+                if (scenario==9) cash["obligations"].push_back(cash["obligations"][0]);
+                if (scenario==10) financial[map]["other-player"]=financial[map]["v"];
+                if (scenario==11) financial["cap"]=100;
+                if (scenario==12) {
+                    cash["other_obligations"]={{"count",1},{"nominal_total",std::numeric_limits<int64_t>::max()},
+                        {"paid_total",0},{"unpaid_total",std::numeric_limits<int64_t>::max()}};
+                    cash["nominal_total"]=std::numeric_limits<int64_t>::max();
+                    cash["paid_total"]=cash["obligations"][0]["paid"];
+                    cash["unpaid_total"]=std::numeric_limits<int64_t>::max()-cash["paid_total"].get<int64_t>();
+                }
+                if (scenario==13) {bad_request.erase("receipt_format");bad["result"].erase("receipt_format");}
+                if (scenario==14) cash["other_obligations"]["count"]=std::numeric_limits<uint64_t>::max();
+                if (scenario==15) cash["revision"]=true;
+                bool rejected=false;
+                try { franchise::validate_result(bad,bad_request); } catch (const std::exception&) { rejected=true; }
+                if (!rejected) throw std::runtime_error("Invalid compact receipt accepted: "+operation+"/"+std::to_string(scenario));
+            }
+        }
         auto generational_trade_request=trade_request, generational_trade_reply=trade_reply;
         const auto from_id="contract-gen:"+std::string(64,'e'), to_id="contract-gen:"+std::string(64,'f');
         generational_trade_request["seller_generation_id"]=from_id;

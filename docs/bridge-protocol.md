@@ -226,6 +226,24 @@ shape; this check is imposed by the native Bridge boundary.
 Full lifecycle receipts still include team cash and financial snapshots. A
 synthetic 53-player roster with 30 released agreements produces a 70,171-byte
 release receipt, so the current native protocol cannot support that state through
-these operations. Compact transaction receipts or paged reconciliation are still
-needed for long franchises. This guard prevents a commit the client cannot read;
-it does not remove that capacity limitation.
+these operations. Clients can opt into the compact receipt format described below. Full-format
+receipts retain this capacity limitation; the guard prevents unreadable commits.
+
+
+Release, trade and restructure requests may include `receipt_format: "target_v1"`.
+The successful result echoes that exact format. Each participant contains team
+financial revision, all annual cap charges, the complete signed-player list and
+only the affected player's lifecycle archive. Cash contains its revision and
+complete team nominal/paid/unpaid totals, the affected obligation and an
+`other_obligations` summary with count and nominal/paid/unpaid totals. The native
+validator binds the target cash to its lifecycle archive and checks target plus
+other cash against all team totals. Counts and money use nonnegative integers;
+partial, substituted or unexpected compact formats are rejected.
+
+Projection uses the exact fresh or historical stored receipt, and the complete
+projected reply must fit before commit. Full database receipts and event replay
+are unchanged. The compact request can retry a full-format original transaction,
+or vice versa, because receipt format is a transport choice, not new financial
+terms. A large affected archive or ownership list can still exceed capacity and
+reject safely. This is a bounded transaction receipt, not a complete league
+reconciliation or proof of guest-game posting.

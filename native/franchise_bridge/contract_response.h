@@ -86,6 +86,41 @@ inline void restructure_cash_record(const nlohmann::json& cash) {
     }
     if (paid!=cash.at("paid").get<int64_t>()) throw std::runtime_error("Amendment payments disagree");
 }
+inline bool target_receipt_mode(const nlohmann::json& result, const nlohmann::json& request) {
+    if (!request.contains("receipt_format")) {
+        if (result.contains("receipt_format")) throw std::runtime_error("Unexpected compact receipt mode");
+        return false;
+    }
+    if (request.at("receipt_format")!="target_v1" || !result.contains("receipt_format") ||
+        result.at("receipt_format")!="target_v1") throw std::runtime_error("Compact receipt mode mismatch");
+    return true;
+}
+inline void target_financial(const nlohmann::json& financial, const char* lifecycle, const std::string& player) {
+    if (!financial.is_object() || financial.size()!=4 || !financial.contains("revision") ||
+        !financial.contains("charges") || !financial.contains("signed_players") ||
+        !financial.at(lifecycle).is_object() || financial.at(lifecycle).size()!=1 || !financial.at(lifecycle).contains(player))
+        throw std::runtime_error("Compact receipt has unrelated financial archives");
+}
+inline void target_cash(const nlohmann::json& cash, const nlohmann::json& target) {
+    if (!cash.is_object() || cash.size()!=6 || !cash.at("obligations").is_array() || cash.at("obligations").size()!=1)
+        throw std::runtime_error("Invalid compact cash coverage");
+    restructure_cash_record(target);
+    if (cash.at("obligations")[0].dump()!=target.dump()) throw std::runtime_error("Compact cash differs from target archive");
+    integer_money(cash.at("revision"));
+    for (const auto* field : {"nominal_total","paid_total","unpaid_total"}) integer_money(cash.at(field));
+    const auto& other=cash.at("other_obligations");
+    if (!other.is_object() || other.size()!=4) throw std::runtime_error("Invalid other-obligation summary");
+    for (const auto* field : {"count","nominal_total","paid_total","unpaid_total"}) integer_money(other.at(field));
+    if (other.at("paid_total")>other.at("nominal_total") || other.at("unpaid_total").get<int64_t>()!=
+            other.at("nominal_total").get<int64_t>()-other.at("paid_total").get<int64_t>() ||
+        (other.at("count")==0 && (other.at("nominal_total")!=0 || other.at("paid_total")!=0 || other.at("unpaid_total")!=0)))
+        throw std::runtime_error("Other-obligation summary does not reconcile");
+    const auto nominal=checked_money_sum(target.at("amount").get<int64_t>(),other.at("nominal_total"));
+    const auto paid=checked_money_sum(target.at("paid").get<int64_t>(),other.at("paid_total"));
+    const auto unpaid=checked_money_sum(target.at("amount").get<int64_t>()-target.at("paid").get<int64_t>(),other.at("unpaid_total"));
+    if (cash.at("nominal_total")!=nominal || cash.at("paid_total")!=paid || cash.at("unpaid_total")!=unpaid)
+        throw std::runtime_error("Compact target and other cash do not reconcile");
+}
 inline std::string generation_cash_identity(const nlohmann::json& value, const std::string& player) {
     if (!value.is_string()) throw std::runtime_error("Invalid saved agreement identity");
     const auto identity=value.get<std::string>();
@@ -203,6 +238,7 @@ inline void validate_contract_accounting(const nlohmann::json& accounting, const
     }
 }
 inline void validate_restructure(const nlohmann::json& result, const nlohmann::json& request) {
+    const bool compact=target_receipt_mode(result,request);
     const auto player=request.at("player_id").get<std::string>();
     if (player.empty() || !request.at("team_id").is_string() || request.at("team_id").get<std::string>().empty() ||
         !request.at("request_id").is_string() || request.at("request_id").get<std::string>().empty() ||
@@ -228,6 +264,8 @@ inline void validate_restructure(const nlohmann::json& result, const nlohmann::j
     if (!owners.count(player)) throw std::runtime_error("Amendment removed player ownership");
     for (const auto& charge : financial.at("charges")) exact_money(charge);
     const auto& archive=financial.at("restructures").at(player);
+    if (compact) target_financial(financial,"restructures",player);
+    else if (cash.contains("other_obligations")) throw std::runtime_error("Unmarked compact cash summary");
     if (!archive.is_object() || archive.size()!=8) throw std::runtime_error("Incomplete amendment archive");
     auto scope=request.at("scope");
     auto& exclusions=scope.at("exclusions");
@@ -319,6 +357,7 @@ inline void validate_restructure(const nlohmann::json& result, const nlohmann::j
         if (paid!=amount) throw std::runtime_error("Original bonus or past base remains unpaid");
     }
     integer_money(cash.at("revision")); integer_money(cash.at("nominal_total")); integer_money(cash.at("paid_total")); integer_money(cash.at("unpaid_total"));
+    if (compact) { target_cash(cash,amended_cash); return; }
     if (!cash.at("obligations").is_array() || cash.at("paid_total")>cash.at("nominal_total") ||
         cash.at("unpaid_total").get<int64_t>()!=cash.at("nominal_total").get<int64_t>()-cash.at("paid_total").get<int64_t>())
         throw std::runtime_error("Invalid amendment cash totals");
@@ -340,8 +379,12 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
     if (!response["error"].is_null()) return;
     const auto& result = response["result"];
     auto operation = request.at("operation").get<std::string>();
+    if ((request.contains("receipt_format") || result.contains("receipt_format")) &&
+        operation!="manual_restructure" && operation!="manual_trade" && operation!="manual_release")
+        throw std::runtime_error("Unsupported compact receipt operation");
     if (operation == "manual_restructure") { validate_restructure(result,request); return; }
     if (operation == "manual_trade") {
+        const bool compact=target_receipt_mode(result,request);
         const auto seller=request.at("seller").get<std::string>(), buyer=request.at("buyer").get<std::string>();
         if (seller.empty() || buyer.empty() || seller == buyer || result.at("decision_mode") != "manual" ||
             result.at("seller") != seller || result.at("buyer") != buyer || result.at("player_id") != request.at("player_id"))
@@ -401,6 +444,12 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
                 cash.at("nominal_total").get<int64_t>()-cash.at("paid_total").get<int64_t>())
                 throw std::runtime_error("Invalid assigned cash totals");
             const auto& archive=financial.at(team==seller ? "outgoing_trades" : "incoming_trades").at(request.at("player_id").get<std::string>());
+            if (compact) {
+                target_financial(financial,team==seller ? "outgoing_trades" : "incoming_trades",request.at("player_id").get<std::string>());
+                const auto& target=archive.at(team==seller ? "seller_cash" : "buyer_cash");
+                if (target.at("player_id")!=request.at("player_id")) throw std::runtime_error("Compact trade cash belongs to another player");
+                target_cash(cash,target);
+            } else if (cash.contains("other_obligations")) throw std::runtime_error("Unmarked compact cash summary");
             if (archive.at("scope")!=scope || canonical_offer(archive.at("original_contract").at("offer")).at("player_id")!=request.at("player_id"))
                 throw std::runtime_error("Response changed assignment source facts");
         }
@@ -411,6 +460,7 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         return;
     }
     if (operation == "manual_release") {
+        const bool compact=target_receipt_mode(result,request);
         if (result.at("decision_mode") != "manual" || result.at("player_id") != request.at("player_id"))
             throw std::runtime_error("Invalid manual release identity");
         const auto& financial=result.at("release").at("financial");
@@ -425,6 +475,11 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
             if (!player.is_string() || player == request.at("player_id")) throw std::runtime_error("Released player remains owned");
         for (const auto& charge : financial.at("charges")) exact_money(charge);
         const auto& archive=financial.at("released_contracts").at(request.at("player_id").get<std::string>());
+        if (compact) {
+            target_financial(financial,"released_contracts",request.at("player_id").get<std::string>());
+            if (archive.at("cash_obligation").at("player_id")!=request.at("player_id")) throw std::runtime_error("Compact release cash belongs to another player");
+            target_cash(cash,archive.at("cash_obligation"));
+        } else if (cash.contains("other_obligations")) throw std::runtime_error("Unmarked compact cash summary");
         if (canonical_offer(archive.at("original_contract").at("offer")).at("player_id") != request.at("player_id"))
             throw std::runtime_error("Release archive identity mismatch");
         auto scope=request.at("scope");

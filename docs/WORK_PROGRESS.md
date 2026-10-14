@@ -2023,3 +2023,28 @@ repeated error, byte-identical SQLite file, retained ownership and unchanged
 financial/cash totals. The exact raw C++ request was exercised locally through
 Bridge twice with unchanged database bytes; portable protocol checks pass.
 The new Windows process execution awaits CI and is not yet claimed verified.
+
+### Compact native lifecycle receipts (2026-10-13)
+
+Added opt-in receipt_format target_v1 to manual release, paired trade and first
+restructure. Financial receipts retain all annual team cap charges, revision
+and full ownership list, with only the target lifecycle archive. Cash retains
+the allocated target record, team totals and a counted aggregate for every other
+obligation. Python verifies projection against full source cash; C++ binds target
+cash to the archive and uses checked arithmetic to reconcile target plus others.
+Exact mode echoes, strict shape checks and corrupted totals/type/identity/mode
+cases prevent accepting partial summaries as full receipts. Full event payloads,
+checkpoint replay and historical transaction identities remain unchanged.
+
+All 427 Python tests, portable native protocol checks and money audit pass.
+Six Python tests cover all three operations, invalid projections/modes, a
+53-player long franchise, generation-aware trades back to former clubs and
+historical retry without ownership restoration, plus returned restructures.
+The exact new Windows fixture after 30 prior releases produces a 2915-byte
+Python reply (full team receipt exceeds 64 KiB), preserves cap 429m/88m/88m
+and cash 605m nominal/477m paid. A temporary native C++ harness accepted that
+actual Python reply. New Windows process execution remains pending CI.
+
+The previous 01dcf17 Windows CI 38498584782 succeeded: 421 tests and the actual
+native oversized lifecycle rejection/restart fixture passed. No retail game
+execution, guest write or save/load evidence is implied by either fixture.

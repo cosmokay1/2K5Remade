@@ -176,7 +176,7 @@ coherent negotiations and persistent consequences without violating financial ru
       verified at `d2d9e0b`, run `38465198052`; game integration remains under M5.
 - [ ] Keep game thread responsive while inference runs; reject obsolete responses.
 - [ ] Ship a cooperative client handshake without distributing owner credentials.
-- [ ] Replace whole-team native lifecycle receipts with bounded reconciliation before long-franchise runtime validation; precommit capacity checks now reject oversized release/trade/restructure receipts without mutation.
+- [ ] Validate bounded native lifecycle receipts in the integrated game before long-franchise runtime validation; opt-in target_v1 receipts now retain target archives and reconcile team cash totals. Precommit capacity checks reject oversized replies without mutation; actual guest reconciliation remains unverified.
 - [ ] Ensure AI shutdown preserves financial enforcement and provides a clearly
       labeled manual/deterministic decision path; no silent native cap bypass.
 - [ ] Test disconnects, expired credentials, protocol mismatch and service restart.

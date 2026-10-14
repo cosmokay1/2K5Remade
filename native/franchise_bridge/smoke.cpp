@@ -5,6 +5,7 @@ int wmain(int argc, wchar_t** argv) {
     if (argc != 3 && argc != 4) return 2;
     const bool replay = argc == 4 && std::wstring(argv[3]) == L"--replay";
     const bool abrupt = argc == 4 && std::wstring(argv[3]) == L"--abrupt";
+    const bool compact_release = argc == 4 && std::wstring(argv[3]) == L"--compact-release";
     const bool capacity = argc == 4 && std::wstring(argv[3]) == L"--receipt-capacity";
     const bool release = argc == 4 && std::wstring(argv[3]) == L"--release";
     const bool assignment = argc == 4 && std::wstring(argv[3]) == L"--trade";
@@ -13,7 +14,7 @@ int wmain(int argc, wchar_t** argv) {
     const bool return_replay = argc == 4 && std::wstring(argv[3]) == L"--return-replay";
     const bool returned_amendment = argc == 4 && std::wstring(argv[3]) == L"--returned-restructure";
     const bool generation_trade = argc == 4 && std::wstring(argv[3]) == L"--generation-trade";
-    if (argc == 4 && !capacity && !generation_trade && !returned_amendment && !replay && !abrupt && !release && !assignment && !restructure && !returning) return 2;
+    if (argc == 4 && !compact_release && !capacity && !generation_trade && !returned_amendment && !replay && !abrupt && !release && !assignment && !restructure && !returning) return 2;
     try {
         franchise::PipeClient client(argv[1], argv[2], franchise::ServiceMode::OfflineFixture);
         if (abrupt) {
@@ -82,13 +83,20 @@ int wmain(int argc, wchar_t** argv) {
             }
             return 0;
         }
-        if (release || capacity) {
+        if (release || capacity || compact_release) {
             const char* release_requests[] = {
                 R"({"protocol":1,"request_id":"release","operation":"manual_release","team_id":"a","player_id":"v","expected_revision":1,"timeout_ms":1000,"decision_mode":"manual","scope":{"league_year":2026,"removed_on":"2026-06-01","first_regular_season_game":"2026-09-10","exclusions":["additional_termination_pay","early_june1_designation","grievance","guarantee_offsets","guarantee_voids","injury_liability","other_compensation","waiver_transfer"],"covered_guarantees":true,"healthy":true,"current_year_earned_base":0,"source":"synthetic Windows fixture"},"discount":{"league_year":2026,"annual_rate":0,"rate_source":"synthetic zero rate"},"payment_year_offsets":[0,1,2]})",
                 R"({"protocol":1,"request_id":"release-player","operation":"player_context","team_id":"a","player_id":"v","timeout_ms":1000})"
             };
-            for (size_t index=0;index<(capacity ? 1 : 2);++index) {
-                client.submit(release_requests[index]);
+            for (size_t index=0;index<((capacity || compact_release) ? 1 : 2);++index) {
+                auto request=franchise::parse_frame(release_requests[index]);
+                if (compact_release) {
+                    request["receipt_format"]="target_v1";
+                    request["request_id"]="compact-release";
+                    request["expected_revision"]=31;
+                    request["timeout_ms"]=5000;
+                }
+                client.submit(request.dump());
                 while (!client.ready()) std::this_thread::sleep_for(std::chrono::milliseconds(2));
                 std::cout << client.take() << std::endl;
             }
