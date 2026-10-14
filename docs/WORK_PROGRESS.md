@@ -2068,3 +2068,25 @@ The rebuilt C++ harness still accepts the actual 2915-byte Python receipt.
 The earlier compact Windows run 38498978074 was still live when checked; no
 restart or new Windows execution is claimed here. Retail runtime/save gates
 remain unresolved.
+
+### Bounded release-history replay measurement (2026-10-13)
+
+Added tools.benchmark_replay --release-history for a fixed 53-contract,
+30-release fixture. It independently verifies cap422m/92m/92m and cash606m
+nominal/477m paid/129m unpaid, then measures five reads and five compact
+historical retries. Full receipt71346bytes vs compact3043bytes; retries must
+preserve both canonical generation snapshots and exact database bytes. Fixture
+construction is timed separately. --generation-checkpoint measures format4
+without weakening reconciliation; the prior dialogue benchmark remains usable.
+
+Local Mac sample: format3 median read56.46ms/max72.42ms and retry56.83ms;
+format4 median read132.61ms/max138.96ms and retry122.31ms. Build743.58ms
+and844.04ms respectively; checkpoint migration153.84ms. These measurements
+show compact transport does not remove replay cost. They are synthetic local
+figures, not Windows/Deck or game-frame acceptance. Both modes and the prior
+2-team/zero-story mode executed successfully with internal financial assertions.
+
+Windows CI38498978074 for5f0b472 completed successfully:427tests on Ubuntu
+and Windows; native compact long-franchise cash reconciliation/restart fixture
+executed on Windows. Later cash-binding CI38499239068 was still live when
+checked. No retail gameplay or guest save/load evidence is implied.
