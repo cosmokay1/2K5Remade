@@ -2281,3 +2281,34 @@ fixture fill stdin, submit another frame, destroy the client and verify child
 exit. CTest has a 20-second timeout to catch a hanging destructor. Portable
 protocol checks pass; the new Windows regression is pending CI. No guest
 transaction, gameplay, or save/load validation is implied.
+
+### Host lifecycle work in progress (2026-10-13)
+
+Run 38503588940 passed Windows/Ubuntu checks for c16ce25, including the first
+stalled-peer shutdown fixture. A stronger fixture at 04cfe1f proves write
+stall beyond the read deadline; CI remains pending. Review identified inherited
+pipe-handle leakage between concurrent child launches: the constructor must
+restrict inheritance with HANDLE_LIST alongside JOB_LIST before claiming robust
+shutdown ownership. This is the next transport fix.
+
+Uncommitted root host lifecycle wiring is drafted behind an OFF-by-default
+CMake option and explicit vertex/Python/database environment configuration.
+The shared C startup source is included in the asset-free Windows C fixture,
+with disabled/invalid-provider/missing-path cases and idempotent cleanup.
+Strict portable C syntax checks and protocol CTest pass; Windows compilation
+and root game execution remain pending. No guest hooks or automatic AI grant.
+
+### Restricted child inheritance and opt-in root lifecycle (2026-10-13)
+
+Added HANDLE_LIST alongside JOB_LIST, with explicitly duplicated inheritable
+stderr or NUL fallback. Temporary child handles close on setup/launch failures
+and success. Stalled-peer fixture now checks an unrelated inheritable event
+was excluded before exercising the blocked-write cleanup. Windows CI pending.
+
+Reviewed and linked root host lifecycle behind NFL2K5_FRANCHISE_CLIENT=OFF
+by default. Explicit vertex-only runtime paths launch immediately before guest
+entry; normal return, crash and atexit clean up. No automatic handshake or
+model call, fixture fallback, guessed guest addresses or guest writes. Same C
+source compiles in asset-free native fixture with off/invalid/missing-config
+cases. Portable strict C syntax and protocol CTest pass. Independent review
+found no concrete lifecycle defect. Actual root build/runtime remains gated.

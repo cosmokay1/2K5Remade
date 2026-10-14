@@ -13,6 +13,9 @@
 #include "recomp_icall_feedback.h"
 #include "nfl2k5_presentation.h"
 #include <stdbool.h>
+#ifdef NFL2K5_FRANCHISE_CLIENT
+#include "nfl2k5_franchise_host.h"
+#endif
 extern MCPXAPUState *g_apu_state;
 extern bool apu_hook_handle_mmio(PCONTEXT, uintptr_t, uint32_t, int);
 
@@ -3756,11 +3759,17 @@ int main(int argc, char **argv)
          * NFL2K5_FORCED_DISPLAY=1. */
         if (getenv("NFL2K5_FORCED_DISPLAY"))
             CreateThread(NULL, 0, nfl2k5_forced_display_thread, NULL, 0, NULL);
+#ifdef NFL2K5_FRANCHISE_CLIENT
+        if (!nfl2k5_franchise_start()) return 5;
+#endif
         printf("[BOOT] Entering recompiled NFL 2K5 code.\n");
         /* Guest code runs one thread at a time (RECOMP_GGL); see xbox_ggl.h. */
         { extern void xbox_ggl_enter(void); xbox_ggl_enter(); }
         __try { entry(); }
         __except(crash_report(GetExceptionInformation())) {
+#ifdef NFL2K5_FRANCHISE_CLIENT
+            nfl2k5_franchise_stop();
+#endif
             { extern int xbox_ggl_release_all(void); xbox_ggl_release_all(); }
             /* Only the explicit synthetic-display diagnostic should survive
              * a guest crash. Otherwise background audio/timer threads made a
@@ -3774,6 +3783,9 @@ int main(int argc, char **argv)
             ExitProcess(1);
         }
         printf("[BOOT] Guest entry returned.\n");
+#ifdef NFL2K5_FRANCHISE_CLIENT
+        nfl2k5_franchise_stop();
+#endif
     }
     xbox_kernel_bridge_shutdown();
     xbox_kernel_shutdown();

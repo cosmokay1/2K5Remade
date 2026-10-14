@@ -187,7 +187,7 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
 ## M5 — Verified Remade integration (B01/B02 gate)
 
 - [ ] Fix native client shutdown ordering so a sidecar that stops reading cannot leave destruction waiting on a blocked pipe write; add a Windows stalled-peer regression. Shutdown now stops the owned sidecar before joining its worker; a stalled-peer CTest fixture is implemented. Windows verification remains pending.
-- [ ] Link the reusable C-compatible franchise client into the actual root game host with explicit opt-in lifecycle ownership; validate host transport separately from guest transactions. The game target currently has no franchise-client linkage.
+- [ ] Link the reusable C-compatible franchise client into the actual root game host with explicit opt-in lifecycle ownership; validate host transport separately from guest transactions. OFF-by-default root target linkage and explicit vertex-only startup/cleanup are implemented; Windows source validation and actual root game execution remain pending.
 - [ ] Establish a baseline game build and franchise behavior with the legal game.
 - [ ] Map contract records, cap/tender fields, player identity, statistics and save data.
 - [ ] Trace signing, extension, release, trade, draft and year-transition functions.

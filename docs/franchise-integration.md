@@ -20,7 +20,7 @@ Win32 PipeClient, with an explicit service mode, bounded response retrieval and
 owned child lifetime. The added asset-free plain-C caller validates that ABI and
 transport before the game target is linked; its Windows execution awaits CI. It does not read or write guest
 rosters, commit game contracts, supply unverified addresses or create a franchise
-UI. Game-host startup/shutdown linkage and verified guest transaction callbacks
+UI. Verified guest transaction callbacks
 remain required work. A real transaction hook may only follow the controlled
 save experiments below and runtime readback/reconciliation.
 
@@ -152,3 +152,21 @@ Windows fixture checks handshake, preview, manual signing, context, stale previe
 and identical historical signing across two client processes. Portable C-header
 syntax and the exact JSON sequence passed locally; that is not Windows execution
 or guest game/save validation.
+
+## Opt-in root host lifecycle
+
+Configure the real game target with NFL2K5_FRANCHISE_CLIENT=ON to link the C
+transport and src/nfl2k5_franchise_host.c. The default remains OFF. Runtime
+activation requires NFL2K5_FRANCHISE_PROVIDER=vertex,
+NFL2K5_FRANCHISE_PYTHON and NFL2K5_FRANCHISE_DATABASE. No fixture fallback
+is allowed in the game host. Missing or invalid opted-in configuration stops
+startup before guest entry. Without the provider variable no sidecar starts.
+
+Startup owns the sidecar immediately before guest entry; normal guest return,
+crash handling and normal process exit clean it up. Each child inherits only
+its own stdin/stdout and duplicated stderr (NUL if unavailable). No hello or
+AI request is sent automatically. This is lifecycle wiring only: verified
+franchise callbacks still need to consume the handshake, reconcile the ledger
+and guest state, and complete verified save/readback transactions. The shared
+C lifecycle source is compiled by the asset-free Windows fixture. Actual root
+game build and execution remain unverified.

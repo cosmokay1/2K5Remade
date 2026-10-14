@@ -57,28 +57,43 @@ public:
             CloseHandle(child_input); CloseHandle(child_output); close();
             throw std::runtime_error("Pipe inheritance configuration failed");
         }
+        HANDLE child_error = nullptr;
+        HANDLE parent_error = GetStdHandle(STD_ERROR_HANDLE);
+        if (!parent_error || parent_error == INVALID_HANDLE_VALUE ||
+            !DuplicateHandle(GetCurrentProcess(), parent_error, GetCurrentProcess(),
+                             &child_error, 0, TRUE, DUPLICATE_SAME_ACCESS)) {
+            child_error = CreateFileW(L"NUL", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                      &attributes, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+        }
+        if (!child_error || child_error == INVALID_HANDLE_VALUE) {
+            CloseHandle(child_input); CloseHandle(child_output); close();
+            throw std::runtime_error("Sidecar stderr setup failed");
+        }
+        HANDLE inherited[] = {child_input, child_output, child_error};
         job_ = CreateJobObjectW(nullptr, nullptr);
         JOBOBJECT_EXTENDED_LIMIT_INFORMATION limits{};
         limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
         SIZE_T attribute_size = 0;
-        InitializeProcThreadAttributeList(nullptr, 1, 0, &attribute_size);
+        InitializeProcThreadAttributeList(nullptr, 2, 0, &attribute_size);
         auto attributes_list = static_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(
             HeapAlloc(GetProcessHeap(), 0, attribute_size));
-        bool initialized = attributes_list && InitializeProcThreadAttributeList(attributes_list, 1, 0, &attribute_size);
+        bool initialized = attributes_list && InitializeProcThreadAttributeList(attributes_list, 2, 0, &attribute_size);
         bool configured = initialized && job_ &&
             SetInformationJobObject(job_, JobObjectExtendedLimitInformation, &limits, sizeof(limits)) &&
             UpdateProcThreadAttribute(attributes_list, 0, PROC_THREAD_ATTRIBUTE_JOB_LIST,
-                                      &job_, sizeof(job_), nullptr, nullptr);
+                                      &job_, sizeof(job_), nullptr, nullptr) &&
+            UpdateProcThreadAttribute(attributes_list, 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
+                                      inherited, sizeof(inherited), nullptr, nullptr);
         if (!configured) {
             if (initialized) DeleteProcThreadAttributeList(attributes_list);
             if (attributes_list) HeapFree(GetProcessHeap(), 0, attributes_list);
-            CloseHandle(child_input); CloseHandle(child_output); close();
+            CloseHandle(child_input); CloseHandle(child_output); CloseHandle(child_error); close();
             throw std::runtime_error("Sidecar ownership setup failed");
         }
         STARTUPINFOEXW startup{}; startup.StartupInfo.cb = sizeof(startup);
         startup.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
         startup.StartupInfo.hStdInput = child_input; startup.StartupInfo.hStdOutput = child_output;
-        startup.StartupInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+        startup.StartupInfo.hStdError = child_error;
         startup.lpAttributeList = attributes_list;
         PROCESS_INFORMATION info{};
         // Mode is fixed before launch; runtime never falls back to a fixture.
@@ -90,7 +105,7 @@ public:
                                       nullptr, nullptr, &startup.StartupInfo, &info);
         DeleteProcThreadAttributeList(attributes_list);
         HeapFree(GetProcessHeap(), 0, attributes_list);
-        CloseHandle(child_input); CloseHandle(child_output);
+        CloseHandle(child_input); CloseHandle(child_output); CloseHandle(child_error);
         if (!started) { close(); throw std::runtime_error("Sidecar launch failed"); }
         process_ = info.hProcess; CloseHandle(info.hThread);
     }

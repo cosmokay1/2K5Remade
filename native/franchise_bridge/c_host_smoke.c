@@ -1,5 +1,6 @@
 /* Plain C exercises the host ABI only; no retail game or guest state. */
 #include "host_client.h"
+#include "../../src/nfl2k5_franchise_host.h"
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,6 +52,18 @@ int wmain(int argc, wchar_t** argv) {
     };
     size_t i;
     if (argc != 3) { fprintf(stderr,"Usage: c_host_smoke PYTHON DATABASE\n"); return 2; }
+    /* Exercise the actual host startup policy without launching Vertex. */
+    if (_wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER", L"") ||
+        _wputenv_s(L"NFL2K5_FRANCHISE_PYTHON", L"") ||
+        _wputenv_s(L"NFL2K5_FRANCHISE_DATABASE", L"") ||
+        !nfl2k5_franchise_start()) return 1;
+    nfl2k5_franchise_stop();
+    nfl2k5_franchise_stop();
+    if (_wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER", L"offline-fixture") ||
+        nfl2k5_franchise_start()) return 1;
+    if (_wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER", L"vertex") ||
+        nfl2k5_franchise_start()) return 1;
+    if (_wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER", L"")) return 1;
     if (!require_status(franchise_host_create(argv[1],argv[2],(FranchiseHostMode)99,&client),FRANCHISE_HOST_INVALID_ARGUMENT) || client) return 1;
     if (!require_status(franchise_host_create(argv[1],argv[2],FRANCHISE_HOST_OFFLINE_FIXTURE,NULL),FRANCHISE_HOST_INVALID_ARGUMENT)) return 1;
     franchise_host_destroy(NULL);

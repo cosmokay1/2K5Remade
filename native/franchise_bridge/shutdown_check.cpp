@@ -1,11 +1,17 @@
 #include "pipe_client.h"
 #include <iostream>
 #include <memory>
+#include <cstdint>
 
 int wmain(int argc, wchar_t** argv) {
     if (argc != 2) return 1;
     try {
-        auto client = std::make_unique<franchise::PipeClient>(argv[1], L"unused", franchise::ServiceMode::OfflineFixture);
+        SECURITY_ATTRIBUTES attributes{sizeof(SECURITY_ATTRIBUTES), nullptr, TRUE};
+        HANDLE unrelated = CreateEventW(&attributes, TRUE, FALSE, nullptr);
+        if (!unrelated) throw std::runtime_error("Cannot create inheritance sentinel");
+        auto client = std::make_unique<franchise::PipeClient>(argv[1],
+            std::to_wstring(reinterpret_cast<uintptr_t>(unrelated)), franchise::ServiceMode::OfflineFixture);
+        CloseHandle(unrelated);
         HANDLE child = OpenProcess(SYNCHRONIZE, FALSE, client->process_id());
         if (!child) throw std::runtime_error("Cannot observe owned child");
         std::string request = R"({"protocol":1,"request_id":"stall","operation":"hello"})";
