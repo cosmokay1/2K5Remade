@@ -4200,11 +4200,17 @@ pythonw. Import result verifiesPython3.13.16/SQLite3.50.4 and actual sidecar
 source under Proton11.0-100. A second authored check launches the native C host
 with CREATE_NO_WINDOW and exits0 after two synthetic handshake/preview/manual
 sign/context/restart runs. Its charge10/room90 assertions are synthetic.
-Result-artifact retrieval then hit a transient SSH port22 timeout; the completed
-check's exit0 is observed, but its JSON artifact has not yet been read back.
+Result-artifact retrieval initially hit a transient SSH port22 timeout. After
+the user woke the Deck, dependencies/python-proton-pipe-result.json was read
+back successfully: packaged Python3.13.16 reports handshake, cap preview,
+manual signing, player context and restart retry passing, with charge10/room90.
+These are authored synthetic C-host checks under Proton, not game transactions
+or paid inference. Actual game PID71410 remained running and was not interrupted.
 Separate test prefix and private fixture DBs preserve the game prefix/saves.
 
 Optional Google SDK vendoring, authorized scoped runtime identity, actual remote
 hello and real-franchise import remain required. Game provider remains unset
 and original signing judgment still runs. Publisheda4e89c1 passed
 Build38606568296 and Franchise AI38606568593;0eb0135 also completed both workflows.
+Published589bea2 Build38611029790 passed; Franchise AI38611029693 is still
+in progress at this check and is not yet claimed successful.
