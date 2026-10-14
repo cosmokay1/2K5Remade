@@ -7,6 +7,7 @@
 
 static FranchiseHostClient *franchise_client;
 static volatile LONG franchise_owner_thread;
+static volatile LONG franchise_foreign_sign_logged;
 static int hello_pending, hello_failed;
 static int positive_limit(const wchar_t *text, unsigned long long *value)
 {
@@ -23,6 +24,7 @@ static int positive_limit(const wchar_t *text, unsigned long long *value)
 void nfl2k5_franchise_stop(void)
 {
     InterlockedExchange(&franchise_owner_thread, 0);
+    InterlockedExchange(&franchise_foreign_sign_logged, 0);
     hello_pending = hello_failed = 0;
     franchise_host_destroy(franchise_client);
     franchise_client = NULL;
@@ -31,8 +33,15 @@ void nfl2k5_franchise_on_fsm(uint32_t descriptor, int push)
 {
     /* Guest callbacks may run on another host thread. Do not hand a single-owner
      * client to it, block the callback, or move ownership implicitly. */
-    if ((DWORD)InterlockedCompareExchange(&franchise_owner_thread, 0, 0) != GetCurrentThreadId())
+    DWORD owner = (DWORD)InterlockedCompareExchange(&franchise_owner_thread, 0, 0);
+    DWORD caller = GetCurrentThreadId();
+    if (owner != caller) {
+        if (owner && push && descriptor == 0x00557B2Cu &&
+            !InterlockedCompareExchange(&franchise_foreign_sign_logged, 1, 0))
+            fprintf(stderr, "[FRANCHISE] Signing callback on foreign thread: owner=%lu caller=%lu; transport not accessed.\n",
+                (unsigned long)owner, (unsigned long)caller);
         return;
+    }
     if (!franchise_client || hello_failed) return;
     if (hello_pending) {
         int ready = 0;
@@ -102,7 +111,9 @@ int nfl2k5_franchise_start(void)
         return 0;
     }
     hello_pending = hello_failed = 0;
+    InterlockedExchange(&franchise_foreign_sign_logged, 0);
     InterlockedExchange(&franchise_owner_thread, (LONG)GetCurrentThreadId());
-    fprintf(stderr, "[FRANCHISE] Transport launched; signing-screen control handshake available; guest transaction hooks remain unavailable.\n");
+    fprintf(stderr, "[FRANCHISE] Transport launched on owner thread=%lu; signing-screen control handshake available; guest transaction hooks remain unavailable.\n",
+        (unsigned long)GetCurrentThreadId());
     return 1;
 }

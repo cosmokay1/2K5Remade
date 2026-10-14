@@ -4837,3 +4837,41 @@ Hosted logs verify676 tests on Windows/Ubuntu and repaired native plain-C
 host/context/restart execution. That validates the earlier checker repair;
 new half-sack source678 suite still requires its subsequent published CI.
 Persistent runtime auth, actual guest signing and save/load integration remain open.
+
+## October14,2026 — Root transport diagnostic built and privately installed
+
+Deck access restored; freshly verified no game process and unchanged installed
+game/launcher hashes before installation. Added bounded diagnostic logging of the
+startup transport owner and the first foreign-thread signing callback. A foreign
+callback still performs no IPC and never assumes ownership. Default provider-unset
+behavior and all signing/accounting behavior remain unchanged.
+
+Actual private MSVC compilation passed for NFL2K5 and the existing owner-thread
+handshake fixture. Restored the current native CMake manifest in the private build
+to expose that fixture; its first attempted combined build rejected the previously
+missing target. The rebuilt Windows fixture executed under isolated Proton and
+passed owner submissions, foreign-thread rejection and transport failure handling.
+Local strict C11 syntax and git diff checks also passed.
+
+Staged a private cloned ledger with all32 financial snapshots matching the source,
+retaining Trotter's pending minimum classification. Packaged Windows CPython ran
+the actual sidecar hello with an explicit nonexistent ADC path: ai_disabled,
+zero SDK attempts, unchanged Giants financial snapshot. No model/control/IAM
+request, credentials distribution or salary-credit assignment. Evidence is private
+runtime/root-transport-diagnostic/windows-preflight.json; this proves the Windows
+service preflight, not a root game callback or actual signing integration.
+
+Installed root EXE SHA256
+efa3958a00b035ab5f70f905a5033639f1ed138bcb9b4147080180e5a0a31cc5
+and launcher SHA256
+5a0b046c2df7efa6e3b8b69b46c03f11f27307e822c61cda1abf91664c511afb.
+Preserved prior files as NFL2K5.pre-root-transport.exe and
+launch-2k5.pre-root-transport.sh, with their previously verified hashes unchanged.
+The diagnostic launcher explicitly denies AI through the absent ADC path and uses
+the clone; no actual guest write/modern contract hook is enabled. Requested normal
+Steam launch and Trotter offer screen without submission; actual game execution
+of this newly installed diagnostic remains pending.
+
+Published3c97f06 Build38629769797 and AI38629769570 passed. Retrieved logs verify
+678 tests on both Windows and Ubuntu. This updates the earlier published676
+baseline; it does not validate the newly authored logging change's hosted CI.
