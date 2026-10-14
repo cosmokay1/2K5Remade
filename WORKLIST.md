@@ -160,7 +160,7 @@ invent future published NFL values: separate verified inputs from simulation pol
 - [ ] Make guarantees and supported nonfinancial promises meaningful negotiated terms.
 - [ ] Trigger stories from committed events and actual consequences, not invented facts.
 - [ ] Add negotiation deadlines, withdrawal, holdout/request state, and resolution.
-- [ ] Bound inference frequency; cache recorded decisions; add usage/cost telemetry.
+- [ ] Bound inference frequency; cache recorded decisions; add usage/cost telemetry. Provider context is byte-bounded and safe last-completed-call token diagnostics are captured; durable attribution, frequency/spend limits and verified pricing remain.
 - [ ] Test different personalities on the same situation and validate multiweek continuity.
 
 Done when an offline league scenario and a bounded live scenario produce distinct,

@@ -42,6 +42,7 @@ class VertexProvider:
         self.instructions = instructions
         self.response_schema = json.loads(json.dumps(schema, allow_nan=False))
         self.model = model
+        self._last_usage = None
         if client is None:
             try:
                 from google import genai
@@ -65,26 +66,47 @@ class VertexProvider:
                 raise RuntimeError("Could not initialize Vertex AI; check Google credentials") from None
         self._client = client
 
+    @property
+    def last_usage(self):
+        """Last completed call; diagnostic only, not durable billing or deal attribution."""
+        return json.loads(json.dumps(self._last_usage))
+
     def __call__(self, context: dict) -> str:
-        if type(context) is not dict:
-            raise ValueError("Model context must be an object; no inference submitted")
-        contents = json.dumps(context, allow_nan=False)
-        if len(contents.encode("utf-8")) > self.max_context_bytes:
-            raise ValueError("Model context exceeds request size limit; no inference submitted")
+        token_fields=("prompt_token_count","candidates_token_count","total_token_count",
+                      "cached_content_token_count","thoughts_token_count","tool_use_prompt_token_count")
+        usage={"model":self.model,"sdk_invoked":False,"outcome":"preflight_rejected",
+                          "context_bytes":None,"tokens":{field:None for field in token_fields},"estimated_cost":None}
         try:
-            result = self._client.models.generate_content(
-                model=self.model, contents=contents,
-                config={"system_instruction": self.instructions,
-                        "response_mime_type": "application/json",
-                        "response_schema": self.response_schema,
-                        "max_output_tokens": 4096})
-        except Exception:
-            # Avoid echoing credentials or raw cloud error bodies.
-            raise RuntimeError("Vertex AI request failed; no deal committed") from None
-        candidates = result.candidates or []
-        if len(candidates) != 1 or candidates[0].finish_reason != "STOP":
-            raise ValueError("Gemini response was blocked or incomplete; no deal committed")
-        text = result.text
-        if type(text) is not str or not text.strip():
-            raise ValueError("Gemini returned no decision; no deal committed")
-        return text
+            if type(context) is not dict:
+                raise ValueError("Model context must be an object; no inference submitted")
+            contents = json.dumps(context, allow_nan=False)
+            usage["context_bytes"] = len(contents.encode("utf-8"))
+            if usage["context_bytes"] > self.max_context_bytes:
+                raise ValueError("Model context exceeds request size limit; no inference submitted")
+            usage.update(sdk_invoked=True,outcome="request_failed")
+            try:
+                result = self._client.models.generate_content(
+                    model=self.model, contents=contents,
+                    config={"system_instruction": self.instructions,
+                            "response_mime_type": "application/json",
+                            "response_schema": self.response_schema,
+                            "max_output_tokens": 4096})
+            except Exception:
+                # Avoid echoing credentials or raw cloud error bodies.
+                raise RuntimeError("Vertex AI request failed; no deal committed") from None
+            metadata=getattr(result,"usage_metadata",None)
+            for field in token_fields:
+                value=getattr(metadata,field,None)
+                if type(value) is int and value >= 0:
+                    usage["tokens"][field]=value
+            usage["outcome"]="response_rejected"
+            candidates = result.candidates or []
+            if len(candidates) != 1 or candidates[0].finish_reason != "STOP":
+                raise ValueError("Gemini response was blocked or incomplete; no deal committed")
+            text = result.text
+            if type(text) is not str or not text.strip():
+                raise ValueError("Gemini returned no decision; no deal committed")
+            usage["outcome"]="response_accepted"
+            return text
+        finally:
+            self._last_usage = usage

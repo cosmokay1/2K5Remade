@@ -86,3 +86,68 @@ class VertexTests(unittest.TestCase):
         client.models.generate_content.assert_not_called()
         ledger.sign('manual',Offer('p',(10,),0),0)
         self.assertEqual(ledger.charges,(10,))
+
+    def test_usage_snapshot_preserves_unknown_counts_and_blocked_response_usage(self):
+        metadata=SimpleNamespace(prompt_token_count=10,candidates_token_count=3,total_token_count=18,
+            cached_content_token_count=None,thoughts_token_count=5,tool_use_prompt_token_count=0)
+        response=SimpleNamespace(candidates=[SimpleNamespace(finish_reason='STOP')],text='{}',usage_metadata=metadata)
+        provider=self.provider(response)
+        self.assertIsNone(provider.last_usage)
+        provider({'player_id':'p'})
+        usage=provider.last_usage
+        self.assertEqual(usage['tokens']['total_token_count'],18)
+        self.assertEqual(usage['tokens']['thoughts_token_count'],5)
+        self.assertIsNone(usage['tokens']['cached_content_token_count'])
+        self.assertEqual(usage['outcome'],'response_accepted')
+        self.assertIsNone(usage['estimated_cost'])
+        usage['tokens']['prompt_token_count']=999
+        self.assertEqual(provider.last_usage['tokens']['prompt_token_count'],10)
+        response.candidates[0].finish_reason='MAX_TOKENS'
+        with self.assertRaises(ValueError):provider({})
+        self.assertEqual(provider.last_usage['outcome'],'response_rejected')
+        self.assertEqual(provider.last_usage['tokens']['total_token_count'],18)
+        provider._client.models.generate_content.side_effect=RuntimeError('SECRET')
+        with self.assertRaises(RuntimeError):provider({})
+        self.assertEqual(provider.last_usage['outcome'],'request_failed')
+        self.assertTrue(provider.last_usage['sdk_invoked'])
+        self.assertTrue(all(value is None for value in provider.last_usage['tokens'].values()))
+        self.assertNotIn('SECRET',str(provider.last_usage))
+        with self.assertRaises(ValueError):provider([])
+        self.assertFalse(provider.last_usage['sdk_invoked'])
+        self.assertEqual(provider.last_usage['outcome'],'preflight_rejected')
+
+    def test_usage_invalid_or_missing_counters_stay_unknown_without_changing_decision(self):
+        response=SimpleNamespace(candidates=[SimpleNamespace(finish_reason='STOP')],text='{}',
+            usage_metadata=SimpleNamespace(prompt_token_count=True,candidates_token_count=-1,total_token_count=2.5))
+        provider=self.provider(response)
+        self.assertEqual(provider({}),'{}')
+        self.assertTrue(all(value is None for value in provider.last_usage['tokens'].values()))
+        self.assertNotIn('player_id',provider.last_usage)
+
+    def test_concurrent_usage_is_published_as_one_completed_call_snapshot(self):
+        import json
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Event
+        entered,released=Event(),Event()
+        def generate(**kwargs):
+            first=json.loads(kwargs['contents'])['tag']=='first'
+            if first:
+                entered.set()
+                if not released.wait(2):raise RuntimeError('test wait expired')
+            count=11 if first else 22
+            return SimpleNamespace(candidates=[SimpleNamespace(finish_reason='STOP')],text='{}',
+                usage_metadata=SimpleNamespace(total_token_count=count))
+        client=SimpleNamespace(models=SimpleNamespace(generate_content=generate))
+        provider=VertexProvider(project='p',location='global',model='m',client=client)
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future=pool.submit(provider,{'tag':'first'})
+            try:
+                self.assertTrue(entered.wait(2))
+                self.assertIsNone(provider.last_usage)
+                provider({'tag':'second'})
+                second=provider.last_usage
+                self.assertEqual(second['tokens']['total_token_count'],22)
+            finally:released.set()
+            self.assertEqual(future.result(timeout=2),'{}')
+        self.assertEqual(provider.last_usage['tokens']['total_token_count'],11)
+        self.assertEqual(second['tokens']['total_token_count'],22)

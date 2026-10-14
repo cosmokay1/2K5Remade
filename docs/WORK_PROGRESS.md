@@ -2197,3 +2197,27 @@ authorization was used. Story memory reduction and cost telemetry remain open.
 Promise-context commit2a27925 passed CI38500341337; new native context
 fixture and latest provider changes still need their own Windows execution.
 Retail game and actual save/load gates remain unresolved.
+
+### Safe provider usage metadata diagnostics (2026-10-13)
+
+Verified official Google GenerateContentResponse UsageMetadata and installed
+google-genai fields before implementing a bounded last-completed-call snapshot.
+It captures model/contextbytes/SDKattempt/fixedoutcome and six optional token
+counts, with unknown invalid/missing values preserved as null and no inferred
+cost. Blocked/incomplete replies retain reported usage; SDK/preflight failures
+clear stale counts. Per-call local state publishes once in finally, preventing
+interleaved counters; callers receive a deep copy. No prompt/player/modeltext/
+credential/errorbody is retained, no extra model call or retry introduced.
+
+Three new tests cover known/unknown/invalid usage, blocked replies, failures and
+copy isolation plus overlapping SDK calls with controlled completion order.
+InstalledSDK typed metadata also passed an offline fake-response check. All442
+Python tests pass; independent review found no concrete defects and reran10
+provider tests. This is diagnostic capture, not durable billing or per-decision
+attribution; costs, frequency/spend controls and pricing remain unfinished.
+Context-preflight commitc2cc1f1 passed CI38500823733. New diagnostics need
+their own CI; no paid inference or retail game/save validation occurred.
+
+Completed CI38500823733 logs also verify the native Windows sourced promise
+circumstances/unknown counts/raw score/restart fixture, with439tests passing
+on both Windows and Ubuntu. This remains synthetic service/client execution.
