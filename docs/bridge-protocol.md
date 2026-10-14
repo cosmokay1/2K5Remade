@@ -18,7 +18,7 @@ store; clients cannot bootstrap balances through the handler.
 
 Responses contain `protocol`, `request_id`, `result`, `error`, and `detail`.
 Errors include `protocol_mismatch`, `ai_disabled`, `timeout`, `state_rejected`,
-`invalid_request`, and `service_failure`. No automatic retries or inference on
+`invalid_request`, `response_too_large`, and `service_failure`. No automatic retries or inference on
 failure. Retry the same recorded request/terms for the same committed result.
 An unrecorded failed request requires fresh state/history before resubmission.
 
@@ -213,3 +213,19 @@ It reads one freshly validated engine snapshot and does not initialize actors or
 change financial revisions. Source accounting still requires real game import
 and reconciliation; browser display and actual guest roster verification remain
 separate delivery requirements.
+
+
+Manual release, trade and restructure receipts are checked against the 65,536-byte
+native frame capacity, including the complete reply envelope, JSON escaping and
+newline, inside the held database transaction. An oversized reply returns
+`response_too_large` with null result before ownership or event writes. Historical
+retries validate the original receipt without restoring old ownership or changing
+current finances. Direct engine calls retain their existing unbounded receipt
+shape; this check is imposed by the native Bridge boundary.
+
+Full lifecycle receipts still include team cash and financial snapshots. A
+synthetic 53-player roster with 30 released agreements produces a 70,171-byte
+release receipt, so the current native protocol cannot support that state through
+these operations. Compact transaction receipts or paged reconciliation are still
+needed for long franchises. This guard prevents a commit the client cannot read;
+it does not remove that capacity limitation.

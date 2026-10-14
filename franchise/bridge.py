@@ -10,6 +10,10 @@ from franchise.store import StoredLedger
 PROTOCOL = 1
 
 
+class ResponseTooLarge(ValueError):
+    """A lifecycle receipt cannot fit the native protocol frame."""
+
+
 class Bridge:
     def __init__(self, store, *, provider, access_check, connection_check=lambda: None):
         if not callable(provider) or not callable(access_check):
@@ -76,12 +80,15 @@ class Bridge:
                     if parsed.isoformat() != value:
                         raise ValueError('Canonical YYYY-MM-DD restructure dates required')
                     scope[field] = parsed
+                def restructure_result(receipt):
+                    return {'decision_mode':'manual','team_id':request['team_id'],
+                        'player_id':request['player_id'],'restructure':receipt,
+                        **({'generation_id':generation_id} if generation_id is not None else {})}
                 receipt = self.store.restructure_preseason_veteran(request['team_id'],request_id,request['player_id'],
                     scope=PreseasonRestructureScope(**scope),converted_base=converted,
-                    expected_revision=request['expected_revision'],access_check=restructure_access,generation_id=generation_id,require_return_generation_id=True)
-                return self._reply(request_id,result={'decision_mode':'manual','team_id':request['team_id'],
-                    'player_id':request['player_id'],'restructure':receipt,
-                    **({'generation_id':generation_id} if generation_id is not None else {})})
+                    expected_revision=request['expected_revision'],access_check=restructure_access,generation_id=generation_id,require_return_generation_id=True,
+                    receipt_check=lambda receipt:self._require_frame(request_id,restructure_result(receipt)))
+                return self._reply(request_id,result=restructure_result(receipt))
             if operation == 'manual_trade':
                 from datetime import date
                 from franchise.trades import PreseasonTradeScope
@@ -122,13 +129,17 @@ class Bridge:
                     if parsed.isoformat() != value:
                         raise ValueError('Canonical YYYY-MM-DD assignment dates required')
                     scope[field]=parsed
+                def trade_result(receipt):
+                    identity={key:receipt[key] for key in ('seller_generation_id','buyer_generation_id','buyer_previous_generation_id')} if len(receipt)>2 else {}
+                    return {'decision_mode':'manual','player_id':request['player_id'],
+                        'seller':request['seller'],'buyer':request['buyer'],
+                        'trade':receipt['participants'] if identity else receipt,**identity}
                 receipt=self.store.trade_preseason_veteran(request_id,request['seller'],request['buyer'],request['player_id'],
                     scope=PreseasonTradeScope(**scope),seller_revision=request['seller_revision'],buyer_revision=request['buyer_revision'],
                     access_check=trade_access,seller_generation_id=seller_generation,
-                    buyer_previous_generation_id=buyer_previous,require_generation_ids=True,include_generation_identity=True)
-                identity={key:receipt[key] for key in ('seller_generation_id','buyer_generation_id','buyer_previous_generation_id')} if len(receipt)>2 else {}
-                return self._reply(request_id,result={'decision_mode':'manual','player_id':request['player_id'],
-                    'seller':request['seller'],'buyer':request['buyer'],'trade':receipt['participants'] if identity else receipt,**identity})
+                    buyer_previous_generation_id=buyer_previous,require_generation_ids=True,include_generation_identity=True,
+                    receipt_check=lambda receipt:self._require_frame(request_id,trade_result(receipt)))
+                return self._reply(request_id,result=trade_result(receipt))
             if operation == 'manual_release':
                 from datetime import date
                 from franchise.releases import PreseasonReleaseScope
@@ -166,7 +177,8 @@ class Bridge:
                 receipt=self.store.release_preseason_veteran(request['team_id'],request_id,request['player_id'],
                     scope=PreseasonReleaseScope(**scope),discount=DiscountProfile(**discount),
                     payment_year_offsets=tuple(request['payment_year_offsets']),expected_revision=request['expected_revision'],
-                    access_check=release_access)
+                    access_check=release_access,receipt_check=lambda receipt:self._require_frame(request_id,
+                        {'decision_mode':'manual','player_id':request['player_id'],'release':receipt}))
                 return self._reply(request_id,result={'decision_mode':'manual','player_id':request['player_id'],'release':receipt})
             if operation == 'contract_context':
                 if set(request) != {'protocol','request_id','operation','team_id','generation_id','timeout_ms'}:
@@ -268,6 +280,8 @@ class Bridge:
                                          expected_revision=request["expected_revision"],
                                          promise_goals=goals_from_list(request.get("promise_goals", [])))
             return self._reply(request_id, result=result)
+        except ResponseTooLarge:
+            return self._reply(request_id,error='response_too_large',detail='Lifecycle receipt exceeds pipe frame capacity; transaction not changed')
         except AccessDisabled:
             return self._reply(request_id, error="ai_disabled")
         except TimeoutError:
@@ -279,6 +293,11 @@ class Bridge:
         except Exception:
             # Never put cloud credentials, provider internals or tracebacks on wire.
             return self._reply(request_id, error="service_failure")
+
+    @classmethod
+    def _require_frame(cls,request_id,result):
+        if len(json.dumps(cls._reply(request_id,result=result),allow_nan=False).encode('utf-8'))+1 > 65536:
+            raise ResponseTooLarge('Lifecycle receipt exceeds pipe frame capacity')
 
     @staticmethod
     def _reply(request_id, *, result=None, error=None, detail=None):

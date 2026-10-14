@@ -907,8 +907,10 @@ class FranchiseStore:
             raise ValueError('Trade resulting state disagrees with replay')
 
     def trade_preseason_veteran(self,request_id,seller,buyer,player_id,*,scope,seller_revision,buyer_revision,access_check,
-                               seller_generation_id=None,buyer_previous_generation_id=None,require_generation_ids=False,include_generation_identity=False):
+                               seller_generation_id=None,buyer_previous_generation_id=None,require_generation_ids=False,include_generation_identity=False,receipt_check=None):
         from franchise.trades import PreseasonTradeScope
+        if receipt_check is not None and not callable(receipt_check):
+            raise ValueError('Callable lifecycle receipt validation required')
         if any(type(value) is not str or not value.strip() for value in (request_id,seller,buyer,player_id)) or seller == buyer:
             raise ValueError('Distinct identified trade participants required')
         if not isinstance(scope,PreseasonTradeScope) or not callable(access_check):
@@ -941,8 +943,11 @@ class FranchiseStore:
                     raise Rejected('Trade request targets different agreements')
                 if any(common[field] != requested[field] for field in requested):
                     raise Rejected('Trade request already recorded differently')
+                receipt=self._trade_receipt(common,include_generation_identity)
+                if receipt_check is not None:
+                    receipt_check(receipt)
                 access_check()
-                return self._trade_receipt(common,include_generation_identity)
+                return receipt
             owner=db.execute('SELECT team_id FROM ownership WHERE player_id=?',(player_id,)).fetchone()
             if owner != (seller,):
                 raise Rejected('Seller lacks exclusive player ownership')
@@ -975,6 +980,9 @@ class FranchiseStore:
                        buyer:{'financial':target.financial_snapshot(),'cash':target.cash_snapshot()}})
             if versioned:
                 common['after_generations']={seller:source.generation_snapshot(),buyer:target.generation_snapshot()}
+            receipt=self._trade_receipt(common,include_generation_identity)
+            if receipt_check is not None:
+                receipt_check(receipt)
             access_check()
             if db.execute('UPDATE ownership SET team_id=? WHERE player_id=? AND team_id=?',(buyer,player_id,seller)).rowcount != 1:
                 raise Rejected('Trade ownership changed')
@@ -983,7 +991,7 @@ class FranchiseStore:
                 posting=common['after'][team]
                 db.execute('INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,?,?)',
                     (team,key,kind,json.dumps({'trade':common,'posting':posting['financial'],'cash_posting':posting['cash']},allow_nan=False)))
-            return self._trade_receipt(common,include_generation_identity)
+            return receipt
 
     @staticmethod
     def _trade_receipt(common,include_identity):
@@ -1027,8 +1035,10 @@ class FranchiseStore:
             expected_revision=payload['expected_revision'])
 
     def restructure_preseason_veteran(self,team_id,request_id,player_id,*,scope,converted_base,
-                                      expected_revision,access_check,generation_id=None,require_return_generation_id=False):
+                                      expected_revision,access_check,generation_id=None,require_return_generation_id=False,receipt_check=None):
         from franchise.restructures import PreseasonRestructureScope
+        if receipt_check is not None and not callable(receipt_check):
+            raise ValueError('Callable lifecycle receipt validation required')
         if any(type(value) is not str or not value.strip() for value in (request_id,player_id)) or not callable(access_check):
             raise ValueError('Stable amendment identities and final access check required')
         if not isinstance(scope,PreseasonRestructureScope):
@@ -1057,8 +1067,11 @@ class FranchiseStore:
                     raise Rejected('Amendment request targets a different generation')
                 if any(previous[field] != payload[field] for field in payload):
                     raise Rejected('Amendment request already recorded differently')
+                receipt={'financial':previous['posting'],'cash':previous['cash_posting']}
+                if receipt_check is not None:
+                    receipt_check(receipt)
                 access_check()
-                return {'financial':previous['posting'],'cash':previous['cash_posting']}
+                return receipt
             if (require_return_generation_id and generation_id is None
                     and ledger.contract_identity(player_id).generation_id.startswith('contract-gen:')):
                 raise ValueError('Returned agreement requires explicit generation identity')
@@ -1084,14 +1097,19 @@ class FranchiseStore:
             payload.update(posting=ledger.financial_snapshot(),cash_posting=ledger.cash_snapshot())
             if kind=='generation_restructure':
                 payload['generation_posting']=ledger.generation_snapshot()
+            receipt={'financial':payload['posting'],'cash':payload['cash_posting']}
+            if receipt_check is not None:
+                receipt_check(receipt)
             access_check()
             db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,?,?)",
                        (team_id,key,kind,json.dumps(payload,allow_nan=False)))
-            return {'financial':payload['posting'],'cash':payload['cash_posting']}
+            return receipt
 
     def release_preseason_veteran(self,team_id,request_id,player_id,*,scope,discount,payment_year_offsets,
-                                 expected_revision,access_check):
+                                 expected_revision,access_check,receipt_check=None):
         from franchise.releases import PreseasonReleaseScope
+        if receipt_check is not None and not callable(receipt_check):
+            raise ValueError('Callable lifecycle receipt validation required')
         from franchise.guarantees import DiscountProfile
         if any(type(value) is not str or not value.strip() for value in (request_id,player_id)) or not callable(access_check):
             raise ValueError('Stable release identities and final access check required')
@@ -1113,8 +1131,11 @@ class FranchiseStore:
                 previous=json.loads(row[0])
                 if any(previous[field] != payload[field] for field in payload):
                     raise Rejected('Release request already recorded differently')
+                receipt={'financial':previous['posting'],'cash':previous['cash_posting']}
+                if receipt_check is not None:
+                    receipt_check(receipt)
                 access_check()
-                return {'financial':previous['posting'],'cash':previous['cash_posting']}
+                return receipt
             kind='release'
             if ledger.contract_identity(player_id).generation_id.startswith('contract-gen:'):
                 kind='generation_release'
@@ -1126,12 +1147,15 @@ class FranchiseStore:
             payload.update(posting=ledger.financial_snapshot(),cash_posting=ledger.cash_snapshot())
             if kind=='generation_release':
                 payload['generation_posting']=ledger.generation_snapshot()
+            receipt={'financial':payload['posting'],'cash':payload['cash_posting']}
+            if receipt_check is not None:
+                receipt_check(receipt)
             access_check()
             if db.execute('DELETE FROM ownership WHERE player_id=? AND team_id=?',(player_id,team_id)).rowcount != 1:
                 raise Rejected('Release ownership is unavailable')
             db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,?,?)",
                        (team_id,key,kind,json.dumps(payload,allow_nan=False)))
-            return {'financial':payload['posting'],'cash':payload['cash_posting']}
+            return receipt
 
     def preview_offer(self, team_id: str, offer: Offer, expected_revision: int) -> dict:
         with self._connection() as db:

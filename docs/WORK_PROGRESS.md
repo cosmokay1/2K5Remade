@@ -1991,3 +1991,24 @@ base 15 preserves combined nominal cash 57 and paid cash 12. Three distinct
 agreements survive; retrying the earlier trade leaves current ownership and
 all agreement snapshots unchanged. The audit passes, including 5050 bonus
 conservation cases. Real game import, posting and save/load remain gated.
+
+### Native lifecycle receipt capacity (2026-10-13)
+
+Measured a real source-level transport failure using synthetic 53-player books:
+30 released agreements produced a 70,171-byte receipt against the native
+65,536-byte limit. Previously these operations could commit before the native
+client rejected the reply. Release, paired trade and restructure now run an
+optional exact receipt validator inside the Store transaction, before final
+connection/deadline checks and ownership/event writes. The native Bridge checks
+the full JSON reply including envelope, escaping and newline and reports
+response_too_large without mutation. Historical retries validate their original
+receipt and never restore historical ownership. Direct engine receipt shapes
+and existing event serialization remain unchanged.
+
+Six new tests cover all three Bridge operations, exact frame boundary, realistic
+53-contract overflow, byte-identical rollback, identity-bearing trade receipts,
+historical retries and serialization before final access. All 421 Python tests,
+portable native C++ protocol checks and the repeatable money audit pass. Compact
+transaction receipts/paged reconciliation remain necessary for long franchises;
+the guard prevents unreadable commits but does not expand protocol capacity.
+No game execution or save/load evidence is implied.
