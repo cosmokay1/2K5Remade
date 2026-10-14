@@ -2132,3 +2132,31 @@ synthetic evidence, not game-frame/Windows/Deck acceptance.
 Cash-binding commit fbe9e80 passed Windows/Ubuntu429tests and native compact
 long-franchise reconciliation/restart fixture in CI38499239068. Later source
 changes still need their own CI; actual game/save gates remain unresolved.
+
+### Sourced promise circumstances for later negotiation (2026-10-13)
+
+Added frozen PromiseCircumstances with player/team/window/mode, nullable total/
+available/injury-unavailable/coaching-DNP counts, source/coverage/completeness
+and an explicit reason for unknown counts. Bounds preserve availability/injury
+disjointness and coaching-DNP subset membership without classifying missing
+causes or converting unknown values to zero. Optional format1 promise-score
+events persist context alongside unchanged raw achievement, with exact field/
+type replay checks and stable retries. Legacy event/result shapes remain intact.
+Typed performance recording checks player/team/window/mode before committing;
+replay validates declared sources, not an independently saved raw collector
+snapshot. That boundary is documented in docs/promise-circumstances.md.
+
+Recorded promise_history already feeds later Negotiation model context. Prompt
+guidance now uses sourced circumstances with saved priorities, retaining unknown
+coverage and avoiding inferred fault, altered targets or automatic trust/money
+effects. An actual scripted provider test sees injury4/availability12 alongside
+unchanged achievement1/2 and trust0.6 after persisted score, release, format4
+migration and return negotiation. Context-aware consequence policy, real game
+capture and in-game display remain unfinished.
+
+All437 Python tests, portable native protocol checks and money audit pass.
+Eight new tests cover bounds, unknowns, foreign/duplicate windows, mode mapping,
+strict replay tampering, stable retries/legacy shapes and provider delivery.
+Independent read-only review passed24 focused cases with no concrete regression.
+Replay optimization13031b5 also passed CI38499740729. New context Windows
+execution remains pending CI; no retail game/save/load evidence is claimed.

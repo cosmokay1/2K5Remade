@@ -199,3 +199,74 @@ def observe_promise_windows(goals, performances, *, player_id, team_id, context,
                                            context=context,team_results=teams.get(window)):
             observed[observation.goal_id] = observation
     return tuple(observed[g.goal_id] for g in goals)
+
+
+@dataclass(frozen=True)
+class PromiseCircumstances:
+    """Observed availability; coaching DNPs are a subset of eligible games.
+
+    These counts explain opportunity. They never change raw promise achievement.
+    Injury-unavailable games and available games are disjoint. Other causes may
+    remain unclassified, so neither a missing count nor a remainder becomes zero.
+    """
+    player_id: str
+    team_id: str
+    window: str
+    mode: str
+    total_games: int | None
+    available_games: int | None
+    injury_unavailable_games: int | None
+    coaching_dnp_games: int | None
+    source: str
+    coverage: str
+    complete_window: bool
+    unavailable_reason: str | None
+
+    def __post_init__(self):
+        from franchise.performance import MODES
+        if (any(type(value) is not str or not value.strip() for value in
+                (self.player_id,self.team_id,self.window,self.source,self.coverage))
+                or type(self.mode) is not str or self.mode not in MODES or type(self.complete_window) is not bool):
+            raise ValueError('Sourced player, team, window, mode and circumstance coverage required')
+        counts=(self.total_games,self.available_games,self.injury_unavailable_games,self.coaching_dnp_games)
+        if any(value is not None and (type(value) is not int or value<0) for value in counts):
+            raise ValueError('Observed nonnegative circumstance counts or explicit unknown required')
+        if any(value is None for value in counts):
+            if type(self.unavailable_reason) is not str or not self.unavailable_reason.strip():
+                raise ValueError('Unknown circumstance counts require an explicit reason')
+        elif self.unavailable_reason is not None:
+            raise ValueError('Known circumstances cannot also be unavailable')
+        total,available,injury,coaching=counts
+        if total is not None:
+            if any(value is not None and value>total for value in counts[1:]):
+                raise ValueError('Circumstance count exceeds observed total games')
+            for first,second in ((available,injury),(injury,coaching)):
+                if first is not None and second is not None and first+second>total:
+                    raise ValueError('Disjoint circumstance counts exceed observed total games')
+        if coaching is not None and available is not None and coaching>available:
+            raise ValueError('Coaching DNP games exceed available games')
+
+    def to_dict(self):
+        from dataclasses import asdict
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls,data):
+        from dataclasses import fields
+        import json
+        if type(data) is not dict or set(data)!={field.name for field in fields(cls)}:
+            raise ValueError('Complete canonical promise circumstances required')
+        value=cls(**data)
+        if json.dumps(value.to_dict(),sort_keys=True,allow_nan=False)!=json.dumps(data,sort_keys=True,allow_nan=False):
+            raise ValueError('Noncanonical promise circumstance source')
+        return value
+
+
+def validate_circumstances(circumstances,*,player_id,team_id,windows):
+    if type(circumstances) is not tuple or not circumstances or any(not isinstance(item,PromiseCircumstances) for item in circumstances):
+        raise ValueError('Nonempty immutable sourced promise circumstances required')
+    if len({item.window for item in circumstances})!=len(circumstances):
+        raise ValueError('One circumstance record per declared window required')
+    if any(item.player_id!=player_id or item.team_id!=team_id or item.window not in windows for item in circumstances):
+        raise ValueError('Promise circumstances disagree with agreement player, team or windows')
+    return circumstances

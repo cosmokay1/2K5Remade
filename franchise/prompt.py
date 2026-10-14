@@ -50,6 +50,13 @@ It measures fulfillment of specific promises, not player ability. Unknown covera
 or unfinished windows do not establish a broken promise. Retain reported health,
 coaching and opportunity context; do not invent fault or treat team wins as wholly
 within one player's or coach's control. Scores create no automatic salary/cap effect.
+When a recorded promise evaluation includes structured circumstances, use its
+source, coverage, completeness and simulation mode. available_games means
+healthy and eligible, including games with a coaching DNP; injury_unavailable_games
+and coaching_dnp_games describe separate circumstances. Missing counts remain
+unknown. These observations do not rewrite goal targets or achievement scores,
+prove who caused a missed promise, or authorize a relationship penalty. Weigh
+reported context with the player's saved priorities and the actual agreement.
 """
 
 INSTRUCTIONS += """

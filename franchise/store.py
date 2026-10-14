@@ -478,7 +478,7 @@ class FranchiseStore:
                 ledger.revision += 1
             elif kind == "promise_score":
                 result = self._compute_promise_score(ledger,payload)
-                if result != payload['result']:
+                if (self._checkpoint_hash(result)!=self._checkpoint_hash(payload['result']) if 'format' in payload else result!=payload['result']):
                     raise ValueError('Promise score disagrees with recorded observations')
                 ledger._promise_scores.append(result)
                 ledger.revision += 1
@@ -1447,26 +1447,52 @@ class FranchiseStore:
         fields = {'goal_id','window','value','source','coverage','context'}
         if type(observations) is not list or any(type(o) is not dict or set(o) not in (fields,fields | {'complete_window'}) for o in observations):
             raise ValueError('Complete observed goal records required')
+        circumstances=None
+        if 'format' in payload or 'circumstances' in payload:
+            from franchise.promises import PromiseCircumstances,validate_circumstances
+            if (type(payload.get('format')) is not int or payload['format']!=1
+                    or type(payload.get('circumstances')) is not list):
+                raise ValueError('Versioned sourced promise circumstances required')
+            required={'request_id','agreement_request_id','observations','window_closed','expected_revision','source','format','circumstances'}
+            if set(payload) not in (required,required|{'result','posting'}):
+                raise ValueError('Unexpected versioned promise-score fields')
+            circumstances=validate_circumstances(tuple(PromiseCircumstances.from_dict(item) for item in payload['circumstances']),
+                player_id=agreement['player_id'],team_id=ledger._team_identity,
+                windows={goal['window'] for goal in agreement['goals']})
         score = score_promises(goals_from_list(agreement['goals']),tuple(GoalObservation(**o) for o in observations),
                                window_closed=payload['window_closed'])
         return {'request_id':payload['request_id'],'agreement_request_id':payload['agreement_request_id'],
-                'player_id':agreement['player_id'],'source':payload['source'],'score':score}
+                'player_id':agreement['player_id'],'source':payload['source'],'score':score,
+                **({'circumstances':[item.to_dict() for item in circumstances]} if circumstances is not None else {})}
 
     def record_promise_performance(self,team_id,request_id,agreement_request_id,performance,*,window_closed,
-                                   expected_revision,source,context,team_results=None):
+                                   expected_revision,source,context,team_results=None,circumstances=None):
         from franchise.promises import goals_from_list,observe_promises,observe_promise_windows
         ledger = self.load_team(team_id)
         agreement = ledger._promise_agreements.get(agreement_request_id)
         if agreement is None:
             raise Rejected('Committed promise agreement required')
+        if circumstances is not None:
+            from franchise.promises import validate_circumstances
+            validate_circumstances(circumstances,player_id=agreement['player_id'],team_id=team_id,
+                windows={goal['window'] for goal in agreement['goals']})
+            from franchise.performance import PerformanceEvidence
+            performances=performance if type(performance) is tuple else (performance,)
+            if not performances or any(not isinstance(item,PerformanceEvidence) for item in performances):
+                raise ValueError('Typed observed performance windows required')
+            by_window={item.window:item for item in performances}
+            if any(item.window not in by_window or item.mode!=by_window[item.window].mode
+                    or by_window[item.window].player_id!=item.player_id or by_window[item.window].team_id!=item.team_id
+                    for item in circumstances):
+                raise ValueError('Circumstances disagree with observed performance player/team/window/mode')
         mapper = observe_promise_windows if type(performance) is tuple else observe_promises
         observations = mapper(goals_from_list(agreement['goals']),performance,
             player_id=agreement['player_id'],team_id=team_id,context=context,
             team_results=() if type(performance) is tuple and team_results is None else team_results)
         return self.record_promise_score(team_id,request_id,agreement_request_id,observations,
-            window_closed=window_closed,expected_revision=expected_revision,source=source)
+            window_closed=window_closed,expected_revision=expected_revision,source=source,circumstances=circumstances)
 
-    def record_promise_score(self,team_id,request_id,agreement_request_id,observations,*,window_closed,expected_revision,source):
+    def record_promise_score(self,team_id,request_id,agreement_request_id,observations,*,window_closed,expected_revision,source,circumstances=None):
         from dataclasses import asdict
         from franchise.promises import GoalObservation
         if any(type(v) is not str or not v.strip() for v in (request_id,agreement_request_id)):
@@ -1476,13 +1502,18 @@ class FranchiseStore:
         payload = {'request_id':request_id,'agreement_request_id':agreement_request_id,
                    'observations':[{key:value for key,value in asdict(o).items() if key != 'complete_window' or value is not None} for o in observations],'window_closed':window_closed,
                    'expected_revision':expected_revision,'source':source}
+        if circumstances is not None:
+            from franchise.promises import PromiseCircumstances
+            if type(circumstances) is not tuple or not circumstances or any(not isinstance(item,PromiseCircumstances) for item in circumstances):
+                raise ValueError('Nonempty immutable promise circumstances required')
+            payload.update(format=1,circumstances=[item.to_dict() for item in circumstances])
         with self._connection(write=True) as db:
             ledger = self._load(db,team_id)
             key = 'promise-score:' + request_id
             row = db.execute('SELECT payload FROM events WHERE team_id=? AND request_key=?',(team_id,key)).fetchone()
             if row:
                 previous = json.loads(row[0])
-                if any(previous[field] != payload[field] for field in payload):
+                if ('format' in previous)!=('format' in payload) or any(self._checkpoint_hash(previous[field]) != self._checkpoint_hash(payload[field]) for field in payload):
                     raise Rejected('Score request already recorded differently')
                 return previous['result']
             result = self._compute_promise_score(ledger,payload)
