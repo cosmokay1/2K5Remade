@@ -3485,3 +3485,26 @@ Wine/CMake/Ninja/MSI tooling image built under the Deck user's container storage
 Microsoft installer metadata fetched only. Compiler/SDK download still requires
 explicit license acceptance. No proprietary toolchain or game asset was published,
 no paid inference/cloud infrastructure was used, and no game was executed yet.
+
+
+## October 14, 2026 — Private Deck Windows compiler verified
+
+User explicitly accepted the Microsoft Visual Studio Build Tools 2022 license
+and authorized the private compiler/SDK installation. Installation completed
+with MSVC 19.44.35229 x64 and Windows SDK 10.0.26100.0 inside the existing
+rootless build environment. No SteamOS system packages or Steam/Proton prefixes
+were changed. Microsoft binaries remain private; none are committed or published.
+
+The initial Wine prefix was incomplete and compilation failed with D8037.
+Initializing a fresh project-private prefix with wineboot and waiting for
+wineserver shutdown resolved that failure. The compiler built a Windows C probe,
+and Wine executed it successfully on the Deck. A separate C++17 probe including
+winrt/Windows.Foundation.h compiled successfully; its first include-path check
+was corrected to follow the SDK directory symlink. These are compiler/runtime
+checks only, not game execution.
+
+The fork and pinned xboxrecomp submodule were cloned privately onto the Deck.
+SDL 3.2.20 source matches the CI pin
+96292a5b464258a2b926e0a3d72f8b98c2a81aa6; its Windows dependency build is
+in progress. Full game compilation, boot, franchise signing and save/reload
+remain unverified. Financial guest-memory hooks remain disabled.

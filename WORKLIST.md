@@ -58,7 +58,7 @@ steps, rather than expand the already substantial standalone engine.
 |---|---|---|---|
 | B01 | User-supplied Xbox executable/disc now extracted; title/hash checked | Static intake resolved; runtime field/call verification remains | Private executable analysis and native build |
 | B02 | Raw franchise saves and companion metadata; controlled transaction pairs | Contract decoding, reconciliation and save round trips | Synthetic import fixtures, read-only diff tooling, state schema |
-| B03 | Steam Deck SSH and Proton verified; full Windows game build pending | Actual franchise execution, save/reload and delivery acceptance | Private local build environment and read-only signing-path analysis |
+| B03 | Steam Deck SSH, Windows compiler execution and WinRT headers verified; full game build pending | Actual franchise execution, save/reload and delivery acceptance | Private local build environment and read-only signing-path analysis |
 | B04 | Written upstream/third-party permission or suitable licenses | Redistribution of modified binaries and affected bundled components | Original source development, attribution, permission-request drafts |
 | B05 | Explicit approval for scoped runtime impersonation delegation | Live runtime-identity read/inference verification | Offline/native recovery and financial implementation |
 
