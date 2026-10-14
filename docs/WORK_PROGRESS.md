@@ -2855,3 +2855,11 @@ contract/player inspection and restart with saved personality (verified log).
 dcea1b2 Build38514505332 passed both platform runtime builds; its native transaction
 FranchiseAI38514505285 remains active at last inspection. None of this establishes
 actual guest save/game execution.
+
+Verified terminal success for dcea1b2 FranchiseAI38514505285. Its Windows log
+explicitly confirms the native calendar-release transaction, archive/player reads
+and owned sidecar restart fixture executed successfully; Windows and Ubuntu each
+passed 491 offline tests. Both platform runtime builds also passed run 38514505332.
+This proves synthetic native transaction transport and durable replay, not guest
+save writes or gameplay. Revision e93283e adds the 493-test history coverage and
+remains a separate CI revision.

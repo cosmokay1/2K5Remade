@@ -115,7 +115,7 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       separates release-year cursor from archived terms and validates allocated
       retained cash. Explicit manual calendar-format requests now route to the
       atomic Store release with bound full/compact native receipts; Windows pipe
-      transaction execution is pending. Actual game wiring remains open and legacy
+      transaction/restart execution passed run 38514505285 at dcea1b2. Actual game wiring remains open and legacy
       post-roll APIs remain guarded.
 - [ ] Implement atomic trades with both teams' obligations and ownership.
       Supported sourced preseason veteran contract assignments now commit paired
