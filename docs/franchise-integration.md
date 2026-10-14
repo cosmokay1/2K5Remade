@@ -236,3 +236,20 @@ compact release receipts, agreement/player reads, saved personality and retry
 across two sidecar launches, then verifies later payroll/rollover/reopen. Local
 Python fixture orchestration passes; Windows execution passed run 38515051781
 at 642d533. This mode belongs only to the smoke checker, not the game client API.
+
+`calendar_v3` explicitly requests format4 inspection, adding `trade_calendar` to
+format3's envelope. Sourced outgoing trade year/cursor remains separate from the
+original economic contract. Seller cash includes settled bonuses and earned prior
+base; transferred future base/guarantees are zero seller liabilities. Native checks
+bind the marker to assigned status/year and reconcile exact component ceilings,
+full allocated settlement and zero remaining guarantees. Null markers use the
+legacy economic cursor, so removing a later-trade marker cannot bypass cash
+reconciliation. Other agreements use a null trade calendar and preserve release
+inspection. Both contract/player requests are read-only and available with AI off.
+Legacy v1/v2 Store requests reject new calendar assignment archives.
+
+Portable native fixtures and eight actual Python seller/buyer contract/player
+replies across rollover passed C++ validation. Windows pipe fixtures now compare
+these snapshots and saved personalities across two processes in two years; their
+execution is pending. This does not expose a native calendar trade write or prove
+actual guest interaction.

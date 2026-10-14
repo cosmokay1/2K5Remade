@@ -123,7 +123,9 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       enforces current cap/floors and preserves prior closed/settled expired debt,
       with a new trade-year-anchored agreement. Atomic paired Store calendar
       commits/replay now persist both books and ownership with strict before/after
-      calendar checks and rollback. Native calendar inspection/receipts and game
+      calendar checks and rollback. Explicit calendar_v3 native inspection now
+      separates the outgoing trade cursor and retained cash from archived terms;
+      Windows pipe execution is pending. Native trade write receipts and game
       wiring remain open; no postroll trade service route is enabled.
       Supported sourced preseason veteran contract assignments now commit paired
       cash/cap/ownership events with independent league replay. Consideration, rookies,

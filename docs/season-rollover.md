@@ -176,7 +176,8 @@ base does not, and retained bonus charges start at the actual trade year. This
 path validates before mutation and preserves legacy postroll guards. Paired Store
 commit/replay is now implemented below; native versioned accounting/receipts and
 guest wiring remain open.
-Store inspection rejects these outgoing archives until that protocol exists.
+Legacy calendar inspection rejects these outgoing archives; explicit calendar_v3
+inspection reports their sourced trade cursor separately from archived terms.
 
 The receiving Ledger explicitly recalculates the original plan, binds canonical
 source and destination generation identities, and enforces current cap and salary

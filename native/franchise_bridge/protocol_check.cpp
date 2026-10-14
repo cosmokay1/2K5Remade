@@ -498,6 +498,34 @@ int main() {
         auto active_v2=calendar_reply;active_v2["result"]["format"]=3;
         active_v2["result"]["release_calendar"]=nullptr;
         franchise::validate_result(active_v2,calendar_release_request);
+        auto trade_context_request=calendar_release_request;trade_context_request["context_format"]="calendar_v3";
+        auto trade_context_reply=calendar_release_reply;
+        auto& trade_context=trade_context_reply["result"];
+        trade_context["format"]=4;trade_context["release_calendar"]=nullptr;
+        trade_context["trade_calendar"]={{"league_year",2027},{"elapsed_years",1},{"source","synthetic calendar trade"}};
+        trade_context["economic_archive"]["status"]="assigned";
+        trade_context["calendar_accounting"]["status"]="assigned";
+        trade_context["economic_archive"]["annual_charges"]={3,3};
+        trade_context["calendar_accounting"]["annual_charges"]={3,3};
+        trade_context["economic_archive"]["cash_obligation"]["amount"]=19;
+        trade_context["economic_archive"]["guarantees"]["unpaid_guaranteed_base_by_original_year"]={0,0,0};
+        franchise::validate_result(trade_context_reply,trade_context_request);
+        auto active_v3=active_v2;active_v3["result"]["format"]=4;active_v3["result"]["trade_calendar"]=nullptr;
+        franchise::validate_result(active_v3,trade_context_request);
+        for(int scenario=0;scenario<8;++scenario) {
+            auto bad=trade_context_reply;auto& context=bad["result"];
+            if(scenario==0) context["trade_calendar"]=nullptr;
+            if(scenario==1) context["trade_calendar"]["elapsed_years"]=true;
+            if(scenario==2) context["trade_calendar"]["league_year"]=2026;
+            if(scenario==3) context["trade_calendar"]["source"]=" ";
+            if(scenario==4) context["economic_archive"]["cash_obligation"]["amount"]=20;
+            if(scenario==5) context["economic_archive"]["guarantees"]["unpaid_guaranteed_base_by_original_year"][2]=5;
+            if(scenario==6) context["calendar_accounting"]["ownership_current"]=true;
+            if(scenario==7) context["trade_calendar"].erase("elapsed_years");
+            bool rejected=false;
+            try{franchise::validate_result(bad,trade_context_request);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Corrupt calendar trade context accepted");
+        }
         for(int scenario=0;scenario<11;++scenario) {
             auto bad=calendar_release_reply;auto& context=bad["result"];
             if(scenario==0) context["release_calendar"]=nullptr;
@@ -537,6 +565,10 @@ int main() {
         released_player_reply["result"]["context_format"]="calendar_v2";
         released_player_reply["result"]["calendar_contract_context"]=release_context;
         franchise::validate_result(released_player_reply,released_player_request);
+        auto trade_player_request=released_player_request;trade_player_request["context_format"]="calendar_v3";
+        auto trade_player_reply=released_player_reply;trade_player_reply["result"]["context_format"]="calendar_v3";
+        trade_player_reply["result"]["calendar_contract_context"]=trade_context;
+        franchise::validate_result(trade_player_reply,trade_player_request);
         for (int scenario=0;scenario<8;++scenario) {
             auto bad=calendar_player_reply;
             if (scenario==0) bad["result"]["context_format"]="unknown";

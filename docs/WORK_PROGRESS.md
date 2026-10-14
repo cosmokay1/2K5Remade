@@ -2935,3 +2935,18 @@ downgrade cases and verify access/receipt/second-insert rollback byte-for-byte.
 Independent review found no concrete defect. No Bridge/native trade route or guest
 writes were opened. Both Build 38515825166 and FranchiseAI 38515825234 passed at
 prior receiving-ledger revision 97553c1; the new paired Store change is separate.
+
+Explicit calendar_v3 / format4 contract and player inspection now includes a
+sourced outgoing trade year/cursor, with economic archives unchanged. Native
+validation reconciles assigned cash as settled bonuses plus earned prior base,
+zero transferred future bases/guarantees, exact payment component ceilings and
+full settlement. Null-marker fallback uses the economic cursor to prevent a
+later-trade cash downgrade. Release metadata stays independent; conflicting
+lifecycle markers reject. Legacy v1/v2 Store inspection remains guarded for new
+calendar assignments. AI-off reads invoke no inference and preserve DB bytes.
+All 506 offline tests passed. Portable CTest passes valid and corrupt v3 contract/
+player responses; eight actual Python seller/buyer replies in two calendar years
+passed C++. Windows fixture source and local Python orchestration pass; actual
+Windows pipe execution of v3 remains pending. Native write receipts and actual
+guest trades remain open. Both atomic Store revision 78fcff1 Build 38516329482 and
+FranchiseAI 38516329469 passed; this inspection extension is a separate revision.

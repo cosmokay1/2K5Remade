@@ -475,6 +475,42 @@ def main():
             finally:fixture.doCleanups()
         print("Native Windows layered/assigned calendar releases, full/compact receipts, personality and next rollover verified (synthetic).")
 
+        from tests import test_calendar_trade_store
+        trade_fixture=test_calendar_trade_store.CalendarTradeStoreTests()
+        trade_fixture.setUp()
+        try:
+            receipt=trade_fixture.trade()
+            for year in (2027,2028):
+                if year==2028:
+                    ledger=trade_fixture.store.load_team('b')
+                    trade_fixture.store.record_payment('b','native-history-pay',receipt['buyer_generation_id'],2000000,
+                        expected_cash_revision=ledger.cash_snapshot()['revision'],source='synthetic earned salary',
+                        payment_reference='native-buyer-base-2027',component='base:0')
+                    trade_fixture.roll(2027)
+                requests=[]
+                for team in ('a','b'):
+                    generation=trade_fixture.inputs['seller_generation_id'] if team=='a' else receipt['buyer_generation_id']
+                    requests.extend([dict(protocol=1,request_id=team+'-contract',operation='contract_context',team_id=team,
+                        generation_id=generation,context_format='calendar_v3',timeout_ms=5000),
+                        dict(protocol=1,request_id=team+'-player',operation='player_context',team_id=team,
+                            player_id='v',context_format='calendar_v3',timeout_ms=5000)])
+                payload=''.join(json.dumps(request,separators=(',',':'))+'\n' for request in requests)
+                unchanged=trade_fixture.path.read_bytes();previous=None
+                for attempt in range(2):
+                    result=subprocess.run([sys.argv[1],sys.executable,str(trade_fixture.path),'--calendar-history'],
+                        input=payload,text=True,capture_output=True,timeout=30,check=True)
+                    replies=[json.loads(line) for line in result.stdout.splitlines()]
+                    assert len(replies)==4 and all(reply['error'] is None for reply in replies)
+                    for request,reply in zip(requests,replies):
+                        expected=(trade_fixture.store.calendar_contract_context(request['team_id'],request['generation_id'],context_format='calendar_v3')
+                            if request['operation']=='contract_context' else trade_fixture.store.player_context(request['team_id'],'v',context_format='calendar_v3'))
+                        assert reply['result']==expected
+                    if attempt:assert replies==previous
+                    previous=replies
+                    assert trade_fixture.path.read_bytes()==unchanged
+        finally:trade_fixture.doCleanups()
+        print("Native Windows calendar-v3 seller/buyer inspection, personality and rollover restart verified (synthetic).")
+
         if len(sys.argv)>2:
             c_path=Path(directory)/'C host ownership.sqlite'
             c_store=FranchiseStore(c_path)

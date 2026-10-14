@@ -92,6 +92,29 @@ class CalendarTradeStoreTests(unittest.TestCase):
             self.store.trade_preseason_veteran('legacy','a','b','v',**self.inputs)
         self.assertEqual(self.path.read_bytes(),before)
 
+    def test_calendar_v3_inspects_retained_seller_and_rebased_buyer_without_writes(self):
+        receipt=self.trade();before=self.path.read_bytes()
+        seller=self.store.calendar_contract_context('a',self.inputs['seller_generation_id'],context_format='calendar_v3')
+        buyer=self.store.calendar_contract_context('b',receipt['buyer_generation_id'],context_format='calendar_v3')
+        self.assertEqual(seller['format'],4)
+        self.assertEqual(seller['trade_calendar'],dict(league_year=2027,elapsed_years=1,source=self.inputs['scope'].source))
+        self.assertEqual(seller['economic_archive']['contract']['elapsed_years'],0)
+        self.assertEqual(seller['economic_archive']['cash_obligation']['amount'],5000000)
+        self.assertFalse(seller['calendar_accounting']['ownership_current'])
+        self.assertIsNone(seller['release_calendar']);self.assertIsNone(buyer['trade_calendar'])
+        self.assertEqual(buyer['calendar_accounting']['current_contract']['elapsed_years'],0)
+        from franchise.bridge import Bridge
+        from franchise.control import AccessDisabled
+        def forbidden(_):raise AssertionError('Read invoked inference')
+        def disabled():raise AccessDisabled('synthetic AI shutdown')
+        bridge=Bridge(self.store,provider=forbidden,access_check=disabled)
+        request=dict(protocol=1,request_id='inspect-seller',operation='contract_context',team_id='a',
+            generation_id=self.inputs['seller_generation_id'],context_format='calendar_v3',timeout_ms=1000)
+        self.assertEqual(bridge.handle(request)['result'],seller)
+        request.pop('generation_id');request.update(operation='player_context',player_id='v')
+        self.assertEqual(bridge.handle(request)['result']['calendar_contract_context'],seller)
+        self.assertEqual(self.path.read_bytes(),before)
+
     def test_failed_second_event_rolls_back_ownership_and_first_event(self):
         with closing(sqlite3.connect(self.path)) as db:
             db.execute("CREATE TRIGGER reject_calendar_buyer BEFORE INSERT ON events WHEN NEW.kind='calendar_trade_in' BEGIN SELECT RAISE(ABORT,'synthetic reject'); END");db.commit()
