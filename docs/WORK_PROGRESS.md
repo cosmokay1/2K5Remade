@@ -3718,3 +3718,17 @@ transaction effects. No interception or financial write was made.
 CI for80279d9 was observed live: Build38553654953 and Franchise AI38553655040
 were in progress. Do not report them as passing until completed. The currently
 open Deck game still requires normal exit before staged observer activation.
+
+
+## October 14, 2026 — Windows observer-harness portability repair
+
+Observer source80279d9 Build38553654953 passed, but Franchise AI38553655040
+failed only its new Windows harness: implicit declarations for POSIX unsetenv
+and setenv under cc/Werror. Replaced those harness-only calls with an authored
+getenv fixture and an explicit .exe output path; the production observer and
+private compiled game are unchanged. The actual extracted observer's focused
+C11/Werror test passes locally after repair. Windows CI must verify the fix.
+
+Read-only Deck state still reports game PID65155 active, so staged observer
+activation remains pending normal exit. No restart, live replacement or input
+was performed.

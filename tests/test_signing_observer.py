@@ -15,7 +15,6 @@ class SigningObserverTests(unittest.TestCase):
         observer = source[source.index('static bool signing_screen_read('):
                           source.index('void nfl2k5_diag_texzero(')]
         harness = r'''
-#define _POSIX_C_SOURCE 200809L
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -26,6 +25,12 @@ class SigningObserverTests(unittest.TestCase):
 static unsigned char ram[0x1000000], before[0x1000000];
 static size_t g_xbox_total_ram = sizeof ram;
 static unsigned reads;
+static const char *trace_env;
+static const char *test_getenv(const char *key) {
+    assert(!strcmp(key, "NFL2K5_TRACE_FRANCHISE"));
+    return trace_env;
+}
+#define getenv test_getenv
 static void *xbox_GetMemoryOffset(void) { return ram; }
 static bool xbox_guest_memory_read(uintptr_t base, uint64_t addr, void *out, size_t n) {
     ++reads;
@@ -65,9 +70,9 @@ int main(void) {
     const uint16_t first[] = {'T','e','s','t',0}, last[] = {'P','l','a','y','e','r',0};
     memcpy(ram + 0x8000, first, sizeof first); memcpy(ram + 0x8100, last, sizeof last);
     memcpy(before, ram, sizeof ram);
-    reads = 0; unsetenv("NFL2K5_TRACE_FRANCHISE");
+    reads = 0; trace_env = NULL;
     nfl2k5_diag_fsm(1, 0x557B2C, 1); assert(reads == 0);
-    setenv("NFL2K5_TRACE_FRANCHISE", "1", 1);
+    trace_env = "1";
     nfl2k5_diag_fsm(1, 0x557B2C, 0); assert(reads == 0);
     nfl2k5_diag_fsm(1, 0x557B2C, 1); assert(reads > 0);
     assert(!memcmp(before, ram, sizeof ram));
@@ -79,8 +84,8 @@ int main(void) {
             path = Path(directory)
             (path / 'observer.c').write_text(harness + observer + cases)
             subprocess.run(['cc', '-std=c11', '-Wall', '-Wextra', '-Werror',
-                            str(path / 'observer.c'), '-o', str(path / 'observer')], check=True)
-            result = subprocess.run([str(path / 'observer')], capture_output=True, text=True, check=True)
+                            str(path / 'observer.c'), '-o', str(path / 'observer.exe')], check=True)
+            result = subprocess.run([str(path / 'observer.exe')], capture_output=True, text=True, check=True)
         self.assertIn('bank_slot=1 first_name="Test" last_name="Player"', result.stderr)
         self.assertIn('identity_scope=current_bank_locator', result.stderr)
         self.assertIn('sign_player identity=unverified', result.stderr)

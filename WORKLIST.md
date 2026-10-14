@@ -32,7 +32,9 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 - Current delivered local suite: **609 tests passed**. Actual AIBASELIN parsing
   resolves 1937 roster/free-agent members. This does not prove contract/save
   round-trip integration. The read-only signing observer includes bounded bank-slot/name reads and is compiled and staged;
-  runtime observation awaits a safe game exit.
+  runtime observation awaits a safe game exit. Observer source80279d9 passed its
+  build check; its Windows test harness needed a POSIX-environment portability
+  repair, with replacement CI pending.
 - Request/token ceilings and remote shutdown are sufficient for current work.
   Additional dollar-policy machinery is deferred at the user's direction.
 - Xbox asset intake and Steam Deck SSH are now verified. Static analysis located
