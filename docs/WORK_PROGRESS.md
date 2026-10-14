@@ -1723,3 +1723,16 @@ unowned player separately from its assigned contract. Parallel generation audit
 documented ordered immutable identity/cash/archive/migration prerequisites and
 acceptance cases. No actual game/save or generation migration claimed.999f884
 passed CI38490946024/38490945988; current packaging CI remained running.
+
+## October 13, 2026 — Legacy contract identity inventory for migration
+
+Added read-only stable per-team/player legacy identities independent of mutable
+terms/payments/status. One validated snapshot preserves effective contract/cash
+and supported retained records; unknown cash remains null. Parallel review caught
+unmatched cash omitted from the first draft; final view preserves it explicitly
+alongside opening debt/credits, prior cohort records and unsigned tenders without
+guessed links. Authenticated /api/contracts uses the configured team and makes
+no actor/financial/schema writes.339 full tests and diff checks pass. No format
+migration, new-generation signing or game field mapping claimed. Packagingcf5d6a7
+passed CI38491252585/38491252588; 06ba848 Build38491823246 passed and Franchise
+AI38491823297 remained running. Full goal remains active.

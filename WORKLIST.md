@@ -77,6 +77,8 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
 
 - [ ] Add immutable contract generations, backed-up format migration and separate
       retained cash/debt histories before enabling former-club return signings.
+      Read-only legacy identities and explicit unmatched obligations now support
+      reconciliation inspection through authenticated /api/contracts.
       See docs/contract-generations.md; current ownership now controls free-agent
       negotiation availability without deleting historical receipts.
 

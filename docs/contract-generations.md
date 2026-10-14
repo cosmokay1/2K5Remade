@@ -42,3 +42,24 @@ old obligations after new signing, old receipt retry after a new agreement,
 competing clubs, migration rollback, and conservation of all original bonus,
 guarantee, cash and retained-charge histories. These are implementation requirements,
 not claims of completed game integration or a decoded guest contract format.
+
+## Read-only legacy inventory foundation
+
+FranchiseStore.contract_generations(team_id), also available through authenticated
+GET /api/contracts for the configured team, reads one freshly validated snapshot.
+The format1 response identifies legacy generations with `legacy-contract:` plus
+SHA-256 of compact UTF-8 JSON `[team_id,player_id]` (ensure_ascii=false). Mutable
+terms, payments and lifecycle status never enter this identity. Existing guards
+currently permit only one book agreement per team/player.
+
+The view includes effective typed contracts, known cash or null, and retained
+records from supported release/assignment archives. Unassigned opening debt and
+credits, prior cohort contracts, unsigned tenders and unmatched cash obligations
+remain explicit separate records. Unknown cash coverage stays null; known empty
+unmatched cash is an empty list. No relationship or generation is guessed from
+record names.
+
+This inventory does not rewrite events, change database format3, enable new
+agreements, or replace the full original configuration/history needed for migration.
+Backups and exact old/new replay reconciliation remain required before format
+advancement. Actual guest contract identification remains unverified.

@@ -32,6 +32,9 @@ class WebOriginTests(unittest.TestCase):
                     connection.close()
                     return result
                 self.assertEqual(request('GET', '/api/franchise', authorized=False)[0], 401)
+                self.assertEqual(request('GET','/api/contracts',authorized=False)[0],401)
+                self.assertEqual(request('GET','/api/contracts')[1],store.contract_generations('a'))
+                self.assertEqual(request('GET','/api/contracts?team_id=other')[0],404)
                 before = request('GET', '/api/franchise')[1]
                 self.assertFalse(request('GET','/api/players')[1]['players'][0]['initialized'])
                 self.assertIsNone(request('GET','/api/player?player_id=p')[1]['personality'])

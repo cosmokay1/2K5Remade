@@ -96,14 +96,15 @@ def make_server(store, team_id, token, *, port=8786, tls_cert=None, tls_key=None
                     self.reply(503, {'error': 'franchise_unavailable'})
                 else:
                     self.reply(200,result)
-            elif self.path == '/api/players':
+            elif self.path in ('/api/players', '/api/contracts'):
                 if not self.authorized():
                     return
                 if store is None:
                     self.reply(503, {'error': 'franchise_not_configured'})
                     return
                 try:
-                    self.reply(200,store.registered_players(team_id))
+                    result = store.contract_generations(team_id) if self.path == '/api/contracts' else store.registered_players(team_id)
+                    self.reply(200,result)
                 except Exception:
                     self.reply(503, {'error': 'franchise_unavailable'})
             elif self.path == '/api/franchise':

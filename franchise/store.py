@@ -7,6 +7,7 @@ retail game state is imported or modified by this store.
 from contextlib import contextmanager, closing
 from dataclasses import asdict
 import json
+import hashlib
 import math
 from pathlib import Path
 import sqlite3
@@ -406,6 +407,51 @@ class FranchiseStore:
                     'negotiation_history':history[-10:],
                     'negotiation_history_total':len(history),
                     'negotiation_history_has_more':len(history)>10}
+
+    def contract_generations(self, team_id):
+        """Legacy contract identities and unresolved opening/prior-cohort records.
+
+        This read does not assign players to unassociated debt, create a new
+        contract generation, or establish game import or return-signing rights.
+        """
+        if type(team_id) is not str or not team_id.strip():
+            raise ValueError('Stable team identity required')
+        def charge_record(record):
+            return {'record_id':record.record_id, 'annual_charges':[json_amount(value) for value in record.annual_charges],
+                    'source':record.source}
+        with self._connection() as db:
+            ledger = self._load(db, team_id)
+            generations = []
+            for player in sorted(ledger._contracts):
+                retained = ()
+                if player in ledger._active_contracts:
+                    contract, status = ledger._active_contracts[player], 'active'
+                elif player in ledger._released:
+                    plan = ledger._released[player]
+                    contract, status, retained = plan.original_contract, 'released', plan.retained
+                elif player in ledger._traded_out:
+                    plan = ledger._traded_out[player]
+                    contract, status, retained = plan.original_contract, 'assigned', (plan.retained_bonus,)
+                else:
+                    raise ValueError('Historical contract has no supported generation status')
+                identity = json.dumps([team_id,player], ensure_ascii=False, separators=(',',':')).encode('utf-8')
+                cash = ledger._cash.records.get('contract:' + player) if ledger._cash is not None else None
+                generations.append({'generation_id':'legacy-contract:' + hashlib.sha256(identity).hexdigest(),
+                    'player_id':player, 'status':status, 'contract':contract.to_dict(),
+                    'cash_obligation':cash.to_dict() if cash is not None else None,
+                    'retained_records':[charge_record(record) for record in retained]})
+            books = ledger._opening_books
+            linked_cash_ids = {'contract:'+player for player in ledger._contracts}
+            return {'format':1, 'team_id':team_id, 'financial_revision':ledger.revision,
+                'cash_revision':ledger._cash.revision if ledger._cash is not None else None,
+                'generations':generations,
+                'unassigned_cash_obligations':[record.to_dict() for key,record in sorted(ledger._cash.records.items())
+                    if key not in linked_cash_ids] if ledger._cash is not None else None,
+                'unsigned_tenders':[{'player_id':player,'amount':amount} for player,amount in sorted(ledger._tenders.items())],
+                'unassigned_prior_cohort_contracts':[contract.to_dict() for contract in ledger._rookie_pool_opening.prior_contracts]
+                    if ledger._rookie_pool_opening is not None else [],
+                'unassigned_opening':{'retained':[charge_record(record) for record in books.retained],
+                                      'adjustments':[charge_record(record) for record in books.adjustments]}}
 
     def load_team(self, team_id: str) -> Ledger:
         with self._connection() as db:
