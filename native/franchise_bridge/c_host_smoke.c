@@ -51,12 +51,14 @@ int wmain(int argc, wchar_t** argv) {
         "{\"protocol\":1,\"request_id\":\"c-context\",\"operation\":\"player_context\",\"team_id\":\"a\",\"player_id\":\"v\",\"timeout_ms\":1000}"
     };
     size_t i;
-    if (argc == 5) {
+    if (argc == 5 || argc == 6) {
         wchar_t missing_credentials[4096];
+        int token_budget = argc == 6;
         const char* budget_requests[] = {
             "{\"protocol\":1,\"request_id\":\"budget-hello\",\"operation\":\"hello\"}",
             "{\"protocol\":1,\"request_id\":\"budget-context\",\"operation\":\"player_context\",\"team_id\":\"a\",\"player_id\":\"v\",\"timeout_ms\":5000}"
         };
+        if (token_budget && wcscmp(argv[5],L"token-budget")) return 2;
         /* Explicit missing ADC prevents credentials or model requests in CI. */
         if (wcslen(argv[3]) > 4000 || swprintf(missing_credentials,4096,L"%ls.missing-adc.json",argv[3]) < 0 ||
             _wputenv_s(L"GOOGLE_APPLICATION_CREDENTIALS",missing_credentials)) return 1;
@@ -64,8 +66,17 @@ int wmain(int argc, wchar_t** argv) {
                 argv[3],argv[4],2,&client),FRANCHISE_HOST_INVALID_ARGUMENT) || client) return 1;
         if (!require_status(franchise_host_create_with_budget(argv[1],argv[2],FRANCHISE_HOST_VERTEX_RUNTIME,
                 argv[3],argv[4],0,&client),FRANCHISE_HOST_INVALID_ARGUMENT) || client) return 1;
-        if (!require_status(franchise_host_create_with_budget(argv[1],argv[2],FRANCHISE_HOST_VERTEX_RUNTIME,
-                argv[3],argv[4],2,&client),FRANCHISE_HOST_OK)) return 1;
+        if (token_budget) {
+            if (!require_status(franchise_host_create_with_token_budget(argv[1],argv[2],FRANCHISE_HOST_VERTEX_RUNTIME,
+                    argv[3],argv[4],2,0,&client),FRANCHISE_HOST_INVALID_ARGUMENT) || client) return 1;
+            if (!require_status(franchise_host_create_with_token_budget(argv[1],argv[2],FRANCHISE_HOST_VERTEX_RUNTIME,
+                    argv[3],argv[4],2,9223372036854775808ULL,&client),FRANCHISE_HOST_INVALID_ARGUMENT) || client) return 1;
+            if (!require_status(franchise_host_create_with_token_budget(argv[1],argv[2],FRANCHISE_HOST_OFFLINE_FIXTURE,
+                    argv[3],argv[4],2,30000,&client),FRANCHISE_HOST_INVALID_ARGUMENT) || client) return 1;
+            if (!require_status(franchise_host_create_with_token_budget(argv[1],argv[2],FRANCHISE_HOST_VERTEX_RUNTIME,
+                    argv[3],argv[4],2,30000,&client),FRANCHISE_HOST_OK)) return 1;
+        } else if (!require_status(franchise_host_create_with_budget(argv[1],argv[2],FRANCHISE_HOST_VERTEX_RUNTIME,
+                    argv[3],argv[4],2,&client),FRANCHISE_HOST_OK)) return 1;
         for (i=0;i<2;++i) {
             if (!require_status(franchise_host_submit(client,budget_requests[i],strlen(budget_requests[i])),FRANCHISE_HOST_OK) ||
                 !receive(client)) goto done;
@@ -73,7 +84,7 @@ int wmain(int argc, wchar_t** argv) {
         ok=1;
         goto done;
     }
-    if (argc != 3) { fprintf(stderr,"Usage: c_host_smoke PYTHON DATABASE [BUDGET_DATABASE SCOPE]\n"); return 2; }
+    if (argc != 3) { fprintf(stderr,"Usage: c_host_smoke PYTHON DATABASE [BUDGET_DATABASE SCOPE [token-budget]]\n"); return 2; }
     /* Exercise the actual host startup policy without launching Vertex. */
     if (_wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER", L"") ||
         _wputenv_s(L"NFL2K5_FRANCHISE_PYTHON", L"") ||

@@ -139,11 +139,30 @@ from partial measured usage. No prompt or credentials are saved.
 
 An attempted legacy scope cannot acquire a token policy retroactively; a policy
 cannot be removed or changed to restore capacity. Existing request-only scopes
-remain supported. No automatic new scope or season is selected. Native launch
-forwarding and making cumulative token policy mandatory remain subsequent work.
+remain supported. No automatic new scope or season is selected. Native launch forwarding is available via the explicit token-budget ABI and
+environment option below. Making cumulative token policy mandatory remains
+subsequent work.
 
 Known input/output/total usage above its reserved allowance is persisted, rejects
 the returned decision and blocks subsequent admission. Unknown components stay
 unknown; they do not earn refunds. Counts are provider-reported preflight estimates,
 so this is an admission ceiling, not an exact billing guarantee. Dollar pricing
 and spending policy are still unimplemented.
+
+
+## Native cumulative token launch
+
+`franchise_host_create_with_token_budget` takes the existing persisted budget
+arguments plus an explicit cumulative token limit. Both request/token limits must
+be positive integers no greater than INT64_MAX. Existing APIs are preserved.
+The host startup hook accepts optional `NFL2K5_FRANCHISE_AI_TOKEN_LIMIT`; a
+nonempty value requires every existing budget field and ASCII decimal digits
+representing a supported positive limit. It forwards `--ai-token-limit` to the
+actual sidecar. Absent token configuration retains request-only launch behavior.
+No policy defaults, period selection, credits or AI enablement are manufactured.
+
+Portable command forwarding and parser fixtures pass. The Windows CI fixture
+launches the actual C ABI twice with missing ADC, then verifies exact SQLite
+request/token policy and zero attempts across restart while manual reads work.
+That new Windows execution is pending publication/CI; no game hooks or real
+franchise save verification is established by these synthetic fixtures.

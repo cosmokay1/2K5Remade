@@ -30,6 +30,11 @@ FranchiseHostStatus franchise_host_create(const wchar_t* python, const wchar_t* 
 FranchiseHostStatus franchise_host_create_with_budget(const wchar_t* python, const wchar_t* database,
     FranchiseHostMode mode, const wchar_t* budget_database, const wchar_t* budget_scope,
     unsigned long long request_limit, FranchiseHostClient** out_client);
+/* Adds an explicit cumulative token ceiling; both limits are positive and
+ * bounded by INT64_MAX. Request-only creation never supplies a token policy. */
+FranchiseHostStatus franchise_host_create_with_token_budget(const wchar_t* python, const wchar_t* database,
+    FranchiseHostMode mode, const wchar_t* budget_database, const wchar_t* budget_scope,
+    unsigned long long request_limit, unsigned long long token_limit, FranchiseHostClient** out_client);
 /* Explicit UTF-8 JSON bytes, excluding terminator; max 4095, no NUL/CR/LF.
  * A pending or unread cached reply rejects the next submission as BUSY.
  * AI negotiate requires a validated successful hello grant. Server access is

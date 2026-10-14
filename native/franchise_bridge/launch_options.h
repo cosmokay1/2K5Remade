@@ -5,7 +5,7 @@
 #include <stdexcept>
 namespace franchise {
 enum class ServiceMode { OfflineFixture, VertexRuntime };
-struct BudgetLaunch { std::wstring database; std::wstring scope; unsigned long long request_limit; };
+struct BudgetLaunch { std::wstring database; std::wstring scope; unsigned long long request_limit; std::optional<unsigned long long> token_limit=std::nullopt; };
 // Quote one Windows command-line argument, including embedded quotes/backslashes.
 inline std::wstring quote(const std::wstring& value) {
     std::wstring result = L"\"";
@@ -30,10 +30,14 @@ inline std::wstring launch_command(const std::wstring& python,const std::wstring
     if(budget && (mode!=ServiceMode::VertexRuntime || !launch_text(budget->database) || !launch_text(budget->scope) ||
                   budget->request_limit==0 || budget->request_limit>static_cast<unsigned long long>(std::numeric_limits<long long>::max())))
         throw std::invalid_argument("Invalid explicit runtime budget");
+    if(budget && budget->token_limit && (*budget->token_limit==0 ||
+        *budget->token_limit>static_cast<unsigned long long>(std::numeric_limits<long long>::max())))
+        throw std::invalid_argument("Invalid explicit token budget");
     auto command=quote(python)+L" -m franchise.sidecar --database "+quote(database)+
         (mode==ServiceMode::OfflineFixture?L" --provider offline-fixture":L" --provider vertex --impersonate-runtime");
     if(budget) command+=L" --ai-budget-database "+quote(budget->database)+L" --ai-budget-scope "+quote(budget->scope)+
         L" --ai-request-limit "+std::to_wstring(budget->request_limit);
+    if(budget && budget->token_limit) command+=L" --ai-token-limit "+std::to_wstring(*budget->token_limit);
     return command;
 }
 }

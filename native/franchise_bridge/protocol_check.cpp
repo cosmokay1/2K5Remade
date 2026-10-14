@@ -13,6 +13,20 @@ int main() {
         for(auto mode:{franchise::ServiceMode::OfflineFixture,franchise::ServiceMode::VertexRuntime})
             if(franchise::launch_command(L"python",L"db",mode).find(L"--ai-budget")!=std::wstring::npos)
                 throw std::runtime_error("Implicit launch budget added");
+        auto token_budget=launch_budget;token_budget.token_limit=110;
+        if(franchise::launch_command(L"python path",L"database path",franchise::ServiceMode::VertexRuntime,token_budget)!=
+            expected_budget+L" --ai-token-limit 110" || budget_command.find(L"--ai-token-limit")!=std::wstring::npos)
+            throw std::runtime_error("Token policy launch forwarding changed");
+        for(auto value:{0ULL,~0ULL}) {
+            token_budget.token_limit=value;bool rejected=false;
+            try{franchise::launch_command(L"python",L"db",franchise::ServiceMode::VertexRuntime,token_budget);}
+            catch(const std::invalid_argument&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Invalid cumulative token launch accepted");
+        }
+        token_budget.token_limit=static_cast<unsigned long long>(std::numeric_limits<long long>::max());
+        if(franchise::launch_command(L"python",L"db",franchise::ServiceMode::VertexRuntime,token_budget).find(
+            L" --ai-token-limit 9223372036854775807")==std::wstring::npos)
+            throw std::runtime_error("Maximum token policy was truncated");
         for(int scenario=0;scenario<7;++scenario) {
             auto budget=launch_budget;auto mode=franchise::ServiceMode::VertexRuntime;
             if(scenario==0) mode=franchise::ServiceMode::OfflineFixture;

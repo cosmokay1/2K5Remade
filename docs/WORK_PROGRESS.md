@@ -3358,3 +3358,25 @@ usage, post-reservation shutdown and unchanged negotiation finances. Both live
 factory tests verify the same token ceiling across transports. Prior49366e5
 Build38529452500 and FranchiseAI38529452501 passed. Real asset/save/runtime gates
 remain unchanged.
+
+
+## October 14, 2026 — Native cumulative token-policy launch
+
+Added compatible franchise_host_create_with_token_budget with explicit
+INT64-bounded request/token limits. Optional BudgetLaunch.token_limit forwards
+only explicitly supplied --ai-token-limit; request-only and original ABIs retain
+their shapes. Native startup accepts NFL2K5_FRANCHISE_AI_TOKEN_LIMIT only with
+complete existing budget configuration. Shared decimal parsing rejects zero,
+signs, overflow, whitespace and Unicode numerals. No defaults/grants/credits are
+added; mandatory cumulative policy remains subsequent work.
+
+Rebuilt portable protocol CTest passed exact forwarding, missing option and
+invalid/maximum token-limit checks. Plain-C header syntax and a portable fixture
+against the actual startup parser passed; those stub-factory checks do not prove
+Win32 transport execution. Windows lifecycle cases now cover token policy and
+shutdown. Added actual plain-C token-budget launch/manual-read/restart fixture
+that checks persisted request/token rows before inspection could create them,
+with missing ADC and zero paid inference. Its Python driver compiles; actual
+Windows execution awaits this commit's CI. Prior f5e7965 Build38530074049 passed;
+FranchiseAI38530074067 is still running. Previous49366e5 checks passed. No paid
+requests, real game execution or save/load verification occurred this milestone.

@@ -770,6 +770,20 @@ def main():
                 status=InferenceBudget(budget_path,scope=scope,request_limit=2).status()
                 assert status['attempts']==0 and status['request_limit']==2
             print("Native Windows plain-C explicit budget launch preserves scope and manual reads without paid inference (synthetic).")
+            token_path=Path(directory)/'C cumulative token budget with spaces.sqlite'
+            for attempt in range(2):
+                result=subprocess.run([sys.argv[2],sys.executable,str(c_path),str(token_path),scope,'token-budget'],
+                    text=True,capture_output=True,timeout=30,check=True)
+                replies=[json.loads(line) for line in result.stdout.splitlines()]
+                assert len(replies)==2 and replies[0]['error']=='ai_disabled'
+                assert replies[1]['error'] is None and replies[1]['result']==c_store.player_context('a','v')
+                assert token_path.is_file()
+                with closing(sqlite3.connect(token_path)) as budget_db:
+                    assert budget_db.execute('SELECT scope,request_limit FROM policies').fetchall()==[(scope,2)]
+                    assert budget_db.execute('SELECT scope,token_limit FROM token_policies').fetchall()==[(scope,30000)]
+                status=InferenceBudget(token_path,scope=scope,request_limit=2,token_limit=30000).status()
+                assert status['attempts']==0 and status['reserved_tokens']==0 and status['remaining_tokens']==30000
+            print("Native Windows plain-C cumulative token launch preserves immutable policy across restart without paid inference (synthetic).")
 
 
 
