@@ -2893,3 +2893,11 @@ accounting only: receiving Ledger, atomic paired Store replay/rollback, versione
 native requests/receipts and actual guest trades remain required. No paired trade
 service route was enabled. Prior 642d533 platform Build38515051821 passed; expanded
 Windows history FranchiseAI38515051781 remained active at last inspection.
+
+Verified terminal success for 642d533 FranchiseAI38515051781. Its Windows log
+confirms the layered/assigned calendar releases, full/compact receipts, personality
+and next rollover fixture executed, rather than only compiled. Ubuntu and Windows
+each passed 493 offline tests. Both platform runtime builds passed run 38515051821.
+These are synthetic histories and owned transport/restart evidence, not actual
+guest execution. Revision 665757d adds seller calendar assignment accounting with
+497 locally passed offline tests; its new CI is separate and not yet verified.
