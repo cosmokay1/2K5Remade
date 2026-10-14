@@ -367,20 +367,27 @@ def main():
         calendar.anchor_calendar(request_id='initial',league_year=2026,source='synthetic year',expected_revisions={'a':1,'b':1})
         calendar.migrate_generations(calendar_path)
         calendar.advance_league_year(request_id='next',from_year=2026,to_year=2027,source='synthetic transition',teams=terms)
+        for team in ('a','b'):
+            calendar.bind_actor(team,team,{'money':0.8},{'trust':0.6},access_check=lambda:None)
         unchanged=calendar_path.read_bytes();previous=None
         for attempt in range(2):
             result=subprocess.run([sys.argv[1],sys.executable,str(calendar_path),'--calendar-context'],
                 text=True,capture_output=True,timeout=20,check=True)
             replies=[json.loads(line) for line in result.stdout.splitlines()]
-            assert len(replies)==2 and all(reply['error'] is None for reply in replies)
+            assert len(replies)==4 and all(reply['error'] is None for reply in replies)
             if previous is not None:assert replies==previous
             previous=replies
-            active,expired=(reply['result']['calendar_accounting'] for reply in replies)
+            active,expired=(reply['result']['calendar_accounting'] for reply in replies[:2])
             assert active['status']=='active' and active['current_contract']['elapsed_years']==1
             assert active['annual_charges']==[3000000,3000000] and active['ownership_current'] is True
             assert expired['status']=='expired' and expired['current_contract'] is None and expired['ownership_current'] is False
+            for team,reply in zip(('a','b'),replies[2:]):
+                assert reply['result']==calendar.player_context(team,team,context_format='calendar_v1')
+                assert reply['result']['initialized'] is True
+                assert reply['result']['personality']=={'money':0.8}
+                assert reply['result']['contract_accounting'] is None
             assert calendar_path.read_bytes()==unchanged
-        print("Native Windows advanced calendar context, archived terms, settled expiry and restart verified (synthetic).")
+        print("Native Windows advanced calendar contract/player contexts, personality, settled expiry and restart verified (synthetic).")
 
         if len(sys.argv)>2:
             c_path=Path(directory)/'C host ownership.sqlite'

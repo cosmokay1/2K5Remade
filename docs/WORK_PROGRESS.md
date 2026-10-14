@@ -2649,3 +2649,15 @@ also passed the C++ validator. All480 offline tests and portable native CTest pa
 Windows pipe execution of this format and actual game UI/save integration remain
 unverified. Delivery estimate remains approximately25–30percent by scope judgment,
 not completed-test counts; verified playable-game acceptance remains unproven.
+
+### Windows sentinel validation and calendar-player pipe coverage (2026-10-13)
+
+Franchise run38509566991 at7c7f4cd completed successfully on Windows and Ubuntu,
+including genuine inheritance positive control and stalled-write child shutdown.
+Prior corrected fixture run38509483351 also succeeded. These validate synthetic
+native ownership/shutdown behavior, not guest execution. Extended the existing
+Windows calendar pipe scenario with active/expired player_context calendar_v1
+requests and saved personality. Both process launches compare replies to exact
+store snapshots and retain identical database bytes. Tool syntax and portable
+native CTest pass locally; this new pipe scenario awaits exact-revision Windows
+execution. No live cloud inference or game assets are used.

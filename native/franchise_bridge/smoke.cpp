@@ -22,7 +22,9 @@ int wmain(int argc, wchar_t** argv) {
         if (calendar_context) {
             const char* requests[] = {
                 R"({"protocol":1,"request_id":"calendar-current","operation":"contract_context","team_id":"a","generation_id":"legacy-contract:6a82e497f58043c0c18152df7d39335462babd6c6f98b619af8d6f03f0f77ec2","timeout_ms":5000,"context_format":"calendar_v1"})",
-                R"({"protocol":1,"request_id":"calendar-expired","operation":"contract_context","team_id":"b","generation_id":"legacy-contract:66c0244076e7869a68431355e9e1f6bedced76f2ae8afb3d1907b327a65a252b","timeout_ms":5000,"context_format":"calendar_v1"})"
+                R"({"protocol":1,"request_id":"calendar-expired","operation":"contract_context","team_id":"b","generation_id":"legacy-contract:66c0244076e7869a68431355e9e1f6bedced76f2ae8afb3d1907b327a65a252b","timeout_ms":5000,"context_format":"calendar_v1"})",
+                R"({"protocol":1,"request_id":"calendar-player-current","operation":"player_context","team_id":"a","player_id":"a","timeout_ms":5000,"context_format":"calendar_v1"})",
+                R"({"protocol":1,"request_id":"calendar-player-expired","operation":"player_context","team_id":"b","player_id":"b","timeout_ms":5000,"context_format":"calendar_v1"})"
             };
             for (const auto* request : requests) {
                 client.submit(request);
