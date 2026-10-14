@@ -30,7 +30,7 @@ class VertexProvider:
     def __init__(self, *, project: str, location: str, model: str, client=None,
                  use_gcloud_login: bool = False, credentials=None,
                  instructions=INSTRUCTIONS, response_schema=None, max_context_bytes=1048576,
-                 max_requests_per_minute=20):
+                 max_requests_per_minute=20, request_budget=None):
         if not all(type(value) is str and value.strip() for value in (project, location, model)):
             raise ValueError("GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION, and GEMINI_MODEL are required")
         if credentials is not None and use_gcloud_login:
@@ -46,6 +46,11 @@ class VertexProvider:
         if type(max_requests_per_minute) is not int or max_requests_per_minute <= 0:
             raise ValueError("Positive integer inference rate limit required")
         self.max_requests_per_minute = max_requests_per_minute
+        if request_budget is not None:
+            from franchise.inference_budget import InferenceBudget
+            if not isinstance(request_budget,InferenceBudget):
+                raise ValueError('Typed persistent inference budget required')
+        self.request_budget = request_budget
         self._request_times = deque()
         self._rate_lock = Lock()
         self.instructions = instructions
@@ -85,6 +90,7 @@ class VertexProvider:
                       "cached_content_token_count","thoughts_token_count","tool_use_prompt_token_count")
         usage={"model":self.model,"sdk_invoked":False,"outcome":"preflight_rejected",
                           "context_bytes":None,"tokens":{field:None for field in token_fields},"estimated_cost":None}
+        reservation = None
         try:
             if type(context) is not dict:
                 raise ValueError("Model context must be an object; no inference submitted")
@@ -100,6 +106,8 @@ class VertexProvider:
                     raise ValueError("Inference request rate exceeded; no inference submitted")
                 # Failed/blocked calls still consume their attempted SDK slot.
                 self._request_times.append(now)
+            if self.request_budget is not None:
+                reservation = self.request_budget.reserve(model=self.model)
             usage.update(sdk_invoked=True,outcome="request_failed")
             try:
                 result = self._client.models.generate_content(
@@ -127,3 +135,5 @@ class VertexProvider:
             return text
         finally:
             self._last_usage = usage
+            if reservation is not None:
+                self.request_budget.complete(reservation,outcome=usage['outcome'],tokens=usage['tokens'])

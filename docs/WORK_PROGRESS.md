@@ -3248,3 +3248,24 @@ validated. Added actual Windows owned-pipe reads across active/expired state,
 scoped player contexts and restart, requiring unchanged DB bytes. Python smoke
 compilation passed; its Windows execution awaits this commit's CI. Actual game
 save/load and playable Windows/Steam Deck delivery remain unverified.
+
+
+## Persistent inference request ceilings and usage records
+
+Added InferenceBudget with explicit immutable scope/request policy, atomic
+BEGIN IMMEDIATE reservations, FULL SQLite durability and no automatic refund or
+reset after failure/restart. Pending/crashed calls retain their request slot.
+Completion is idempotent only for identical outcome/nullable token metadata;
+missing usage stays unknown. Persisted malformed policy/completion/token records
+fail closed before another SDK attempt. A seven-process fixture admits exactly
+three calls under a three-request ceiling. No prompts, responses or cloud errors
+are written to this usage database, and no dollar guarantee is inferred.
+VertexProvider accepts an explicit typed request_budget, reserves immediately
+before the SDK invocation and completes using each call's own diagnostic snapshot.
+Context/rate preflight rejection makes no durable SDK reservation. Failed/blocked
+SDK attempts remain charged; a completion-persistence error prevents a response
+from reaching financial commit while the reservation remains spent.
+All 575 offline tests passed. The milestone provides explicit configured request
+limits; mandatory sidecar/HTTPS runtime wiring, actual season attribution,
+input/output token and dollar ceilings, compact/batched prompts and measured game
+costs remain next. No paid inference was performed in these fixtures.

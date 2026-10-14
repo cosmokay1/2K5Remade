@@ -29,7 +29,7 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   history-aware trades, separate buyer payroll/release and rollover retries.
 - History-aware releases passed Windows pipe checks at `f7d9ad9`, run
   `38522825921`; repeated amendments passed at `048a8e6`, run `38522299444`.
-- Current local suite: **565 tests passed**. Calendar-v4 full-history inspection
+- Current local suite: **575 tests passed**. Calendar-v4 full-history inspection
   also passes portable native checks and 18 actual sidecar response validations.
 - Calendar-v4 inspection and its Windows pipe smoke are implemented; actual
   Windows execution awaits this source revision's CI. Continue with the next
@@ -221,7 +221,12 @@ invent future published NFL values: separate verified inputs from simulation pol
 - [ ] Make guarantees and supported nonfinancial promises meaningful negotiated terms.
 - [ ] Trigger stories from committed events and actual consequences, not invented facts.
 - [ ] Add negotiation deadlines, withdrawal, holdout/request state, and resolution.
-- [ ] Bound inference frequency; cache recorded decisions; add usage/cost telemetry. Provider context is byte-bounded and safe last-completed-call token diagnostics are captured; a thread-safe rolling per-provider request limit now rejects excess calls before the SDK. Durable attribution, cross-process frequency/spend limits and verified pricing remain.
+- [ ] Bound inference frequency; cache recorded decisions; add usage/cost telemetry. Provider context is byte-bounded and safe last-completed-call token diagnostics are captured; a thread-safe rolling per-provider request limit now rejects excess calls before the SDK. A persistent SQLite request budget now reserves each actual SDK attempt before
+      submission, shares its ceiling across processes/restarts, keeps failed or
+      unfinished attempts counted and records nullable token usage without prompt
+      content. Vertex accepts this explicit budget. Mandatory production runtime
+      wiring, token/dollar ceilings, automatic usage attribution to actual seasons,
+      compact prompts/batching and measured gameplay costs remain.
 - [ ] Test different personalities on the same situation and validate multiweek continuity. examples.personality_continuity now verifies seeded priorities, equal observed inputs, different scripted offers/outcomes and two-round restart history without regeneration; live-model variation and actual game-week advancement remain unverified.
 
 Done when an offline league scenario and a bounded live scenario produce distinct,
