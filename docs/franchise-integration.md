@@ -410,3 +410,13 @@ Runtime verification must bind the observed pointer to a bank slot and name,
 then compare salary-only and term-only contracts from AIBASELIN with an unchanged
 save control. Keep the user's current game running; the compiled observer remains
 staged until it can be applied safely after exit.
+
+
+The opt-in signing observer now resolves global0x00B72918 as a count/base bank
+and accepts the selected pointer only on a complete, aligned0x54-byte record
+inside ordinary RAM. It reads bounded relocated first/last UTF16 pointers and
+logs bank_slot and names separately from unverified financial units. Slot/name
+readback remains a current-bank locator, not a durable identity. Malformed,
+unreadable, unterminated and unsupported surrogate names report identity unknown;
+no relative-pointer fallback is attempted. This code is compiled and fixture-tested
+but has not yet observed the actual AIBASELIN player in the running game.

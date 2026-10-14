@@ -3676,3 +3676,25 @@ CI for4c7da04 completed successfully: Build38552289387 and Franchise AI385522893
 Updated the worklist's stale source/test/input summary to this evidence. Keep the
 user's current game undisturbed; staged observer activation and controlled save
 pairs remain the next runtime steps.
+
+
+## October 14, 2026 — Bounded signing player-bank observation
+
+Implemented opt-in read-only bank-slot/name observation using the actual retail
+slot getter's count/base/84-byte layout. Full-bank arithmetic uses64-bit bounds;
+unknown pointers or malformed names never become asserted identities. Names use
+bounded relocated UTF16 pointers and BMP-to-UTF8 encoding, with unsupported
+surrogates and unsafe log characters rejected. No durable identity, financial
+units, guest writes or AI signing integration are inferred.
+
+An authored RAM harness compiles the actual src/main.c observer body with C11
+Wall/Wextra/Werror and checks bank alignment, bounds/overflow, malformed names,
+Unicode, default-off behavior and unchanged RAM during observation. Full609-test
+offline suite passed. The private full Windows game target compiled and linked
+under the authorized Deck build toolchain. Staged runtime/NFL2K5.next.exe SHA256
+df1c0158a4325710bcddcb8740feda6501462581b9e30174b0a3956cd68ee07d.
+The live executable remains c1855b735ad382393866aba33a3ad94612a5ee9936c7f685527a48499426d5c1
+and PID65155 remains active; no restart or executable replacement occurred.
+User was asked to exit normally when finished so the staged observer can be
+applied safely. Actual selected-player readback and controlled contract/save
+pairs remain pending.

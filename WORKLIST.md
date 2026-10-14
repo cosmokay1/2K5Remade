@@ -29,9 +29,9 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.
-- Current delivered local suite: **608 tests passed**. Actual AIBASELIN parsing
+- Current delivered local suite: **609 tests passed**. Actual AIBASELIN parsing
   resolves 1937 roster/free-agent members. This does not prove contract/save
-  round-trip integration. The read-only signing observer is compiled and staged;
+  round-trip integration. The read-only signing observer includes bounded bank-slot/name reads and is compiled and staged;
   runtime observation awaits a safe game exit.
 - Request/token ceilings and remote shutdown are sufficient for current work.
   Additional dollar-policy machinery is deferred at the user's direction.

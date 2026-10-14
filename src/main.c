@@ -538,6 +538,53 @@ static bool signing_screen_read(uint32_t address, void *out, size_t size)
     return xbox_guest_memory_read(base, address, out, size);
 }
 
+/* The retail slot getter (0x0031DBE0) uses this bank's count/base and
+ * 0x54-byte stride. A slot is a locator in the current bank, not a durable ID. */
+static bool signing_screen_slot(uint32_t player, uint32_t *slot)
+{
+    uint32_t bank, header[2];
+    uint64_t end;
+    if (!signing_screen_read(0x00B72918u, &bank, sizeof(bank)) ||
+        !signing_screen_read(bank, header, sizeof(header)) ||
+        !header[0] || header[0] > INT32_MAX || !header[1])
+        return false;
+    end = (uint64_t)header[1] + (uint64_t)header[0] * 0x54u;
+    if (end > g_xbox_total_ram || player < header[1] ||
+        (uint64_t)player + 0x54u > end || (player - header[1]) % 0x54u)
+        return false;
+    *slot = (player - header[1]) / 0x54u;
+    return true;
+}
+
+/* Read only relocated UTF-16 names, never guess relative pointers. Reject
+ * malformed/unbounded text; a failed name is an unknown identity observation. */
+static bool signing_screen_name(uint32_t address, char out[151])
+{
+    size_t used = 0;
+    for (uint32_t i = 0; i < 50; ++i) {
+        uint16_t ch;
+        uint64_t location = (uint64_t)address + i * 2u;
+        if (!address || address % 2u || location > UINT32_MAX ||
+            !signing_screen_read((uint32_t)location, &ch, sizeof(ch)))
+            return false;
+        if (!ch) { out[used] = 0; return used != 0; }
+        /* Surrogate pairs are unsupported here; do not print broken UTF-8. */
+        if (ch < 32 || (ch >= 0x7Fu && ch <= 0x9Fu) ||
+            (ch >= 0xD800u && ch <= 0xDFFFu) || ch == '"' || ch == '\\')
+            return false;
+        if (ch < 0x80u) out[used++] = (char)ch;
+        else if (ch < 0x800u) {
+            out[used++] = (char)(0xC0u | (ch >> 6));
+            out[used++] = (char)(0x80u | (ch & 0x3Fu));
+        } else {
+            out[used++] = (char)(0xE0u | (ch >> 12));
+            out[used++] = (char)(0x80u | ((ch >> 6) & 0x3Fu));
+            out[used++] = (char)(0x80u | (ch & 0x3Fu));
+        }
+    }
+    return false;
+}
+
 void nfl2k5_diag_fsm(uint32_t obj, uint32_t desc, int push)
 {
     static unsigned int recorded;
@@ -562,6 +609,18 @@ void nfl2k5_diag_fsm(uint32_t obj, uint32_t desc, int push)
             fprintf(stderr, "[FRANCHISE-TRACE] sign_screen unreadable_records context=0x%08X player=0x%08X other=0x%08X\n",
                 (unsigned int)context, (unsigned int)player, (unsigned int)other);
             return;
+        }
+        uint32_t slot, first_pointer, last_pointer;
+        char first_name[151], last_name[151];
+        memcpy(&first_pointer, player_raw + 0x10, sizeof(first_pointer));
+        memcpy(&last_pointer, player_raw + 0x14, sizeof(last_pointer));
+        if (signing_screen_slot(player, &slot) &&
+            signing_screen_name(first_pointer, first_name) &&
+            signing_screen_name(last_pointer, last_name)) {
+            fprintf(stderr, "[FRANCHISE-TRACE] sign_player bank_slot=%u first_name=\"%s\" last_name=\"%s\" identity_scope=current_bank_locator\n",
+                (unsigned int)slot, first_name, last_name);
+        } else {
+            fprintf(stderr, "[FRANCHISE-TRACE] sign_player identity=unverified\n");
         }
         memcpy(&salary_raw, player_raw + 0x0A, sizeof(salary_raw));
         fprintf(stderr, "[FRANCHISE-TRACE] sign_screen context=0x%08X player=0x%08X other=0x%08X context_08_raw=0x%02X context_09_raw=0x%02X context_0A_raw=0x%02X context_0C_raw=0x%02X player_salary_0A_raw=%u units=unverified player_profile_26_raw=0x%02X player_term_27_raw=0x%02X identity=unverified\n",
