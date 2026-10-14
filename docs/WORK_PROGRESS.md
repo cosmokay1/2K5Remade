@@ -3732,3 +3732,12 @@ C11/Werror test passes locally after repair. Windows CI must verify the fix.
 Read-only Deck state still reports game PID65155 active, so staged observer
 activation remains pending normal exit. No restart, live replacement or input
 was performed.
+
+
+The repaired authored observer harness also compiled with the authorized private
+MSVC toolchain (/std:c11 /W4 /WX) and executed as a Windows PE console program
+in the isolated build Wine prefix, exiting0. It reported bank_slot1/Test Player
+for the valid fixture and identity unknown for the misaligned record. This is
+Windows compilation/execution of the fixture, not a real guest signing. Private
+log: observer-check-windows.log. Replacement checks0ba8cfe Build38554154874 and
+Franchise AI38554155010 were confirmed in progress; watching the latter exact run.
