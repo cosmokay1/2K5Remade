@@ -125,8 +125,9 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       commits/replay now persist both books and ownership with strict before/after
       calendar checks and rollback. Explicit calendar_v3 native inspection now
       separates the outgoing trade cursor and retained cash from archived terms;
-      Windows pipe execution is pending. Native trade write receipts and game
-      wiring remain open; no postroll trade service route is enabled.
+      Windows inspection passed run 38516814959. Explicit manual calendar trade
+      requests now route to the paired Store with bound full/compact native receipts;
+      Windows transaction execution is pending. Actual game wiring remains open.
       Supported sourced preseason veteran contract assignments now commit paired
       cash/cap/ownership events with independent league replay. Consideration, rookies,
       unpaid bonus and other trade protections remain; supported assignments now use

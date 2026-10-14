@@ -479,7 +479,24 @@ def main():
         trade_fixture=test_calendar_trade_store.CalendarTradeStoreTests()
         trade_fixture.setUp()
         try:
-            receipt=trade_fixture.trade()
+            request=trade_fixture.bridge_request();request.update(request_id='assignment',timeout_ms=5000)
+            payload=''.join(json.dumps(item,separators=(',',':'))+'\n' for item in (request,{**request,'receipt_format':'target_v1'}))
+            previous=None
+            for attempt in range(2):
+                result=subprocess.run([sys.argv[1],sys.executable,str(trade_fixture.path),'--calendar-history'],
+                    input=payload,text=True,capture_output=True,timeout=30,check=True)
+                replies=[json.loads(line) for line in result.stdout.splitlines()]
+                assert len(replies)==2 and all(reply['error'] is None for reply in replies)
+                receipt=trade_fixture.trade()
+                expected=dict(decision_mode='manual',player_id='v',seller='a',buyer='b',trade=receipt['participants'],
+                    seller_generation_id=receipt['seller_generation_id'],buyer_generation_id=receipt['buyer_generation_id'],
+                    buyer_previous_generation_id=receipt['buyer_previous_generation_id'],calendar_format='calendar_v1',
+                    format=2,league_year=2027)
+                assert replies[0]['result']==expected
+                assert replies[1]['result']==compact_lifecycle_result(expected,'manual_trade')
+                if attempt:assert replies==previous and trade_fixture.path.read_bytes()==unchanged
+                else:unchanged=trade_fixture.path.read_bytes()
+                previous=replies
             for year in (2027,2028):
                 if year==2028:
                     ledger=trade_fixture.store.load_team('b')
@@ -509,7 +526,7 @@ def main():
                     previous=replies
                     assert trade_fixture.path.read_bytes()==unchanged
         finally:trade_fixture.doCleanups()
-        print("Native Windows calendar-v3 seller/buyer inspection, personality and rollover restart verified (synthetic).")
+        print("Native Windows calendar trade transaction, full/compact receipts, v3 inspection and rollover restart verified (synthetic).")
 
         if len(sys.argv)>2:
             c_path=Path(directory)/'C host ownership.sqlite'

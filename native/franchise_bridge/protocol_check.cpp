@@ -258,6 +258,57 @@ int main() {
         generational_trade_reply["result"]["trade"]["a"]["financial"]["outgoing_trades"]["v"]=linked_archive;
         generational_trade_reply["result"]["trade"]["b"]["financial"]["incoming_trades"]["v"]=linked_archive;
         franchise::validate_result(generational_trade_reply,generational_trade_request);
+        auto calendar_trade_write_request=generational_trade_request,calendar_trade_write_reply=generational_trade_reply;
+        calendar_trade_write_request["calendar_format"]="calendar_v1";
+        calendar_trade_write_request["scope"]["league_year"]=2027;
+        auto& calendar_trade_result=calendar_trade_write_reply["result"];
+        calendar_trade_result["calendar_format"]="calendar_v1";calendar_trade_result["format"]=2;
+        calendar_trade_result["league_year"]=2027;
+        auto calendar_trade_archive=linked_archive;
+        calendar_trade_archive["scope"]=calendar_trade_write_request["scope"];
+        calendar_trade_archive["original_contract"]["source"]="synthetic original";
+        calendar_trade_archive["original_contract"]["elapsed_years"]=0;
+        calendar_trade_archive["original_contract"]["bonus_years"]=3;
+        auto transferred_offer=calendar_trade_archive["original_contract"]["offer"];
+        transferred_offer["signing_bonus"]=0;
+        calendar_trade_archive["buyer_contract"]={{"offer",transferred_offer},{"source","synthetic transferred"},
+            {"elapsed_years",0},{"bonus_years",3}};
+        calendar_trade_archive["assigned_base"]=60;
+        calendar_trade_archive["retained_bonus"]={{"record_id","synthetic:seller-bonus"},{"annual_charges",{9}},
+            {"source","synthetic acceleration"}};
+        calendar_trade_result["trade"]["a"]["financial"]["outgoing_trades"]["v"]=calendar_trade_archive;
+        calendar_trade_result["trade"]["b"]["financial"]["incoming_trades"]["v"]=calendar_trade_archive;
+        calendar_trade_result["trade"]["a"]["cash"]["revision"]=1;
+        calendar_trade_result["trade"]["a"]["cash"]["source"]="synthetic cash coverage";
+        calendar_trade_result["trade"]["b"]["cash"]["revision"]=1;
+        calendar_trade_result["trade"]["b"]["cash"]["source"]="synthetic cash coverage";
+        calendar_trade_result["trade"]["a"]["cash"]["obligations"]=nlohmann::json::array({calendar_trade_archive["seller_cash"]});
+        calendar_trade_result["trade"]["b"]["cash"]["obligations"]=nlohmann::json::array({calendar_trade_archive["buyer_cash"]});
+        franchise::validate_result(calendar_trade_write_reply,calendar_trade_write_request);
+        auto calendar_trade_compact=calendar_trade_write_reply,calendar_trade_compact_request=calendar_trade_write_request;
+        calendar_trade_compact_request["receipt_format"]="target_v1";
+        calendar_trade_compact["result"]["receipt_format"]="target_v1";
+        for(const auto& club:{"a","b"}) calendar_trade_compact["result"]["trade"][club]["cash"]["other_obligations"]=
+            {{"count",0},{"nominal_total",0},{"paid_total",0},{"unpaid_total",0}};
+        for(const auto& club:{"a","b"}) calendar_trade_compact["result"]["trade"][club]["cash"].erase("source");
+        franchise::validate_result(calendar_trade_compact,calendar_trade_compact_request);
+        for(int scenario=0;scenario<8;++scenario) {
+            auto bad=calendar_trade_write_reply;auto& result=bad["result"];
+            if(scenario==0) result["format"]=true;
+            if(scenario==1) result["league_year"]=2026;
+            if(scenario==2) result["trade"]["b"]["cash"]["obligations"]=nlohmann::json::array();
+            if(scenario==3) result["trade"]["b"]["cash"]["obligations"][0]["source"]="changed";
+            if(scenario==4) {
+                result["trade"]["a"]["financial"]["outgoing_trades"]["v"]["buyer_contract"]["elapsed_years"]=1;
+                result["trade"]["b"]["financial"]["incoming_trades"]["v"]["buyer_contract"]["elapsed_years"]=1;
+            }
+            if(scenario==5) result.erase("calendar_format");
+            if(scenario==6) result["unexpected"]=0;
+            if(scenario==7) result["trade"]["b"]["cash"]["revision"]=true;
+            bool rejected=false;
+            try{franchise::validate_result(bad,calendar_trade_write_request);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Corrupt calendar trade write receipt accepted");
+        }
         for (int scenario=0;scenario<7;++scenario) {
             auto bad=generational_trade_reply,input=generational_trade_request;
             if (scenario==0) bad["result"]["seller_generation_id"]=to_id;
@@ -468,12 +519,13 @@ int main() {
         write_archive["cash_obligation"]=released_archive["cash_obligation"];
         write_archive["original_cash"]=released_archive["cash_obligation"];
         write_archive["original_cash"]["amount"]=69;
-        write_receipt["cash"]={{"revision",1},{"nominal_total",24},{"paid_total",19},{"unpaid_total",5},
+        write_receipt["cash"]={{"revision",1},{"source","synthetic cash coverage"},{"nominal_total",24},{"paid_total",19},{"unpaid_total",5},
             {"obligations",nlohmann::json::array({write_archive["cash_obligation"]})}};
         franchise::validate_result(calendar_write_reply,calendar_write_request);
         auto calendar_compact_request=calendar_write_request,calendar_compact_reply=calendar_write_reply;
         calendar_compact_request["receipt_format"]="target_v1";
         calendar_compact_reply["result"]["receipt_format"]="target_v1";
+        calendar_compact_reply["result"]["release"]["cash"].erase("source");
         calendar_compact_reply["result"]["release"]["cash"]["other_obligations"]=
             {{"count",0},{"nominal_total",0},{"paid_total",0},{"unpaid_total",0}};
         franchise::validate_result(calendar_compact_reply,calendar_compact_request);

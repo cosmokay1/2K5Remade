@@ -649,6 +649,17 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
     if (operation == "manual_trade") {
         const bool compact=target_receipt_mode(result,request);
         const auto seller=request.at("seller").get<std::string>(), buyer=request.at("buyer").get<std::string>();
+        const bool calendar=request.contains("calendar_format");
+        if(calendar) {
+            if(request.at("calendar_format")!="calendar_v1" || !request.contains("seller_generation_id") ||
+                !request.contains("buyer_previous_generation_id") || !result.is_object() || result.size()!=(compact ? 12 : 11) ||
+                result.at("calendar_format")!=request.at("calendar_format") || !result.at("format").is_number_integer() || result.at("format")!=2)
+                throw std::runtime_error("Invalid calendar assignment receipt format");
+            integer_money(result.at("league_year"));integer_money(request.at("scope").at("league_year"));
+            if(result.at("league_year")!=request.at("scope").at("league_year") || result.at("league_year")<2020 || result.at("league_year")>2030)
+                throw std::runtime_error("Calendar assignment year mismatch");
+        } else if(result.contains("calendar_format") || result.contains("format") || result.contains("league_year"))
+            throw std::runtime_error("Unexpected calendar assignment receipt");
         if (seller.empty() || buyer.empty() || seller == buyer || result.at("decision_mode") != "manual" ||
             result.at("seller") != seller || result.at("buyer") != buyer || result.at("player_id") != request.at("player_id"))
             throw std::runtime_error("Invalid manual assignment identity");
@@ -707,6 +718,25 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
                 if (target.at("player_id")!=request.at("player_id")) throw std::runtime_error("Compact trade cash belongs to another player");
                 target_cash(cash,target);
             } else if (cash.contains("other_obligations")) throw std::runtime_error("Unmarked compact cash summary");
+            if(calendar && !compact) {
+                const auto& target=archive.at(team==seller ? "seller_cash" : "buyer_cash");
+                if(!cash.is_object() || cash.size()!=6 || !cash.at("source").is_string() || cash.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos) throw std::runtime_error("Invalid calendar assignment cash posting shape");
+                integer_money(cash.at("revision"));
+                if(!cash.at("obligations").is_array()) throw std::runtime_error("Missing calendar assignment cash inventory");
+                std::set<std::string> ids;int64_t nominal=0,paid=0;size_t matched=0;
+                for(const auto& record:cash.at("obligations")) {
+                    restructure_cash_record(record);
+                    const auto id=record.at("obligation_id").get<std::string>();
+                    if(!ids.insert(id).second) throw std::runtime_error("Duplicate calendar assignment obligation");
+                    nominal=checked_money_sum(nominal,record.at("amount"));paid=checked_money_sum(paid,record.at("paid"));
+                    if(id==target.at("obligation_id")) {
+                        if(record.dump()!=target.dump()) throw std::runtime_error("Calendar assignment target cash differs from archive");
+                        ++matched;
+                    }
+                }
+                if(matched!=1 || cash.at("nominal_total")!=nominal || cash.at("paid_total")!=paid)
+                    throw std::runtime_error("Calendar assignment cash inventory disagrees");
+            }
             if (archive.at("scope")!=scope || canonical_offer(archive.at("original_contract").at("offer")).at("player_id")!=request.at("player_id"))
                 throw std::runtime_error("Response changed assignment source facts");
         }
@@ -714,6 +744,42 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         if (postings.at(seller).at("financial").at("outgoing_trades").at(player) !=
             postings.at(buyer).at("financial").at("incoming_trades").at(player))
             throw std::runtime_error("Paired assignment archives disagree");
+        if(calendar) {
+            const auto& archive=postings.at(seller).at("financial").at("outgoing_trades").at(player);
+            const auto& original=archive.at("original_contract");
+            auto offer=canonical_offer(original.at("offer"));
+            integer_money(original.at("elapsed_years"));
+            const auto cursor=original.at("elapsed_years").get<int64_t>();
+            const auto term=static_cast<int64_t>(offer.at("salaries").size());
+            if(cursor>=term) throw std::runtime_error("Calendar assignment exhausted source contract");
+            auto bases=nlohmann::json::array(),guaranteed=nlohmann::json::array(),zeros=nlohmann::json::array();
+            int64_t assigned=0;
+            for(int64_t i=0;i<term;++i) {
+                zeros.push_back(0);
+                if(i>=cursor) {
+                    bases.push_back(offer.at("salaries")[i]);guaranteed.push_back(offer.at("guaranteed_salaries")[i]);
+                    assigned=checked_money_sum(assigned,offer.at("salaries")[i]);
+                }
+            }
+            auto expected=offer;expected["salaries"]=bases;expected["guaranteed_salaries"]=guaranteed;expected["signing_bonus"]=0;
+            const auto& incoming=archive.at("buyer_contract");
+            integer_money(incoming.at("elapsed_years"));integer_money(incoming.at("bonus_years"));integer_money(archive.at("assigned_base"));
+            if(!incoming.is_object() || !(incoming.size()==4 || (incoming.size()==5 && incoming.contains("bonus_layers"))) ||
+                !incoming.at("source").is_string() || incoming.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
+                throw std::runtime_error("Invalid calendar assignment receiving contract");
+            if(canonical_offer(incoming.at("offer")).dump()!=expected.dump() || incoming.at("elapsed_years")!=0 ||
+                incoming.at("bonus_years").dump()!=original.at("bonus_years").dump() ||
+                (incoming.contains("bonus_layers") && (!incoming.at("bonus_layers").is_array() || !incoming.at("bonus_layers").empty())) ||
+                archive.at("buyer_cash").at("amount")!=assigned || archive.at("assigned_base")!=assigned)
+                throw std::runtime_error("Calendar assignment changed transferred compensation");
+            auto accounting=nlohmann::json{{"generation_id",request.at("seller_generation_id")},{"status","assigned"},
+                {"charge_scope","retained_obligations"},{"contract",original},
+                {"annual_charges",archive.at("retained_bonus").at("annual_charges")},
+                {"cash_obligation",archive.at("seller_cash")},
+                {"guarantees",{{"unpaid_guaranteed_base_by_original_year",zeros},{"unpaid_signing_bonus",0}}}};
+            validate_contract_accounting(accounting,player);
+            validate_assigned_calendar_cash(accounting,cursor);
+        }
         return;
     }
     if (operation == "manual_release") {
@@ -776,6 +842,8 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
             for(int64_t i=0;i<cursor;++i) if(allocated["base:"+std::to_string(i)]!=ceilings.at("base:"+std::to_string(i)))
                 throw std::runtime_error("Calendar release has unpaid prior salary");
             if (!compact) {
+                if (!cash.is_object() || cash.size()!=6 || !cash.at("source").is_string() || cash.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos) throw std::runtime_error("Invalid calendar release cash posting shape");
+                integer_money(cash.at("revision"));
                 if (!cash.at("obligations").is_array()) throw std::runtime_error("Missing calendar release cash records");
                 std::set<std::string> identities;int64_t nominal=0,paid=0;bool found=false;
                 for (const auto& row:cash.at("obligations")) {

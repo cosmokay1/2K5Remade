@@ -251,5 +251,21 @@ Legacy v1/v2 Store requests reject new calendar assignment archives.
 Portable native fixtures and eight actual Python seller/buyer contract/player
 replies across rollover passed C++ validation. Windows pipe fixtures now compare
 these snapshots and saved personalities across two processes in two years; their
-execution is pending. This does not expose a native calendar trade write or prove
-actual guest interaction.
+inspection execution passed Windows run 38516814959 at 481027c. Inspection alone
+grants no trade-write authority and does not prove actual guest interaction.
+
+Manual trades now accept explicit `calendar_format=calendar_v1` with canonical
+seller and nullable prior-buyer generation IDs. This selects the atomic calendar
+Store transaction; legacy requests retain their guards. Full/compact receipts
+carry typed format2, matching calendar format/year and both participant identities.
+Native validation checks revision/ownership, original/retained/transferred cash
+conservation, allocated full inventories or compact summaries, and exact remaining
+buyer salaries/guarantees with no transferred bonus layers. Seller bonus and earned
+prior base must be fully settled; transferred future base is not a seller liability.
+Receipt size and final connection/deadline checks precede commit. Manual trades
+work with AI off without inference.
+
+Windows fixtures now execute full/compact calendar trades twice across sidecar
+processes, then inspect both parties through rollover. The new transaction fixture
+awaits Windows execution. Prior inspection passed run 38516814959 at 481027c.
+Actual guest trade interaction and save writes remain unimplemented.

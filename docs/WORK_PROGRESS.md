@@ -2950,3 +2950,22 @@ passed C++. Windows fixture source and local Python orchestration pass; actual
 Windows pipe execution of v3 remains pending. Native write receipts and actual
 guest trades remain open. Both atomic Store revision 78fcff1 Build 38516329482 and
 FranchiseAI 38516329469 passed; this inspection extension is a separate revision.
+
+Explicit calendar-format manual_trade requests now route to the paired Store
+transaction only with complete canonical source/prior-buyer identities. Full and
+compact receipts preserve typed format2/year/calendar echoes. Native checks bind
+both participants, revision/ownership, allocated original/retained/transferred cash
+and inventory totals, plus exact transferred remaining salaries/guarantees and
+buyer cursor/bonus rules. Seller earned prior base and original bonus layers are
+fully settled and future base transfers remain independent. Full cash posting
+shape now includes actual coverage source and typed cash revision; validation
+against real Python replies caught/corrected an initial schema mismatch. Receipt
+capacity and final connection checks remain before atomic commit. All 508 offline
+tests passed, including AI-off/no-model operation, stable full/compact retry and
+capacity/disconnect rollback. Portable CTest and actual Python full/compact trade
+and release receipts passed C++ validation. Windows fixture now executes the trade
+across processes before inspecting both parties in two years; local Python fixture
+orchestration passes, new native Windows execution remains pending. Prior 481027c
+FranchiseAI 38516814959 log confirms actual v3 seller/buyer inspection, personality
+and rollover restart; both runtime platform builds passed run 38516814955. No actual
+guest trade/write or playable game claim is made.

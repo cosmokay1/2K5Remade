@@ -15,6 +15,53 @@ from franchise.trades import PreseasonTradeScope,EXCLUDED_TRADE_LIABILITIES
 
 
 class CalendarTradeStoreTests(unittest.TestCase):
+    def bridge_request(self):
+        from dataclasses import asdict
+        scope=asdict(self.inputs['scope']);scope.update(exclusions=sorted(scope['exclusions']))
+        for field in ('traded_on','seller_first_regular_season_game','buyer_first_regular_season_game'):
+            scope[field]=scope[field].isoformat()
+        return dict(protocol=1,request_id='bridge-calendar-trade',operation='manual_trade',seller='a',buyer='b',
+            player_id='v',seller_revision=self.inputs['seller_revision'],buyer_revision=self.inputs['buyer_revision'],
+            seller_generation_id=self.inputs['seller_generation_id'],buyer_previous_generation_id=None,
+            scope=scope,decision_mode='manual',calendar_format='calendar_v1',timeout_ms=1000)
+
+    def test_explicit_calendar_trade_bridge_ai_off_full_compact_and_retry(self):
+        from franchise.bridge import Bridge
+        from franchise.control import AccessDisabled
+        def forbidden(_):raise AssertionError('Manual trade invoked inference')
+        def disabled():raise AccessDisabled('synthetic shutdown')
+        bridge=Bridge(self.store,provider=forbidden,access_check=disabled)
+        request=self.bridge_request();before=self.path.read_bytes()
+        for changes in ({'calendar_format':True},{'seller_generation_id':None},{'buyer_revision':True}):
+            self.assertIsNotNone(bridge.handle({**request,**changes})['error'])
+            self.assertEqual(self.path.read_bytes(),before)
+        legacy={key:value for key,value in request.items() if key!='calendar_format'}
+        self.assertIsNotNone(bridge.handle(legacy)['error']);self.assertEqual(self.path.read_bytes(),before)
+        reply=bridge.handle(request);self.assertIsNone(reply['error'])
+        self.assertEqual(reply['result']['format'],2)
+        self.assertEqual(reply['result']['league_year'],2027)
+        self.assertEqual(reply['result']['calendar_format'],'calendar_v1')
+        self.assertEqual(reply['result']['trade']['a']['financial']['signed_players'],[])
+        compact=Bridge(FranchiseStore(self.path),provider=forbidden,access_check=disabled).handle({**request,'receipt_format':'target_v1'})
+        self.assertIsNone(compact['error'])
+        self.assertEqual(compact['result']['format'],2);self.assertEqual(compact['result']['league_year'],2027)
+        self.assertEqual(compact['result']['seller_generation_id'],request['seller_generation_id'])
+        self.assertEqual(bridge.handle(request),reply)
+
+    def test_calendar_trade_bridge_connection_and_receipt_capacity_rollback(self):
+        from franchise.bridge import Bridge,ResponseTooLarge
+        from unittest.mock import patch
+        request=self.bridge_request();before=self.path.read_bytes();calls=[]
+        def disconnect():
+            calls.append(1)
+            if len(calls)>1:raise TimeoutError('synthetic disconnect')
+        bridge=Bridge(self.store,provider=lambda _:None,access_check=lambda:None,connection_check=disconnect)
+        self.assertEqual(bridge.handle(request)['error'],'timeout');self.assertEqual(self.path.read_bytes(),before)
+        bridge.connection_check=lambda:None
+        with patch.object(bridge,'_require_frame',side_effect=ResponseTooLarge('synthetic full native frame')):
+            self.assertIsNotNone(bridge.handle(request)['error'])
+        self.assertEqual(self.path.read_bytes(),before)
+
     def setUp(self):
         directory=tempfile.TemporaryDirectory();self.addCleanup(directory.cleanup)
         self.path=Path(directory.name)/'calendar-trade.sqlite';self.store=FranchiseStore(self.path)

@@ -105,8 +105,12 @@ class Bridge:
                 from franchise.trades import PreseasonTradeScope
                 base={'protocol','request_id','operation','seller','buyer','player_id','seller_revision',
                       'buyer_revision','timeout_ms','decision_mode','scope'}
-                if request_fields not in (base,base|{'seller_generation_id','buyer_previous_generation_id'}) or request['decision_mode']!='manual':
+                calendar='calendar_format' in request
+                allowed=(base|{'seller_generation_id','buyer_previous_generation_id','calendar_format'},) if calendar else (base,base|{'seller_generation_id','buyer_previous_generation_id'})
+                if request_fields not in allowed or request['decision_mode']!='manual':
                     raise ValueError('Explicit complete manual assignment required')
+                if calendar and request['calendar_format']!='calendar_v1':
+                    raise ValueError('Unsupported calendar assignment format')
                 seller_generation=request.get('seller_generation_id')
                 buyer_previous=request.get('buyer_previous_generation_id')
                 if 'seller_generation_id' in request:
@@ -144,11 +148,14 @@ class Bridge:
                     identity={key:receipt[key] for key in ('seller_generation_id','buyer_generation_id','buyer_previous_generation_id')} if len(receipt)>2 else {}
                     return receipt_result({'decision_mode':'manual','player_id':request['player_id'],
                         'seller':request['seller'],'buyer':request['buyer'],
-                        'trade':receipt['participants'] if identity else receipt,**identity})
-                receipt=self.store.trade_preseason_veteran(request_id,request['seller'],request['buyer'],request['player_id'],
+                        'trade':receipt['participants'] if identity else receipt,**identity,
+                        **({'calendar_format':'calendar_v1','format':receipt['format'],'league_year':receipt['league_year']} if calendar else {})})
+                trade=self.store.trade_calendar_preseason_veteran if calendar else self.store.trade_preseason_veteran
+                receipt=trade(request_id,request['seller'],request['buyer'],request['player_id'],
                     scope=PreseasonTradeScope(**scope),seller_revision=request['seller_revision'],buyer_revision=request['buyer_revision'],
                     access_check=trade_access,seller_generation_id=seller_generation,
-                    buyer_previous_generation_id=buyer_previous,require_generation_ids=True,include_generation_identity=True,
+                    buyer_previous_generation_id=buyer_previous,
+                    **({} if calendar else {'require_generation_ids':True,'include_generation_identity':True}),
                     receipt_check=lambda receipt:self._require_frame(request_id,trade_result(receipt)))
                 return self._reply(request_id,result=trade_result(receipt))
             if operation == 'manual_release':
