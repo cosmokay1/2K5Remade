@@ -3778,3 +3778,17 @@ Next runtime action: launch the existing Steam Gaming Mode entry, load AIBASELIN
 open a player's Sign Contract screen without submitting an offer, and compare
 actual observer bank/name readback with that visible player. Selected identity,
 contract units and controlled transaction/save reload still remain unverified.
+
+
+## October 14, 2026 — Deck access unavailable during scheduled checks
+
+Scheduled checks at12:12,13:13 and14:15UTC could not resolve steamdeck.local.
+The first check retried once with the same result. This is a runtime-access
+blocker, not evidence that the game exited, crashed, or produced an observation.
+The user was already notified to wake/connect the Deck; do not repeat unchanged
+notifications. Repository remains clean apart from this evidence update. Installed
+observer and preserved AIBASELIN were last verified during installation; no later
+remote file or process state is claimed. No game/save writes, model requests,
+cloud changes or binary publication were performed. Resume with a read-only
+connection/log check when Deck access returns, then verify selected-player/UI
+readback before any negotiation interception or financial mapping.
