@@ -2221,3 +2221,25 @@ their own CI; no paid inference or retail game/save validation occurred.
 Completed CI38500823733 logs also verify the native Windows sourced promise
 circumstances/unknown counts/raw score/restart fixture, with439tests passing
 on both Windows and Ubuntu. This remains synthetic service/client execution.
+
+### Offline seeded-personality continuity scenario (2026-10-13)
+
+Added examples.personality_continuity and included it in the existing Windows/
+Ubuntu offline examples CI step. A bounded16-ID authored fixture selects two
+seeded players before create_franchise. Both receive the same observed50
+receptions/700yards, unknown targets/pressures and identical offers. The scripted
+provider explicitly checks saved priorities and observed inputs: first-round
+counters20/30 differ, and the second identical20 offer produces one signing and
+one rejection through remembered counter history. Synthetic cap100 retains
+charge20/room80. Money units and choice rules are authored fixtures, not NFL
+rules or a live-model decision mechanism.
+
+The same explicitly authored +0.05 trust consequence is sourced to each saved
+first-round counter. Restart preserves priorities, stories and trust0.55. A
+second restart recalls all four replies with a provider that fails if called;
+exact generation state, ownership and database bytes remain unchanged. Four
+scripted provider calls, zero live calls, zero calls during recall. The scenario
+executed successfully locally. Narrative round labels do not advance an actual
+game week; live-model variation and guest calendar/save validation remain open.
+Usage-diagnostic commitf7afca8 passed CI38501237122. New example execution on
+Windows still awaits its own CI; no retail gameplay or paid inference claimed.

@@ -161,7 +161,7 @@ invent future published NFL values: separate verified inputs from simulation pol
 - [ ] Trigger stories from committed events and actual consequences, not invented facts.
 - [ ] Add negotiation deadlines, withdrawal, holdout/request state, and resolution.
 - [ ] Bound inference frequency; cache recorded decisions; add usage/cost telemetry. Provider context is byte-bounded and safe last-completed-call token diagnostics are captured; durable attribution, frequency/spend limits and verified pricing remain.
-- [ ] Test different personalities on the same situation and validate multiweek continuity.
+- [ ] Test different personalities on the same situation and validate multiweek continuity. examples.personality_continuity now verifies seeded priorities, equal observed inputs, different scripted offers/outcomes and two-round restart history without regeneration; live-model variation and actual game-week advancement remain unverified.
 
 Done when an offline league scenario and a bounded live scenario produce distinct,
 coherent negotiations and persistent consequences without violating financial rules.
