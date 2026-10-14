@@ -226,12 +226,13 @@ invent future published NFL values: separate verified inputs from simulation pol
       unfinished attempts counted and records nullable token usage without prompt
       content. Vertex accepts this explicit budget. Live sidecar/HTTPS runtime budget configuration is now mandatory before SDK
       initialization; missing or invalid policy leaves manual operations available.
-      Optional immutable cumulative token reservations now share the same atomic
+      Immutable cumulative token reservations now share the same atomic
       admission transaction, retaining allowances after errors/crashes and stopping
       on reported usage overruns. Live CLI accepts explicit --ai-token-limit;
       native token-policy forwarding is now implemented through explicit ABI and
-      environment options; Windows execution awaits CI. Mandatory token
-      configuration, dollar admission, automatic attribution to actual seasons,
+      environment options; Windows execution awaits CI. Live runtime token policy
+      is mandatory before credentials/SDK initialization. Dollar admission,
+      automatic attribution to actual seasons,
       compact prompts/batching and measured gameplay costs remain.
 - [ ] Test different personalities on the same situation and validate multiweek continuity. examples.personality_continuity now verifies seeded priorities, equal observed inputs, different scripted offers/outcomes and two-round restart history without regeneration; live-model variation and actual game-week advancement remain unverified.
 
@@ -372,7 +373,8 @@ Live runtimes now count the exact contents, instructions and structured response
 schema before generation, rejecting missing/invalid/over-16384 input counts.
 The provider output ceiling is explicitly configurable (runtime4096). Durable
 cumulative token admission is implemented as an explicit optional
-policy and live CLI/native launch options. Portable forwarding/parser checks
-pass; actual Windows token launch/restart awaits CI. Mandatory runtime token
-configuration, spending admission, authoritative season scope and measured
+policy and live CLI/native launch options, now required for production AI.
+Portable forwarding/parser checks
+pass; actual Windows token launch/restart awaits CI.
+Spending admission, authoritative season scope and measured
 gameplay costs remain.

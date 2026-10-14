@@ -53,10 +53,11 @@ identity. Offline tests confirm denied runtime impersonation leaves AI disabled
 while explicit manual transactions retain the same cap validator.
 
 
-## Required persistent request budget
+## Required persistent request and token budget
 
 Live sidecar `--provider vertex` and HTTPS origin `--ai vertex-runtime` both
-require `--ai-budget-database`, `--ai-budget-scope`, and `--ai-request-limit`.
+require `--ai-budget-database`, `--ai-budget-scope`, `--ai-request-limit`, and
+`--ai-token-limit`.
 The usage database must be separate from the franchise database (path aliases,
 symlinks and hard links to the same file are rejected). Share the same usage file,
 scope and limit between transports to share the ceiling. A missing/invalid budget
@@ -66,15 +67,15 @@ remain available. Offline fixture/disabled modes require no budget.
 Example arguments appended to an existing authorized runtime launch:
 
 ```text
---ai-budget-database .local-runtime/ai-usage.sqlite --ai-budget-scope franchise-a:2026 --ai-request-limit 250
+--ai-budget-database .local-runtime/ai-usage.sqlite --ai-budget-scope franchise-a:2026 --ai-request-limit 250 --ai-token-limit 1000000
 ```
 
 The scope is an explicit operator-selected period identity, not the wall clock.
 Restarting retains spent/pending attempts; changing a recorded limit rejects.
 Neither runtime automatically creates a new period to restore capacity, refunds
 failed calls, or re-enables the remote switch. This is a request ceiling, not a
-$5 spending guarantee. Token/dollar admission limits, authoritative game-season
-attribution and native launcher configuration remain subsequent work. Explicit
+$5 spending guarantee. Dollar admission and authoritative game-season
+attribution remain subsequent work. Explicit
 paid demonstration scripts are outside these production runtime launch paths.
 
 
@@ -128,7 +129,7 @@ References: [CountTokens](https://docs.cloud.google.com/vertex-ai/generative-ai/
 
 ## Cumulative token admission
 
-Live Python launchers accept optional `--ai-token-limit POSITIVE_INTEGER` with
+Live Python launchers require `--ai-token-limit POSITIVE_INTEGER` with
 the existing explicit budget database/scope/request limit. The token policy is
 immutable and shares the same SQLite admission transaction as request capacity.
 Every generation reserves the preflight-reported input count plus the configured
@@ -138,10 +139,11 @@ Status exposes `token_limit`, `reserved_tokens` and `remaining_tokens` separatel
 from partial measured usage. No prompt or credentials are saved.
 
 An attempted legacy scope cannot acquire a token policy retroactively; a policy
-cannot be removed or changed to restore capacity. Existing request-only scopes
-remain supported. No automatic new scope or season is selected. Native launch forwarding is available via the explicit token-budget ABI and
-environment option below. Making cumulative token policy mandatory remains
-subsequent work.
+cannot be removed or changed to restore capacity. Existing request-only scopes remain readable through the library, but cannot
+authorize production inference. A used legacy scope requires an explicit
+accounted migration before enabling cumulative policy; no such migration or
+automatic new scope/season is provided. Native forwarding is available via the
+explicit token-budget ABI and environment option below.
 
 Known input/output/total usage above its reserved allowance is persisted, rejects
 the returned decision and blocks subsequent admission. Unknown components stay
@@ -158,7 +160,8 @@ be positive integers no greater than INT64_MAX. Existing APIs are preserved.
 The host startup hook accepts optional `NFL2K5_FRANCHISE_AI_TOKEN_LIMIT`; a
 nonempty value requires every existing budget field and ASCII decimal digits
 representing a supported positive limit. It forwards `--ai-token-limit` to the
-actual sidecar. Absent token configuration retains request-only launch behavior.
+actual sidecar. Absent token configuration retains transport/manual behavior,
+but the Python sidecar refuses live AI before credentials/SDK initialization.
 No policy defaults, period selection, credits or AI enablement are manufactured.
 
 Portable command forwarding and parser fixtures pass. The Windows CI fixture

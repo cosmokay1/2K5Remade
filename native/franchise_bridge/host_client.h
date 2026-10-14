@@ -26,7 +26,8 @@ typedef enum FranchiseHostStatus {
 FranchiseHostStatus franchise_host_create(const wchar_t* python, const wchar_t* database,
     FranchiseHostMode mode, FranchiseHostClient** out_client);
 /* Vertex runtime only. Explicit persisted budget; no automatic credit or scope.
- * The original create API supplies no budget and starts runtime AI disabled. */
+ * This request-only API and original create API start runtime AI disabled:
+ * live Python policy also requires the explicit cumulative token ceiling. */
 FranchiseHostStatus franchise_host_create_with_budget(const wchar_t* python, const wchar_t* database,
     FranchiseHostMode mode, const wchar_t* budget_database, const wchar_t* budget_scope,
     unsigned long long request_limit, FranchiseHostClient** out_client);

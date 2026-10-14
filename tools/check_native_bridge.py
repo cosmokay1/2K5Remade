@@ -762,14 +762,10 @@ def main():
                 assert len(replies)==2 and replies[0]['error']=='ai_disabled'
                 assert replies[1]['error'] is None
                 assert replies[1]['result']==c_store.player_context('a','v')
-                assert budget_path.is_file()
-                import sqlite3
-                from contextlib import closing
-                with closing(sqlite3.connect(budget_path)) as budget_db:
-                    assert budget_db.execute('SELECT scope,request_limit FROM policies').fetchall()==[(scope,2)]
-                status=InferenceBudget(budget_path,scope=scope,request_limit=2).status()
-                assert status['attempts']==0 and status['request_limit']==2
-            print("Native Windows plain-C explicit budget launch preserves scope and manual reads without paid inference (synthetic).")
+                assert not budget_path.exists()
+            print("Native Windows request-only launch refuses live AI without token policy while manual reads remain available (synthetic).")
+            import sqlite3
+            from contextlib import closing
             token_path=Path(directory)/'C cumulative token budget with spaces.sqlite'
             for attempt in range(2):
                 result=subprocess.run([sys.argv[2],sys.executable,str(c_path),str(token_path),scope,'token-budget'],

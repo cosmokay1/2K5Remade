@@ -3380,3 +3380,24 @@ with missing ADC and zero paid inference. Its Python driver compiles; actual
 Windows execution awaits this commit's CI. Prior f5e7965 Build38530074049 passed;
 FranchiseAI38530074067 is still running. Previous49366e5 checks passed. No paid
 requests, real game execution or save/load verification occurred this milestone.
+
+
+## October 14, 2026 — Mandatory cumulative token policy for live AI
+
+Both production runtime factories now require an explicit positive INT64-bounded
+--ai-token-limit before creating usage storage, loading credentials or creating
+the Vertex client. Missing/invalid cumulative policy leaves AI unavailable while
+manual/read operations remain usable. Core request-only budget inspection and
+legacy native transport APIs remain compatible; attempted old scopes cannot gain
+fresh token capacity through an implicit upgrade. No defaults, paid calls or
+period resets are introduced. Dollar policy and actual season attribution remain.
+
+Updated both live-factory fixtures to cover missing/zero/negative/overflow token
+limits, no credential/SDK/file creation and manual recovery; valid shared policy
+fixtures reserve actual token allowances. The Windows driver now verifies legacy
+request-only transport starts manual-capable with no usage file, while explicit
+token launch verifies persisted policy. All603 offline tests passed; Python
+Windows driver source compiles and diffcheck passes. Native actual execution
+awaits current CI:75dbf4a Build38530565397 and FranchiseAI38530565261 are running.
+Prior f5e7965 Build38530074049 and FranchiseAI38530074067 passed. No actual game
+execution/save-load evidence is implied by these asset-free checks.
