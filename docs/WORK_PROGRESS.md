@@ -3825,3 +3825,21 @@ after rechecking no game process before atomic replacement. AIBASELIN remains
 The complete-offer-word fixture passed after the small logging addition; no
 production acceptance or financial write behavior changed. Actual readback of
 Trotter, financial units and controlled save/reload remain pending.
+
+
+## October 14, 2026 — Actual Trotter player-bank readback verified
+
+Corrected game process68889 reached signing descriptor557B2C at sequence19.
+Per-user session log reports bank_slot1910, first_name Jeremiah, last_name
+Trotter at pointer811FF3A0; this matches the user's selected player and baseline
+free-agent slot1910. Captured trace privately in
+analysis/AIBASELIN/trotter-live-observer.txt. This establishes a current-bank
+record/name association, not a durable identity across saves or roster rebuilds.
+
+Observed raw context+8 dword4D060004, context+0x0A byte06 and context+0x0C
+word1949. Existing player salary word+0x0A, profile byte+0x26 and term byte+0x27
+are zero. Currency units, offer years and packed flag meanings await displayed
+UI comparison. No AI decision, accepted signing, guest write or save/reload is
+proved by this readback. Both corrected-source258c223 workflows completed
+successfully: Build38589604849 and Franchise AI38589604925. Updated worklist
+from pending readback to this limited actual runtime evidence.

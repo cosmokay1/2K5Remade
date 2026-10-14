@@ -24,21 +24,24 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 ## Latest verified state — October 14, 2026
 
-- Latest published verified source: `0ba8cfe`. Build `38554154874` and Franchise AI
-  `38554155010` passed. CI checks asset-free runtime and bridge components;
+- Latest published verified source: `258c223`. Build `38589604849` and Franchise AI
+  `38589604925` passed. CI checks asset-free runtime and bridge components;
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.
 - Current delivered local suite: **609 tests passed**. Actual AIBASELIN parsing
   resolves 1937 roster/free-agent members. This does not prove contract/save
   round-trip integration. The read-only signing observer includes bounded bank-slot/name reads and is compiled and installed after confirmed exit;
-  actual selected-player readback remains pending. The Windows harness portability
+  actual readback identifies Jeremiah Trotter at bank slot1910, matching AIBASELIN.
+  Contract units, team identity and controlled transaction/save readback remain pending. The Windows harness portability
   repair passed replacement CI and private MSVC/Wine fixture execution.
 - Request/token ceilings and remote shutdown are sufficient for current work.
   Additional dollar-policy machinery is deferred at the user's direction.
 - Xbox asset intake and Steam Deck SSH are now verified. Static analysis located
   the actual Sign Contract FSM descriptor0x00557B2C and message11 callback,
-  and that descriptor has now been observed during a user signing attempt. Units, durable selected-player identity and transaction readback remain unverified.
+  and that descriptor has now been observed during a user signing attempt. Current
+  bank/name readback is verified for Trotter; units, durable identity and
+  transaction readback remain unverified.
 - Actual AI/game/save integration, telemetry capture and final playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 
@@ -62,7 +65,7 @@ steps, rather than expand the already substantial standalone engine.
 |---|---|---|---|
 | B01 | User-supplied Xbox executable/disc now extracted; title/hash checked | Static intake resolved; runtime field/call verification remains | Private executable analysis and native build |
 | B02 | AIBASELIN FXG baseline and companion files captured; controlled transaction pairs pending | Contract decoding, reconciliation and save round trips | Synthetic import fixtures, read-only diff tooling, state schema |
-| B03 | Deck access restored. Actual signing pointers use the separate physical window; observer bounds repaired and rebuild pending selected-player readback. Standard Windows build renders franchise UI in Deck Gaming Mode; actual transaction/save accounting pending | Actual franchise execution, save/reload and delivery acceptance | Private local build environment and read-only signing-path analysis |
+| B03 | Deck access restored; corrected observer identifies Trotter at bank slot1910. Displayed contract units and controlled transaction/save readback pending. Standard Windows build renders franchise UI in Deck Gaming Mode; actual transaction/save accounting pending | Actual franchise execution, save/reload and delivery acceptance | Private local build environment and read-only signing-path analysis |
 | B04 | Written upstream/third-party permission or suitable licenses | Redistribution of modified binaries and affected bundled components | Original source development, attribution, permission-request drafts |
 | B05 | Explicit approval for scoped runtime impersonation delegation | Live runtime-identity read/inference verification | Offline/native recovery and financial implementation |
 
