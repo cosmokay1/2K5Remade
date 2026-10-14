@@ -46,8 +46,8 @@ public:
             throw std::runtime_error("Explicit supported service mode required");
         SECURITY_ATTRIBUTES attributes{sizeof(SECURITY_ATTRIBUTES), nullptr, TRUE};
         HANDLE child_input = nullptr, child_output = nullptr;
-        if (!CreatePipe(&child_input, &input_, &attributes, 0) ||
-            !CreatePipe(&output_, &child_output, &attributes, 0)) {
+        if (!CreatePipe(&child_input, &input_, &attributes, 4096) ||
+            !CreatePipe(&output_, &child_output, &attributes, 4096)) {
             if (child_input) CloseHandle(child_input);
             if (child_output) CloseHandle(child_output);
             close(); throw std::runtime_error("Pipe creation failed");
@@ -97,7 +97,9 @@ public:
     PipeClient(const PipeClient&) = delete;
     PipeClient& operator=(const PipeClient&) = delete;
     ~PipeClient() {
-        // Worker polling has a bounded deadline; never close its handles concurrently.
+        // Stop the owned peer first: it may never read a synchronous pipe write.
+        // Keep the worker's pipe handles alive until it has finished.
+        if (job_) { CloseHandle(job_); job_ = nullptr; }
         if (pending_.valid()) pending_.wait();
         close();
     }

@@ -38,8 +38,8 @@ FranchiseHostStatus franchise_host_ready(FranchiseHostClient* client, int* ready
  * NOT_READY never waits for the sidecar. Failed calls return static statuses. */
 FranchiseHostStatus franchise_host_take(FranchiseHostClient* client, char* buffer,
     size_t capacity, size_t* required_size);
-/* NULL-safe; waits for the transport worker before owned child shutdown.
- * Not a render callback: transport write completion precedes response timeout. */
+/* NULL-safe; stops the owned child before joining the transport worker.
+ * Not a render callback: destruction waits for process/worker cleanup. */
 void franchise_host_destroy(FranchiseHostClient* client);
 
 #ifdef __cplusplus

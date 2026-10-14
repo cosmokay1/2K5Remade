@@ -2269,3 +2269,15 @@ is pending. Independent review found no concrete CABI defect. Existing blocking
 transport write precedes its response timeout; shutdown is not yet an
 unconditional bound against a nonreading peer. Actual game-host lifecycle,
 franchise hooks, save/readback and gameplay remain unverified.
+
+### Native stalled-peer shutdown (2026-10-13)
+
+C host adapter Windows validation completed successfully in run 38503080961.
+Changed PipeClient destruction to close its kill-on-close job before joining
+the worker, while retaining parent pipe handles until the worker finishes.
+This addresses a nonreading sidecar blocking synchronous WriteFile before
+the response deadline. Explicit 4096-byte pipe buffers and a Windows CTest
+fixture fill stdin, submit another frame, destroy the client and verify child
+exit. CTest has a 20-second timeout to catch a hanging destructor. Portable
+protocol checks pass; the new Windows regression is pending CI. No guest
+transaction, gameplay, or save/load validation is implied.
