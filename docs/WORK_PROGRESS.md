@@ -4635,3 +4635,34 @@ exit cycle is unnecessary. Installed hash verified exact. No signing, game launc
 or save write. The already requested AIGILDON/Trotter screen remains the next live
 check; old session.log has no new calendar/checkpoint evidence and is not reused
 as proof of this build's execution.
+
+
+## October14,2026 — Exact new-contract guest format boundary
+
+Implemented GuestContractTerms and guest_terms_for_offer using the calibrated
+original annual-row calculator. Context extraction follows323D80's actual field
+copies (bonus low nibble, term bits16..19, schedule bits29..31). New terms retain
+nominal signing bonus; they do not invent a smaller bonus to hide truncated guest
+allocation. Modern charges must equal every original annual charge exactly.
+Bonus-bearing terms over5 years refuse; existing legacy schedules are unaffected.
+Exact encoding checks all annual salaries/bonus, whole-thousand posting and term
+bounds. Positive bonus yields at most10 amount candidates; zero-bonus shapes use
+bounded binary search. Unrepresentable annual vectors and positive guaranteed
+base refuse without changing terms. This is a compatibility boundary for a first
+supported guest path, not a restriction on the independent engine's broader modern
+contract rules. Arbitrary modern schedules/guarantees need authoritative override
+storage and guest lifecycle hooks before they can be used in the game.
+
+Seven focused tests cover all8 shapes/15 zero-bonus terms, exact positive bonus
+allocation over1..5 years, malformed raw fields, impossible vectors/protection,
+calibrated Descending rounding and cap/minimum rejection with unchanged ledgers.
+Full offline suite passed660 tests in22.351s. Private read-only report from actual
+AIGILDON saved slot1792 decodes829/4/1/2, returns the exact $4.766M/$3.523M charges,
+and encodes an identical economic offer. No save/legacy migration or guest write.
+Report remains private in .local-runtime/guest-contract-compatibility.json.
+
+Fresh Deck check still found no game process and only old session.log evidence;
+no new-build runtime claim. The requested Trotter offer screen remains pending
+without another prompt. Published ca73789 Build38622308971/AI38622309030 completed
+successfully. Checkpoint57a7c1f Build38623459291 passed; AI38623459396 was in progress
+at inspection, not claimed passing. No cloud/model/control or installed-game change.
