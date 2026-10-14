@@ -47,6 +47,7 @@ int wmain(int argc, wchar_t** argv) {
     const char* requests[] = {
         "{\"protocol\":1,\"request_id\":\"c-hello\",\"operation\":\"hello\"}",
         "{\"protocol\":1,\"request_id\":\"c-preview\",\"operation\":\"preview\",\"team_id\":\"a\",\"offer\":{\"player_id\":\"v\",\"salaries\":[10],\"signing_bonus\":0},\"expected_revision\":0,\"timeout_ms\":1000}",
+        "{\"protocol\":1,\"request_id\":\"c-proposal\",\"operation\":\"negotiate_proposal\",\"team_id\":\"a\",\"offer\":{\"player_id\":\"v\",\"salaries\":[10],\"signing_bonus\":0},\"expected_revision\":0,\"timeout_ms\":1000,\"personality\":{},\"performance\":{},\"relationships\":{}}",
         "{\"protocol\":1,\"request_id\":\"c-manual\",\"operation\":\"manual_sign\",\"team_id\":\"a\",\"offer\":{\"player_id\":\"v\",\"salaries\":[10],\"signing_bonus\":0},\"expected_revision\":0,\"timeout_ms\":1000,\"decision_mode\":\"manual\"}",
         "{\"protocol\":1,\"request_id\":\"c-context\",\"operation\":\"player_context\",\"team_id\":\"a\",\"player_id\":\"v\",\"timeout_ms\":1000}"
     };
@@ -117,6 +118,8 @@ int wmain(int argc, wchar_t** argv) {
     {
         const char* ai = "{\"protocol\":1,\"request_id\":\"c-ai-before-hello\",\"operation\":\"negotiate\"}";
         if (!require_status(franchise_host_submit(client,ai,strlen(ai)),FRANCHISE_HOST_SERVICE_FAILURE)) goto done;
+        const char* proposal = "{\"protocol\":1,\"request_id\":\"c-proposal-before-hello\",\"operation\":\"negotiate_proposal\"}";
+        if (!require_status(franchise_host_submit(client,proposal,strlen(proposal)),FRANCHISE_HOST_SERVICE_FAILURE)) goto done;
     }
     memset(oversized,'x',sizeof oversized);
     if (!require_status(franchise_host_submit(client,oversized,sizeof oversized),FRANCHISE_HOST_INVALID_ARGUMENT) ||

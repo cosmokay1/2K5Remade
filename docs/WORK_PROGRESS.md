@@ -4666,3 +4666,44 @@ no new-build runtime claim. The requested Trotter offer screen remains pending
 without another prompt. Published ca73789 Build38622308971/AI38622309030 completed
 successfully. Checkpoint57a7c1f Build38623459291 passed; AI38623459396 was in progress
 at inspection, not claimed passing. No cloud/model/control or installed-game change.
+
+
+## October14,2026 — Noncommitting game-facing negotiation proposals
+
+Audited bridge ordering: existing negotiate commits the independent ledger on
+model acceptance, before any possible guest confirmation. Added explicit
+negotiate_proposal through the actual Bridge/Negotiation/sidecar/native boundary.
+It retains the same required remote handshake and provider budget. Eligible
+acceptance records accepted_proposal dialogue plus a financial preview; it never
+changes cap charges, ownership, cash, revision or contractual promises and returns
+no signing charges. Other outcomes preserve proposal mode. Existing committing
+engine operation remains compatible but must not be used at the guest judgment
+boundary. This is a required integration step, not an implemented guest transaction.
+
+Durable accepted preview is recomputed inside recording's SQLite transaction and
+on financial replay. Recording checks global ownership/draft rights/current
+revision and control again before insertion. Accepted retry rechecks current
+state without another inference. Request reuse across commit modes/terms refuses;
+ordinary signing cannot reuse the dialogue ID. No operation to promote a proposal
+or commit to the guest exists yet; commit readback/recovery/save/load remain open.
+
+Sidecar audit found its worker selection matched only negotiate. Updated both
+AI operations to share the one-worker/busy admission and disconnect behavior;
+proposal inference cannot block stdin dispatch. Native host blocks proposal
+submission without hello, and response validator rejects claimed signing/charges,
+wrong mode, inexact preview and mismatched evidence/preview revision.
+
+Eight proposal tests cover unchanged finances/restart, no repeated inference,
+mode/term promotion denial, stale state/foreign ownership, over-cap acceptance,
+counter/rejection persistence, disable during inference and tampered durable
+preview. Added real sidecar proposal/restart and mixed-operation busy/EOF tests.
+Full final offline suite passed670 tests in24.759s. Portable native protocol
+compiled and CTest passed with accepted proposal and7 corrupt variants.
+Actual synthetic Bridge acceptance JSON passed a freshly compiled native decoder;
+its private reused checker prints a fixed legacy-context label, which is not a
+real-save/legacy execution claim. Added Windows C ABI before-hello refusal and
+post-hello synthetic proposal rejection/restart assertions; published Windows
+execution of those new assertions is pending CI. No actual game/provider auth,
+paid inference, installed executable, control object or save was changed.
+Fresh Deck check still found no game process and only old log evidence; the
+requested installed-observer Trotter screen remains pending without re-prompting.

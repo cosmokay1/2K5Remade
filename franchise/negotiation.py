@@ -55,7 +55,10 @@ class Decision:
 
 class Negotiation:
     def __init__(self, ledger: Ledger, *, player_id: str, personality: dict,
-                 performance: dict, relationships: dict, access_check):
+                 performance: dict, relationships: dict, access_check, proposal_only=False):
+        if type(proposal_only) is not bool:
+            raise ValueError('Explicit proposal-only mode required')
+        self._proposal_only = proposal_only
         if not callable(access_check):
             raise ValueError("An access handshake is required")
         self._access_check = access_check
@@ -97,6 +100,8 @@ class Negotiation:
 
     def _respond(self, request_id: str, offer: Offer, provider, *, expected_revision=None, promise_goals=()) -> dict:
         self._access_check()
+        if self._proposal_only and (type(expected_revision) is not int or expected_revision < 0):
+            raise ValueError('Proposal requires an explicit nonnegative revision')
         if type(promise_goals) is not tuple:
             raise ValueError("Immutable promise proposals required")
         proposed = [asdict(goal) for goal in promise_goals]
@@ -111,9 +116,11 @@ class Negotiation:
             if (prior[0] != offer or prior[1].get("promise_goals", []) != proposed
                     or prior[1].get("return_scope") != return_scope):
                 raise ValueError("Negotiation request ID reused with different terms")
+            self._check_recalled_mode(prior[1], offer, expected_revision)
             return json.loads(json.dumps(prior[1]))
         recorded = self.ledger.recalled_negotiation(request_id, offer)
         if recorded is not None:
+            self._check_recalled_mode(recorded, offer, expected_revision)
             if recorded.get("promise_goals", []) != proposed:
                 raise ValueError("Negotiation request ID reused with different promises")
             self._replies[request_id] = (offer, recorded)
@@ -130,6 +137,8 @@ class Negotiation:
             raise ValueError("Player is currently signed; extensions are unsupported")
         if snapshot.get('classification_pending'):
             raise Rejected('Observed player salary classification is unavailable; no inference submitted')
+        if self._proposal_only and return_scope is not None:
+            raise ValueError('Guest proposal return signing is not supported')
         self._actor = json.dumps({**refreshed, "performance": actor["performance"]}, allow_nan=False)
         if expected_revision is not None and (type(expected_revision) is not int or expected_revision != snapshot["revision"]):
             raise Rejected("Offer was based on stale client franchise state")
@@ -139,6 +148,8 @@ class Negotiation:
                    "history": self.events, "promise_goals": proposed,
                    **({'return_scope':return_scope} if return_scope is not None else {}),
                    **({'observed_efficiency': json.loads(self._efficiency)} if self._efficiency is not None else {})}
+        if self._proposal_only:
+            context['decision_mode'] = 'proposal'
         from franchise.vertex_provider import VertexProvider
         frozen_context=json.loads(json.dumps(context, allow_nan=False))
         response = (provider(frozen_context,before_generate=self._access_check)
@@ -159,7 +170,18 @@ class Negotiation:
         if proposed or decision.counter_promises:
             event["promise_goals"] = proposed
             event["counter_promises"] = [asdict(goal) for goal in decision.counter_promises] if decision.action == "counter" else None
-        if decision.action == "accept":
+        if self._proposal_only:
+            event['decision_mode'] = 'proposal'
+        if decision.action == 'accept' and self._proposal_only:
+            try:
+                preview = self.ledger.preview_offer(offer, snapshot['revision'])
+            except Rejected as exc:
+                event['outcome'] = 'accounting_rejected'
+                event['accounting_reason'] = str(exc)
+            else:
+                event['outcome'] = 'accepted_proposal'
+                event['proposal_preview'] = preview
+        elif decision.action == "accept":
             try:
                 receipt = self.ledger.commit_negotiation(
                     request_id, offer, snapshot["revision"],
@@ -187,6 +209,16 @@ class Negotiation:
         self._events.append(event)
         self._replies[request_id] = (offer, event)
         return json.loads(json.dumps(event))
+
+    def _check_recalled_mode(self, event, offer, expected_revision):
+        if (event.get('decision_mode') == 'proposal') != self._proposal_only:
+            raise Rejected('Negotiation request already used in a different commit mode')
+        if self._proposal_only and event['outcome'] == 'accepted_proposal':
+            # Historical agreement is not permission to commit. Recheck cap,
+            # minimums, ownership and revision without submitting another model.
+            preview = self.ledger.preview_offer(offer, expected_revision)
+            if json.dumps(preview, sort_keys=True) != json.dumps(event['proposal_preview'], sort_keys=True):
+                raise Rejected('Accepted proposal no longer matches franchise state')
 
 
 def validate_performance(value):

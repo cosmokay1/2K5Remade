@@ -60,7 +60,7 @@ def serve(bridge, reader, writer):
                     emit(Bridge._reply(None, error="invalid_request"))
                     continue
                 request_id = request.get("request_id") if type(request) is dict else None
-                if type(request) is dict and request.get("operation") == "negotiate":
+                if type(request) is dict and request.get("operation") in ("negotiate", "negotiate_proposal"):
                     if busy.is_set():
                         emit(Bridge._reply(request_id, error="busy"))
                     else:

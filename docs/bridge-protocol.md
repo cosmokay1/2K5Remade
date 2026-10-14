@@ -33,6 +33,33 @@ Provider network work may finish before process exit. Clients must keep input op
 until receiving their response. Stdout contains only protocol responses.
 A native pipe client and actual game-thread integration are still pending.
 
+
+## Game-facing proposal path
+
+`negotiate_proposal` accepts the same fields and optional promise goals as
+`negotiate`, except return signing is currently unsupported. It requires the
+remote AI grant and uses the same bounded worker, request/token budget and
+connection/deadline checks. The native host denies it before a successful hello.
+
+Accepting eligible terms returns `outcome: "accepted_proposal"`,
+`decision_mode: "proposal"` and `proposal_preview`. It records dialogue/evidence,
+without changing cap charges, ownership, cash, financial revision or contractual
+promises. It returns no signing `charges`. Counter/reject/accounting rejection
+also carry proposal mode. Durable preview replay must match its historical
+financial state; recording acceptance rechecks cap/minimums and global ownership
+inside the write transaction. Accepted retries revalidate current affordability,
+ownership and revision without calling the model again. Changing terms or
+reusing the request in the committing mode rejects.
+
+A proposal is neither a reservation nor permission to write guest memory. No
+proposal-to-guest-commit operation exists yet. Actual integration must verify the
+active save/player/calendar and terms, recheck remote control/state at commitment,
+confirm guest effects and reconcile/save/reload before recording a signing.
+Do not use the existing auto-committing `negotiate` operation at the guest judgment
+boundary: it is an independent-engine operation and can commit before the game.
+The native validator rejects signed/charge-bearing proposal replies and checks
+acceptance preview/evidence revisions. Guest commit/recovery remains unfinished.
+
 ## Native candidate
 
 `native/franchise_bridge` builds a standalone Windows C++17 transport check.

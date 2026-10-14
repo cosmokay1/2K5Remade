@@ -76,7 +76,8 @@ extern "C" FranchiseHostStatus franchise_host_submit(FranchiseHostClient* client
             !request.at("operation").is_string() || request.at("operation").get<std::string>().empty()) return FRANCHISE_HOST_INVALID_ARGUMENT;
         operation = request.at("operation").get<std::string>();
     } catch (...) { return FRANCHISE_HOST_INVALID_ARGUMENT; }
-    if (operation == "negotiate" && !client->ai_granted) return FRANCHISE_HOST_SERVICE_FAILURE;
+    if ((operation == "negotiate" || operation == "negotiate_proposal") && !client->ai_granted)
+        return FRANCHISE_HOST_SERVICE_FAILURE;
     try {
         client->transport->submit(std::move(frame));
         client->operation = std::move(operation);

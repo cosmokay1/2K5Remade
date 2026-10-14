@@ -44,7 +44,7 @@ class Bridge:
                 if set(request) != {"protocol", "request_id", "operation"}:
                     raise ValueError("Unexpected handshake fields")
                 self.access_check()
-                return self._reply(request_id, result={"ai_enabled": True, "operations": ["preview", "negotiate", "manual_sign", "manual_release", "manual_trade", "manual_restructure", "player_context", "contract_context"]})
+                return self._reply(request_id, result={"ai_enabled": True, "operations": ["preview", "negotiate", "negotiate_proposal", "manual_sign", "manual_release", "manual_trade", "manual_restructure", "player_context", "contract_context"]})
             if operation == 'manual_restructure':
                 from datetime import date
                 from franchise.cap import money
@@ -264,16 +264,18 @@ class Bridge:
                     return self._reply(request_id,error='context_too_large',detail='Player context exceeds pipe frame capacity')
                 return reply
             fields = {"protocol", "request_id", "operation", "team_id", "offer", "expected_revision", "timeout_ms"}
-            if operation == "negotiate":
+            if operation in ("negotiate", "negotiate_proposal"):
                 fields |= {"personality", "performance", "relationships"}
             elif operation == "manual_sign":
                 fields |= {"decision_mode"}
             elif operation != "preview":
                 raise ValueError("Unsupported operation")
-            if operation == "negotiate" and "promise_goals" in request:
+            if operation in ("negotiate", "negotiate_proposal") and "promise_goals" in request:
                 fields |= {"promise_goals"}
             if "return_scope" in request:
                 fields |= {"return_scope"}
+                if operation == 'negotiate_proposal':
+                    raise ValueError('Guest proposal return signing is not supported')
             if set(request) != fields:
                 raise ValueError("Unexpected request fields")
             return_scope=self.store._return_scope(request["return_scope"]) if "return_scope" in request else None
@@ -321,7 +323,8 @@ class Bridge:
                     raise ValueError("Integer client revision required")
                 session = Negotiation(ledger, player_id=offer.player_id,
                     personality=request["personality"], performance=request["performance"],
-                    relationships=request["relationships"], access_check=guarded_access)
+                    relationships=request["relationships"], access_check=guarded_access,
+                    proposal_only=operation == 'negotiate_proposal')
                 from franchise.promises import goals_from_list
                 result = session.respond(request_id, offer, self.provider,
                                          expected_revision=request["expected_revision"],

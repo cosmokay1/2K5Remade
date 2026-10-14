@@ -788,6 +788,11 @@ class FranchiseStore:
                 ledger._scouting.append(payload["event"])
             elif kind == "dialogue":
                 self._validate_dialogue(payload["event"], efficiency_cache=efficiency_cache)
+                if payload['event']['outcome'] == 'accepted_proposal':
+                    event = payload['event']
+                    preview = ledger.preview_offer(Offer.from_dict(event['offer']), event['evidence']['financial_revision'])
+                    if self._checkpoint_hash(preview) != self._checkpoint_hash(event['proposal_preview']):
+                        raise ValueError('Accepted proposal preview disagrees with financial replay')
             elif kind == "budget":
                 ledger.update_budget(**{key: payload[key] for key in ("cap", "roster_reserve", "expected_revision")})
             elif kind == 'calendar_anchor':
@@ -2185,7 +2190,7 @@ class FranchiseStore:
     def _validate_dialogue(event, *, efficiency_cache=None):
         FranchiseStore._validate_story_evidence(event, efficiency_cache=efficiency_cache)
         if type(event) is not dict or event.get("outcome") not in {
-                "counteroffer", "player_rejected", "accounting_rejected"}:
+                "counteroffer", "player_rejected", "accounting_rejected", "accepted_proposal"}:
             raise ValueError("Noncommitted negotiation event required")
         if type(event.get("request_id")) is not str or not event["request_id"].strip():
             raise ValueError("Negotiation request ID required")
@@ -2199,6 +2204,14 @@ class FranchiseStore:
             "guaranteed_salaries": counter.get("guaranteed_salaries") if counter else None,
             **({"promise_goals": event["counter_promises"] if counter else None} if "counter_promises" in event else {})}), data["player_id"])
         expected = {"counter": "counteroffer", "reject": "player_rejected", "accept": "accounting_rejected"}
+        if event['outcome'] == 'accepted_proposal':
+            if (event.get('decision_mode') != 'proposal' or 'evidence' not in event
+                    or type(event.get('proposal_preview')) is not dict or 'return_scope' in event
+                    or type(event['proposal_preview'].get('revision')) is not int
+                    or event['proposal_preview']['revision'] != event['evidence']['financial_revision']
+                    or 'charges' in event):
+                raise ValueError('Noncommitting proposal evidence required')
+            expected['accept'] = 'accepted_proposal'
         if event["outcome"] != expected[decision.action] or (counter and counter["player_id"] != data["player_id"]):
             raise ValueError("Dialogue decision and outcome disagree")
 
@@ -2237,9 +2250,17 @@ class FranchiseStore:
             if event.get("evidence") is not None and event["outcome"] != "accounting_rejected":
                 if event["evidence"]["financial_revision"] != ledger.revision:
                     raise Rejected("Response was based on stale franchise context")
+            if event['outcome'] == 'accepted_proposal':
+                offer = Offer.from_dict(event['offer'])
+                if db.execute('SELECT 1 FROM ownership WHERE player_id=?', (offer.player_id,)).fetchone():
+                    raise Rejected('Player already belongs to a team')
+                self._check_draft_right(db, team_id, offer.player_id)
+                preview = ledger.preview_offer(offer, event['evidence']['financial_revision'])
+                if self._checkpoint_hash(preview) != self._checkpoint_hash(event['proposal_preview']):
+                    raise Rejected('Accepted proposal preview changed before recording')
             self._check_history(db, team_id, event["offer"]["player_id"], event)
             payload = {"event": event, "posting": ledger.financial_snapshot()}
-            if 'return_scope' in event:
+            if 'return_scope' in event or event['outcome'] == 'accepted_proposal':
                 access_check()
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'dialogue', ?)",
                        (team_id, key, json.dumps(payload, allow_nan=False)))

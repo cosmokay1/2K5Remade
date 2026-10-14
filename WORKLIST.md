@@ -314,7 +314,7 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
       Original-game controlled Gildon signing now has saved contract/ownership
       and first-year cap readback; AI/modern terms are not yet committed to the game.
 - [ ] Integrate all supported roster transactions and season advancement.
-- [ ] Reconcile the external ledger and guest state before every financial write.
+- [ ] Reconcile the external ledger and guest state before every financial write. The bridge now has a remote-gated proposal-only negotiation path that records accepted dialogue without cap/ownership mutation; exact preview persistence and retry checks pass. Actual guest commit confirmation, recovery and save reconciliation remain pending.
 - [ ] Add real franchise negotiation UI with cap/cash/guarantee effects and reasons.
 - [ ] Integrate persistent stories/relationships into the actual franchise experience.
 - [ ] Add opt-in configuration, backups, recovery and explicit migration handling.

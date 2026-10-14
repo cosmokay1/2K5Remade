@@ -1330,7 +1330,7 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         for (const auto& item : result["operations"]) if (!item.is_string()) throw std::runtime_error("Invalid operation list");
         return;
     }
-    if (operation == "preview" || operation == "negotiate" || operation == "manual_sign") {
+    if (operation == "preview" || operation == "negotiate" || operation == "negotiate_proposal" || operation == "manual_sign") {
         if (request.contains("return_scope")) {
             const auto& scope=request.at("return_scope");
             if (!scope.is_object() || scope.size()!=6 || !scope.at("league_year").is_number_integer() ||
@@ -1352,12 +1352,13 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         for (const auto& charge : charges) exact_money(charge);
         return;
     }
-    if (operation != "manual_sign" && operation != "negotiate") throw std::runtime_error("Unsupported result operation");
+    if (operation != "manual_sign" && operation != "negotiate" && operation != "negotiate_proposal")
+        throw std::runtime_error("Unsupported result operation");
     if (canonical_offer(result.at("offer")) != canonical_offer(request.at("offer")) || result.at("request_id") != request.at("request_id"))
         throw std::runtime_error("Response changed submitted contract");
     auto outcome = result.at("outcome").get<std::string>();
     auto action = result.at("action").get<std::string>();
-    if (operation == "negotiate") {
+    if (operation == "negotiate" || operation == "negotiate_proposal") {
         const auto proposed = request.value("promise_goals", nlohmann::json::array());
         const auto echoed = result.value("promise_goals", nlohmann::json::array());
         promise_goals(proposed); promise_goals(echoed);
@@ -1367,7 +1368,18 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
             else if (!result.at("counter_promises").is_null()) throw std::runtime_error("Unexpected counter promises");
         } else if (result.contains("counter_promises")) throw std::runtime_error("Missing submitted promise context");
     }
-    if (outcome == "signed") {
+    if (operation == "negotiate_proposal" &&
+        (result.at("decision_mode") != "proposal" || result.contains("charges") || outcome == "signed"))
+        throw std::runtime_error("Proposal cannot report a signing");
+    if (outcome == "accepted_proposal") {
+        if (operation != "negotiate_proposal" || action != "accept" || !result.at("counter").is_null() ||
+            !request.at("expected_revision").is_number_integer() || request.at("expected_revision")<0 ||
+            result.at("evidence").at("financial_revision") != request.at("expected_revision"))
+            throw std::runtime_error("Invalid noncommitting acceptance");
+        auto preview_request = request; preview_request["operation"] = "preview";
+        nlohmann::json preview_response={{"error",nullptr},{"result",result.at("proposal_preview")}};
+        validate_result(preview_response,preview_request);
+    } else if (outcome == "signed") {
         if (action != "accept" || !result.at("counter").is_null()) throw std::runtime_error("Invalid signed decision");
         if (operation == "manual_sign" && result.at("decision_mode") != "manual") throw std::runtime_error("Manual decision mode missing");
         const auto& charges = result.at("charges");

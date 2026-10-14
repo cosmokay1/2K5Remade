@@ -23,12 +23,19 @@ def request():
 
 class SidecarTests(unittest.TestCase):
     def test_real_process_handshake_preview_dialogue_and_restart(self):
+        self._check_real_process('negotiate')
+
+    def test_real_process_proposal_and_restart(self):
+        self._check_real_process('negotiate_proposal')
+
+    def _check_real_process(self, operation):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "state.sqlite"
             store = FranchiseStore(path)
             store.create_team("a", Ledger.from_opening(OpeningBooks(), cap=100,
                 roster_reserve=0, max_bonus_years=5, veteran_minimums={"v": (1,)}))
             message_request = request()
+            message_request['operation'] = operation
             for attempt in range(2):
                 process = subprocess.Popen([sys.executable, "-m", "franchise.sidecar", "--database", str(path),
                     "--provider", "offline-fixture"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -40,6 +47,8 @@ class SidecarTests(unittest.TestCase):
                         response = json.loads(process.stdout.readline())
                         self.assertIsNone(response["error"])
                     self.assertEqual(response["result"]["outcome"], "player_rejected")
+                    if operation == 'negotiate_proposal':
+                        self.assertEqual(response['result']['decision_mode'], 'proposal')
                     process.stdin.close()
                     self.assertEqual(process.wait(timeout=5), 0)
                 finally:
@@ -52,6 +61,12 @@ class SidecarTests(unittest.TestCase):
             self.assertEqual(store.load_team("a").revision, 0)
 
     def test_busy_and_disconnect_do_not_commit_inflight_acceptance(self):
+        self._check_busy_disconnect('negotiate')
+
+    def test_proposals_share_worker_and_disconnect_cannot_record_acceptance(self):
+        self._check_busy_disconnect('negotiate_proposal')
+
+    def _check_busy_disconnect(self, operation):
         with tempfile.TemporaryDirectory() as directory:
             store = FranchiseStore(Path(directory) / "state.sqlite")
             store.create_team("a", Ledger.from_opening(OpeningBooks(), cap=100,
@@ -77,9 +92,10 @@ class SidecarTests(unittest.TestCase):
             thread = Thread(target=serve, args=(bridge, Reader(), Writer()))
             thread.start()
             try:
-                incoming.put(json.dumps(request()) + "\n")
+                incoming.put(json.dumps({**request(), 'operation': operation}) + "\n")
                 self.assertTrue(entered.wait(timeout=5))
-                incoming.put(json.dumps({**request(), "request_id": "two"}) + "\n")
+                incoming.put(json.dumps({**request(), "request_id": "two",
+                    'operation': 'negotiate' if operation=='negotiate_proposal' else 'negotiate_proposal'}) + "\n")
                 self.assertEqual(outgoing.get(timeout=5)["error"], "busy")
                 incoming.put("")
                 self.assertTrue(closed.wait(timeout=5))

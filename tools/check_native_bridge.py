@@ -738,16 +738,18 @@ def main():
                 result=subprocess.run([sys.argv[2],sys.executable,str(c_path)],
                     text=True,capture_output=True,timeout=20,check=True)
                 replies=[json.loads(line) for line in result.stdout.splitlines()]
-                assert len(replies)==4
+                assert len(replies)==5
                 assert replies[0]['error'] is None and replies[0]['result']['ai_enabled'] is True
                 if attempt==0:
                     assert replies[1]['error'] is None and replies[1]['result']['room_after']==90
-                    agreement=replies[2];context=replies[3]
+                    agreement=replies[3];context=replies[4]
                 else:
                     assert replies[1]['error']=='state_rejected'
-                    assert replies[2]==agreement and replies[3]==context
-                assert replies[2]['error'] is None and replies[2]['result']['outcome']=='signed'
-                assert replies[3]['error'] is None
+                    assert replies[3]==agreement and replies[4]==context
+                assert replies[2]['error'] is None and replies[2]['result']['outcome']=='player_rejected'
+                assert replies[2]['result']['decision_mode']=='proposal' and 'charges' not in replies[2]['result']
+                assert replies[3]['error'] is None and replies[3]['result']['outcome']=='signed'
+                assert replies[4]['error'] is None
                 current=c_store.load_team('a')
                 assert current.charges==(10,) and current.revision==1 and current._players=={'v'}
                 assert replies[3]['result']==c_store.player_context('a','v')

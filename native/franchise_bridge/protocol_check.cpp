@@ -57,6 +57,29 @@ int main() {
         auto request = franchise::parse_frame(R"({"operation":"manual_sign","request_id":"one","offer":{"player_id":"v","salaries":[10],"signing_bonus":0,"guaranteed_salaries":[8]}})");
         auto reply = franchise::parse_frame(R"({"error":null,"result":{"request_id":"one","offer":{"player_id":"v","salaries":[10],"signing_bonus":0,"guaranteed_salaries":[8]},"action":"accept","outcome":"signed","counter":null,"decision_mode":"manual","charges":[10]}})");
         franchise::validate_result(reply, request);
+        auto proposal_request=request;
+        proposal_request["operation"]="negotiate_proposal";
+        proposal_request["expected_revision"]=0;
+        auto proposal_reply=reply;
+        proposal_reply["result"]["decision_mode"]="proposal";
+        proposal_reply["result"]["outcome"]="accepted_proposal";
+        proposal_reply["result"].erase("charges");
+        proposal_reply["result"]["evidence"]={{"financial_revision",0}};
+        proposal_reply["result"]["proposal_preview"]={{"revision",0},{"contract_charges",{10}},{"room_after",90}};
+        franchise::validate_result(proposal_reply,proposal_request);
+        for(int scenario=0;scenario<7;++scenario) {
+            auto bad=proposal_reply;auto bad_request=proposal_request;
+            if(scenario==0) bad["result"]["outcome"]="signed";
+            if(scenario==1) bad["result"]["charges"]={10};
+            if(scenario==2) bad["result"]["decision_mode"]="manual";
+            if(scenario==3) bad["result"]["proposal_preview"]["revision"]=1;
+            if(scenario==4) bad["result"]["evidence"]["financial_revision"]=1;
+            if(scenario==5) bad["result"]["proposal_preview"]["contract_charges"]={10.5};
+            if(scenario==6) bad_request["operation"]="negotiate";
+            bool rejected=false;
+            try{franchise::validate_result(bad,bad_request);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Proposal signing/mode/revision substitution accepted");
+        }
         auto return_scope=franchise::parse_frame(R"({"league_year":2026,"signed_on":"2026-06-01","first_regular_season_game":"2026-09-10","healthy":true,"exclusions":["extensions","guarantee_offsets","league_year_rollover","rookie_contracts"],"source":"synthetic return"})");
         auto return_request=request;
         return_request["return_scope"]=return_scope;
