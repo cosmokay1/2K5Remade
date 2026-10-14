@@ -431,7 +431,7 @@ int main() {
         auto repeated_financial=franchise::parse_frame(R"golden({"revision":9,"cap":20000000,"roster_reserve":0,"charges":[3050000],"signed_players":["v"],"rookie_year_one_remaining":"0","rookie_total_remaining":0,"rookie_tenders":{}})golden");
         repeated_financial["restructures"]={{"v",repeated_history["latest_restructure"]}};
         auto repeated_cash=franchise::parse_frame(R"golden({"revision":5,"source":"synthetic complete allocated cash","nominal_total":9000000,"paid_total":7000000,"unpaid_total":2000000})golden");
-        repeated_cash["obligations"]={repeated_history["latest_restructure"]["cash_obligation"]};
+        repeated_cash["obligations"]=nlohmann::json::array({repeated_history["latest_restructure"]["cash_obligation"]});
         auto repeated_reply=nlohmann::json{{"error",nullptr},{"result",{{"team_id","a"},{"player_id","v"},
             {"decision_mode","manual"},{"generation_id",repeated_request["generation_id"]},
             {"restructure",{{"format",3},{"generation_id",repeated_request["generation_id"]},{"league_year",2028},
@@ -442,7 +442,7 @@ int main() {
         repeated_compact_reply["result"]["restructure"]["financial"]=franchise::parse_frame(R"golden({"revision":9,"charges":[3050000],"signed_players":["v"]})golden");
         repeated_compact_reply["result"]["restructure"]["financial"]["restructures"]={{"v",repeated_history["latest_restructure"]}};
         repeated_compact_reply["result"]["restructure"]["cash"]=franchise::parse_frame(R"golden({"revision":5,"nominal_total":9000000,"paid_total":7000000,"unpaid_total":2000000,"other_obligations":{"count":0,"nominal_total":0,"paid_total":0,"unpaid_total":0}})golden");
-        repeated_compact_reply["result"]["restructure"]["cash"]["obligations"]={repeated_history["latest_restructure"]["cash_obligation"]};
+        repeated_compact_reply["result"]["restructure"]["cash"]["obligations"]=nlohmann::json::array({repeated_history["latest_restructure"]["cash_obligation"]});
         franchise::validate_result(repeated_compact_reply,repeated_compact_request);
         for(int scenario=0;scenario<29;++scenario) {
             auto bad=repeated_reply;auto req=repeated_request;

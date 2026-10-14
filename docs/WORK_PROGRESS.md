@@ -3153,3 +3153,18 @@ restart retries, recorded payroll and later settled expiry/history preservation.
 That Windows execution awaits this commit's CI. Post-repeat Store release/trade
 support, explicit full-history inspection and actual game/save integration remain
 open. No playable build is claimed.
+
+
+## October 13, 2026 — Windows repeated-fixture array correction
+
+4edd386 Build 38521743315 passed; Franchise AI 38521743303 failed Windows
+protocol_boundary with "Invalid repeated amendment cash totals" before the native
+pipe fixture executed. Ubuntu passed. The repeated fixture used a one-element
+brace assignment for JSON obligations. Replaced both full/compact assignments
+with explicit nlohmann::json::array construction to remove compiler-dependent
+initializer selection. An isolated portable build against the exact published
+4edd386 header and corrected fixture passed; current portable rebuild/CTest also
+passed. Windows confirmation still awaits the fix commit's CI; repeated Windows
+pipe execution has not yet been verified.
+Separately, history-aware release Store and compact receipt work is local and
+uncommitted; its native validation/fixtures are still in progress.
