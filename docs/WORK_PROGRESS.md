@@ -3419,3 +3419,25 @@ AI refusal/manual reads plus token-policy restart. Source inspection confirms th
 root host only owns service startup/stop: no verified guest signing callback or
 financial write exists. Legal Xbox assets, controlled saves and Windows gameplay
 access remain B01/B02/B03; source/fixture checks cannot substitute for them.
+
+
+## October14,2026 — Existing menu probe for first franchise integration
+
+Source audit distinguished pregame card/roster identity and simulation-entry
+selection from unknown franchise signing/financial behavior. Recorded exact
+candidates and the controlled roster->player->contract trace in
+docs/franchise-integration.md; no speculative financial interception was added.
+The existing root FSM callback was a no-op despite address-anchored push/pop
+patches already present. It now provides explicit NFL2K5_TRACE_FRANCHISE=1
+read-only event logging capped at256 events per process, silent otherwise.
+No guest memory access, hidden-rating input, AI inference or contract mutation
+is introduced. The real source function body compiled under C11 with
+-Wall/-Wextra/-Werror and a portable driver verified disabled modes silent,
+exact object/descriptor output and the256-event bound. This proves the logger,
+not real franchise descriptors or game execution.
+
+original/ still contains onlyREADME; legal assets/saves/runtime gates persist.
+User received the local original/disc intake path. Analysis accepts its XBE
+through explicit -Xbe; its historical default original/default.xbe remains.
+Next actual experiment is franchise navigation and selected-player readback,
+then controlled signing/save/load. Cost-policy expansion stays deferred.

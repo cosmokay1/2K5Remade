@@ -274,7 +274,7 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
 - [ ] Establish a baseline game build and franchise behavior with the legal game.
 - [ ] Map contract records, cap/tender fields, player identity, statistics and save data.
 - [ ] Trace signing, extension, release, trade, draft and year-transition functions.
-- [ ] Trace CPU-controlled paths as well as user menu paths; avoid double decisions.
+- [ ] Trace CPU-controlled paths as well as user menu paths; avoid double decisions. Existing FSM push/pop probes now have an explicit read-only 256-event trace (NFL2K5_TRACE_FRANCHISE=1); actual franchise descriptors and signing callbacks still require runtime evidence.
 - [ ] Intercept a single verified free-agent signing through existing patch conventions.
 - [ ] Commit legal terms to the actual game and verify readback/save/reload.
 - [ ] Integrate all supported roster transactions and season advancement.

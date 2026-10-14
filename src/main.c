@@ -526,7 +526,15 @@ void recomp_flags_fallback_hit(uint32_t address) { (void)address; }
 void recomp_icall_hist(uint32_t va) { (void)va; }
 void recomp_unresolved_hit(uint32_t address) { (void)address; }
 void recomp_todo_hit(uint32_t address) { (void)address; }
-void nfl2k5_diag_fsm(uint32_t obj, uint32_t desc, int push) { (void)obj; (void)desc; (void)push; }
+void nfl2k5_diag_fsm(uint32_t obj, uint32_t desc, int push)
+{
+    static unsigned int recorded;
+    const char *enabled = getenv("NFL2K5_TRACE_FRANCHISE");
+    if (!enabled || strcmp(enabled, "1") || recorded >= 256) return;
+    /* Existing FSM probes only: no guest reads/writes or guessed screen IDs. */
+    fprintf(stderr, "[FRANCHISE-TRACE] fsm_%s sequence=%u object=0x%08X descriptor=0x%08X\n",
+        push ? "push" : "pop", ++recorded, (unsigned int)obj, (unsigned int)desc);
+}
 void nfl2k5_diag_texzero(uint32_t tex, uint32_t ret) { (void)tex; (void)ret; }
 void nfl2k5_diag_reg(uint32_t fn, uint32_t edx_, uint32_t a0, uint32_t a1, uint32_t obj) { (void)fn; (void)edx_; (void)a0; (void)a1; (void)obj; }
 void nfl2k5_diag_res43(uint32_t obj, uint32_t load, uint32_t fre, uint32_t where) { (void)obj; (void)load; (void)fre; (void)where; }

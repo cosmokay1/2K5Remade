@@ -269,3 +269,42 @@ Windows fixtures now execute full/compact calendar trades twice across sidecar
 processes, then inspect both parties through rollover. The new transaction fixture
 passed Windows run 38517734890 at 8ea3682. Prior inspection passed run 38516814959 at 481027c.
 Actual guest trade interaction and save writes remain unimplemented.
+
+
+## First franchise screen trace — October14,2026
+
+Source inspection identifies existing FSM probes, not an established financial
+hook. tools/apply-gen-patches.py injects DIAG_FSMPUSH in sub_0006E390 and a
+matching pop. Root src/main.c now logs those existing events only when
+NFL2K5_TRACE_FRANCHISE=1, with a256-event process-lifetime ceiling. The trace
+contains sequence, push/pop, object and descriptor addresses; it performs no
+guest memory reads/writes and starts no AI requests. It is silent by default.
+
+Once the legal game runs, enable this environment flag for a fresh session and
+navigate franchise roster -> selected player -> contract -> back. Record the
+visible screen/player and correlate the logged descriptors across repetitions.
+Use a separate fresh session for a different player. A descriptor is only a
+candidate until it reproduces on the real franchise screens; none is hardcoded
+as a signing hook. Disable the flag after collecting this bounded trace.
+
+The pregame PLAYERCARD_PROBE in sub_002604D0 obtains a script context and card
+kind at+0x48. The single-player fact-card code in
+src/nfl2k5_presentation.cpp validates a player pointer against away/home roster
+arrays, but only in fresh_pregame state. Neither proves a persistent franchise
+player ID, club ownership, contract fields or negotiation-menu context. Do not
+attach negotiation to that pregame probe or reuse its hidden-rating ranking.
+
+The SIM_PICK_EMPTY patch in sub_00204930 selects an active collection entry and
+protects a modulo-by-zero case. Its caller sub_0020B670 writes a two-word tuple
+whose business meaning is unproven. It is not an evidenced contract commit or
+cap calculation. Existing source therefore does not justify a financial hook.
+
+Next evidence: correlate selected records across franchise navigation and
+save/reload, inspect the controlled signing save differences, then trace the
+proven accept/commit caller before enabling writes. Initial integration should
+provide selected-player context/preview before committing a contract.
+
+Asset intake may use original/disc/default.xbe plus the complete extracted disc
+structure (including vc_53450030). The existing analyzer's default is the legacy
+original/default.xbe path; pass -Xbe original/disc/default.xbe explicitly for the
+folder described to the user. No duplication or public upload is required.
