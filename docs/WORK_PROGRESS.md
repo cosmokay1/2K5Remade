@@ -1975,3 +1975,19 @@ actual native returned-restructure/olddebt/restart fixture execution.
 
 Actual game hooks/assets/save/load, consideration and unsupported trade/contract
 protections, season progression and final playable delivery remain unfinished.
+
+### Generation assignment audit and Windows verification (2026-10-13)
+
+Commit 60c54b4 passed Build check 38497901990 and Franchise AI checks
+38497901974. Windows ran all 415 tests and executed the native generation
+assignment fixture with separate receiver agreement, retained debt and restart
+retry. Ubuntu also passed all 415 tests. These are synthetic pipe/service
+checks, not execution of the retail game.
+
+The repeatable money audit now independently constructs release, return,
+assignment and assignment back to the former club. Expected former-club cap
+is 47/5/5; original retained cash 39 plus returned bonus 3 plus receiving
+base 15 preserves combined nominal cash 57 and paid cash 12. Three distinct
+agreements survive; retrying the earlier trade leaves current ownership and
+all agreement snapshots unchanged. The audit passes, including 5050 bonus
+conservation cases. Real game import, posting and save/load remain gated.

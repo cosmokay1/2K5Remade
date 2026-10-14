@@ -127,6 +127,64 @@ def trade_findings():
     return {'scenarios':scenarios,'scope':'Synthetic supported preseason contract assignment; consideration and real game/runtime unverified'}
 
 
+def generation_trade_findings():
+    """Independent cash/cap totals across release, return and two assignments."""
+    from datetime import date
+    from franchise.cash import CashObligation
+    from franchise.books import ActiveContract
+    from franchise.guarantees import DiscountProfile
+    from franchise.releases import PreseasonReleaseScope, EXCLUDED_LIABILITIES
+    from franchise.returns import PreseasonReturnScope, RETURN_EXCLUSIONS
+    from franchise.trades import PreseasonTradeScope, EXCLUDED_TRADE_LIABILITIES
+    with tempfile.TemporaryDirectory() as directory:
+        store = FranchiseStore(Path(directory) / 'generations.sqlite')
+        original = ActiveContract(Offer('v', (10,20,30),9,(0,20,10)), 'synthetic original')
+        for team in ('a','b'):
+            opening = OpeningBooks(contracts=(original,)) if team == 'a' else OpeningBooks()
+            store.create_team(team, Ledger.from_opening(opening, cap=200, roster_reserve=0,
+                max_bonus_years=5, veteran_minimums={'v':(1,)*3}))
+            cash = (CashObligation('contract:v','v',69,9,'synthetic bank',(('signing_bonus',9),)),) if team == 'a' else ()
+            store.initialize_cash(team,cash,source='synthetic complete cash')
+        day, first = date(2026,6,1), date(2026,9,10)
+        store.release_preseason_veteran('a','release','v',
+            scope=PreseasonReleaseScope(2026,day,first,EXCLUDED_LIABILITIES,True,True,0,'synthetic exclusions'),
+            discount=DiscountProfile(2026,Fraction(0),'synthetic zero rate'),
+            payment_year_offsets=(0,1,2),expected_revision=1,access_check=lambda:None)
+        old_id = store.load_team('a').contract_identity('v').generation_id
+        FranchiseStore.migrate_generations(store.path)
+        store.return_sign('a','return',Offer('v',(5,5,5),3,(5,0,0)),2,
+            scope=PreseasonReturnScope(2026,day,first,True,RETURN_EXCLUSIONS,'synthetic return'),
+            access_check=lambda:None)
+        returned_id = store.load_team('a').contract_identity('v').generation_id
+        store.record_payment('a','bonus',returned_id,3,expected_cash_revision=store.load_team('a').cash_snapshot()['revision'],
+            source='synthetic bank',payment_reference='return bonus',component='signing_bonus')
+        scope = PreseasonTradeScope(2026,day,first,first,EXCLUDED_TRADE_LIABILITIES,
+            True,0,True,True,'synthetic assignment')
+        receipt = store.trade_preseason_veteran('out','a','b','v',scope=scope,
+            seller_revision=4,buyer_revision=1,access_check=lambda:None)
+        assert store.load_team('a').charges == (42,0,0)
+        assert store.load_team('b').charges == (5,5,5)
+        store.trade_preseason_veteran('back','b','a','v',scope=scope,
+            seller_revision=2,buyer_revision=5,access_check=lambda:None)
+        reopened = FranchiseStore(store.path)
+        a,b = reopened.load_team('a'), reopened.load_team('b')
+        assert a.charges == (47,5,5) and b.charges == (0,0,0)
+        assert a.generation_cash(old_id).amount == 39
+        assert a.generation_cash(returned_id).amount == 3
+        assert len(a.generation_agreements()) == 3
+        assert a.cash_snapshot()['nominal_total'] + b.cash_snapshot()['nominal_total'] == 57
+        assert a.cash_snapshot()['paid_total'] + b.cash_snapshot()['paid_total'] == 12
+        before = {team:reopened.load_team(team).generation_snapshot() for team in ('a','b')}
+        assert reopened.trade_preseason_veteran('out','a','b','v',scope=scope,
+            seller_revision=4,buyer_revision=1,access_check=lambda:None) == receipt
+        assert before == {team:reopened.load_team(team).generation_snapshot() for team in ('a','b')}
+        return {'former_club_cap':[47,5,5], 'other_club_cap':[0,0,0],
+            'original_retained_cash':39,'returned_bonus_cash':3,'current_assigned_base_cash':15,
+            'combined_nominal_cash':57,'combined_paid_cash':12,'former_club_agreements':3,
+            'historical_retry_preserves_current_ownership':True,
+            'scope':'Synthetic supported same-year lifecycle; no game posting or complete NFL rules'}
+
+
 def restructure_findings():
     from datetime import date
     from franchise.books import ActiveContract
@@ -251,6 +309,7 @@ def main():
                       "durable_path": durable_findings(),
                       "supported_release_path": release_findings(),
                       "supported_assignment_path": trade_findings(),
+                      "generation_assignment_path": generation_trade_findings(),
                       "pure_restructure_calculation": restructure_findings(),
                       "implemented_component_scope": {
                           "cash": "Nominal sourced obligations, component-allocated payments and guarantee present-value projections; full settlement/vesting is incomplete.",
