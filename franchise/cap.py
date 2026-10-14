@@ -10,6 +10,8 @@ are reported without assuming future league caps.
 from dataclasses import asdict, dataclass, replace
 from fractions import Fraction
 from threading import RLock
+import hashlib
+import json
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -123,6 +125,7 @@ class Ledger:
         self._opening_books = opening_books
         self._contracts = {item.offer.player_id: item.offer for item in opening_books.contracts} if opening_books else {}
         self._active_contracts = {item.offer.player_id: item for item in opening_books.contracts} if opening_books else {}
+        self._legacy_contracts = {item.player_id: item for item in opening_books.legacy_contracts} if opening_books else {}
         self._released = {}
         self._last_transaction_date = None
         self._traded_out = {}
@@ -160,13 +163,15 @@ class Ledger:
         self.revision = 0
         self._lock = RLock()
         self._rookies = dict(rookies or {})
+        if self._legacy_contracts.keys() & self._rookies.keys():
+            raise ValueError('Preserved legacy contracts cannot use a modern rookie cohort')
         self._draft_reservations = {}
         self._draft_rights = {}
         self._promise_agreements = {}
         self._promise_scores = []
         if self._rookies.keys() & self._veteran_minimums.keys():
             raise ValueError("A player cannot be classified as both rookie and veteran")
-        known = self._rookies.keys() | self._veteran_minimums.keys()
+        known = self.registered_player_ids
         if not self._players <= known:
             raise ValueError("Signed players must exist in the player registry")
         if self._rookies and (rookie_year_one_allocation is None
@@ -213,7 +218,7 @@ class Ledger:
             if any(item.bonus_layers for item in opening_books.contracts):
                 raise ValueError("Layered contracts require durable restructure cash reconciliation")
             if (self._charges != opening_books.charges()
-                    or self._players != {item.offer.player_id for item in opening_books.contracts}
+                    or self._players != {item.offer.player_id for item in opening_books.contracts} | self._legacy_contracts.keys()
                     or self._tenders != {item.player_id: item.amount for item in opening_books.tenders}):
                 raise ValueError("Opening balances, ownership or tenders disagree with source books")
 
@@ -246,7 +251,7 @@ class Ledger:
             rules.setdefault("undrafted_bonus_reservation", profile.undrafted_reservation)
             rules.setdefault("undrafted_reservation_source", profile.source)
         return cls(existing_charges=books.charges(),
-                   signed_player_ids=frozenset(item.offer.player_id for item in books.contracts),
+                   signed_player_ids=frozenset({item.offer.player_id for item in books.contracts} | {item.player_id for item in books.legacy_contracts}),
                    rookie_tenders={item.player_id: item.amount for item in books.tenders},
                    opening_books=books, **rules)
 
@@ -261,6 +266,10 @@ class Ledger:
                 return self.generation_accounting(gid).contract
             return self._active_contracts[player_id]
 
+    @property
+    def registered_player_ids(self):
+        return self._rookies.keys() | self._veteran_minimums.keys() | self._legacy_contracts.keys()
+
     def bind_team_identity(self, team_id):
         from franchise.generations import legacy_identity
         if type(team_id) is not str or not team_id.strip():
@@ -270,19 +279,19 @@ class Ledger:
                 if self._team_identity != team_id:
                     raise Rejected('Contract generation team identity cannot change')
                 if (set(self._generation_by_player) != set(self._contracts)
-                        or set(self._active_generation_ids) != self._players):
+                        or set(self._active_generation_ids) != self._players - self._legacy_contracts.keys()):
                     raise Rejected('Existing contract generation mapping is inconsistent')
                 self.generation_agreements()
                 for player in self._contracts:
                     self.contract_identity(player)
                 return
-            if not self._players <= self._contracts.keys():
+            if not self._players - self._legacy_contracts.keys() <= self._contracts.keys():
                 raise Rejected('Original contracts required to bind owned generations')
             identities = {player:legacy_identity(team_id,player) for player in self._contracts}
             self._team_identity = team_id
             self._generation_identities = {item.generation_id:item for item in identities.values()}
             self._generation_by_player = {player:item.generation_id for player,item in identities.items()}
-            self._active_generation_ids = {player:identities[player].generation_id for player in self._players}
+            self._active_generation_ids = {player:identities[player].generation_id for player in self._players - self._legacy_contracts.keys()}
             for player in identities:
                 self._refresh_generation_agreement(player)
 
@@ -413,6 +422,8 @@ class Ledger:
         from franchise.generations import GenerationCalendarView
         from franchise.salary_rules import VeteranMinimumProfile
         with self._lock:
+            if self._legacy_contracts:
+                raise Rejected('Legacy schedule aging requires verified calendar migration')
             if (type(from_year) is not int or type(to_year) is not int or to_year!=from_year+1
                     or getattr(self,'_league_year',None)!=from_year
                     or type(expected_revision) is not int or expected_revision!=self.revision):
@@ -1059,11 +1070,14 @@ class Ledger:
 
     def negotiation_context(self, player_id: str) -> dict:
         with self._lock:
-            if player_id not in self._rookies and player_id not in self._veteran_minimums:
+            if player_id not in self.registered_player_ids:
                 raise Rejected("Player is unknown or contract classification is missing")
             scale = self._rookies.get(player_id)
             _, reserved_one, reserved_total = self._draft_reserved(except_player=player_id)
             return {"revision": self.revision, "cap": self.cap, "room": json_amount(self.room),
+                    **({'legacy_contract': self._legacy_contracts[player_id].to_dict(),
+                        'legacy_liability_scope': 'original cap schedule; cash/protections/lifecycle unverified'}
+                       if player_id in self._legacy_contracts else {}),
                     "promise_history": self.promise_history(player_id),
                     "annual_team_charges": [json_amount(value) for value in self._charges],
                     "roster_reserve": self.roster_reserve,
@@ -1144,6 +1158,11 @@ class Ledger:
     def financial_snapshot(self) -> dict:
         with self._lock:
             return {"revision": self.revision, "cap": self.cap,
+                    **({'legacy_schedule_count':len(self._legacy_contracts),
+                        'legacy_schedule_sha256':hashlib.sha256(json.dumps(
+                            [self._legacy_contracts[key].to_dict() for key in sorted(self._legacy_contracts)],
+                            sort_keys=True,separators=(',',':')).encode('utf-8')).hexdigest()}
+                       if self._legacy_contracts else {}),
                     "roster_reserve": self.roster_reserve,
                     "charges": [json_amount(value) for value in self._charges], "signed_players": sorted(self._players),
                     "rookie_year_one_remaining": str(self._rookie_year_one),

@@ -24,12 +24,12 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 ## Latest verified state — October 14, 2026
 
-- Latest published verified source: `a4e89c1`. Build `38606568296` and Franchise AI
-  `38606568593` passed. CI checks asset-free runtime and bridge components;
+- Latest published verified source: `b6cf85f`. Build `38616885315` and Franchise AI
+  `38616885613` passed. CI checks asset-free runtime and bridge components;
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.
-- Latest verified published CI suite: **625 tests passed on Windows and Ubuntu**. Actual AIBASELIN parsing
+- Latest verified published CI suite: **647 tests passed on Windows and Ubuntu**. Actual AIBASELIN parsing
   resolves 1937 roster/free-agent members. This does not prove contract/save
   round-trip integration. The read-only signing observer includes bounded bank-slot/name reads and is compiled and installed after confirmed exit;
   actual readback identifies Jeremiah Trotter at bank slot1910, matching AIBASELIN.
@@ -59,7 +59,10 @@ rules for new deals, and retain2004 dollars with proportional modern amounts.
 Legacy guarantees/cash/termination obligations must remain explicit or reject
 unsupported operations; do not impose new bonus horizons on opening contracts.
 Typed preserved legacy exports now match all32 current payroll totals across
-the three private saves (1696/1696/1697 contracts); durable book integration remains.
+the three private saves (1696/1696/1697 contracts). Durable books now preserve
+legacy cap/ownership and permit cap-constrained new modern deals; the private
+32-team restart check retains1697 IDs/actors/exact current charges. Free-agent
+floors, cash/rookie sources, calendar conversion and actual guest writes remain.
 
 The user identified cost-control expansion as a distraction. Stop adding spending
 policies, quota layers or supporting infrastructure. Keep the existing request/

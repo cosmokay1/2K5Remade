@@ -154,6 +154,21 @@ exports contain1696/1696/1697 records and match all32 totals. These are opening
 inputs; they are not yet loaded into FranchiseStore, nor is future season aging
 or legacy cash/termination treatment authorized by this export.
 
+OpeningBooks now accepts separate typed legacy schedules. Their remaining
+original charges join the cap ledger and their player IDs join exclusive durable
+ownership. They are not converted into modern agreement generations or presumed
+cash/guarantee records. Initialized actors include declared legacy owners;
+context and inventory expose their original records with an explicit unknown
+liability scope. Financial checkpoints bind the preserved schedules by digest.
+
+New modern acquisitions still enforce available room after legacy charges.
+Legacy termination/amendment paths lack modern ActiveContract inputs and reject;
+cash initialization, calendar anchoring/advancement and roster-status projection
+explicitly reject unsupported legacy conversion. They cannot discard schedules
+or assume cash coverage is zero. The private legacy-only32-team database check
+reopens all1697 players with matching IDs/personas/current payroll, but has no
+registered free-agent floors, paid cash, rookie sources or guest authority.
+
 `tools.inspect_franchise_cap` now derives the franchise tail from the validated
 saved scheduler boundary and reads the league-cap field at tail+15D0. Original
 save/load routines2D0790/2D0CE0 transfer this field to/from globalE3C278. Team

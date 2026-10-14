@@ -4446,3 +4446,32 @@ records and payroll mismatch. No database/game/save writes or model requests.
 Opening-book ownership/generation integration, unknown legacy liability handling
 and actual lifecycle/season validation remain required. Staged calendar observer
 installation still awaits normal game exit; this source work does not replace it.
+
+## October14,2026 — Durable legacy cap obligations and exclusive ownership
+
+OpeningBooks now stores legacy schedules separately from modern contracts,
+rejecting duplicate players across both kinds/tenders. Ledger derives preserved
+charges and signed ownership from those records; generation identities cover
+modern agreements only, avoiding fictional legacy cash generations. Strict source
+balance/ownership checks include legacy records. Financial checkpoints retain a
+canonical schedule digest/count without expanding every receipt with raw terms.
+
+Legacy IDs are registered for initialization/read context, without invented modern
+minimums. Existing unadapted books/contexts retain prior shapes. Inventory/player
+context explicitly expose preserved records and unknown liability scope. Cash
+initialization, calendar migration/aging and roster-status projection reject
+unsupported legacy conversion; no missing payment/guarantee is guessed zero.
+
+New fixture tests verify restart ownership/personality, cross-team theft rejection,
+cap rejection after legacy charges, legal new signing/replay, unchanged legacy
+schedule digest and no mutation on unknown cash/calendar attempts. Full offline
+suite outside sandbox passed650 tests in33.681s.
+
+Created only private analysis/AIBASELIN/legacy-cap-import-check.sqlite from actual
+AIGILDON typed exports and pinned seed/IDs. All32 teams reopened with1697 owned
+legacy players/actors, exact matching current charges and original seeded traits.
+Cap80500000 is sourced; reserve0 is provisional. This private validation has no
+registered free-agent floor inputs, cash/rookie/calendar import or live game
+configuration and is not signing authority. Game/save/control remain untouched.
+Publishedb6cf85f passed Build38616885315 and AI38616885613; logs confirm647 tests
+on Windows and Ubuntu.334268e also passed both workflows.

@@ -392,7 +392,7 @@ class FranchiseStore:
         origin = self._franchise_origin(db)
         if origin is not None:
             from franchise.initialization import initial_actor
-            registered = ledger._veteran_minimums.keys() | ledger._rookies.keys()
+            registered = ledger.registered_player_ids
             if not ledger._players <= registered:
                 raise ValueError('Every roster player requires registered classification')
             for player in sorted(registered):
@@ -404,6 +404,8 @@ class FranchiseStore:
 
     @staticmethod
     def _validate_calendar_year(ledger, year):
+        if ledger._legacy_contracts:
+            raise Rejected('Legacy schedules require verified calendar migration before anchoring')
         years = []
         if ledger._veteran_minimum_profile is not None:
             years.append(ledger._veteran_minimum_profile.start_year)
@@ -855,7 +857,7 @@ class FranchiseStore:
                 raise ValueError('Unexpected calendar transaction posting')
             if payload.get("posting") != ledger.financial_snapshot():
                 raise ValueError("Recorded financial posting disagrees with replay")
-        if origin is not None and set(ledger._actors) != ledger._veteran_minimums.keys() | ledger._rookies.keys():
+        if origin is not None and set(ledger._actors) != ledger.registered_player_ids:
             raise ValueError('Initialized player personality coverage is incomplete')
         if through_event_id is not None:
             return ledger
@@ -874,9 +876,9 @@ class FranchiseStore:
         with self._connection() as db:
             ledger=self._load(db,team_id)
             players=[]
-            for player in sorted(ledger._veteran_minimums.keys() | ledger._rookies.keys()):
+            for player in sorted(ledger.registered_player_ids):
                 context=ledger.negotiation_context(player)
-                players.append({'player_id':player,'contract_classification':context['rookie_type'] or 'veteran',
+                players.append({'player_id':player,'contract_classification':('legacy' if player in ledger._legacy_contracts else context['rookie_type'] or 'veteran'),
                                 'initialized':player in ledger._actors})
             return {'team_id':team_id,'financial_revision':ledger.revision,'players':players,
                     'scope':'registered contract identities; guest roster membership unverified'}
@@ -923,6 +925,9 @@ class FranchiseStore:
                 else:
                     accounting=self._generation_accounting_view(ledger,agreement)
             result = {'player_id':player_id,'financial_revision':ledger.revision,'initialized':actor is not None,
+                    **({'legacy_contract':ledger._legacy_contracts[player_id].to_dict(),
+                        'legacy_liability_scope':'original cap schedule; cash/protections/lifecycle unverified'}
+                       if player_id in ledger._legacy_contracts else {}),
                     'contract_accounting':accounting,
                     'personality':actor['personality'] if actor else None,
                     'relationships':actor['relationships'] if actor else None,
@@ -1033,6 +1038,8 @@ class FranchiseStore:
         books = ledger._opening_books
         linked_cash_ids = {agreement.identity.cash_obligation_id for agreement in agreements}
         return {'format':1, 'team_id':team_id, 'financial_revision':ledger.revision,
+            **({'preserved_legacy_contracts':[contract.to_dict() for _,contract in sorted(ledger._legacy_contracts.items())]}
+               if ledger._legacy_contracts else {}),
             'cash_revision':ledger._cash.revision if ledger._cash is not None else None,
             'generations':generations,
             'unassigned_cash_obligations':[record.to_dict() for key,record in sorted(ledger._cash.records.items())
@@ -1056,6 +1063,8 @@ class FranchiseStore:
         if type(classification_source) is not str or not classification_source.strip():
             raise ValueError("Roster classification provenance required")
         ledger = self.load_team(team)
+        if ledger._legacy_contracts:
+            raise Rejected('Legacy roster-status projection requires verified conversion')
         if getattr(ledger, '_league_year', None) is not None and ledger._league_year != league_year:
             raise Rejected('Projection year disagrees with anchored league calendar')
         if ledger._opening_books is None:
@@ -1150,6 +1159,8 @@ class FranchiseStore:
 
     @staticmethod
     def _check_opening_cash(ledger, records):
+        if ledger._legacy_contracts:
+            raise Rejected('Legacy cash obligations require verified import; cannot assume zero')
         by_id = {record.obligation_id: record for record in records}
         for player, offer in ledger._contracts.items():
             record = by_id.get(ledger.contract_cash_id(player))

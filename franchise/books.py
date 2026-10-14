@@ -7,6 +7,7 @@ operations exist. These records do not establish that import values are truthful
 from dataclasses import asdict, dataclass
 from fractions import Fraction
 from franchise.cap import Offer, json_amount, money
+from franchise.legacy_contracts import LegacyContract
 
 
 @dataclass(frozen=True)
@@ -139,13 +140,15 @@ class OpeningBooks:
     retained: tuple[ChargeRecord, ...] = ()
     adjustments: tuple[ChargeRecord, ...] = ()
     tenders: tuple[RookieTender, ...] = ()
+    legacy_contracts: tuple[LegacyContract, ...] = ()
 
     def __post_init__(self):
         for records, expected in ((self.contracts, ActiveContract), (self.retained, ChargeRecord),
-                                  (self.adjustments, ChargeRecord), (self.tenders, RookieTender)):
+                                  (self.adjustments, ChargeRecord), (self.tenders, RookieTender),
+                                  (self.legacy_contracts, LegacyContract)):
             if type(records) is not tuple or any(not isinstance(item, expected) for item in records):
                 raise ValueError("Opening records must be immutable typed tuples")
-        players = [item.offer.player_id for item in self.contracts]
+        players = [item.offer.player_id for item in self.contracts] + [item.player_id for item in self.legacy_contracts]
         tenders = [item.player_id for item in self.tenders]
         ids = [item.record_id for item in (*self.retained, *self.adjustments)]
         if len(players) != len(set(players)) or len(tenders) != len(set(tenders)) or len(ids) != len(set(ids)):
@@ -159,6 +162,7 @@ class OpeningBooks:
 
     def charges(self) -> tuple[Fraction, ...]:
         rows = [item.charges() for item in self.contracts]
+        rows.extend(item.charges() for item in self.legacy_contracts)
         rows.extend(item.annual_charges for item in (*self.retained, *self.adjustments))
         rows.extend((item.amount,) for item in self.tenders)
         years = max((len(row) for row in rows), default=1)
@@ -167,14 +171,18 @@ class OpeningBooks:
 
     def to_dict(self):
         return {"contracts": [item.to_dict() for item in self.contracts],
+                **({'legacy_contracts': [item.to_dict() for item in self.legacy_contracts]} if self.legacy_contracts else {}),
                 "retained": [{**asdict(item), "annual_charges": [json_amount(value) for value in item.annual_charges]} for item in self.retained],
                 "adjustments": [{**asdict(item), "annual_charges": [json_amount(value) for value in item.annual_charges]} for item in self.adjustments],
                 "tenders": [asdict(item) for item in self.tenders]}
 
     @classmethod
     def from_dict(cls, data):
-        if type(data) is not dict or set(data) != {"contracts", "retained", "adjustments", "tenders"}:
+        fields = {"contracts", "retained", "adjustments", "tenders"}
+        if type(data) is not dict or set(data) not in (fields, fields | {'legacy_contracts'}):
             raise ValueError("Unexpected opening book fields")
+        if 'legacy_contracts' in data and type(data['legacy_contracts']) is not list:
+            raise ValueError('Legacy opening records must be a list')
         contracts = []
         for item in data["contracts"]:
             contracts.append(ActiveContract.from_dict(item))
@@ -182,4 +190,5 @@ class OpeningBooks:
             return tuple(ChargeRecord(item["record_id"], tuple(parse_amount(value) for value in item["annual_charges"]), item["source"])
                          for item in data[key])
         return cls(tuple(contracts), records("retained"), records("adjustments"),
-                   tuple(RookieTender(**item) for item in data["tenders"]))
+                   tuple(RookieTender(**item) for item in data["tenders"]),
+                   tuple(LegacyContract.from_dict(item) for item in data.get('legacy_contracts', [])))
