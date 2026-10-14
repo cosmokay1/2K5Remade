@@ -77,3 +77,11 @@ and provides no future cap, ownership change or settlement grant. Historical
 agreement economics and lifecycle plans remain unchanged. This is the projection
 view needed for rollover work, not an executable season transition. New-year
 agreement anchors and authoritative expiry/ownership transitions remain work.
+
+## Payroll funding during closing and rollover
+
+Normal payroll follows docs/payroll-funding-policy.md: no revenue or bank-balance
+threshold is required. Closing-year settlement still requires recorded allocated
+payments or explicit sourced settlement facts. Owner funding is not a payment
+record; unpaid nominal obligations must survive. This keeps liquidity gameplay
+separate from cap legality and compensation-history reconciliation.

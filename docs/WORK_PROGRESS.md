@@ -2419,3 +2419,13 @@ never inferred from losses/missing revenue. Updated negotiation/draft prompts
 and the worklist to preserve this policy through settlement and rollover.
 Current cash ledger has no revenue/bank-balance gate. Provider tests and money
 audit pass; financial transaction code and compensation amounts are unchanged.
+
+### Calendar Windows validation and rollover payroll boundary (2026-10-13)
+
+Windows/Ubuntu run 38505171414 passed calendar anchoring at c8d09f3.
+Subsequent projection/payroll revisions remain in existing live CI runs; no
+restart was requested. Recorded owner-funded normal payroll in rollover closing
+requirements: there is no revenue gate, but funding cannot silently become
+allocated paid salary. Unpaid cash must survive source reconciliation.
+Parallel implementation is preparing typed current contract views around
+immutable agreement schedules; authoritative expiry/rollover remain open.
