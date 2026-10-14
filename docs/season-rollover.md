@@ -100,3 +100,28 @@ FranchiseStore.calendar_closing_state reports recorded outgoing/past active base
 settlement and outstanding nominal cash. Unknown allocation stays unknown; owner
 funding creates neither a revenue gate nor a paid record. The inspection never
 authorizes expiry or advances a season.
+
+## Initial durable transition scope
+
+FranchiseStore.advance_league_year now commits a supported veteran-only
+transition across all anchored teams under one BEGIN IMMEDIATE. It requires
+format4 migration, consecutive explicit years, exact expected revisions, sourced
+next cap/reserve/minimum inputs, explicit eligible expiry IDs and declared absence
+of unresolved incentives, cap adjustments, carryover and other calendar liabilities.
+Draft cohorts/rights, rookie obligations and other unresolved state reject.
+
+Replay validates the common per-team event, exact closing/after financial, cash
+and calendar postings, and full peer coverage. Surviving contract cursors and
+retained schedules advance; original economics/payment indices remain immutable.
+Eligible fully settled terms lose ownership but retain their archives/cash.
+Normal owner funding introduces no revenue gate and no automatic payment.
+
+Two-team/two-transition tests cover restart, historical transition retry, explicit
+intervening payroll, retained debt, expiry, stale/partial closing rollback and
+posting-type/missing-peer tamper. Calendar contract context format2 separates
+current state from the economic archive; legacy contexts/inventory reject after
+advancement rather than showing stale current contracts. Native format2 support
+is still unimplemented. Post-transition signing/release/trade/restructure remain
+guarded until calendar-aware lifecycle paths are completed; payments, reads and
+further supported transitions work. This does not complete playable franchise
+season advancement, rookie lifecycle, official posting or actual guest save hooks.

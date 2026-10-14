@@ -53,6 +53,106 @@ def from_config(config: dict) -> Ledger:
 
 
 class FranchiseStore:
+    YEAR_TRANSITION_EXCLUSIONS = frozenset({'unsettled_incentives','unresolved_cap_adjustments','carryover','other_calendar_liabilities'})
+
+    @staticmethod
+    def _calendar_posting(ledger):
+        records = []
+        for agreement in ledger.generation_agreements():
+            view = ledger.generation_calendar_view(agreement.identity.generation_id)
+            records.append({'generation_id':agreement.identity.generation_id,
+                'anchor_year':view.anchor_year,'current_year':view.current_year,
+                'status':view.status,'expiry_source':view.expiry_source,
+                'current_contract':view.current_contract.to_dict() if view.current_contract is not None else None,
+                'annual_charges':[json_amount(value) for value in view.annual_charges()],
+                'payment_ceilings':view.payment_ceilings()})
+        return {'league_year':ledger._league_year,'agreements':records}
+
+    def _year_transition_group(self, db, transition):
+        required = {'format','request_id','from_year','to_year','source','teams'}
+        if (type(transition) is not dict or set(transition) != required
+                or type(transition['format']) is not int or transition['format'] != 1
+                or type(transition['from_year']) is not int or type(transition['to_year']) is not int
+                or not 2020 <= transition['from_year'] < transition['to_year'] <= 2030
+                or transition['to_year'] != transition['from_year'] + 1
+                or any(type(transition[key]) is not str or not transition[key].strip() for key in ('request_id','source'))
+                or type(transition['teams']) is not dict):
+            raise ValueError('Invalid common year transition')
+        teams = {row[0] for row in db.execute('SELECT id FROM teams')}
+        if set(transition['teams']) != teams or not teams:
+            raise ValueError('Year transition requires complete league coverage')
+        rows = db.execute("SELECT team_id,payload FROM events WHERE kind='year_transition' AND request_key=?",
+                          ('year:'+transition['request_id'],)).fetchall()
+        if len(rows) != len(teams) or {row[0] for row in rows} != teams:
+            raise ValueError('Partial league year transition')
+        for team, serialized in rows:
+            payload = json.loads(serialized)
+            if (type(payload) is not dict or set(payload) != {'transition','before','posting','cash_posting','calendar_posting'}
+                    or self._checkpoint_hash(payload['transition']) != self._checkpoint_hash(transition)):
+                raise ValueError('Common year transition records disagree')
+
+    def _apply_year_input(self, ledger, transition, team):
+        from franchise.salary_rules import VeteranMinimumProfile
+        item = transition['teams'][team]
+        keys = {'expected_revision','next_cap','next_cap_source','roster_reserve','reserve_source',
+                'next_minimum_profile','expired_generation_ids','exclusions','source'}
+        if (type(item) is not dict or set(item) != keys
+                or any(type(item[key]) is not str or not item[key].strip() for key in ('next_cap_source','reserve_source','source'))
+                or type(item['exclusions']) is not list or len(item['exclusions']) != len(self.YEAR_TRANSITION_EXCLUSIONS)
+                or any(type(value) is not str for value in item['exclusions'])
+                or set(item['exclusions']) != self.YEAR_TRANSITION_EXCLUSIONS
+                or type(item['expired_generation_ids']) is not list
+                or any(type(value) is not str or not value.strip() for value in item['expired_generation_ids'])):
+            raise ValueError('Complete sourced closing and next-year inputs required')
+        ledger.apply_year_transition(from_year=transition['from_year'],to_year=transition['to_year'],
+            expected_revision=item['expected_revision'],next_cap=item['next_cap'],roster_reserve=item['roster_reserve'],
+            next_minimum_profile=VeteranMinimumProfile.from_dict(item['next_minimum_profile']),
+            source=item['source'],expired_generation_ids=tuple(item['expired_generation_ids']))
+
+    def advance_league_year(self, *, request_id, from_year, to_year, source, teams):
+        """Atomic supported transition; no guest write or inferred future rules."""
+        if (type(request_id) is not str or not request_id.strip()
+                or type(source) is not str or not source.strip()
+                or type(from_year) is not int or type(to_year) is not int
+                or not 2020 <= from_year < to_year <= 2030 or to_year != from_year + 1
+                or type(teams) is not dict):
+            raise ValueError('Explicit adjacent sourced league years and team inputs required')
+        transition = json.loads(json.dumps({'format':1,'request_id':request_id,'from_year':from_year,
+            'to_year':to_year,'source':source,'teams':teams},allow_nan=False))
+        with self._connection(write=True) as db:
+            if db.execute('PRAGMA user_version').fetchone()[0] != 4:
+                raise Rejected('Year transition requires explicit generation migration')
+            known = {row[0] for row in db.execute('SELECT id FROM teams')}
+            if not known or set(teams) != known or self._calendar_anchor(db) is None:
+                raise Rejected('Anchored complete league required for year transition')
+            # Cohort/rights advancement is still unsupported; never drop history.
+            if db.execute('SELECT 1 FROM draft_orders LIMIT 1').fetchone():
+                raise Rejected('Draft cohort calendar transition is not implemented')
+            existing = db.execute("SELECT payload FROM events WHERE kind='year_transition' AND request_key=? LIMIT 1",
+                                  ('year:'+request_id,)).fetchone()
+            if existing is not None:
+                previous = json.loads(existing[0])['transition']
+                if self._checkpoint_hash(previous) != self._checkpoint_hash(transition):
+                    raise Rejected('Year transition retry changed its terms')
+                self._year_transition_group(db, previous)
+                self._load_teams(db,tuple(sorted(known)))
+                return previous
+            ledgers = self._load_teams(db,tuple(sorted(known)))
+            postings = {}
+            for team, ledger in sorted(ledgers.items()):
+                before = {'financial':ledger.financial_snapshot(),'cash':ledger.cash_snapshot(),
+                          'calendar':self._calendar_posting(ledger)}
+                self._apply_year_input(ledger,transition,team)
+                postings[team] = {'transition':transition,'before':before,
+                    'posting':ledger.financial_snapshot(),'cash_posting':ledger.cash_snapshot(),
+                    'calendar_posting':self._calendar_posting(ledger)}
+            for team, payload in postings.items():
+                db.execute("INSERT INTO events(team_id,request_key,kind,payload) VALUES(?,?,'year_transition',?)",
+                           (team,'year:'+request_id,json.dumps(payload,allow_nan=False)))
+                db.execute('DELETE FROM ownership WHERE team_id=?',(team,))
+                for player in ledgers[team]._players:
+                    db.execute('INSERT INTO ownership VALUES(?,?)',(player,team))
+            return transition
     def __init__(self, path: str | Path):
         self.path = str(path)
         if self.path == ":memory:":
@@ -372,7 +472,13 @@ class FranchiseStore:
         with self._connection() as db:
             anchor = self._calendar_anchor(db)
             if anchor is not None:
-                self._load_teams(db, tuple(sorted(anchor['expected_revisions'])))
+                ledgers = self._load_teams(db, tuple(sorted(anchor['expected_revisions'])))
+                years = {ledger._league_year for ledger in ledgers.values()}
+                if len(years) != 1:
+                    raise ValueError('League teams disagree on current calendar')
+                current = years.pop()
+                if current != anchor['league_year']:
+                    return {**anchor,'initial_league_year':anchor['league_year'],'league_year':current}
             return anchor
 
     def calendar_projection(self, team_id, *, target_year):
@@ -385,13 +491,18 @@ class FranchiseStore:
             if anchor is None or target_year < anchor['league_year']:
                 raise Rejected('Anchored calendar and current/future projection year required')
             ledger = self._load(db, team_id)
-            offset = target_year - anchor['league_year']
+            if target_year < ledger._league_year:
+                raise Rejected('Projection precedes current league year')
+            offset = target_year - ledger._league_year
             return {'team_id':team_id,'financial_revision':ledger.revision,
-                    'recorded_league_year':anchor['league_year'],'target_year':target_year,
+                    'recorded_league_year':ledger._league_year,'target_year':target_year,
                     'calendar_source':anchor['source'],
                     'modeled_remaining_charges':[json_amount(value) for value in ledger.charges[offset:]],
-                    'agreements':[GenerationCalendarView(item,anchor['league_year'],target_year).to_projection()
+                    'agreements':[GenerationCalendarView(item,ledger.generation_calendar_view(item.identity.generation_id).anchor_year,
+                                                       target_year).to_projection()
                                   for item in ledger.generation_agreements()],
+                    **({'current_calendar':self._calendar_posting(ledger)}
+                       if ledger._generation_calendar_anchor is not None else {}),
                     'unchanged_cash':ledger.cash_snapshot(),
                     'season_advanced':False,'ownership_changed':False,'future_cap':None}
 
@@ -406,14 +517,15 @@ class FranchiseStore:
             for agreement in ledger.generation_agreements():
                 cash = ledger.generation_cash(agreement.identity.generation_id)
                 allocations = dict(cash.paid_components) if cash is not None and cash.paid_components is not None else None
-                active = agreement.status == 'active'
-                index = agreement.contract.elapsed_years
+                view = ledger.generation_calendar_view(agreement.identity.generation_id)
+                active = view.status == 'active' and view.current_contract is not None
+                index = view.current_contract.elapsed_years if active else None
                 required = {'base:'+str(i):amount for i,amount in enumerate(agreement.contract.offer.salaries) if i <= index} if active else None
                 settled = None if allocations is None or required is None else all(allocations.get(key,0) == amount for key,amount in required.items())
                 term_ends = active and index + 1 == len(agreement.contract.offer.salaries)
                 all_paid = None if allocations is None else cash.paid == cash.amount
                 agreements.append({'generation_id':agreement.identity.generation_id,
-                    'recorded_status':agreement.status,
+                    'recorded_status':view.status,
                     'outgoing_year_original_index':index if active else None,
                     'required_past_and_outgoing_base':required,
                     'recorded_base_settled':settled,
@@ -422,7 +534,7 @@ class FranchiseStore:
                     'unpaid_nominal_cash':cash.amount-cash.paid if cash is not None else None,
                     'expiry_authorized':False})
             return {'team_id':team_id,'financial_revision':ledger.revision,
-                    'league_year':anchor['league_year'],'agreements':agreements,
+                    'league_year':ledger._league_year,'agreements':agreements,
                     'normal_payroll_owner_funded':True,'revenue_gate':False,
                     'season_advanced':False,'scope':'recorded settlement inspection; actual closing facts and transition required'}
 
@@ -461,7 +573,7 @@ class FranchiseStore:
     def _load_teams(self,db,team_ids):
         ledgers={team:self._load_one(db,team) for team in team_ids}
         # One fresh read transaction validates the league, without persistent cache.
-        if db.execute("SELECT 1 FROM events WHERE kind IN ('calendar_anchor','trade_out','trade_in','generation_trade_out','generation_trade_in') LIMIT 1").fetchone():
+        if db.execute("SELECT 1 FROM events WHERE kind IN ('year_transition','calendar_anchor','trade_out','trade_in','generation_trade_out','generation_trade_in') LIMIT 1").fetchone():
             for (other,) in db.execute('SELECT id FROM teams').fetchall():
                 if other not in ledgers:
                     self._load_one(db,other)
@@ -654,6 +766,20 @@ class FranchiseStore:
                 ledger.revision += 1
                 if self._checkpoint_hash(payload['posting']) != self._checkpoint_hash(ledger.financial_snapshot()):
                     raise ValueError('Calendar financial posting types disagree with replay')
+            elif kind == 'year_transition':
+                if db.execute('PRAGMA user_version').fetchone()[0] != 4:
+                    raise ValueError('Year transition requires versioned generation replay')
+                self._year_transition_group(db,payload['transition'])
+                before = {'financial':ledger.financial_snapshot(),'cash':ledger.cash_snapshot(),
+                          'calendar':self._calendar_posting(ledger)}
+                if self._checkpoint_hash(payload['before']) != self._checkpoint_hash(before):
+                    raise ValueError('Closing-year state disagrees with replay')
+                self._apply_year_input(ledger,payload['transition'],team_id)
+                for key, actual in (('posting',ledger.financial_snapshot()),
+                                    ('cash_posting',ledger.cash_snapshot()),
+                                    ('calendar_posting',self._calendar_posting(ledger))):
+                    if self._checkpoint_hash(payload[key]) != self._checkpoint_hash(actual):
+                        raise ValueError('Year-transition posting disagrees with replay')
             else:
                 raise ValueError("Unknown financial event; refusing to reconstruct state")
             if kind in ('return_sign','generation_release','generation_restructure') or (kind=='cash_payment' and self._has_new_generations(ledger)):
@@ -750,7 +876,9 @@ class FranchiseStore:
             return self._contract_generations_from_ledger(team_id,self._load(db,team_id))
 
     @staticmethod
-    def _generation_accounting_view(ledger,agreement):
+    def _generation_accounting_view(ledger,agreement,*,archive_only=False):
+        if ledger._generation_calendar_anchor is not None and not archive_only:
+            raise Rejected('Legacy contract context cannot represent advanced calendar; use calendar contract context')
         identity=agreement.identity
         cash=ledger.generation_cash(identity.generation_id)
         return {'generation_id':identity.generation_id,'status':agreement.status,
@@ -770,8 +898,27 @@ class FranchiseStore:
             return {'team_id':team_id,'generation_id':generation_id,'financial_revision':ledger.revision,
                 'accounting':self._generation_accounting_view(ledger,agreement)}
 
+    def calendar_contract_context(self,team_id,generation_id):
+        """Versioned current calendar state with a separately labeled economic archive."""
+        if any(type(value) is not str or not value.strip() for value in (team_id,generation_id)):
+            raise ValueError('Stable team and agreement identities required')
+        with self._connection() as db:
+            ledger=self._load(db,team_id)
+            agreement=ledger.generation_accounting(generation_id)
+            view=ledger.generation_calendar_view(generation_id)
+            return {'format':2,'team_id':team_id,'generation_id':generation_id,
+                'financial_revision':ledger.revision,'league_year':ledger._league_year,
+                'calendar_accounting':{'status':view.status,
+                    'current_contract':view.current_contract.to_dict() if view.current_contract is not None else None,
+                    'annual_charges':[json_amount(value) for value in view.annual_charges()],
+                    'ownership_current':ledger._active_generation_ids.get(agreement.identity.player_id)==generation_id,
+                    'expiry_source':view.expiry_source},
+                'economic_archive':self._generation_accounting_view(ledger,agreement,archive_only=True)}
+
     @staticmethod
     def _contract_generations_from_ledger(team_id,ledger):
+        if ledger._generation_calendar_anchor is not None:
+            raise Rejected('Legacy generation inventory cannot represent advanced calendar')
         def charge_record(record):
             return {'record_id':record.record_id, 'annual_charges':[json_amount(value) for value in record.annual_charges],
                     'source':record.source}

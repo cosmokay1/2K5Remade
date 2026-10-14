@@ -129,6 +129,9 @@ class Ledger:
         self._traded_in = {}
         self._restructures = {}
         self._team_identity = None
+        self._generation_calendar_views = {}
+        self._generation_calendar_anchor = None
+        self._year_transition_source = None
         self._generation_agreements = {}
         self._generation_identities = {}
         self._generation_by_player = {}
@@ -252,7 +255,10 @@ class Ledger:
             if player_id not in self._active_contracts:
                 raise Rejected("Original active contract and elapsed years unavailable")
             if self._team_identity is not None:
-                return self.generation_accounting(self.contract_identity(player_id).generation_id).contract
+                gid=self.contract_identity(player_id).generation_id
+                if gid in self._generation_calendar_views:
+                    return self._generation_calendar_views[gid].current_contract
+                return self.generation_accounting(gid).contract
             return self._active_contracts[player_id]
 
     def bind_team_identity(self, team_id):
@@ -365,6 +371,119 @@ class Ledger:
             agreement = self.generation_accounting(generation_id)
             return self._guarantee_cash(agreement.identity.player_id, agreement=agreement)
 
+    def _require_pretransition_operations(self):
+        if self._generation_calendar_anchor is not None:
+            raise Rejected('Post-transition contract mutations require calendar-aware lifecycle support')
+
+    def generation_calendar_view(self, generation_id):
+        from franchise.generations import GenerationCalendarView
+        with self._lock:
+            agreement=self.generation_accounting(generation_id)
+            if generation_id in self._generation_calendar_views:
+                return self._generation_calendar_views[generation_id]
+            year=getattr(self,'_league_year',None)
+            if year is None:
+                raise Rejected('Anchored league year required')
+            return GenerationCalendarView(agreement,year,year)
+
+    def generation_calendar_snapshot(self):
+        with self._lock:
+            return {'format':1,'league_year':getattr(self,'_league_year',None),
+                'anchor_year':self._generation_calendar_anchor,'source':self._year_transition_source,
+                'generations':[{'generation_id':a.identity.generation_id,
+                    'anchor_year':self.generation_calendar_view(a.identity.generation_id).anchor_year,
+                    'current_year':self.generation_calendar_view(a.identity.generation_id).current_year,
+                    'status':self.generation_calendar_view(a.identity.generation_id).status,
+                    'scheduled_term_complete':self.generation_calendar_view(a.identity.generation_id).scheduled_term_complete,
+                    'expiry_source':self.generation_calendar_view(a.identity.generation_id).expiry_source,
+                    'current_contract':self.generation_calendar_view(a.identity.generation_id).current_contract.to_dict()
+                        if self.generation_calendar_view(a.identity.generation_id).current_contract is not None else None,
+                    'annual_charges':[json_amount(v) for v in self.generation_calendar_view(a.identity.generation_id).annual_charges()]}
+                    for a in self.generation_agreements()]}
+
+    def apply_year_transition(self, *, from_year, to_year, expected_revision, next_cap,
+                              roster_reserve, next_minimum_profile, source,
+                              expired_generation_ids=()):
+        from franchise.generations import GenerationCalendarView
+        from franchise.salary_rules import VeteranMinimumProfile
+        with self._lock:
+            if (type(from_year) is not int or type(to_year) is not int or to_year!=from_year+1
+                    or getattr(self,'_league_year',None)!=from_year
+                    or type(expected_revision) is not int or expected_revision!=self.revision):
+                raise Rejected('Anchored consecutive year and current revision required')
+            if (not isinstance(next_minimum_profile,VeteranMinimumProfile)
+                    or next_minimum_profile.start_year!=to_year
+                    or type(source) is not str or not source.strip()):
+                raise ValueError('Sourced next-year minimum profile and transition source required')
+            if (self._veteran_minimum_profile is not None
+                    and self._veteran_minimum_profile.start_year!=from_year):
+                raise Rejected('Current salary profile disagrees with anchored outgoing year')
+            cap,reserve=money(next_cap),money(roster_reserve)
+            floors=next_minimum_profile.floors()
+            if set(floors)!=set(self._veteran_minimums):
+                raise Rejected('Next-year veteran registry must preserve all known players')
+            if (self._team_identity is None or self._cash is None or self._rookies
+                    or self._tenders or self._draft_reservations or self._draft_rights
+                    or self._rookie_pool_opening is not None or self._undrafted_bonus_initial is not None
+                    or self._prior_rookie_players or self._rookie_year_one or self._rookie_total):
+                raise Rejected('Supported transition requires bound veteran-only allocated books')
+            if (type(expired_generation_ids) is not tuple
+                    or any(type(g) is not str for g in expired_generation_ids)
+                    or len(set(expired_generation_ids))!=len(expired_generation_ids)):
+                raise ValueError('Unique explicit expiry generation identities required')
+            anchor=self._generation_calendar_anchor if self._generation_calendar_anchor is not None else from_year
+            views={}; expiring=set(); active={}
+            for agreement in self.generation_agreements():
+                gid=agreement.identity.generation_id
+                cash=self.generation_cash(gid)
+                ceilings=agreement.payment_ceilings()
+                if (cash is None or cash.paid_components is None
+                        or cash.player_id!=agreement.identity.player_id
+                        or cash.amount!=sum(ceilings.values())):
+                    raise Rejected('Known allocated generation cash matching obligations required')
+                paid=dict(cash.paid_components)
+                if any(k not in ceilings or v>ceilings[k] for k,v in paid.items()):
+                    raise Rejected('Generation cash allocations exceed preserved payment rights')
+                previous=self._generation_calendar_views.get(gid)
+                if previous is not None and previous.authoritative_expired:
+                    view=GenerationCalendarView(agreement,anchor,to_year,True,cash,previous.expiry_source)
+                else:
+                    view=GenerationCalendarView(agreement,anchor,to_year)
+                    if agreement.status=='active':
+                        outgoing_index=agreement.contract.elapsed_years+(from_year-anchor)
+                        required={k:v for k,v in ceilings.items() if not k.startswith('base:')
+                            or int(k[5:])<=outgoing_index}
+                        if any(paid.get(k,0)!=v for k,v in required.items()):
+                            raise Rejected('Outgoing base and all bonus components must be settled explicitly')
+                        if view.scheduled_term_complete:
+                            expiring.add(gid)
+                            if gid in expired_generation_ids:
+                                view=GenerationCalendarView(agreement,anchor,to_year,True,cash,source)
+                        else:
+                            contract=view.current_contract
+                            remaining=contract.offer.salaries[contract.elapsed_years:]
+                            player=agreement.identity.player_id
+                            if len(floors[player])<len(remaining) or any(v<f for v,f in zip(remaining,floors[player])):
+                                raise Rejected('Surviving contract violates sourced next-year salary floors')
+                            active[player]=contract
+                views[gid]=view
+            if set(expired_generation_ids)!=expiring:
+                raise Rejected('Exact explicit eligibility required for newly exhausted generations')
+            # All validation precedes the first mutation; cash and economic archives remain immutable.
+            self._generation_calendar_anchor=anchor
+            self._generation_calendar_views=views
+            self._active_contracts=active
+            self._players=set(active)
+            self._active_generation_ids={p:self._generation_by_player[p] for p in active}
+            self._charges=self._charges[1:] or (Fraction(0),)
+            self._cap,self._roster_reserve=cap,reserve
+            self._veteran_minimum_profile=next_minimum_profile
+            self._veteran_minimums=floors
+            self._league_year=to_year
+            self._year_transition_source=source
+            self.revision+=1
+            return self.generation_calendar_snapshot()
+
     def apply_preseason_release(self, player_id, *, scope, discount, payment_year_offsets,
                                record_id, expected_revision):
         """Replace one supported veteran's active obligations, preserving debt."""
@@ -412,6 +531,7 @@ class Ledger:
             return plan
 
     def _check_transaction_date(self,year,on):
+        self._require_pretransition_operations()
         known_years=[]
         if getattr(self, '_league_year', None) is not None:
             known_years.append(self._league_year)
@@ -938,6 +1058,7 @@ class Ledger:
             self.revision += 1
 
     def _validate_offer(self, offer: Offer, expected_revision: int, *, returning=False):
+        self._require_pretransition_operations()
         if type(expected_revision) is not int or expected_revision != self.revision:
             raise Rejected("Offer was based on stale franchise state")
         if offer.player_id in self._players:

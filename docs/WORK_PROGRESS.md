@@ -2443,3 +2443,23 @@ Stabilized parallel source includes component-by-component expiry settlement
 checks and six focused immutable-view tests. Additional stored closing coverage
 keeps unknown allocations unknown and fully paid scheduled expiry unapproved.
 Actual atomic season advancement remains unimplemented.
+
+### First atomic veteran-only league-year transition (2026-10-13)
+
+Implemented real Store year_transition events spanning every anchored team under
+one write transaction, with exact shared inputs and before/after cap/cash/calendar
+replay. Ledger calendar views preserve immutable agreements and allocated cash,
+age surviving obligations and archive explicitly eligible fully settled expiry.
+Inputs require sourced next budgets/minimums and explicit closing exclusions;
+rookie/draft unresolved state rejects. Normal payroll has no revenue gate.
+
+Independent review found stale legacy context after rollover; format2 calendar
+context now separates current views from archives, and unsupported legacy reads
+reject. Four durable Store tests pass across two teams/two transitions, explicit
+intervening payroll, retained debt, expiry, unchanged cash, restart/retry, rollback
+and tamper. All 471 offline tests pass. Postroll contract mutations/native calendar
+context remain guarded unfinished work; no guest gameplay/save proof is claimed.
+
+Upstream master has three new commits (d76949a,790d064,e3262f4) touching
+main host/recompiler/CI. Preserve this validated source before merging them and
+reapply opt-in host ownership to the refactored entry/cleanup paths.
