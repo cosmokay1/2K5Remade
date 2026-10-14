@@ -229,3 +229,10 @@ for this manual action. The synthetic Windows fixture now performs and retries
 the transaction across processes, then reads its archives and personality;
 execution passed Windows run 38514505285 at dcea1b2. Actual guest writes and
 in-game release interaction remain unimplemented.
+
+The synthetic Windows check also runs the complete restructuring and assignment
+histories through a fixture-only native stdin request mode. It executes full and
+compact release receipts, agreement/player reads, saved personality and retry
+across two sidecar launches, then verifies later payroll/rollover/reopen. Local
+Python fixture orchestration passes; Windows execution of this extended fixture
+is pending. This mode belongs only to the smoke checker, not the game client API.

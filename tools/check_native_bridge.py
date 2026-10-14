@@ -424,6 +424,57 @@ def main():
             else:unchanged=calendar_path.read_bytes()
         print("Native Windows calendar-release transaction, archives and player contexts survive restart (synthetic).")
 
+        # Reuse complete economic histories, replacing only the release boundary
+        # with an actual native client call. The test assertions still check the
+        # subsequent payment/rollover/reopen and original assignment/amendment.
+        from dataclasses import asdict
+        from tests import test_calendar_release_history
+        from franchise.receipts import compact_lifecycle_result
+        for method in ('test_restructured_bonus_and_earned_base_survive_release_restart_and_second_roll',
+                       'test_assigned_base_guarantees_remain_separate_from_seller_bonus_debt'):
+            fixture=test_calendar_release_history.CalendarReleaseHistoryTests(method)
+            fixture.setUp()
+            original_release=fixture.store.release_calendar_preseason_veteran
+            def native_release(team,request_id,player,**inputs):
+                scope=asdict(inputs['scope'])
+                scope.update(exclusions=sorted(scope['exclusions']),removed_on=scope['removed_on'].isoformat(),
+                    first_regular_season_game=scope['first_regular_season_game'].isoformat())
+                assert inputs['discount'].annual_rate==0
+                request=dict(protocol=1,request_id=request_id,operation='manual_release',team_id=team,
+                    player_id=player,expected_revision=inputs['expected_revision'],timeout_ms=5000,
+                    decision_mode='manual',calendar_format='calendar_v1',generation_id=inputs['generation_id'],
+                    scope=scope,discount=dict(league_year=inputs['discount'].league_year,annual_rate=0,
+                        rate_source=inputs['discount'].rate_source),payment_year_offsets=list(inputs['payment_year_offsets']))
+                fixture.store.bind_actor(team,player,{'money':0.8},{'trust':0.6},access_check=lambda:None)
+                requests=[request,{**request,'receipt_format':'target_v1'},
+                    dict(protocol=1,request_id='history-contract',operation='contract_context',team_id=team,
+                        generation_id=inputs['generation_id'],timeout_ms=5000,context_format='calendar_v2'),
+                    dict(protocol=1,request_id='history-player',operation='player_context',team_id=team,
+                        player_id=player,timeout_ms=5000,context_format='calendar_v2')]
+                payload=''.join(json.dumps(item,separators=(',',':'))+'\n' for item in requests)
+                previous=None
+                for attempt in range(2):
+                    result=subprocess.run([sys.argv[1],sys.executable,str(fixture.path),'--calendar-history'],
+                        input=payload,text=True,capture_output=True,timeout=30,check=True)
+                    replies=[json.loads(line) for line in result.stdout.splitlines()]
+                    assert len(replies)==4 and all(reply['error'] is None for reply in replies)
+                    receipt=original_release(team,request_id,player,**inputs)
+                    expected=dict(decision_mode='manual',player_id=player,release=receipt)
+                    assert replies[0]['result']==expected
+                    assert replies[1]['result']==compact_lifecycle_result(expected,'manual_release')
+                    assert replies[2]['result']==fixture.store.calendar_contract_context(team,inputs['generation_id'],context_format='calendar_v2')
+                    assert replies[3]['result']==fixture.store.player_context(team,player,context_format='calendar_v2')
+                    assert replies[3]['result']['personality']=={'money':0.8}
+                    if attempt:
+                        assert replies==previous and fixture.path.read_bytes()==unchanged
+                    else:unchanged=fixture.path.read_bytes()
+                    previous=replies
+                return receipt
+            fixture.store.release_calendar_preseason_veteran=native_release
+            try:getattr(fixture,method)()
+            finally:fixture.doCleanups()
+        print("Native Windows layered/assigned calendar releases, full/compact receipts, personality and next rollover verified (synthetic).")
+
         if len(sys.argv)>2:
             c_path=Path(directory)/'C host ownership.sqlite'
             c_store=FranchiseStore(c_path)

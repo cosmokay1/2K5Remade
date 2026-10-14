@@ -2863,3 +2863,14 @@ passed 491 offline tests. Both platform runtime builds also passed run 385145053
 This proves synthetic native transaction transport and durable replay, not guest
 save writes or gameplay. Revision e93283e adds the 493-test history coverage and
 remains a separate CI revision.
+
+Extended the synthetic Windows pipe check to reuse the complete layered and
+assigned economic histories, replacing their release boundary with the actual
+C++ client. Fixture requests arrive on the smoke executable's own stdin; its
+owned sidecar still receives one request at a time and validates every reply.
+Each history executes full and compact calendar release requests and contract/
+player reads across two sidecar launches, preserves saved personality and exact
+retry/database bytes, then runs the existing subsequent payment/rollover/reopen
+assertions. Python fixture orchestration passed locally and the tool compiles;
+actual Windows execution of this new history transport fixture awaits CI. This
+is asset-free transport validation and cannot establish actual guest gameplay.
