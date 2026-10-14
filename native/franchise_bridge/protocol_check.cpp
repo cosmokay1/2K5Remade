@@ -2,8 +2,25 @@
 #include "launch_options.h"
 #include <iostream>
 
-int main() {
+int main(int argc,char** argv) {
     try {
+        if(argc==2 && std::string(argv[1])=="--guest-terms") {
+            std::string line; size_t count=0;
+            while(std::getline(std::cin,line)) {
+                const auto sample=franchise::parse_frame(line);
+                nlohmann::json actual=nullptr;
+                try{actual=franchise::exact_guest_offer(sample.at("raw"),sample.at("player_id").get<std::string>());}
+                catch(const std::exception&){}
+                const auto& expected=sample.at("offer");
+                if(expected.is_null()!=actual.is_null() || (!expected.is_null() && actual!=franchise::canonical_offer(expected)))
+                    throw std::runtime_error("Native/Python guest salary schedule mismatch at case "+std::to_string(count));
+                ++count;
+            }
+            if(!count) throw std::runtime_error("Empty guest terms corpus");
+            std::cout<<"Native/Python guest terms matched "<<count<<" cases\n";
+            return 0;
+        }
+        if(argc!=1) throw std::runtime_error("Unsupported protocol-check arguments");
         const franchise::BudgetLaunch launch_budget{LR"(C:\budget path\ledger.sqlite)",L"scope \"quoted\" --provider offline-fixture",17};
         const auto budget_command=franchise::launch_command(L"python path",L"database path",franchise::ServiceMode::VertexRuntime,launch_budget);
         const auto expected_budget=franchise::quote(L"python path")+L" -m franchise.sidecar --database "+franchise::quote(L"database path")+
@@ -688,8 +705,12 @@ int main() {
         franchise::validate_result(rejected_guest,guest_request);
         rejected_guest["result"]["offer_context"]["outcome"]="format_rejected";
         rejected_guest["result"]["offer_context"]["offer"]=nullptr;
-        franchise::validate_result(rejected_guest,guest_request);
-        for(int scenario=0;scenario<7;++scenario) {
+        auto unsupported_guest_request=guest_request;
+        unsupported_guest_request["guest_offer"]={{"amount_word",1949},{"flags_word",0x4D060004}};
+        rejected_guest["result"]["offer_context"]["amount_word"]=1949;
+        rejected_guest["result"]["offer_context"]["flags_word"]=0x4D060004;
+        franchise::validate_result(rejected_guest,unsupported_guest_request);
+        for(int scenario=0;scenario<10;++scenario) {
             auto bad=guest_reply;
             auto& terms=bad["result"]["offer_context"];
             if(scenario==0) terms["outcome"]="signed";
@@ -699,6 +720,9 @@ int main() {
             if(scenario==4) terms["offer"]["guaranteed_salaries"]={1,0};
             if(scenario==5) terms["preview"]["revision"]=1;
             if(scenario==6) terms["outcome"]="format_rejected";
+            if(scenario==7) terms["offer"]["salaries"][0]=3107000;
+            if(scenario==8) terms["preview"]["contract_charges"][0]=4765000;
+            if(scenario==9) {terms["outcome"]="format_rejected";terms["offer"]=nullptr;terms["preview"]=nullptr;terms["reason"]="False format rejection";}
             bool rejected=false;
             try{franchise::validate_result(bad,guest_request);}catch(const std::exception&){rejected=true;}
             if(!rejected) throw std::runtime_error("Corrupt guest offer preview accepted");

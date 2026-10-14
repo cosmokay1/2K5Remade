@@ -77,6 +77,9 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   advisory rejection or preview, with no model call or financial mutation. The
   captured Trotter six-year bonus offer rejects incompatible modern allocation.
   Actual game execution/enforcement of this new check remains pending.
+  Native validation now also reconstructs every guest salary and requires exact
+  modern charges; 2,886 native/Python cases match on portable and actual Windows
+  execution. This is decoding/preview validation, not a guest signing commit.
 - Actual AI/game/save integration, telemetry capture and final playable
   Windows/Steam Deck acceptance remain unverified. External gates are listed below.
 

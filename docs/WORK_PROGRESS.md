@@ -5147,3 +5147,27 @@ User exit request for that performance update remains pending, without repeating
 it. Actual new offer-format request/reply, UI enforcement, AI decisions, commit
 recovery and save/load remain unverified. No cloud/control/IAM change or asset
 publication occurred.
+
+## October14,2026 — Native exact salary schedule gap closed
+
+Inspection found native offer_context validated ID/term/nominal bonus but could
+accept altered salary vectors with those same raw words. Added bounded native
+schedule reconstruction matching the observed original float32 stores, integer
+division and final truncation. No arbitrary salary, altered annual charge or
+false format-rejection receipt now passes. Incompatible modern bonus allocation
+still rejects; existing preserved legacy schedules are unaffected.
+
+Added an asset-free differential runner to the native protocol CLI/CI. Python
+generates expected exact offers/rejections for all8 shapes, terms1..15, four bonus
+codes, six word cases and malformed boundaries:2886 cases. Portable native and
+actual MSVC/native+Windows CPython under isolated Proton both match all cases.
+Windows result is private saved-performance-stage/native-corpus-windows-result.json.
+Protocol cases also reject changed salaries, charges and a false rejection of
+known-compatible Gildon terms. Full offline692 tests pass in20.013s; diff checks
+and private Windows game/native compilation pass. New private build hash
+1951119d7f0723e6eebf511c5bd068964432378f0dc154aa497569bbc33cf80b.
+
+No game/runtime package installed, model/control/IAM request or financial state
+changed. Frozen validated performance artifact556016fa...1c537 stays preserved
+for its pending normal-exit deployment. Native decoding equivalence is not
+actual game enforcement, AI negotiation or save/commit verification.

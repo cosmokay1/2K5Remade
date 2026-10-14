@@ -38,6 +38,8 @@ jobs:
           cmake --build build-franchise-bridge --config Release
       - name: Execute native protocol boundary checks
         run: ctest --test-dir build-franchise-bridge -C Release --output-on-failure
+      - name: Cross-check exact native guest salary schedules
+        run: python -m tools.check_native_guest_terms build-franchise-bridge
       - name: Execute native pipe handshake and durable restart fixture
         if: runner.os == 'Windows'
         run: python -m tools.check_native_bridge build-franchise-bridge/Release/franchise_bridge_check.exe build-franchise-bridge/Release/franchise_c_host_check.exe

@@ -222,7 +222,11 @@ accounting_rejected retains the decoded offer and a rejection reason, with no
 eligible preview. eligible_preview is advisory, never reservation/write authority.
 Existing contracts remain legacy and are not reinterpreted. Native validation
 correlates raw words, subject, term/nominal bonus and zero guest base guarantees,
-and reuses preview revision/charge validation. NFL2K5_FRANCHISE_GUEST_OFFER=1
+reconstructs every salary with observed float32/truncation, rejects false format
+rejections and requires exact modern annual charges as well as the preview
+revision. An asset-free 2,886-case native/Python corpus runs in CI across all
+eight shapes, terms1..15, bonus boundaries and representative word extremes.
+NFL2K5_FRANCHISE_GUEST_OFFER=1
 opts into capturing the observed context+0C amount/context+8 flags; it requires
 pinned source configuration. Unset/0 leaves it off; other values reject startup.
 This new read is compiled/fixture-tested but not yet executed in the actual game.

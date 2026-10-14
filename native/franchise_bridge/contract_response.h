@@ -889,6 +889,42 @@ inline void validate_restructure(const nlohmann::json& result, const nlohmann::j
     if (matched!=1 || total!=cash.at("nominal_total") || total_paid!=cash.at("paid_total"))
         throw std::runtime_error("Amendment cash posting disagrees with obligations");
 }
+/* Match observed original float32 stores and truncation, retaining every base
+ * salary. Reject unsupported modern allocation rather than repair the bonus. */
+inline nlohmann::json exact_guest_offer(const nlohmann::json& raw,const std::string& player) {
+    integer_money(raw.at("amount_word")); integer_money(raw.at("flags_word"));
+    if(raw.at("amount_word")<1 || raw.at("amount_word")>65535 || raw.at("flags_word")>4294967295ULL)
+        throw std::runtime_error("Unsupported guest offer words");
+    const auto amount=raw.at("amount_word").get<int64_t>();
+    const auto flags=raw.at("flags_word").get<uint32_t>();
+    const unsigned years=(flags>>16)&15u, bonus=flags&15u, shape=(flags>>29)&7u;
+    if(!years || bonus>10 || (bonus && years>5) || (amount*bonus)%years)
+        throw std::runtime_error("Unsupported modern guest bonus allocation");
+    const int64_t average=static_cast<int64_t>(static_cast<float>(static_cast<double>(amount)*10/years));
+    const int64_t base=average-amount*bonus/years;
+    nlohmann::json salaries=nlohmann::json::array(),guarantees=nlohmann::json::array();
+    for(unsigned i=0;i<years;++i) {
+        int64_t salary=base;
+        const double position=i+0.5, midpoint=years*0.5;
+        if(shape==0 || shape==7) {
+            int factor=position<midpoint?12:position>midpoint?8:10;
+            if(shape==7) factor=20-factor;
+            salary=base*factor/10;
+        } else if(shape==1 || shape==6) {
+            const float fraction=static_cast<float>(2*(position/years)-1);
+            const int direction=shape==1?-1:1;
+            salary=static_cast<int64_t>(static_cast<float>(base+direction*static_cast<double>(base/2)*fraction));
+        } else if((shape==3 || shape==4) && years>1) {
+            const double offset=position<=midpoint?position:position-midpoint;
+            const float fraction=static_cast<float>(2*offset/midpoint-1);
+            int direction=position<=midpoint?1:-1;
+            if(shape==4) direction=-direction;
+            salary=static_cast<int64_t>(static_cast<float>(base+direction*static_cast<double>(base/2)*fraction));
+        } else if(shape==5 && years>1) salary=base*(i%2==0?12:8)/10;
+        salaries.push_back(salary*1000); guarantees.push_back(0);
+    }
+    return {{"player_id",player},{"salaries",salaries},{"signing_bonus",amount*bonus*1000},{"guaranteed_salaries",guarantees}};
+}
 inline void validate_result(const nlohmann::json& response, const nlohmann::json& request) {
     if (!response["error"].is_null()) return;
     const auto& result = response["result"];
@@ -1290,10 +1326,15 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
                 terms.at("flags_word")!=raw.at("flags_word")) throw std::runtime_error("Guest offer preview changed raw terms");
             const auto outcome=terms.at("outcome").get<std::string>();
             if (outcome=="format_rejected") {
+                bool compatible=false;
+                try{exact_guest_offer(raw,result.at("player_id").get<std::string>());compatible=true;}catch(const std::exception&){}
+                if(compatible) throw std::runtime_error("Compatible guest terms mislabeled as format rejection");
                 if (!terms.at("offer").is_null() || !terms.at("preview").is_null())
                     throw std::runtime_error("Rejected guest format cannot expose an eligible offer");
             } else {
                 const auto offer=canonical_offer(terms.at("offer"));
+                if(offer!=exact_guest_offer(raw,result.at("player_id").get<std::string>()))
+                    throw std::runtime_error("Guest salary schedule differs from raw terms");
                 const auto flags=raw.at("flags_word").get<uint32_t>();
                 const auto years=(flags>>16)&15u, bonus=flags&15u;
                 if (offer.at("player_id")!=result.at("player_id") || !years || bonus>10 ||
@@ -1307,6 +1348,10 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
                     nlohmann::json preview_request={{"operation","preview"},{"offer",offer},{"expected_revision",result.at("financial_revision")}};
                     nlohmann::json preview_reply={{"error",nullptr},{"result",terms.at("preview")}};
                     validate_result(preview_reply,preview_request);
+                    const auto allocated=offer.at("signing_bonus").get<int64_t>()/years;
+                    for(size_t i=0;i<years;++i)
+                        if(terms.at("preview").at("contract_charges").at(i)!=offer.at("salaries").at(i).get<int64_t>()+allocated)
+                            throw std::runtime_error("Guest preview charges differ from exact modern allocation");
                 } else if(outcome!="accounting_rejected" || !terms.at("preview").is_null())
                     throw std::runtime_error("Unknown guest offer preview outcome");
             }
