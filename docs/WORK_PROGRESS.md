@@ -2674,3 +2674,34 @@ or discard supported layers to simplify tests. This remains implementation work.
 Verified historical run38507267705 success live and corrected stale integration
 text saying first calendar contract Windows execution was pending. Documented
 new player-context format and its pending extended pipe verification separately.
+
+### Linux build failure repair in progress (2026-10-13)
+
+User reported Linux failure. Verified completed build38509871318: Windows runtime
+and tools passed; Linux failed on nv2a_pb_exec.c windows.h and AC97 exception
+structures in xbox_memory_layout.c. Prior timer constant failure is gone.
+Coordinated implementation is in progress: Linux AC97 needs SIGSEGV write faults
+and SIGTRAP single-step handling installed before MemoryLayoutInit, with existing
+APU MMIO and prior-handler chaining retained. Root dispatcher edits and dependency
+hook/test edits remain uncommitted pending isolated real-fault validation.
+Pushbuffer audit found unguarded guest accesses beyond the three SEH blocks:
+attributes, textures/palettes/DXT, framebuffer reads/writes, SDL presentation and
+memory diagnostics. Safe Linux rendering needs exact checked kernel-copy leaves
+and batch/row staging, not broad signal jumps, no-op SEH or per-pixel syscalls.
+Implementation of checked-copy prerequisites is delegated; renderer integration
+and positive textured/framebuffer evidence remain. No passing Linux runtime or
+playability claim is made from partial repairs.
+
+### Published Linux fault/copy prerequisites for CI (2026-10-13)
+
+Dependency3b30798 adds real Linux x86-64 AC97 write-fault/single-step hooks,
+registration-before-protection checks, unrelated/debugger trap rejection and trap
+cleanup. Root main installs both SIGSEGV/SIGTRAP dispatchers before guest memory
+initialization and chains the existing APU/prior handlers. Checked guest-memory
+copy leaves use exact process_vm_readv/writev results on Linux and leaf-only SEH
+on Windows, with guest/host interval checks; failed partial copies are not atomic.
+CI now executes AC97 real-fault/reset cycles and protected-page copy boundaries
+before the full Linux runtime. These Linux tests cannot run on the local macOS
+host and await CI; local existing POSIX lock CTest still passes. Renderer access
+staging is unfinished and its experimental changes remain uncommitted. This pin
+is prerequisite source validation, not a passing full Linux build or game proof.

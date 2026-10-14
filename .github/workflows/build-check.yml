@@ -69,5 +69,14 @@ jobs:
           cmake --build build-condition
           ctest --test-dir build-condition --output-on-failure
 
+      - name: Check real AC97 faults and guest-memory copy boundaries
+        run: |
+          cmake -S external/xboxrecomp/tests/ac97_posix -B build-ac97 -G Ninja
+          cmake --build build-ac97
+          ctest --test-dir build-ac97 --output-on-failure
+          cmake -S tests/guest_memory_posix -B build-guest-memory -G Ninja
+          cmake --build build-guest-memory
+          ctest --test-dir build-guest-memory --output-on-failure
+
       - name: Build Linux runtime (no game)
         run: cmake --build build --parallel
