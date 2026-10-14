@@ -634,6 +634,7 @@ static bool signing_screen_name(uint32_t address, char out[151])
 static void signing_screen_context(void)
 {
     if (!nfl2k5_franchise_context_enabled()) return;
+    nfl2k5_franchise_signing_context(NULL); /* A failed read cannot reuse the last sample. */
     FranchiseSigningObservation observation = {0};
     uint32_t context, player, team, mode, first, last;
     uint8_t record[0x28];
@@ -666,6 +667,7 @@ static void signing_screen_context(void)
 }
 void nfl2k5_franchise_guest_poll(void)
 {
+    signing_screen_context(); /* Refresh before deciding whether a reply is obsolete. */
     nfl2k5_franchise_poll();
     signing_screen_context();
 }

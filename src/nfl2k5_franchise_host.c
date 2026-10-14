@@ -16,6 +16,18 @@ static int saved_performance;
 static int inspect_guest_offer;
 static unsigned long long context_revision;
 static unsigned context_sequence, context_logged;
+static FranchiseSigningObservation observed, requested;
+static int observation_valid, observation_fresh;
+static unsigned long long changed_tick, screen_epoch, requested_epoch;
+static int same_observation(const FranchiseSigningObservation *a,const FranchiseSigningObservation *b)
+{
+    return a->slot==b->slot && a->team_index==b->team_index && a->payroll==b->payroll && a->cap==b->cap &&
+        a->team_flag==b->team_flag && a->accumulator==b->accumulator &&
+        a->offer_amount==b->offer_amount && a->offer_flags==b->offer_flags &&
+        !memcmp(a->calendar,b->calendar,sizeof(a->calendar)) &&
+        !strcmp(a->first_name,b->first_name) && !strcmp(a->last_name,b->last_name) &&
+        !strcmp(a->photo,b->photo) && !strcmp(a->dob,b->dob);
+}
 static int positive_limit(const wchar_t *text, unsigned long long *value)
 {
     unsigned long long limit=0;
@@ -38,6 +50,7 @@ void nfl2k5_franchise_stop(void)
     inspect_guest_offer = 0;
     context_sequence = context_logged = 0;
     signing_active = context_sent = 0;
+    observation_valid = observation_fresh = 0;
     franchise_host_destroy(franchise_client);
     franchise_client = NULL;
 }
@@ -55,8 +68,12 @@ void nfl2k5_franchise_on_fsm(uint32_t descriptor, int push)
         return;
     }
     if (!franchise_client || hello_failed) return;
-    signing_active = push && descriptor == 0x00557B2Cu;
-    if (signing_active) context_sent = 0;
+    int active=push && descriptor==0x00557B2Cu;
+    if (active || active!=signing_active) {
+        ++screen_epoch;
+        context_sent=observation_valid=observation_fresh=0;
+    }
+    signing_active=active;
     nfl2k5_franchise_poll();
     if (hello_failed || hello_pending || context_pending) return;
     if (push && descriptor == 0x00557B2Cu && (!context_enabled || !hello_consumed)) {
@@ -85,8 +102,17 @@ void nfl2k5_franchise_poll(void)
             goto failed;
         if (context_pending) {
             context_pending = 0;
-            if (context_logged++ < 16)
-                fprintf(stderr, "[FRANCHISE] Read-only signing context reply: %s\n", response);
+            int current=signing_active && observation_valid && observation_fresh &&
+                screen_epoch==requested_epoch && same_observation(&observed,&requested);
+            /* Changed terms retain the debounce; unreadable or new-screen
+             * samples may retry once a valid observation becomes available. */
+            if (!observation_valid || !observation_fresh || screen_epoch!=requested_epoch)
+                context_sent=0;
+            if (context_logged++ < 16) {
+                if (current)
+                    fprintf(stderr, "[FRANCHISE] Read-only signing context reply: %s\n", response);
+                else fprintf(stderr,"[FRANCHISE] Discarded obsolete signing context reply.\n");
+            }
         } else {
             hello_pending = 0;
             hello_consumed = 1;
@@ -103,8 +129,7 @@ failed:
 int nfl2k5_franchise_context_enabled(void)
 {
     return (DWORD)InterlockedCompareExchange(&franchise_owner_thread, 0, 0) == GetCurrentThreadId()
-        && context_enabled && signing_active && !context_sent && hello_consumed
-        && !hello_pending && !context_pending && !hello_failed;
+        && context_enabled && signing_active && hello_consumed && !hello_pending && !hello_failed;
 }
 static int safe_name(const char *text, size_t capacity)
 {
@@ -123,10 +148,17 @@ static int safe_hex(const char *text, size_t digits)
 }
 void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
 {
-    if (!nfl2k5_franchise_context_enabled() || !franchise_client || !hello_consumed ||
-        hello_pending || context_pending || !o || o->team_index >= 32 || o->calendar[5] > 255 ||
+    if (!nfl2k5_franchise_context_enabled() || !franchise_client) return;
+    observation_fresh=0; /* NULL or failed sampling invalidates reply freshness. */
+    if (!o || o->team_index >= 32 || o->calendar[5] > 255 ||
         !safe_name(o->first_name,sizeof(o->first_name)) || !safe_name(o->last_name,sizeof(o->last_name)) ||
         !safe_hex(o->photo,8) || !safe_hex(o->dob,6)) return;
+    if (!observation_valid || !same_observation(&observed,o)) {
+        observed=*o; observation_valid=1; changed_tick=GetTickCount64();
+    }
+    observation_fresh=1;
+    if (context_pending || (context_sent && (same_observation(&requested,&observed) ||
+        GetTickCount64()-changed_tick<300))) return;
     char request[4096];
     char offer_field[128] = {0};
     if (inspect_guest_offer) {
@@ -155,6 +187,8 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
     }
     context_pending = 1;
     context_sent = 1;
+    requested=observed;
+    requested_epoch=screen_epoch;
 }
 int nfl2k5_franchise_start(void)
 {
@@ -223,6 +257,8 @@ int nfl2k5_franchise_start(void)
     context_revision = revision;
     context_sequence = context_logged = 0;
     signing_active = context_sent = 0;
+    observation_valid = observation_fresh = 0;
+    screen_epoch=requested_epoch=changed_tick=0;
     InterlockedExchange(&franchise_foreign_sign_logged, 0);
     InterlockedExchange(&franchise_owner_thread, (LONG)GetCurrentThreadId());
     fprintf(stderr, "[FRANCHISE] Transport launched on owner thread=%lu; signing-screen control handshake available; guest transaction hooks remain unavailable.\n",

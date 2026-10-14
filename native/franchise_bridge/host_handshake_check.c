@@ -141,13 +141,33 @@ int main(void)
     assert(strstr(last_request,"\"display_year\":2004"));
     nfl2k5_franchise_signing_context(&observation); assert(submissions==5);
     nfl2k5_franchise_poll(); /* Context collected on the same screen. */
-    nfl2k5_franchise_signing_context(&observation); assert(submissions==5); /* Once per entry. */
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==5); /* Unchanged sample. */
+    observation.offer_amount=1950;
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==5); /* Debounce edits. */
+    Sleep(350);
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==6);
+    ready_value=0;
+    observation.offer_amount=1951;
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==6);
+    ready_value=1;
+    nfl2k5_franchise_poll(); /* Obsolete changed-offer receipt discarded. */
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==6);
+    Sleep(350);
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==7);
+    assert(strstr(last_request,"\"amount_word\":1951"));
+    nfl2k5_franchise_signing_context(NULL);
+    nfl2k5_franchise_poll(); /* Unreadable sample cannot consume a current receipt. */
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==8);
+    nfl2k5_franchise_on_fsm(0,0); /* Pending response belongs to the closed screen. */
+    nfl2k5_franchise_on_fsm(0x557B2C,1);
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==9);
+    nfl2k5_franchise_poll();
     nfl2k5_franchise_on_fsm(0,0);
     assert(!nfl2k5_franchise_context_enabled());
-    nfl2k5_franchise_signing_context(&observation); assert(submissions==5); /* Stale closed-screen observation. */
-    nfl2k5_franchise_on_fsm(0x557B2C,1); assert(submissions==5); /* No redundant hello. */
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==9); /* Stale closed-screen observation. */
+    nfl2k5_franchise_on_fsm(0x557B2C,1); assert(submissions==9); /* No redundant hello. */
     strcpy(observation.first_name,"Bad\"Name");
-    nfl2k5_franchise_signing_context(&observation); assert(submissions==5);
+    nfl2k5_franchise_signing_context(&observation); assert(submissions==9);
     nfl2k5_franchise_stop();
     return 0;
 }

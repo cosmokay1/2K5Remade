@@ -18,5 +18,6 @@ typedef struct {
 } FranchiseSigningObservation;
 /* Optional pinned-snapshot inspection only; never a transaction or AI grant. */
 int nfl2k5_franchise_context_enabled(void);
+/* NULL invalidates sample freshness without submitting or resetting debounce. */
 void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *observation);
 #endif

@@ -5171,3 +5171,28 @@ No game/runtime package installed, model/control/IAM request or financial state
 changed. Frozen validated performance artifact556016fa...1c537 stays preserved
 for its pending normal-exit deployment. Native decoding equivalence is not
 actual game enforcement, AI negotiation or save/commit verification.
+
+## October14,2026 — Obsolete signing-context receipt safeguard
+
+Rechecked the actual running game log: Trotter's persisted personality receipt
+appears at line920, after hello at916, without an intervening offer-screen
+transition. This confirms the existing same-screen proof; it is not a new AI
+negotiation or saved-performance deployment.
+
+The host now samples before collecting replies and compares player, offer,
+calendar and team observations plus the screen entry epoch. Changed, unreadable
+or closed-screen receipts are discarded. Valid changed terms refresh after
+300ms stability; unchanged samples do not send duplicate requests. Failed reads
+invalidate freshness and allow retry when a valid observation returns. Inspection
+remains read-only and never grants AI/signing authority.
+
+Full offline692 tests pass in22.036s, strict C11 syntax and diff checks pass.
+Private MSVC game/native compilation and actual Windows scheduling/protocol
+fixtures pass. Scheduling execution logged three discarded receipts for edited,
+unreadable and closed-screen observations, while unchanged/current receipts
+remained accepted. New private executable SHA256
+2dc415198ba8375c3985e7ba99a5aa9874d911dfe9b05b29a30fe98b560820bc.
+Updated the worklist's published baseline to successful dd13542 CI runs
+38643561542/38643561629. No running game/package was replaced, financial state
+written, cloud setting changed or model request submitted. Actual execution of
+this new safeguard and the frozen saved-performance install remain pending.

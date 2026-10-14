@@ -24,12 +24,12 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 ## Latest verified state — October 14, 2026
 
-- Latest published verified source: `743deb6`. Build `38634852382` and Franchise AI
-  `38634852421` passed. CI checks asset-free runtime and bridge components;
+- Latest published verified source: `dd13542`. Build `38643561542` and Franchise AI
+  `38643561629` passed. CI checks asset-free runtime and bridge components;
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.
-- Latest verified published CI suite: **686 tests passed on Windows and Ubuntu**. Actual AIBASELIN parsing
+- Latest verified published CI suite: **692 tests passed on Windows and Ubuntu**. Actual AIBASELIN parsing
   resolves 1937 roster/free-agent members. This does not prove contract/save
   round-trip integration. The read-only signing observer includes bounded bank-slot/name reads and is compiled and installed after confirmed exit;
   actual readback identifies Jeremiah Trotter at bank slot1910, matching AIBASELIN.
@@ -48,7 +48,7 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
   the actual Sign Contract FSM descriptor0x00557B2C and message11 callback,
   and that descriptor has now been observed during a user signing attempt. Current
   bank/name readback is verified for Trotter; Gildon terms, saved ownership and first-year cap readback are verified; durable
-  pinned same-year UUID bindings now preserve1937 IDs/initial profiles across baseline/control/signing snapshots. Actual Trotter slot/name/biography guard now matches the pinned candidate UUID in the running game test; automatic bridge binding/calendar/financial reconciliation remain pending; identity across rebuilds and AI/modern transaction integration remain unverified.
+  pinned same-year UUID bindings now preserve1937 IDs/initial profiles across baseline/control/signing snapshots. Actual Trotter slot/name/biography guard matches the pinned candidate UUID; automatic context binding reconciles the pinned legacy checkpoint and retrieves persisted personality while the offer stays open. Active-franchise selection, identity across rebuilds and AI/modern transaction integration remain unverified.
 - Actual root-game transport startup and signing-screen hello reply consumption
   now execute on the Deck using the packaged Windows service. This diagnostic
   keeps AI disabled with explicit missing ADC and uses a private cloned ledger;

@@ -26,12 +26,14 @@ class SigningObserverTests(unittest.TestCase):
 #define NFL2K5_FRANCHISE_CLIENT 1
 static int context_enabled;
 static unsigned contexts;
+static unsigned invalidations;
 static unsigned polls;
 static FranchiseSigningObservation captured;
 int nfl2k5_franchise_context_enabled(void) { return context_enabled; }
 void nfl2k5_franchise_on_fsm(uint32_t descriptor,int push) { (void)descriptor; (void)push; }
 void nfl2k5_franchise_poll(void) { ++polls; }
 void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *observation) {
+    if (!observation) { ++invalidations; return; }
     captured=*observation; ++contexts;
 }
 static unsigned char ram[0x1000000], before[0x1000000];
@@ -160,7 +162,7 @@ int main(void) {
     memcpy(before, ram, sizeof ram); memcpy(contig_before, contig, sizeof contig);
     context_enabled=1; trace_env=NULL;
     nfl2k5_franchise_guest_poll();
-    assert(polls==1 && contexts==1 && captured.slot==1 && captured.team_index==1);
+    assert(polls==1 && contexts==2 && invalidations==2 && captured.slot==1 && captured.team_index==1);
     assert(!strcmp(captured.first_name,"Test") && !strcmp(captured.last_name,"Player"));
     assert(!strcmp(captured.photo,"00000000") && !strcmp(captured.dob,"000000"));
     assert(captured.payroll==72272 && captured.cap==80500 && captured.accumulator==500);
@@ -168,7 +170,7 @@ int main(void) {
     assert(captured.calendar[5]==2 && captured.calendar[6]==99 && captured.team_flag==1);
     assert(!memcmp(before,ram,sizeof ram) && !memcmp(contig_before,contig,sizeof contig));
     put32(0xE576B8,256);
-    nfl2k5_franchise_guest_poll(); assert(polls==2 && contexts==1);
+    nfl2k5_franchise_guest_poll(); assert(polls==2 && contexts==2 && invalidations==4);
     put32(0xE576B8,2);
     context_enabled=0; trace_env="1";
     nfl2k5_diag_fsm(1, 0x557B2C, 1);
