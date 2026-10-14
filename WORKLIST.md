@@ -84,7 +84,9 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       Accounting now consumes immutable legacy identities and a cash resolver;
       typed generation archives now drive payment ceilings and native inspection;
       backed-up format4 checkpoint migration is implemented. Versioned new-generation
-      events, superseded-agreement lookup and actual return signing remain pending.
+      events and superseded lookup now support explicit healthy same-year veteran
+      return signing and subsequent release/payment. Normal AI/native return entry
+      points, returned-player trades/amendments and season rollover remain pending.
       See docs/contract-generations.md; current ownership now controls free-agent
       negotiation availability without deleting historical receipts.
 

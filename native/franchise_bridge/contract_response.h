@@ -93,7 +93,7 @@ inline void validate_contract_accounting(const nlohmann::json& accounting, const
     if (accounting.contains("generation_id")) {
         if (!accounting.at("generation_id").is_string()) throw std::runtime_error("Invalid saved agreement identity");
         const auto identity=accounting.at("generation_id").get<std::string>();
-        const std::string prefix="legacy-contract:";
+        const std::string prefix=identity.rfind("contract-gen:",0)==0 ? "contract-gen:" : "legacy-contract:";
         if (identity.size()!=prefix.size()+64 || identity.compare(0,prefix.size(),prefix)!=0 ||
             identity.find_first_not_of("0123456789abcdef",prefix.size())!=std::string::npos)
             throw std::runtime_error("Invalid saved agreement identity");
@@ -140,7 +140,9 @@ inline void validate_contract_accounting(const nlohmann::json& accounting, const
     const auto& cash=accounting.at("cash_obligation");
     if (!cash.is_null()) {
         if (!cash.is_object() || !(cash.size()==5 || (cash.size()==6 && cash.contains("paid_components"))) ||
-            cash.at("player_id")!=player || cash.at("obligation_id")!="contract:"+player ||
+            cash.at("player_id")!=player || cash.at("obligation_id")!=(accounting.contains("generation_id") &&
+                accounting.at("generation_id").get<std::string>().rfind("contract-gen:",0)==0 ?
+                accounting.at("generation_id").get<std::string>() : "contract:"+player) ||
             !cash.at("source").is_string() || cash.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
             throw std::runtime_error("Invalid saved cash identity");
         integer_money(cash.at("amount")); integer_money(cash.at("paid"));

@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from franchise.releases import ReleasePlan
     from franchise.trades import TradePlan
     from franchise.restructures import RestructurePlan
+    from franchise.returns import PreseasonReturnScope
 
 
 @dataclass(frozen=True)
@@ -31,6 +32,14 @@ def legacy_identity(team_id, player_id):
                               player_id,'contract:' + player_id)
 
 
+def generation_identity(team_id, player_id, request_id):
+    if any(type(value) is not str or not value.strip() for value in (team_id,player_id,request_id)):
+        raise ValueError('Stable team, player and signing request identities required')
+    material=json.dumps([team_id,player_id,request_id],ensure_ascii=False,separators=(',',':')).encode('utf-8')
+    generation_id='contract-gen:' + hashlib.sha256(material).hexdigest()
+    return GenerationIdentity(generation_id,player_id,generation_id)
+
+
 @dataclass(frozen=True)
 class GenerationAgreement:
     """One immutable agreement version; cash settlement stays in its cash book."""
@@ -41,9 +50,17 @@ class GenerationAgreement:
     outgoing_trade: "TradePlan | None" = None
     incoming_trade: "TradePlan | None" = None
     restructure: "RestructurePlan | None" = None
+    return_request_id: str | None = None
+    return_scope: "PreseasonReturnScope | None" = None
 
     def __post_init__(self):
         from franchise.books import ActiveContract
+        from franchise.returns import PreseasonReturnScope
+        if ((self.return_request_id is None) != (self.return_scope is None)
+                or (self.return_scope is not None and not isinstance(self.return_scope,PreseasonReturnScope))):
+            raise ValueError('Typed return signing scope required')
+        if self.return_request_id is not None and (type(self.return_request_id) is not str or not self.return_request_id.strip()):
+            raise ValueError('Return signing request identity required')
         if (not isinstance(self.identity, GenerationIdentity)
                 or not isinstance(self.original_contract, ActiveContract)
                 or not isinstance(self.contract, ActiveContract)

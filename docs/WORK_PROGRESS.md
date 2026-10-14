@@ -1850,3 +1850,32 @@ introduced. These measurements are not Windows/Deck/game acceptance evidence.
 Format4 continues legacy event posting semantics. Versioned new-generation events,
 superseded agreement lookup and return signing remain unfinished. Actual game
 hooks, legal assets and save/load/runtime evidence remain external gates.
+
+## October 13, 2026 — Durable same-year veteran return agreements
+
+Implemented sourced healthy same-year preseason veteran return signing after
+format4 migration. Each new agreement gets deterministic team/player/request
+generation identity and matching cash ID. New cap charges add to old retained
+debt. Prior birth/effective terms, unpaid cash, lifecycle sources and original
+payment IDs remain archived. Old agreement lookup is independent of the current
+player pointer. No implicit year transition or guarantee offsets.
+
+Durable return/release/payment records validate versioned full generation postings
+while preserving historical financial views. Second release retains both debts;
+third agreement remains separate. Final access failure and a SQLite trigger
+failing journal insertion after ownership acquisition roll back all state. Mixed
+normal/return receipt reuse rejects cleanly; old signing/release retries preserve
+the later active agreement. Native accounting inspection accepts contract-gen IDs
+and requires their matching cash obligations.
+
+All 392 Python tests and portable C++ build/CTest pass. Independent review verified
+rollback, three agreements, old-debt payments/ceilings and first-return retry after
+a third agreement. Ten+ focused source/durable cases cover cap/floor/chronology/
+unknown cash/source/revision rejection, version downgrade/corruption, two former
+clubs competing for ownership and cancelled salary payment rollback. Exact prior
+8b43e6d passed both remote workflows; new head CI pending push.
+
+Return signing is currently an explicit engine API. Normal AI negotiation and
+native pipe entry still need scope/preview/decision wiring; returned-player trades
+and restructures reject. Game hooks/screens, real saves/assets and playability
+remain unverified. See docs/preseason-return.md.

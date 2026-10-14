@@ -263,14 +263,12 @@ class Ledger:
             if self._team_identity is not None:
                 if self._team_identity != team_id:
                     raise Rejected('Contract generation team identity cannot change')
-                expected = {player:legacy_identity(team_id,player) for player in self._contracts}
-                if (set(self._generation_by_player) != set(expected)
-                        or set(self._generation_identities) != {item.generation_id for item in expected.values()}
+                if (set(self._generation_by_player) != set(self._contracts)
                         or set(self._active_generation_ids) != self._players):
                     raise Rejected('Existing contract generation mapping is inconsistent')
-                for player, identity in expected.items():
-                    if self.contract_identity(player) != identity:
-                        raise Rejected('Contract generation identity cannot change')
+                self.generation_agreements()
+                for player in self._contracts:
+                    self.contract_identity(player)
                 return
             if not self._players <= self._contracts.keys():
                 raise Rejected('Original contracts required to bind owned generations')
@@ -283,7 +281,7 @@ class Ledger:
                 self._refresh_generation_agreement(player)
 
     def contract_identity(self, player_id):
-        from franchise.generations import GenerationIdentity, legacy_identity
+        from franchise.generations import GenerationIdentity, legacy_identity, generation_identity
         with self._lock:
             if player_id not in self._contracts:
                 raise Rejected('Known historical contract required')
@@ -293,8 +291,11 @@ class Ledger:
             if generation_id is None or generation_id not in self._generation_identities:
                 raise Rejected('Contract generation identity is unavailable')
             identity = self._generation_identities[generation_id]
+            agreement=self._generation_agreements.get(generation_id)
+            expected=(generation_identity(self._team_identity,player_id,agreement.return_request_id)
+                if agreement is not None and agreement.return_request_id is not None else legacy_identity(self._team_identity,player_id))
             if (not isinstance(identity, GenerationIdentity) or identity.generation_id != generation_id
-                    or identity != legacy_identity(self._team_identity,player_id)):
+                    or identity != expected):
                 raise Rejected('Contract generation identity disagrees with source team/player')
             if player_id in self._players and self._active_generation_ids.get(player_id) != generation_id:
                 raise Rejected('Active contract generation disagrees with ownership')
@@ -329,15 +330,21 @@ class Ledger:
         original = previous.original_contract if previous is not None else (
             restructure.original_contract if restructure is not None else contract)
         self._generation_agreements[identity.generation_id] = GenerationAgreement(
-            identity, original, contract, release, outgoing, self._traded_in.get(player_id), restructure)
+            identity, original, contract, release, outgoing, self._traded_in.get(player_id), restructure,
+            previous.return_request_id if previous is not None else None,
+            previous.return_scope if previous is not None else None)
 
     def generation_accounting(self, generation_id):
         with self._lock:
             agreement = self._generation_agreements.get(generation_id)
             if agreement is None:
                 raise Rejected('Known contract generation required')
+            from franchise.generations import legacy_identity, generation_identity
+            expected=(generation_identity(self._team_identity,agreement.identity.player_id,agreement.return_request_id)
+                if agreement.return_request_id is not None else legacy_identity(self._team_identity,agreement.identity.player_id))
             if (agreement.identity.generation_id != generation_id
-                    or self.contract_identity(agreement.identity.player_id) != agreement.identity):
+                    or self._generation_identities.get(generation_id) != agreement.identity
+                    or agreement.identity != expected):
                 raise Rejected('Archived agreement identity disagrees with contract generation')
             return agreement
 
@@ -417,7 +424,8 @@ class Ledger:
             raise Rejected('Transaction requires an unsupported league-year transition')
 
     def _retained_record_ids(self):
-        ids = {record.record_id for plan in self._released.values() for record in plan.retained}
+        ids = {record.record_id for agreement in self._generation_agreements.values() for record in agreement.retained_records}
+        ids.update(record.record_id for plan in self._released.values() for record in plan.retained)
         ids.update(plan.retained_bonus.record_id for plan in self._traded_out.values())
         if self._opening_books is not None:
             ids.update(record.record_id for record in (*self._opening_books.retained, *self._opening_books.adjustments))
@@ -432,6 +440,8 @@ class Ledger:
                 raise Rejected('Supported veteran classification required for restructure')
             if player_id not in self._players:
                 raise Rejected('Player has no active owned contract to restructure')
+            if self._team_identity is not None and self.generation_accounting(self.contract_identity(player_id).generation_id).return_request_id is not None:
+                raise Rejected('Returned generation requires unsupported versioned amendment/assignment')
             contract = self.active_contract(player_id)
             cash_id = self.contract_cash_id(player_id)
             cash = self._cash.records.get(cash_id) if self._cash is not None else None
@@ -492,6 +502,8 @@ class Ledger:
                 raise Rejected('Supported veteran classification required for trade')
             if player_id not in self._players or player_id in self._traded_out:
                 raise Rejected('Player has no active owned contract to trade')
+            if self._team_identity is not None and self.generation_accounting(self.contract_identity(player_id).generation_id).return_request_id is not None:
+                raise Rejected('Returned generation requires unsupported versioned amendment/assignment')
             contract = self.active_contract(player_id)
             cash_id = self.contract_cash_id(player_id)
             cash = self._cash.records.get(cash_id) if self._cash is not None else None
@@ -882,14 +894,14 @@ class Ledger:
             del self._draft_reservations[player_id]
             self.revision += 1
 
-    def _validate_offer(self, offer: Offer, expected_revision: int):
+    def _validate_offer(self, offer: Offer, expected_revision: int, *, returning=False):
         if type(expected_revision) is not int or expected_revision != self.revision:
             raise Rejected("Offer was based on stale franchise state")
         if offer.player_id in self._players:
             raise Rejected("Player is already signed; extensions are unsupported")
-        if offer.player_id in self._released:
+        if not returning and offer.player_id in self._released:
             raise Rejected('Released player re-signing requires separate contract generation IDs')
-        if offer.player_id in self._traded_out:
+        if not returning and offer.player_id in self._traded_out:
             raise Rejected('Traded player re-signing requires separate contract generation IDs')
         if offer.player_id in self._prior_rookie_players:
             raise Rejected("Prior cohort contract requires unsupported rookie release/re-sign reconciliation")
@@ -948,6 +960,84 @@ class Ledger:
                     "fully_guaranteed_base": sum(offer.guaranteed_salaries),
                     "rookie_year_one_after": json_amount(self._rookie_year_one - scale.pool_charges(offer)[0]) if scale else None,
                     "rookie_total_after": self._rookie_total - int(sum(scale.pool_charges(offer))) if scale else None}
+
+    def return_sign(self, request_id, offer, expected_revision, *, scope):
+        from franchise.returns import PreseasonReturnScope
+        from franchise.generations import generation_identity, GenerationAgreement
+        from franchise.books import ActiveContract
+        from franchise.cash import CashObligation
+        with self._lock:
+            if type(request_id) is not str or not request_id.strip() or not isinstance(scope,PreseasonReturnScope):
+                raise ValueError('Typed return scope and signing request required')
+            if not isinstance(offer,Offer):
+                raise ValueError('Typed veteran offer required')
+            if self._team_identity is None:
+                raise Rejected('Bound team identity required for return signing')
+            identity=generation_identity(self._team_identity,offer.player_id,request_id)
+            prior=self._requests.get(request_id)
+            if prior is not None:
+                agreement=self._generation_agreements.get(identity.generation_id)
+                if agreement is None or agreement.original_contract.offer != offer or prior.offer != offer or agreement.return_scope != scope:
+                    raise Rejected('Return signing request already used for a different agreement')
+                return prior
+            if offer.player_id in self._rookies or offer.player_id not in self._veteran_minimums:
+                raise Rejected('Supported veteran classification required for return signing')
+            previous=self.generation_accounting(self.contract_identity(offer.player_id).generation_id)
+            if previous.status not in ('released','assigned') or offer.player_id in self._players:
+                raise Rejected('Closed prior agreement required; extensions are unsupported')
+            if self._cash is None or self.generation_cash(previous.identity.generation_id) is None:
+                raise Rejected('Known cash obligations required for return signing')
+            self._check_transaction_date(scope.league_year,scope.signed_on)
+            if (self._veteran_minimum_profile is not None
+                    and self._veteran_minimum_profile.start_year != scope.league_year):
+                raise Rejected('Return signing year disagrees with salary profile')
+            charges,_,updated,scale=self._validate_offer(offer,expected_revision,returning=True)
+            if scale is not None:
+                raise Rejected('Rookie return signing is unsupported')
+            if identity.generation_id in self._generation_identities or identity.cash_obligation_id in self._cash.records:
+                raise Rejected('Return signing generation identity already exists')
+            contract=ActiveContract(offer,'return-sign:'+request_id,bonus_years=self.max_bonus_years)
+            agreement=GenerationAgreement(identity,contract,contract,return_request_id=request_id,return_scope=scope)
+            obligation=CashObligation(identity.cash_obligation_id,offer.player_id,contract.nominal_cash,0,contract.source,())
+            receipt=Signing(request_id,offer,charges,self.revision+1)
+            self._charges=updated
+            self._contracts[offer.player_id]=offer
+            self._active_contracts[offer.player_id]=contract
+            self._players.add(offer.player_id)
+            self._generation_identities[identity.generation_id]=identity
+            self._generation_agreements[identity.generation_id]=agreement
+            self._generation_by_player[offer.player_id]=identity.generation_id
+            self._active_generation_ids[offer.player_id]=identity.generation_id
+            for mapping in (self._released,self._traded_out,self._traded_in,self._restructures):
+                mapping.pop(offer.player_id,None)
+            self._cash.records[identity.cash_obligation_id]=obligation
+            self._cash.revision+=1
+            self._requests[request_id]=receipt
+            self._last_transaction_date=scope.signed_on
+            self.revision+=1
+            return receipt
+
+    def generation_snapshot(self):
+        with self._lock:
+            if self._team_identity is None:
+                raise Rejected('Bound team identity required for generation posting')
+            return {'format':1,'team_id':self._team_identity,'financial':self.financial_snapshot(),
+                'current_generation_ids':dict(sorted(self._generation_by_player.items())),
+                'active_generation_ids':dict(sorted(self._active_generation_ids.items())),
+                'agreements':[{'identity':asdict(a.identity),'status':a.status,
+                    'return_request_id':a.return_request_id,
+                    'return_scope':{'league_year':a.return_scope.league_year,'signed_on':a.return_scope.signed_on.isoformat(),
+                        'first_regular_season_game':a.return_scope.first_regular_season_game.isoformat(),
+                        'healthy':a.return_scope.healthy,'exclusions':sorted(a.return_scope.exclusions),
+                        'source':a.return_scope.source} if a.return_scope is not None else None,
+                    'original_contract':a.original_contract.to_dict(),'contract':a.contract.to_dict(),
+                    'release':self._release_snapshot(a.release) if a.release is not None else None,
+                    'outgoing_trade':self._trade_snapshot(a.outgoing_trade) if a.outgoing_trade is not None else None,
+                    'incoming_trade':self._trade_snapshot(a.incoming_trade) if a.incoming_trade is not None else None,
+                    'restructure':self._restructure_snapshot(a.restructure) if a.restructure is not None else None,
+                    'annual_charges':[json_amount(v) for v in a.annual_charges()],
+                    'cash_obligation':self.generation_cash(a.identity.generation_id).to_dict() if self.generation_cash(a.identity.generation_id) is not None else None}
+                    for a in self.generation_agreements()], 'cash':self.cash_snapshot()}
 
     def _sign(self, request_id: str, offer: Offer, expected_revision: int) -> Signing:
         if not isinstance(request_id, str) or not request_id.strip():

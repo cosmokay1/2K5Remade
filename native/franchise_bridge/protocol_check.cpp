@@ -187,6 +187,16 @@ int main() {
             try { franchise::validate_result(bad,player_request); } catch (const std::exception&) { rejected=true; }
             if (!rejected) throw std::runtime_error("Invalid agreement identity accepted");
         }
+        auto returned=identified;
+        returned["generation_id"]="contract-gen:"+std::string(64,'b');
+        returned["cash_obligation"]["obligation_id"]=returned["generation_id"];
+        player_reply["result"]["contract_accounting"]=returned;
+        franchise::validate_result(player_reply,player_request);
+        auto mismatched=player_reply;
+        mismatched["result"]["contract_accounting"]["cash_obligation"]["obligation_id"]="contract:v";
+        bool mismatch_rejected=false;
+        try { franchise::validate_result(mismatched,player_request); } catch (const std::exception&) { mismatch_rejected=true; }
+        if (!mismatch_rejected) throw std::runtime_error("Return agreement used legacy cash identity");
         auto agreement_request=nlohmann::json{{"operation","contract_context"},{"team_id","a"},
             {"generation_id",identified["generation_id"]}};
         auto agreement_reply=nlohmann::json{{"error",nullptr},{"result",{{"team_id","a"},

@@ -360,6 +360,18 @@ class FranchiseStore:
                         raise ValueError("Recorded signing cash disagrees with replay")
                 if payload.get("contract_charges") != [json_amount(value) for value in receipt.charges]:
                     raise ValueError("Recorded contract charges disagree with replay")
+            elif kind == 'return_sign':
+                if (db.execute('PRAGMA user_version').fetchone()[0]!=4 or
+                        set(payload)!={'format','request_id','offer','scope','expected_revision','generation_id',
+                            'posting','cash_posting','contract_charges','generation_posting'} or
+                        type(payload['format']) is not int or payload['format']!=1):
+                    raise ValueError('Versioned return signing required')
+                receipt=ledger.return_sign(payload['request_id'],Offer.from_dict(payload['offer']),
+                    payload['expected_revision'],scope=self._return_scope(payload['scope']))
+                if (ledger.contract_identity(receipt.offer.player_id).generation_id!=payload['generation_id'] or
+                        self._checkpoint_hash(payload['cash_posting'])!=self._checkpoint_hash(ledger.cash_snapshot()) or
+                        self._checkpoint_hash(payload['contract_charges'])!=self._checkpoint_hash([json_amount(v) for v in receipt.charges])):
+                    raise ValueError('Return signing identity or obligations disagree with replay')
             elif kind == "cash_open":
                 if ledger._cash is not None:
                     raise ValueError("Duplicate opening cash state")
@@ -401,7 +413,14 @@ class FranchiseStore:
                 self._check_cash_components(ledger)
                 if payload['cash_posting'] != ledger.cash_snapshot():
                     raise ValueError('Restructure cash posting disagrees with replay')
-            elif kind == 'release':
+            elif kind in ('release','generation_release'):
+                if kind=='release' and ledger.contract_identity(payload['player_id']).generation_id.startswith('contract-gen:'):
+                    raise ValueError('Return agreement release requires versioned generation event')
+                if kind=='generation_release':
+                    if (type(payload.get('format')) is not int or payload['format']!=1 or
+                            payload.get('generation_id')!=ledger.contract_identity(payload['player_id']).generation_id or
+                            self._checkpoint_hash(payload.get('before_generation_posting'))!=self._checkpoint_hash(ledger.generation_snapshot())):
+                        raise ValueError('Generation release opening state disagrees with replay')
                 if payload['before_posting'] != ledger.financial_snapshot() or payload['before_cash'] != ledger.cash_snapshot():
                     raise ValueError('Release opening state disagrees with replay')
                 self._apply_release_payload(ledger,payload)
@@ -470,6 +489,14 @@ class FranchiseStore:
                 ledger.update_budget(**{key: payload[key] for key in ("cap", "roster_reserve", "expected_revision")})
             else:
                 raise ValueError("Unknown financial event; refusing to reconstruct state")
+            if kind in ('return_sign','generation_release') or (kind=='cash_payment' and self._has_new_generations(ledger)):
+                if ('generation_posting' not in payload or type(payload.get('format')) is not int or payload['format']!=1 or
+                        db.execute('PRAGMA user_version').fetchone()[0]!=4 or
+                        self._checkpoint_hash(payload['generation_posting'])!=self._checkpoint_hash(ledger.generation_snapshot())):
+                    raise ValueError('Versioned generation posting disagrees with replay')
+                if (self._checkpoint_hash(payload.get('posting'))!=self._checkpoint_hash(ledger.financial_snapshot()) or
+                        self._checkpoint_hash(payload.get('cash_posting'))!=self._checkpoint_hash(ledger.cash_snapshot())):
+                    raise ValueError('Versioned financial or cash posting types disagree with replay')
             if payload.get("posting") != ledger.financial_snapshot():
                 raise ValueError("Recorded financial posting disagrees with replay")
         if origin is not None and set(ledger._actors) != ledger._veteran_minimums.keys() | ledger._rookies.keys():
@@ -758,6 +785,8 @@ class FranchiseStore:
             ledger.revision += 1
             payload["cash_posting"] = ledger.cash_snapshot()
             payload["posting"] = ledger.financial_snapshot()
+            if self._has_new_generations(ledger):
+                payload.update(format=1,generation_posting=ledger.generation_snapshot())
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'cash_payment', ?)",
                        (team_id, key, json.dumps(payload, allow_nan=False)))
             return payload["cash_posting"]
@@ -965,15 +994,22 @@ class FranchiseStore:
                     raise Rejected('Release request already recorded differently')
                 access_check()
                 return {'financial':previous['posting'],'cash':previous['cash_posting']}
+            kind='release'
+            if ledger.contract_identity(player_id).generation_id.startswith('contract-gen:'):
+                kind='generation_release'
+                payload.update(format=1,generation_id=ledger.contract_identity(player_id).generation_id,
+                    before_generation_posting=ledger.generation_snapshot())
             payload.update(before_posting=ledger.financial_snapshot(),before_cash=ledger.cash_snapshot())
             self._apply_release_payload(ledger,payload)
             self._check_cash_components(ledger)
             payload.update(posting=ledger.financial_snapshot(),cash_posting=ledger.cash_snapshot())
+            if kind=='generation_release':
+                payload['generation_posting']=ledger.generation_snapshot()
             access_check()
             if db.execute('DELETE FROM ownership WHERE player_id=? AND team_id=?',(player_id,team_id)).rowcount != 1:
                 raise Rejected('Release ownership is unavailable')
-            db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,'release',?)",
-                       (team_id,key,json.dumps(payload,allow_nan=False)))
+            db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,?,?)",
+                       (team_id,key,kind,json.dumps(payload,allow_nan=False)))
             return {'financial':payload['posting'],'cash':payload['cash_posting']}
 
     def preview_offer(self, team_id: str, offer: Offer, expected_revision: int) -> dict:
@@ -1008,8 +1044,10 @@ class FranchiseStore:
             prior = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, "sign:" + request_id)).fetchone()
             if prior:
                 previous = json.loads(prior[0])
+                if "story" not in previous:
+                    raise Rejected("Request belongs to an explicit return signing")
                 normalized = json.loads(serialized)
-                if previous["offer"] != normalized["offer"] or previous["story"] != normalized["story"]:
+                if previous["offer"] != normalized["offer"] or previous.get("story") != normalized["story"]:
                     raise Rejected("Request already committed with different terms or story")
                 return ledger.sign(request_id, offer, expected_revision, access_check=access_check)
             if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (offer.player_id,)).fetchone():
@@ -1028,6 +1066,67 @@ class FranchiseStore:
             serialized = json.dumps(payload, allow_nan=False)
             db.execute("INSERT INTO ownership VALUES (?, ?)", (offer.player_id, team_id))
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'sign', ?)", (team_id, "sign:" + request_id, serialized))
+            return receipt
+
+    @staticmethod
+    def _has_new_generations(ledger):
+        return any(a.identity.generation_id.startswith('contract-gen:') for a in ledger.generation_agreements())
+
+    @staticmethod
+    def _return_scope(data):
+        from datetime import date
+        from franchise.returns import PreseasonReturnScope
+        if type(data) is not dict or set(data)!={'league_year','signed_on','first_regular_season_game','healthy','exclusions','source'}:
+            raise ValueError('Complete sourced return scope required')
+        values=dict(data)
+        values['exclusions']=FranchiseStore._scope_exclusions(values['exclusions'])
+        for name in ('signed_on','first_regular_season_game'):
+            if type(values[name]) is not str:
+                raise ValueError('Canonical return dates required')
+            parsed=date.fromisoformat(values[name])
+            if parsed.isoformat()!=values[name]:
+                raise ValueError('Canonical return dates required')
+            values[name]=parsed
+        return PreseasonReturnScope(**values)
+
+    def return_sign(self,team_id,request_id,offer,expected_revision,*,scope,access_check):
+        from franchise.returns import PreseasonReturnScope
+        if (type(request_id) is not str or not request_id.strip() or not isinstance(offer,Offer)
+                or not isinstance(scope,PreseasonReturnScope) or not callable(access_check)
+                or type(expected_revision) is not int or expected_revision<0):
+            raise ValueError('Typed sourced return signing required')
+        scope_data=asdict(scope)
+        scope_data.update(signed_on=scope.signed_on.isoformat(),
+            first_regular_season_game=scope.first_regular_season_game.isoformat(),exclusions=sorted(scope.exclusions))
+        requested={'format':1,'request_id':request_id,'offer':offer.to_dict(),
+            'scope':scope_data,'expected_revision':expected_revision}
+        with self._connection(write=True) as db:
+            if db.execute('PRAGMA user_version').fetchone()[0]!=4:
+                raise Rejected('Return signing requires explicit format4 migration')
+            ledger=self._load(db,team_id)
+            key='sign:'+request_id
+            row=db.execute('SELECT kind,payload FROM events WHERE team_id=? AND request_key=?',(team_id,key)).fetchone()
+            if row:
+                previous=json.loads(row[1])
+                if row[0]!='return_sign' or any(self._checkpoint_hash(previous[field])!=self._checkpoint_hash(value)
+                        for field,value in requested.items() if field!='expected_revision'):
+                    raise Rejected('Return signing request already recorded differently')
+                access_check()
+                return ledger.return_sign(request_id,offer,expected_revision,scope=scope)
+            if db.execute('SELECT 1 FROM events WHERE team_id=? AND request_key=?',(team_id,'dialogue:'+request_id)).fetchone():
+                raise Rejected('Request already belongs to a recorded negotiation')
+            if db.execute('SELECT 1 FROM ownership WHERE player_id=?',(offer.player_id,)).fetchone():
+                raise Rejected('Player already belongs to a team')
+            receipt=ledger.return_sign(request_id,offer,expected_revision,scope=scope)
+            self._check_cash_components(ledger)
+            payload={**requested,'generation_id':ledger.contract_identity(offer.player_id).generation_id,
+                'posting':ledger.financial_snapshot(),'cash_posting':ledger.cash_snapshot(),
+                'contract_charges':[json_amount(v) for v in receipt.charges],
+                'generation_posting':ledger.generation_snapshot()}
+            access_check()
+            db.execute('INSERT INTO ownership VALUES (?,?)',(offer.player_id,team_id))
+            db.execute('INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,?,?)',
+                (team_id,key,'return_sign',json.dumps(payload,allow_nan=False)))
             return receipt
 
     def update_budget(self, team_id: str, *, cap: int, roster_reserve: int, expected_revision: int):
@@ -1104,6 +1203,8 @@ class FranchiseStore:
                 if (result['player_id'] == player and result['score']['final_achievement_score'] is not None
                         and data['posting']['revision'] <= before_revision):
                     return
+                continue
+            if kind == "return_sign":
                 continue
             event = data["story"] if kind == "sign" else data["event"]
             if event is not None and event["offer"]["player_id"] == player and data["posting"]["revision"] <= before_revision:
@@ -1578,7 +1679,7 @@ class FranchiseStore:
             payload = json.loads(row[0])
             if payload["offer"] != json.loads(json.dumps(offer.to_dict())):
                 raise Rejected("Negotiation request already committed with different terms")
-            if payload["story"] is None:
+            if payload.get("story") is None:
                 raise Rejected("Request belongs to a signing without negotiation history")
             receipt = ledger.sign(request_id, offer, ledger.revision)
             return {**payload["story"], "charges": [json_amount(value) for value in receipt.charges]}

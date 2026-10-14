@@ -1,9 +1,9 @@
 # Contract generations: next franchise lifecycle prerequisite
 
-Current engine guards prohibit a former club from signing or receiving an assigned
-player again. These guards protect old debt; deleting them would overwrite the
-one-player contract/archive and collide with `contract:player` cash history.
-Actual multi-season franchise delivery requires separate contract identities.
+General signing and incoming assignment retain their former-club guards. An
+explicit supported same-year veteran return operation now creates a separate
+agreement while preserving old debt. General AI negotiation, incoming return
+trades and multi-season delivery still require further integration.
 
 Player identity and exclusive ownership remain stable. Contract identity identifies
 one team-book agreement, its effective terms, cash obligation, and closed status.
@@ -49,8 +49,8 @@ FranchiseStore.contract_generations(team_id), also available through authenticat
 GET /api/contracts for the configured team, reads one freshly validated snapshot.
 The format1 response identifies legacy generations with `legacy-contract:` plus
 SHA-256 of compact UTF-8 JSON `[team_id,player_id]` (ensure_ascii=false). Mutable
-terms, payments and lifecycle status never enter this identity. Existing guards
-currently permit only one book agreement per team/player.
+terms, payments and lifecycle status never enter this identity. Format3 permits only one
+book agreement per team/player; explicit format4 returns can add further records.
 
 The view includes effective typed contracts, known cash or null, and retained
 records from supported release/assignment archives. Unassigned opening debt and
@@ -100,9 +100,8 @@ Release, assignment and restructure calculators accept an explicitly expected
 cash ID; omission means the original `contract:player` identity. They still check
 player identity, compensation totals and allocated payments. Assignment can
 identify the receiving book's cash obligation separately. Cash creation refuses
-ID collisions without replacing an earlier obligation. These mechanisms do not
-by themselves authorize a second agreement: player-keyed lifecycle archives and
-versioned replay/migration must change before former-club guards are lifted.
+ID collisions without replacing an earlier obligation. The explicit return operation now supplies versioned records and archived
+lookup for a second agreement. General signing and incoming-trade guards remain.
 
 ## Agreement archives and native inspection
 
@@ -121,11 +120,10 @@ agreements reject, disconnect/deadline checks apply, and oversized responses
 return a bounded error. This is an inspection boundary for future in-game
 screens; it is not a completed game screen or guest hook.
 
-The legacy player-keyed posting view and return guards still remain. Archives
-are rebuilt from source history. Format4 now persists and validates their
-migration checkpoint. Supporting a second agreement requires versioned events
-and generation-specific
-ownership/history lookup before these guards can be lifted.
+The legacy financial posting view remains for historical replay. Archives are
+rebuilt from source history; format4 persists their migration checkpoint.
+Explicit return records below support later agreements. General signing,
+returned-player assignment and amendment still require further integration.
 
 ## Explicit format4 migration
 
@@ -144,6 +142,16 @@ installation rolls back to format3 and retains its backup. The returned report
 provides the private backup path and SHA-256. Repeating migration rejects without
 creating another backup. Keep the backup and report together for recovery.
 
-Format4 currently continues the legacy posting view. It does not yet support
-new agreement generations or return signings. Those require versioned event
-payloads and superseded-agreement lookup. Real guest saves remain unverified.
+Format4 preserves the legacy posting view for historical events. Explicit return,
+release and payment records now validate generational postings and superseded
+agreements. AI/native entry points and real guest saves remain unverified.
+
+## Supported durable return agreements
+
+`FranchiseStore.return_sign(team_id, request_id, offer, expected_revision,
+scope=PreseasonReturnScope(...), access_check=...)` supports explicitly sourced
+healthy same-year preseason veteran return agreements after format4 migration.
+See [preseason-return.md](preseason-return.md) for scope and remaining boundaries.
+Versioned return/release/payment records validate full generational postings.
+Old agreements remain accessible by their own identity after a later return.
+Normal signing and AI negotiation do not select this operation automatically.
