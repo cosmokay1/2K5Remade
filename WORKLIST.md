@@ -156,7 +156,12 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       A staged v2 event now adds bounded guest destination locators without
       memory authority, preserving v1 delivery. All15 actual Windows standalone
       tests and the rebuilt game --validate pass under Proton; not installed.
-      Combine with causal load-boundary checks before another user restart.
+      Load-boundary observation now correlates the delivered read, exact input
+      hash and decoded byte count on the same owner/frame/destination. Generated
+      and interpreted paths share the checkpoints across compatible packs.
+      All17 Windows standalone tests and isolated game --validate pass; the
+      combined build is staged, not installed. Actual MyNFL1 checkpoint delivery,
+      selected-container identity and active-load lifetime still need verification.
       Service-side durable binding and active franchise identity remain open;
       this metadata does not authorize application or prove code compatibility.
       The actual Windows game/DLL build now passes isolated --validate and the

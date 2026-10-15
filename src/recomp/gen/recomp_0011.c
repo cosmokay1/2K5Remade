@@ -53299,6 +53299,8 @@ loc_0016E6BE: ;
     g_seh_ebp = ebp; sub_000F5170(); return; /* tail jmp 0x000F5170 */
 
 loc_0016E6CA: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_BEGIN_sub_0016E1D0 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(1u,esi,ebx,ebp,esp); }
     edx = MEM32(esp + 0x20);
     PUSH32(esp, edx);
     PUSH32(esp, ebx);
@@ -53313,6 +53315,8 @@ loc_0016E6D8: ;
     if (TEST_NZ(_fa, _fb)) goto loc_0016E70B; /* jne: not equal / not zero */
 
 loc_0016E6DC: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_FAILED_sub_0016E1D0 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(2u,esi,ebx,ebp,esp); }
     ecx = esi;
     PUSH32(esp, 0x0016E6E3u); RECOMP_ABI_CALL(0x00048870u, sub_00048870); /* call 0x00048870 */
 
@@ -53343,6 +53347,8 @@ loc_0016E6FF: ;
     g_seh_ebp = ebp; sub_000F5170(); return; /* tail jmp 0x000F5170 */
 
 loc_0016E70B: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_INPUT_sub_0016E1D0 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(3u,esi,ebx,ebp,esp); }
     eax = MEM32(ebp + 0xBDC1D4);
     { uint32_t _jt = MEM32(eax * 4 + 0x16E994); /* switch: 18 entries, 14 targets */
     if (_jt == 0x0016E718u) goto loc_0016E718;
@@ -53557,6 +53563,8 @@ loc_0016E815: ;
     PUSH32(esp, 0x0016E81Au); RECOMP_ABI_CALL(0x002D0780u, sub_002D0780); /* call 0x002D0780 */
 
 loc_0016E81A: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_DECODED_sub_0016E1D0 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(4u,esi,ebx,ebp,esp); }
     PUSH32(esp, 0x0016E81Fu); RECOMP_ABI_CALL(0x000C4B80u, sub_000C4B80); /* call 0x000C4B80 */
 
 loc_0016E81F: ;
@@ -55279,6 +55287,8 @@ loc_0016E6BE: ;
     g_seh_ebp = ebp; sub_000F5170(); return; /* tail jmp 0x000F5170 */
 
 loc_0016E6CA: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_BEGIN_sub_0016E290 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(1u,esi,ebx,ebp,esp); }
     edx = MEM32(esp + 0x20);
     PUSH32(esp, edx);
     PUSH32(esp, ebx);
@@ -55293,6 +55303,8 @@ loc_0016E6D8: ;
     if (TEST_NZ(_fa, _fb)) goto loc_0016E70B; /* jne: not equal / not zero */
 
 loc_0016E6DC: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_FAILED_sub_0016E290 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(2u,esi,ebx,ebp,esp); }
     ecx = esi;
     PUSH32(esp, 0x0016E6E3u); RECOMP_ABI_CALL(0x00048870u, sub_00048870); /* call 0x00048870 */
 
@@ -55323,6 +55335,8 @@ loc_0016E6FF: ;
     g_seh_ebp = ebp; sub_000F5170(); return; /* tail jmp 0x000F5170 */
 
 loc_0016E70B: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_INPUT_sub_0016E290 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(3u,esi,ebx,ebp,esp); }
     eax = MEM32(ebp + 0xBDC1D4);
     { uint32_t _jt = MEM32(eax * 4 + 0x16E994); /* switch: 18 entries, 14 targets */
     if (_jt == 0x0016E718u) goto loc_0016E718;
@@ -55537,6 +55551,8 @@ loc_0016E815: ;
     PUSH32(esp, 0x0016E81Au); RECOMP_ABI_CALL(0x002D0780u, sub_002D0780); /* call 0x002D0780 */
 
 loc_0016E81A: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_DECODED_sub_0016E290 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(4u,esi,ebx,ebp,esp); }
     PUSH32(esp, 0x0016E81Fu); RECOMP_ABI_CALL(0x000C4B80u, sub_000C4B80); /* call 0x000C4B80 */
 
 loc_0016E81F: ;
@@ -57157,6 +57173,8 @@ loc_0016E6BE: ;
     g_seh_ebp = ebp; sub_000F5170(); return; /* tail jmp 0x000F5170 */
 
 loc_0016E6CA: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_BEGIN_sub_0016E350 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(1u,esi,ebx,ebp,esp); }
     edx = MEM32(esp + 0x20);
     PUSH32(esp, edx);
     PUSH32(esp, ebx);
@@ -57171,6 +57189,8 @@ loc_0016E6D8: ;
     if (TEST_NZ(_fa, _fb)) goto loc_0016E70B; /* jne: not equal / not zero */
 
 loc_0016E6DC: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_FAILED_sub_0016E350 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(2u,esi,ebx,ebp,esp); }
     ecx = esi;
     PUSH32(esp, 0x0016E6E3u); RECOMP_ABI_CALL(0x00048870u, sub_00048870); /* call 0x00048870 */
 
@@ -57201,6 +57221,8 @@ loc_0016E6FF: ;
     g_seh_ebp = ebp; sub_000F5170(); return; /* tail jmp 0x000F5170 */
 
 loc_0016E70B: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_INPUT_sub_0016E350 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(3u,esi,ebx,ebp,esp); }
     eax = MEM32(ebp + 0xBDC1D4);
     { uint32_t _jt = MEM32(eax * 4 + 0x16E994); /* switch: 18 entries, 14 targets */
     if (_jt == 0x0016E718u) goto loc_0016E718;
@@ -57415,6 +57437,8 @@ loc_0016E815: ;
     PUSH32(esp, 0x0016E81Au); RECOMP_ABI_CALL(0x002D0780u, sub_002D0780); /* call 0x002D0780 */
 
 loc_0016E81A: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_DECODED_sub_0016E350 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(4u,esi,ebx,ebp,esp); }
     PUSH32(esp, 0x0016E81Fu); RECOMP_ABI_CALL(0x000C4B80u, sub_000C4B80); /* call 0x000C4B80 */
 
 loc_0016E81F: ;
@@ -58948,6 +58972,8 @@ loc_0016E6BE: ;
     g_seh_ebp = ebp; sub_000F5170(); return; /* tail jmp 0x000F5170 */
 
 loc_0016E6CA: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_BEGIN_sub_0016E3F0 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(1u,esi,ebx,ebp,esp); }
     edx = MEM32(esp + 0x20);
     PUSH32(esp, edx);
     PUSH32(esp, ebx);
@@ -58962,6 +58988,8 @@ loc_0016E6D8: ;
     if (TEST_NZ(_fa, _fb)) goto loc_0016E70B; /* jne: not equal / not zero */
 
 loc_0016E6DC: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_FAILED_sub_0016E3F0 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(2u,esi,ebx,ebp,esp); }
     ecx = esi;
     PUSH32(esp, 0x0016E6E3u); RECOMP_ABI_CALL(0x00048870u, sub_00048870); /* call 0x00048870 */
 
@@ -58992,6 +59020,8 @@ loc_0016E6FF: ;
     g_seh_ebp = ebp; sub_000F5170(); return; /* tail jmp 0x000F5170 */
 
 loc_0016E70B: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_INPUT_sub_0016E3F0 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(3u,esi,ebx,ebp,esp); }
     eax = MEM32(ebp + 0xBDC1D4);
     { uint32_t _jt = MEM32(eax * 4 + 0x16E994); /* switch: 18 entries, 14 targets */
     if (_jt == 0x0016E718u) goto loc_0016E718;
@@ -59206,6 +59236,8 @@ loc_0016E815: ;
     PUSH32(esp, 0x0016E81Au); RECOMP_ABI_CALL(0x002D0780u, sub_002D0780); /* call 0x002D0780 */
 
 loc_0016E81A: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_DECODED_sub_0016E3F0 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(4u,esi,ebx,ebp,esp); }
     PUSH32(esp, 0x0016E81Fu); RECOMP_ABI_CALL(0x000C4B80u, sub_000C4B80); /* call 0x000C4B80 */
 
 loc_0016E81F: ;
@@ -60509,6 +60541,8 @@ loc_0016E6BE: ;
     g_seh_ebp = ebp; sub_000F5170(); return; /* tail jmp 0x000F5170 */
 
 loc_0016E6CA: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_BEGIN_sub_0016E540 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(1u,esi,ebx,ebp,esp); }
     edx = MEM32(esp + 0x20);
     PUSH32(esp, edx);
     PUSH32(esp, ebx);
@@ -60523,6 +60557,8 @@ loc_0016E6D8: ;
     if (TEST_NZ(_fa, _fb)) goto loc_0016E70B; /* jne: not equal / not zero */
 
 loc_0016E6DC: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_FAILED_sub_0016E540 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(2u,esi,ebx,ebp,esp); }
     ecx = esi;
     PUSH32(esp, 0x0016E6E3u); RECOMP_ABI_CALL(0x00048870u, sub_00048870); /* call 0x00048870 */
 
@@ -60553,6 +60589,8 @@ loc_0016E6FF: ;
     g_seh_ebp = ebp; sub_000F5170(); return; /* tail jmp 0x000F5170 */
 
 loc_0016E70B: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_INPUT_sub_0016E540 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(3u,esi,ebx,ebp,esp); }
     eax = MEM32(ebp + 0xBDC1D4);
     { uint32_t _jt = MEM32(eax * 4 + 0x16E994); /* switch: 18 entries, 14 targets */
     if (_jt == 0x0016E718u) goto loc_0016E718;
@@ -60767,6 +60805,8 @@ loc_0016E815: ;
     PUSH32(esp, 0x0016E81Au); RECOMP_ABI_CALL(0x002D0780u, sub_002D0780); /* call 0x002D0780 */
 
 loc_0016E81A: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_LOAD_DECODED_sub_0016E540 */
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(4u,esi,ebx,ebp,esp); }
     PUSH32(esp, 0x0016E81Fu); RECOMP_ABI_CALL(0x000C4B80u, sub_000C4B80); /* call 0x000C4B80 */
 
 loc_0016E81F: ;

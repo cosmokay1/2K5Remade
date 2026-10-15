@@ -7,6 +7,8 @@ extern "C" {
 /* Existing generated-code callbacks. Read-only game observations; never a
  * transaction, remote-control grant or proof of mod-pack compatibility. */
 void nfl2k5_diag_fsm(uint32_t object, uint32_t descriptor, int push);
+/* Observed shared load interiors; stage/input facts alone authorize nothing. */
+void nfl2k5_franchise_load_boundary(uint32_t stage,uint32_t buffer,uint32_t offset,uint32_t table_offset,uint32_t stack);
 /* Nonzero defers the original transaction before any contract writes. */
 int nfl2k5_franchise_hold_signing(uint32_t context);
 /* Stage1 is interactive judgment; stage2 is the shared precommit boundary.

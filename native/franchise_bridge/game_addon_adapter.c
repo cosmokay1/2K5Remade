@@ -52,6 +52,14 @@ int nfl2k5_franchise_display(FranchiseSigningDisplay *out) {
     return nfl2k5_addon_snapshot(FRANCHISE_DISPLAY_SNAPSHOT,out,sizeof(*out));
 }
 #endif
+void nfl2k5_franchise_load_boundary(uint32_t stage,uint32_t buffer,uint32_t offset,uint32_t table_offset,uint32_t stack) {
+#ifdef NFL2K5_FRANCHISE_CLIENT
+    const FranchiseLoadEvent event={stage,buffer,offset,table_offset,stack};
+    nfl2k5_addon_event(FRANCHISE_LOAD_EVENT,&event,sizeof(event));
+#else
+    (void)stage;(void)buffer;(void)offset;(void)table_offset;(void)stack;
+#endif
+}
 void nfl2k5_diag_fsm(uint32_t object,uint32_t descriptor,int push) {
 #ifdef NFL2K5_FRANCHISE_CLIENT
     const FranchiseFSMEvent event={object,descriptor,push!=0};

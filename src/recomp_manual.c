@@ -2744,12 +2744,21 @@ static uint32_t ih_franchise_hold_precommit(void) {
 static uint32_t ih_franchise_sign_completed(void) {
     nfl2k5_franchise_signing_completed(g_esi); return 0;
 }
+extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t);
+static uint32_t ih_franchise_load_begin(void){nfl2k5_franchise_load_boundary(1u,g_esi,g_ebx,g_ebp,g_esp);return 0;}
+static uint32_t ih_franchise_load_failed(void){nfl2k5_franchise_load_boundary(2u,g_esi,g_ebx,g_ebp,g_esp);return 0;}
+static uint32_t ih_franchise_load_input(void){nfl2k5_franchise_load_boundary(3u,g_esi,g_ebx,g_ebp,g_esp);return 0;}
+static uint32_t ih_franchise_load_decoded(void){nfl2k5_franchise_load_boundary(4u,g_esi,g_ebx,g_ebp,g_esp);return 0;}
 void nfl2k5_franchise_interp_hooks(void) {
 #ifdef NFL2K5_FRANCHISE_CLIENT
     /* Pack detours can interpret FSM code even with AI/negotiation disabled.
      * Keep observation/capture independent of the opt-in transaction gates. */
     recomp_interp_add_hook(0x0006E3E6u,0,ih_franchise_fsm_push);
     recomp_interp_add_hook(0x0006E439u,0,ih_franchise_fsm_pop);
+    recomp_interp_add_hook(0x0016E6CAu,0,ih_franchise_load_begin);
+    recomp_interp_add_hook(0x0016E6DCu,0,ih_franchise_load_failed);
+    recomp_interp_add_hook(0x0016E70Bu,0,ih_franchise_load_input);
+    recomp_interp_add_hook(0x0016E81Au,0,ih_franchise_load_decoded);
     const char *mode=getenv("NFL2K5_FRANCHISE_NEGOTIATION");
     if(!mode || strcmp(mode,"1")) return;
     recomp_interp_add_hook(0x00324072u,0,ih_franchise_hold_cpu_pass);

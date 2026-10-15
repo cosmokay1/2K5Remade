@@ -18,14 +18,17 @@
 #include "nfl2k5_franchise_host.h"
 #endif
 #include "save_read.h"
-static uint64_t reported_save_read;
+static uint64_t reported_save_read,reported_load_epoch;
+static uint32_t reported_load_phase;
 #ifdef _WIN32
 #include "save_read_win.h"
 static SRWLOCK save_read_lock=SRWLOCK_INIT;
 static FranchiseSaveRead save_read;
+static FranchiseLoadRead load_read;
 static void save_read_reset(void) {
     AcquireSRWLockExclusive(&save_read_lock);
-    memset(&save_read,0,sizeof(save_read));reported_save_read=0;
+    memset(&save_read,0,sizeof(save_read));memset(&load_read,0,sizeof(load_read));
+    reported_save_read=reported_load_epoch=0;reported_load_phase=0;
     ReleaseSRWLockExclusive(&save_read_lock);
 }
 static int save_read_copy(FranchiseSaveRead *out) {
@@ -33,7 +36,7 @@ static int save_read_copy(FranchiseSaveRead *out) {
     return out->sequence!=0;
 }
 #else
-static void save_read_reset(void) {reported_save_read=0;}
+static void save_read_reset(void) {reported_save_read=reported_load_epoch=0;reported_load_phase=0;}
 static int save_read_copy(FranchiseSaveRead *out) {memset(out,0,sizeof(*out));return 0;}
 
 #endif
@@ -394,6 +397,39 @@ int nfl2k5_franchise_hold_signing_at(uint32_t stage,uint32_t context) {
     if(stage==FRANCHISE_SIGN_PRECOMMIT) return nfl2k5_franchise_submit_held(NULL,0);
     return 1;
 }
+#ifdef _WIN32
+static int load_read_table(const FranchiseLoadEvent *event,uint32_t *size,uint32_t *kind) {
+    uint32_t words[3];uint64_t address=UINT64_C(0xBDC1CC)+event->table_offset;
+    if(event->table_offset%24u || address+sizeof(words)>UINT64_C(0x100000000) ||
+       !signing_screen_read((uint32_t)address,words,sizeof(words)))return 0;
+    *size=words[0];*kind=words[2];return 1;
+}
+static void load_read_boundary(const FranchiseLoadEvent *event) {
+    uint32_t size=0,kind=0;int table=load_read_table(event,&size,&kind);
+    const uint32_t owner=GetCurrentThreadId();
+    if(event->stage==FRANCHISE_LOAD_BEGIN) {
+        AcquireSRWLockExclusive(&save_read_lock);franchise_load_begin(&load_read,event,owner,size,kind);ReleaseSRWLockExclusive(&save_read_lock);return;
+    }
+    if(event->stage==FRANCHISE_LOAD_INPUT) {
+        uint64_t epoch;int expected;
+        AcquireSRWLockShared(&save_read_lock);epoch=load_read.epoch;
+        expected=load_read.phase==FRANCHISE_LOAD_READING && franchise_load_same(&load_read,event,owner);
+        ReleaseSRWLockShared(&save_read_lock);
+        char digest[65];int hashed=0;void *copy=NULL;
+        if(expected && table && size==FRANCHISE_SAVE_BYTES && kind==9 && !event->offset && (copy=malloc(FRANCHISE_SAVE_BYTES))!=NULL)
+            hashed=signing_screen_read(event->buffer,copy,FRANCHISE_SAVE_BYTES) && franchise_save_read_digest(copy,FRANCHISE_SAVE_BYTES,digest);
+        free(copy);
+        AcquireSRWLockExclusive(&save_read_lock);
+        if(epoch==load_read.epoch)franchise_load_input(&load_read,event,owner,hashed?digest:NULL);
+        ReleaseSRWLockExclusive(&save_read_lock);return;
+    }
+    AcquireSRWLockExclusive(&save_read_lock);
+    if(event->stage==FRANCHISE_LOAD_DECODED && table && size==FRANCHISE_SAVE_BYTES && kind==9)
+        franchise_load_decoded(&load_read,event,owner);
+    else {load_read.last_stage=event->stage;load_read.last_offset=event->offset;franchise_load_invalid(&load_read);}
+    ReleaseSRWLockExclusive(&save_read_lock);
+}
+#endif
 static int addon_event(const char *name,const void *data,size_t size) {
     if(name && data && !strcmp(name,NFL2K5_ADDON_LOADED_IMAGE) && size==sizeof(NFL2K5AddonImageIdentity)) {
         NFL2K5AddonImageIdentity next;
@@ -404,13 +440,21 @@ static int addon_event(const char *name,const void *data,size_t size) {
     if(!name || !data) return 0;
 #ifdef _WIN32
     if(!strcmp(name,NFL2K5_ADDON_FILE_READ_V2) && size==sizeof(NFL2K5AddonFileReadV2)) {
-        FranchiseSaveRead candidate;
-        if(franchise_save_read_capture(data,&candidate)) {
-            AcquireSRWLockExclusive(&save_read_lock);
-            if(save_read.sequence!=UINT64_MAX) {candidate.sequence=save_read.sequence+1;save_read=candidate;}
-            ReleaseSRWLockExclusive(&save_read_lock);
-        }
+        const NFL2K5AddonFileReadV2 *located=data;FranchiseSaveRead candidate;
+        AcquireSRWLockExclusive(&save_read_lock);
+        const uint64_t epoch=franchise_load_read_begin(&load_read,located);
+        ReleaseSRWLockExclusive(&save_read_lock);
+        const int captured=franchise_save_read_capture(located,&candidate);
+        AcquireSRWLockExclusive(&save_read_lock);
+        if(captured && save_read.sequence!=UINT64_MAX){candidate.sequence=save_read.sequence+1;save_read=candidate;}
+        franchise_load_read_finish(&load_read,epoch,captured?&candidate:NULL);
+        ReleaseSRWLockExclusive(&save_read_lock);
         return 1; /* Observation only, never an application response. */
+    }
+    if(!strcmp(name,FRANCHISE_LOAD_EVENT) && size==sizeof(FranchiseLoadEvent)) {
+        FranchiseLoadEvent event;memcpy(&event,data,sizeof(event));
+        if(event.stage<FRANCHISE_LOAD_BEGIN || event.stage>FRANCHISE_LOAD_DECODED)return 0;
+        load_read_boundary(&event);return 1;
     }
 #endif
     if(!strcmp(name,FRANCHISE_SIGN_APPLICATION_EVENT) && size==sizeof(FranchiseSignGateEvent)) {
@@ -443,6 +487,12 @@ static int addon_event(const char *name,const void *data,size_t size) {
     return 0;
 }
 static int addon_snapshot(const char *name,void *out,size_t capacity) {
+#ifdef _WIN32
+    if(name && out && !strcmp(name,FRANCHISE_LOAD_READ_SNAPSHOT) && capacity==sizeof(FranchiseLoadRead)) {
+        AcquireSRWLockShared(&save_read_lock);memcpy(out,&load_read,sizeof(load_read));int present=load_read.epoch!=0;
+        ReleaseSRWLockShared(&save_read_lock);return present;
+    }
+#endif
     if(name && out && !strcmp(name,FRANCHISE_SAVE_READ_SNAPSHOT) && capacity==sizeof(FranchiseSaveRead)) {
         FranchiseSaveRead candidate;int present=save_read_copy(&candidate);memcpy(out,&candidate,sizeof(candidate));return present;
     }
@@ -478,6 +528,15 @@ static void addon_poll(void) {
         fprintf(stderr,"[FRANCHISE-TRACE] save_read sequence=%llu bytes=%llu payload_sha256=%s guest_mapped=%u guest_address=0x%08x source_scope=read_candidate active_franchise=unverified\n",
             (unsigned long long)candidate.sequence,(unsigned long long)candidate.file_size,candidate.payload_sha256,candidate.guest_mapped,candidate.guest_address);
     }
+#ifdef _WIN32
+    FranchiseLoadRead load;
+    AcquireSRWLockShared(&save_read_lock);load=load_read;ReleaseSRWLockShared(&save_read_lock);
+    if(trace && !strcmp(trace,"1") && load.epoch && (reported_load_epoch!=load.epoch || reported_load_phase!=load.phase)) {
+        reported_load_epoch=load.epoch;reported_load_phase=load.phase;
+        fprintf(stderr,"[FRANCHISE-TRACE] load_read epoch=%llu phase=%u stage=%u buffer=0x%08x size=%u kind=%u consumed=%u source_sequence=%llu source_scope=load_checkpoint namespace_bound=0\n",
+            (unsigned long long)load.epoch,load.phase,load.last_stage,load.buffer,load.raw_size,load.raw_kind,load.last_offset,(unsigned long long)load.source.sequence);
+    }
+#endif
     nfl2k5_franchise_guest_poll();
 }
 static const NFL2K5AddonAPI addon_api={sizeof(NFL2K5AddonAPI),addon_start,addon_stop,

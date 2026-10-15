@@ -724,6 +724,14 @@ PATCHES = [
 ]
 
 
+# The load router's shared interior appears in all five converted exports.
+# Keep each generated copy and interpreted execution on the same observations.
+for _load_func in ("sub_0016E1D0","sub_0016E290","sub_0016E350","sub_0016E3F0","sub_0016E540"):
+    for _load_name,_load_anchor,_load_stage in (("BEGIN","loc_0016E6CA: ;",1),("FAILED","loc_0016E6DC: ;",2),("INPUT","loc_0016E70B: ;",3),("DECODED","loc_0016E81A: ;",4)):
+        PATCHES.append(("FRANCHISE_LOAD_"+_load_name+"_"+_load_func,_load_func,_load_anchor,"after",
+            "    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(%du,esi,ebx,ebp,esp); }\n" % _load_stage))
+
+
 def marker(pid):
     return "/* NFL2K5-GENPATCH:%s */" % pid
 
@@ -790,6 +798,10 @@ def main():
                     with open(path,"w",encoding="utf-8",newline="") as f:
                         f.write("\n".join(lines))
                     applied.append("%s upgraded -> %s" % (pid,os.path.basename(path)))
+                continue
+        if marked is not None and pid.startswith("FRANCHISE_LOAD_"):
+            if marked<=start or lines[marked-1].strip()!=anchor or marked+1>=end or lines[marked+1].strip()!=code.strip():
+                failed.append("%s: unrecognized load checkpoint location/body" % pid)
                 continue
         if marked is not None:
             present.append(pid)

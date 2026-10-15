@@ -17,7 +17,7 @@ typedef struct FranchiseSaveRead {
  * cheap candidate filter, deliberately not the full roster/calendar validator. */
 static inline int franchise_save_read_shape(const void *bytes,size_t size) {
     if(!bytes || size!=FRANCHISE_SAVE_BYTES) return 0;
-    const unsigned char *p=bytes;uint32_t length,count;int32_t start,end;
+    const unsigned char *p=(const unsigned char*)bytes;uint32_t length,count;int32_t start,end;
     memcpy(&length,p+0x2E4,4);memcpy(&count,p+0x320,4);
     memcpy(&start,p+0x324,4);memcpy(&end,p+0x32C,4);
     return !memcmp(p+0x2E0,"ROST",4) && !memcmp(p+0x30C,"ROST",4) &&

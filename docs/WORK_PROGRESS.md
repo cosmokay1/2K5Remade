@@ -8163,3 +8163,40 @@ The earlier transient C-host expected-rejection failure remains a separate issue
 with reply diagnostics and six passing direct Windows reproductions; no deadline
 was changed. Actual selected-load binding and financial signing/save-reload remain
 open; these read observations grant nothing.
+
+## October 15, 2026 — Correlated load checkpoints; Windows validation passed
+
+The franchise addon now observes the existing load router before its native read,
+on failure, before relocation and after franchise decoding. All five generated
+copies and interpreted execution report the same four checkpoints without
+changing game control flow. The patcher rejects altered checkpoint bodies or
+locations. No pack name selects behavior. The existing guest-memory callback
+supplies bounded table/input reads; native pointers are not retained.
+
+An owned observation correlates one full delivered720044-byte read with its
+mapped destination, owner/frame/table, exact input SHA256 and final consumed
+byte count. Epochs prevent an older in-flight read attaching to a newer load.
+Missing, duplicate, partial, changed, unreadable, mismatched or nested attempts
+invalidate the observation. The historical snapshot is explicitly a load
+checkpoint, not an active-session proof, selected-container namespace or permit.
+Failures before the first checkpoint and subsequent lifecycle transitions still
+need active-binding coverage before this can authorize anything.
+
+All868 Python regressions and nine local native CTests pass. An offline MSVC
+build verifies380 declared source files, compiles the full Windows game/DLL and
+all standalone targets. All17 generated Windows CTest commands pass under the
+isolated Proton fixture prefix, including the production-DLL read/input/decoded
+fixture, duplicate/changed/unreadable rejection and restart. The full game/DLL
+also passes isolated --validate, child marker validated, launcher0. Private
+receipts are retained under load-read-8d4f3cd on the Mac and Deck.
+
+EXE SHA256 b770243d64a211595848dd41a17773887c9bb797862ecae9dd77523b699bb518;
+DLL SHA256 4af092de1a4a509d8efc12490997a5fcf94ac793218af91fcbc975b5c705bcc5.
+These combine destination metadata with load checkpoints and are not installed.
+The user game is not interrupted; actual MyNFL1 checkpoint delivery, complete
+active namespace binding and financial signing/save-reload remain unverified.
+AI controls remain off; no inference, save edits or application grant occurred.
+
+Exact preceding commit8d4f3cd passes Build38805048068 and Windows/Ubuntu
+Franchise38805048342, including the corrected bcrypt link. Those CI results
+cover the preceding connection change, not the new uncommitted checkpoint code.

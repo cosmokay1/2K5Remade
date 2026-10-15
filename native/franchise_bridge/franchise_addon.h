@@ -3,6 +3,7 @@
 #define NFL2K5_FRANCHISE_ADDON_H
 #include <stdint.h>
 #include "host_client.h"
+#include "load_read.h"
 #define FRANCHISE_FSM_EVENT "franchise.fsm.v1"
 #define FRANCHISE_SIGN_SUBMIT_EVENT "franchise.sign-submit.v1"
 #define FRANCHISE_SIGN_GATE_EVENT "franchise.sign-gate.v2"
