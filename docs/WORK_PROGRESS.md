@@ -6123,3 +6123,28 @@ Windows (including the actual native FOX/CBS pixel comparison) and Linux runtime
 Franchise38678553423 passed Windows/Ubuntu. Full Linux game rendering, NBC native
 style parity, real financial opening import, native apply/save/reload and delivery
 acceptance remain open.
+
+## Windows saved-signing reader compatibility repair
+
+013854d CI38679439266 passed Ubuntu but failed Windows at the restarted
+confirmation child's startup, before any reply. Build38679439375 passed. The
+reader compared path stat and descriptor fstat ctime directly. CPython documents
+an open Windows inconsistency where these expose creation and change time
+respectively (https://github.com/python/cpython/issues/157671). Retain cross-API
+device/inode/size/mtime checks, but compare ctime within each API separately.
+This preserves detection of path and descriptor mutations without assuming the
+two timestamp sources have identical semantics. Child test failures now include
+exit code and stderr instead of hiding startup diagnostics.
+
+Four focused regressions accept differing stable ctimes and reject path ctime,
+descriptor ctime, identity, size and mtime changes. Existing private Windows
+Python3.13.16 under isolated Proton did not reproduce the mismatch: both APIs
+returned equal timestamps after a rewrite. This does not establish real Windows
+behavior; fresh hosted Windows CI is required to validate the repair. No installed
+game, save, remote control or paid inference was changed.
+
+Local validation after repair:779 regressions passed29.355s with localhost
+fixtures permitted; the initial sandbox run had four socket-bind permission
+errors, not assertion failures. Targeted15 signing bridge tests passed5.403s.
+Money audit retained5050 bonus conservation cases. Hosted Windows validation is
+pending the repair push; native apply/save/reload remains unfinished.

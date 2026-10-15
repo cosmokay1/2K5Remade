@@ -25,8 +25,14 @@ def read_guest_save(path):
         payload=source.read(SIZE+1)
         after=os.fstat(source.fileno())
     def identity(value):
-        return value.st_dev,value.st_ino,value.st_size,value.st_mtime_ns,value.st_ctime_ns
-    if len(payload)>SIZE or identity(before)!=identity(opened) or identity(opened)!=identity(after) or identity(after)!=identity(path.stat()):
+        return value.st_dev,value.st_ino,value.st_size,value.st_mtime_ns
+    final=path.stat()
+    # Windows stat may expose creation time while fstat exposes change time.
+    # Compare ctime only within each API, retaining both mutation checks.
+    if (len(payload)>SIZE or identity(before)!=identity(opened)
+            or identity(opened)!=identity(after) or identity(after)!=identity(final)
+            or before.st_ctime_ns!=final.st_ctime_ns
+            or opened.st_ctime_ns!=after.st_ctime_ns):
         raise ValueError('Pinned guest save changed during read or exceeds the supported layout')
     return payload
 

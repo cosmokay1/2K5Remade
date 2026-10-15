@@ -220,7 +220,9 @@ class GuestSigningBridgeTests(unittest.TestCase):
             replies=Queue()
             Thread(target=lambda:replies.put(process.stdout.readline()),daemon=True).start()
             line=replies.get(timeout=10)
-            self.assertTrue(line,'Child exited without a reply')
+            if not line:
+                process.wait(timeout=5)
+                self.fail('Child exited without a reply (exit '+str(process.returncode)+'): '+process.stderr.read())
             return json.loads(line)
         finally:
             process.stdin.close()
