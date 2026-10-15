@@ -6288,3 +6288,32 @@ store connection ownership is unchanged. The targeted eight-test suite is rerun
 before push; fresh hosted Windows verification remains required. The additional
 private Windows Python check could not stage because steamdeck.local did not
 resolve, so it was not run or claimed as passed.
+
+Cash-scope repair4a74436 now passed Franchise38692925601 Windows2022/Ubuntu,
+including all787 regressions, money audit and actual native pipe/restart checks.
+Targeted eight cases passed0.611s after explicit fixture connection closing.
+
+A separate private preflight used the existing legally provided pinned MyNFL1
+snapshot, without changing the save, bindings or any live DB. A new disposable
+read-only projection replayed all32 clubs,2070 bound player identities and1693
+preserved legacy contracts with explicit unknown cash. Every current roster cap
+charge and legacy schedule hash matched; all franchise-wide cash totals remained
+null and known subsets were empty (no new contracts were inserted). Giants
+roster payroll remained211.984M at301.2M cap, with89.216M roster-only room.
+Modern free-agent classification was deliberately left pending and a new offer
+was refused; no salary floors, retained debt, rookie reserves or guarantees were
+invented. A zero reserve is labeled only as a projection convention, not verified
+complete Team Salary or authority for writes. No model/game execution occurred.
+
+Private evidence: .local-runtime/softdrink-v0.6/mynfl1/
+cash-scope-preflight-830u4h3t/receipt.json and read-only-projection.sqlite.
+Source payload SHA2564c8c31b4f400e25175223163a948e126cb83d10aa4bb98979a564ef287761ec3;
+bindings9955880d3fb6a02eaebc4c1662cfac075afb59443a1191e709bf2dd51c9ee442.
+These are existing local snapshot inputs, not proof of the current Deck session
+or a financial migration. Live opening/source selection, supported legacy aging,
+partial lifecycle native receipt support and actual apply/save/reload remain open.
+
+Companion Build38692925575 also completed successfully on Windows/Linux. The
+extra private Windows/Proton cash-scope suite remains unrun because the Deck's
+hostname did not resolve during staging; hosted Windows results are authoritative
+for that component scope, not proof of game playability.

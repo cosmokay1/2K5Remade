@@ -57,6 +57,9 @@ native offer submission, player response, legal financial commit and save recove
       and track new contracts exactly; no automatic live import or inferred
       legacy cash/guarantees. Actual opening cap/non-roster/rookie data and
       native application/save/reload remain to verify.
+      Source4a74436 passed Windows/Ubuntu CI38692925601. A separate pinned
+      MyNFL1 preflight replayed32 clubs/1693 legacy schedules with unknown cash;
+      it is a roster-only projection and grants no live signing authority.
 - [ ] Complete draft, persistent stories/promises, shutdown and final delivery checks
       below. Defer broader stat mapping while the core signing flow is incomplete.
 
