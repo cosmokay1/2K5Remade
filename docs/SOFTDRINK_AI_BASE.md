@@ -17,7 +17,18 @@ base data, enables 128 MB guest memory and initializes nfl2k5_interp_setup.
 src/nfl2k5_mod_packs.c keeps packs on the installed main executable rather than
 requiring a separate native executable per pack. README reports v0.4/v0.5 support;
 older HANDOFF-MODS.md separate-build failures describe a historical route.
-No v0.6 game execution was performed in this investigation.
+Private v0.6 execution now reaches the field on Deck after the interpreter shared-
+epilogue fix (4e3d3d5). Initial match-start failure and recovery are recorded in
+WORK_PROGRESS.md. The manager Off/On restart and actual DLL mapping alongside the
+active pack are verified. Fresh-franchise, post-play, signing and save/load gates
+remain open; this does not establish full compatibility.
+
+The [v0.6 notes](https://github.com/cruuz/softdrink-2k28/releases/tag/v0.6)
+document corrected rookie-equals-1 experience and aligned career seasons, current-
+team history rows, overall letter grades and player honors. Numeric ratings still
+drive sorting/calculations; attributes remain numeric. New roster/history data
+needs a fresh franchise. These are additional inputs to revalidate rather than
+proof of our performance-driven decisions or modern financial accounting.
 
 ## Acceptance before AI integration
 

@@ -47,14 +47,19 @@ conversion is not claimed.
       d3ca4aa CI38658080834 passed. User now confirms the installed manager
       displays Franchise Sidecar Off; toggle/restart/controller acceptance remains open.
 - [ ] Verify addon installation/upgrade for pinned repacks; preserve user saves
-      and reject unsupported native executable versions.
-- [ ] Verify manager UI/controller behavior and addon plus SOFTDRINK execution.
+      and reject unsupported native executable versions. The guarded DLL installer
+      now passes install/reinstall with copied actual private binaries and rejects
+      the previous host; synthetic upgrade/backup/failed-replace checks pass.
+      Cross-version live upgrade acceptance remains open.
+- [x] Verify installed manager Off/On selection survives normal restart and loads
+      the DLL alongside the selected SOFTDRINK pack: user confirmation plus
+      process102235 mapping, enabled=1, unchanged active-pack and zero runtime errors.
+- [ ] Verify broader controller/gameplay behavior with addon plus SOFTDRINK.
       Private Windows candidate built and installed on Deck; DLL/manager fixture
       passed under Proton. SOFTDRINK reached team selection, then crashed when
       starting a match. Shared-epilogue interpreter regression reproduced and fixed;
       user reports the fixed match-start retry is working; independent on-field
-      screenshot and zero interpreter/crash errors corroborate it. Broader gameplay and
-      manager/controller acceptance remain open.
+      screenshot and zero interpreter/crash errors corroborate it. Broader gameplay/controller acceptance remains open.
 
 ## Active base decision — October 14, 2026
 
@@ -79,10 +84,12 @@ not establish v0.6 compatibility or a new completion percentage.
 
 ## Latest verified state — October 14, 2026
 
-- Latest published verified implementation: `d3ca4aa`. Build `38658080837` and Franchise AI
-  `38658080834` passed. Manager selection and DLL component checks passed. Windows DLL addon fixture and702 tests on Windows/Ubuntu passed; the private candidate is now installed and executed on Deck with the addon disabled.
-  SOFTDRINK reached team selection but crashed at match start; compatibility remains
-  unverified. A synthetic regression confirms an interpreter shared-epilogue bug;
+- Latest verified implementation: `4e3d3d5`; Franchise AI `38662620516` passed
+  Windows/Ubuntu, including the interpreter regression. Private Windows game built
+  and match-start recovery verified on Deck. Manager selection and DLL component checks passed. Windows DLL addon fixture and702 tests on Windows/Ubuntu passed; the private candidate now runs with the addon enabled after normal restart.
+  DLL mapping and unchanged SOFTDRINK selection are independently confirmed.
+  Initial SOFTDRINK match start crashed; its specific recovery is now verified.
+  Broader gameplay and franchise compatibility remain unverified. A synthetic regression confirms an interpreter shared-epilogue bug;
   its fix passes under Proton, and the user reports the match retry is working.
   Broader gameplay and franchise acceptance remain open. CI checks asset-free runtime and bridge components;
   the actual game target is excluded. The privately compiled standard game renders

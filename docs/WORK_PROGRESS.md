@@ -5470,3 +5470,35 @@ The new Windows interpreted_shared_epilogue regression passed, alongside existin
 native protocol/manager/DLL and franchise tests. This complements the actual Deck
 on-field recovery evidence; save/reload and enabled-addon game execution remain
 separate unchecked gates.
+
+
+## October 14, 2026 — actual enabled-addon restart and guarded installer
+
+User confirms Franchise Sidecar On after normal restart. Independent process102235
+maps the installed runtime/addons/franchise/franchise-addon.dll. Selection is
+enabled=1, active pack remains SOFTDRINK_2K28_v0.6-v0.6, current log contains zero
+crash/unknown-opcode markers. No provider, control renewal or cloud calls. This
+checks real manager selection/restart/module loading, not AI or save integration.
+
+Added tools/install_sidecar_addon.py: trusted package manifest lists exact supported
+host SHA256s and DLL checksum. It rejects unlisted hosts, corrupt/non-AMD64 DLL
+headers and symlinked installation paths. Only the franchise DLL is replaced,
+atomically; previous content-hashed DLL backup retained, identical reinstall is a
+no-op. Selection, content pack, launcher, host, saves and AI configuration untouched.
+It requires an already addon-capable host; no universal repack conversion or general
+addon registry is claimed. Documentation includes package trust/licensing limits.
+
+Five new synthetic tests cover initial install/default-off, upgrade/backup, exact
+reinstall, host/payload rejection, failed replacement preserving installed state
+and symlinked-directory refusal. All707 local regressions passed in20.586s. Initial
+sandbox run blocked four localhost HTTP/TLS fixture listeners; unsandboxed retry
+passed. No external services or paid inference were used by those fixtures.
+
+On Deck, a separate installer-check directory with copies of the actual private
+EXE/DLL passed initial install and no-op reinstall, retaining synthetic save and
+selection/pack markers. Supported host1742d8c261f661a46434d0345a05e4b59270676ab27e18fc4585672d441d6bcb;
+previous hosta47435e9d0c5bf9a7fa652a853722484a84d9282a15f5f28c34be40934a7bd28
+was refused without host mutation. DLLd4d1020eee8732aa3b60ba08a8a93237922619548344ab8c9540ff9f81750190.
+Private installer-check-receipt.json records this. Active game/runtime was never
+modified by this check. Synthetic upgrade tests do not prove cross-version live
+upgrade compatibility. Windows/Linux CI for the new installer remains pending.
