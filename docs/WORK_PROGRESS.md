@@ -8270,3 +8270,20 @@ evidence; do not restart it or label it passing. Independent native build,
 17-test Proton execution and isolated game validation are already complete.
 The next runtime acceptance step requires the user's normal game exit and load;
 no game interruption, save edits, inference or control renewal is authorized.
+
+## October 15, 2026 — Corrected load count installed after normal exit
+
+The user confirmed normal exit. The guarded installer verified no game/service
+process, the exact installed EXE and unchanged DLL/wrapper, plus the tested
+private source overlay. It installed only sourcef08390c's corrected EXE,
+SHA256 c23dee11e3df74d6d40d18af82652d9b876cc04c3f6202014d69e853bea853a3,
+with the prior executable backed up under
+decoded-load-027e68b/installed-before-decoded-count. All205 save-file hashes are
+unchanged; the installation receipt is retained on Deck. AI/controlled signing
+remain off. The user has been asked to launch the same Steam entry and leave
+MyNFL1's franchise menu open for actual corrected checkpoint verification.
+
+Exactf08390c Franchise38808041886 has now passed both Windows and Ubuntu;
+Build38808041932 also passed. The read-only CI watcher finished successfully.
+These checks do not establish actual new-game load correlation, selected-container
+binding or legal signing/save-reload; those gates remain open.

@@ -165,7 +165,8 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       checkpoint delivery are verified, but the initial checkpoint rejected the
       count because EBX excludes the final section length returned in EAX.
       Corrected total-count observation passes all17 Windows checks and isolated
-      game validation and is staged for installation after normal exit; actual
+      game validation. Sourcef08390c is now installed after normal exit, preserving
+      all205 save files; Windows/Ubuntu CI also passes. Actual
       successful correlation, selected-container identity and active-load lifetime
       still need verification.
       Service-side durable binding and active franchise identity remain open;
