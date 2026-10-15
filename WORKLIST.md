@@ -101,9 +101,11 @@ not establish v0.6 compatibility or a new completion percentage.
 
 ## Latest verified state — October 14, 2026
 
-- Latest verified implementation: `4e3d3d5`; Franchise AI `38662620516` passed
-  Windows/Ubuntu, including the interpreter regression. Private Windows game built
-  and match-start recovery verified on Deck. Manager selection and DLL component checks passed. Windows DLL addon fixture and702 tests on Windows/Ubuntu passed; the private candidate now runs with the addon enabled after normal restart.
+- Latest verified implementation: `2b35f3e`; Build `38665445078` and Franchise AI
+  `38665445103` passed. Windows/Ubuntu passed707 regressions and native checks,
+  including the generic example addon, ABI1 refusal and interpreter regression.
+  The installed Deck runtime remains the verified ABI1 pair; ABI2 is staged only. Private Windows game built
+  and match-start recovery verified on Deck. Manager selection and DLL component checks passed. Windows DLL addon fixture and707 tests on Windows/Ubuntu passed; the private candidate now runs with the addon enabled after normal restart.
   DLL mapping and unchanged SOFTDRINK selection are independently confirmed.
   Initial SOFTDRINK match start crashed; its specific recovery is now verified.
   Broader gameplay and franchise compatibility remain unverified. A synthetic regression confirms an interpreter shared-epilogue bug;
@@ -112,7 +114,7 @@ not establish v0.6 compatibility or a new completion percentage.
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.
-- Latest verified published CI suite: **702 tests passed on Windows and Ubuntu**. Actual AIBASELIN parsing
+- Latest verified published CI suite: **707 tests passed on Windows and Ubuntu**. Actual AIBASELIN parsing
   resolves 1937 roster/free-agent members. This does not prove contract/save
   round-trip integration. The read-only signing observer includes bounded bank-slot/name reads and is compiled and installed after confirmed exit;
   actual readback identifies Jeremiah Trotter at bank slot1910, matching AIBASELIN.

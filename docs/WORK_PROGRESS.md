@@ -5577,3 +5577,11 @@ count them. The report distinguishes exact saved arithmetic from real-world
 liability coverage and preserves raw payload/source records privately. No game
 financial writes or model calls occurred. Next code work is schema-checked mod
 save parsing and dated obligation mapping, preserving the already-correct scale.
+
+
+ABI2 source2b35f3e validation completed: Build38665445078 and Franchise
+AI38665445103 passed. Windows/Ubuntu707 Python regressions plus native fixtures
+passed, including the generic counter addon through the shared loader, franchise
+message/snapshot checks, legacy ABI refusal and interpreter shared epilogue.
+Installer be9239a also passed Build38663889260 and Franchise38663889318.
+Installed game remains the working ABI1 pair; no ABI2 runtime replacement occurred.
