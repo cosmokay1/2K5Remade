@@ -51,6 +51,9 @@ native offer submission, player response, legal financial commit and save recove
       only a verified candidate after-save against captured identity/charges/
       revision. No inference or guest write grant; signing remains held after
       settlement because native application/reload verification is unfinished.
+      Source8e68e91 passed Franchise38701244992 and Build38701245086 on
+      Windows/Ubuntu, including actual native-client saved settlement and a
+      fresh AI-disabled recovery process with authored save files.
       Native application and save/reload remain unconnected.
       Game-facing acceptance remains held until native application, save/reload
       and recovery are connected and verified. Actual game execution remains

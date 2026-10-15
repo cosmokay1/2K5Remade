@@ -6360,3 +6360,14 @@ C++ validators via a temporary local executable. Money audit retained5050 bonus
 conservation cases. Windows compilation/process execution for the new fixture is
 pending CI; the Deck was unavailable in the prior turn, so none is assumed here.
 Installed runtime, saves and remote controls are unchanged.
+
+8e68e91 hosted verification completed successfully: Franchise38701244992 passed
+Windows2022/Ubuntu and Build38701245086 passed Windows/Linux. Windows compiled
+and executed the new actual franchise_saved_signing_check through the Python
+driver: captured proposal replay, explicit prepare, before/candidate-after reads,
+one financial confirmation, confirmed-after stop and fresh AI-disabled client
+recovery all passed with authored files. The full788 regressions, existing native
+C-client/cache/handshake/interpreter fixtures and money audit also passed.
+This closes native saved-state coordination for the active journal, not real
+in-game guest application, active-save discovery, session rebinding or reload.
+No installation, retail file mutation, paid inference or control change occurred.
