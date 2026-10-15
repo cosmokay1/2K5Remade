@@ -638,8 +638,10 @@ verified or the user cancels it.
 Packaging status October15: tools/package_steamdeck.py builds an explicit-manifest
 candidate ZIP with per-file hashes; it is not yet the final self-contained Deck
 installation flow. Existing private Gaming Mode shortcut/controller evidence does
-not verify a newly extracted package. Bundle the reusable launcher and installation
-instructions, eliminate private build-directory assumptions, and verify a fresh
+not verify a newly extracted package. User explicitly rejected a custom launcher:
+use Steam's standard non-Steam EXE shortcut with a selected Proton compatibility
+tool. Bundle installation instructions, eliminate private build-directory
+assumptions, and verify a fresh
 install/update with preserved saves before marking Deck delivery complete. Keep
 Windows/Proton as the working delivery path while the native Linux port remains
 unfinished. Current private source05ac4e9 game/DLL compilation and Proton boundary

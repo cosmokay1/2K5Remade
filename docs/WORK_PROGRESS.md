@@ -6702,3 +6702,13 @@ verified reusable installation/update package. Launcher bundling, removal of
 private build-folder assumptions and fresh package/save-preservation validation
 remain part of final delivery. Windows/Proton remains the current delivery path;
 the incomplete native Linux port does not replace it.
+
+## Deck packaging scope correction: no custom launcher
+
+The user explicitly rejected a custom launcher as overkill. No launcher code was
+added. Retain the simple explicit-manifest ZIP and normal Steam non-Steam EXE
+shortcut with a selected Proton compatibility tool. The earlier launcher-bundling
+plan is superseded. Ship the matching game/addon/dependencies and concise setup
+instructions with relative runtime paths; verify fresh extraction, Gaming Mode
+controls and save preservation through that normal Steam flow. A custom launcher
+or automated Steam-library editor is not a delivery requirement.

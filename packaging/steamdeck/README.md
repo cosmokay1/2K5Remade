@@ -1,9 +1,10 @@
 # Steam Deck delivery
 
-Delivery route: portable Windows runtime launched by Steam through Proton. This
-is a candidate packaging route; neither gameplay nor the native franchise pipe
-has been tested under Proton. The current repository does not build an integrated
-playable game without the reviewed guest integration and legal assets.
+Delivery route: extract the Windows runtime, add its EXE as a non-Steam game and
+select Proton in Steam Properties. No custom launcher is required or planned.
+Existing private builds have Gaming Mode/controller and native pipe evidence;
+fresh package installation and the complete franchise signing/save/reload flow
+remain unverified. Candidate packaging is not integrated playable delivery.
 
 The local packager accepts an explicit manifest, preserves relative file paths,
 records SHA-256 hashes and refuses to overwrite an existing ZIP. It rejects
