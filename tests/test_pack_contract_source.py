@@ -78,7 +78,7 @@ class PackContractSourceTests(unittest.TestCase):
             location=PLAYER_START+PLAYER_STRIDE+field
             struct.pack_into('<i',payload,location,target-location+1)
         self.payload=bytes(payload)
-        self.bindings=create_bindings(self.payload,game_xbe=self.xbe)
+        self.bindings=create_bindings(self.payload,game_xbe=self.xbe,game_context=self.bindings['game_context'])
         report=self.report()
         self.assertEqual(report['matched_contracts'],0)
         self.assertIn('ambiguous',report['teams']['49ers']['unresolved'][0]['reason'])

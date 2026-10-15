@@ -124,6 +124,7 @@ class SavedSigningConfirmationTests(unittest.TestCase):
         struct.pack_into('<i',before,0x91320+0x83DC+0x15D0,75300)
         self.before=bytes(before);self.after=self.signed(self.before)
         self.bindings=copy.deepcopy(self.bindings)
+        self.bindings.pop('game_context');self.bindings['version']='original-save-bindings-v1'
         self.bindings.update(game_profile={'id':SOFTDRINK_PROFILE,'xbe_sha256':SOFTDRINK_XBE_SHA256},
             baseline_payload_sha256=hashlib.sha256(self.before).hexdigest())
         self.offer=GuestContractTerms(829,4,1,2).to_offer(self.player,contract_format='softdrink_fxg_v1')

@@ -97,33 +97,61 @@ players (including legacy and classification-pending identities) and reports
 complete modern cap obligations, classification, native binding or write authority.
 
 
-## Pinned SOFTDRINK opening snapshot
+## Shared snapshot context
 
-The snapshot binding command can explicitly pin the verified SOFTDRINK 2K28
-v0.6 executable when creating a new registry:
+New registries use one intake path for the original game and compatible packs.
+Provide verified calendar and money data explicitly when the saved scheduler's
+coordinates differ from the logical season. For example, this context represents
+season2026 at scheduler index0 with four display dollars per raw liability dollar:
 
-```sh
-python3 -m tools.franchise_snapshot_bindings /path/to/SAVEGAME.DAT /path/to/new-bindings.json --create --game-xbe /path/to/pack/default.xbe
+```json
+{
+  "season_year": 2026,
+  "season_index": 0,
+  "money_scale": 4,
+  "league_cap_raw": 75300
+}
 ```
 
-Only XBE SHA256f67e6fc1cb76c9ea1f1ad504e4a6491ff126483d66a9da8ddb92950bbaf740ba
-is supported. The registry records that provenance; existing registries are never
-overwritten. Resolution still requires unchanged biography guards, membership
-coverage and same-year identities. This opening profile requires scheduler index0,
-reconciled payrolls, internal cap75300000 and scheduled-game year2026. It uses
-logical season2026 and four-to-one cap liabilities; it does not infer calendar
-advancement from the scheduled-game year or support a future season yet. Retail
-bindings retain their existing shape and calendar checks.
+```sh
+python3 -m tools.franchise_snapshot_bindings /path/to/SAVEGAME.DAT /path/to/new-bindings.json --create --game-context /path/to/context.json --game-xbe /path/to/default.xbe
+```
 
-The legacy exporter consumes the validated registry scale, retaining raw fitted
-terms and their snapshot source. The read-only signing checkpoint compares live
-raw values against the save, then compares scaled obligations and cap against
-the ledger. Native scheduler evidence remains in its original coordinates.
-The pin records offline executable provenance; active pack/franchise selection
-still requires runtime verification. Neither a registry nor a matching checkpoint
-authorizes AI, guest writes, cash assumptions, or omitted non-roster liabilities.
-MyNFL1 resolves2070 players and1693 active schedules across32 teams through this
-path; inherited reserve/dead-money reconciliation remains required for live use.
+The optional executable records source-image provenance; its name or hash never
+selects calendar, units or rules. This digest describes the supplied source file,
+not the host's engine.loaded-image.v1 digest after built-in file patches.
+Without explicit context, creation uses the decoded scheduler year/index, raw cap
+and unit factor1, and rejects a different scheduled-game year. Supported liability
+unit factors are currently1 and4. The raw cap must match the save; null is allowed
+only when the raw cap is unavailable. That permits identity inspection, not a
+financial import. Logical year must match the inspected roster/schedule year.
+
+Version2 registries persist this context with the original franchise namespace,
+player UUIDs, biography guards and personality seed. Resolution checks membership,
+biography, same-year identity and the pinned scheduler index/raw cap. Payroll and
+contract export still require independent reconciliation; context is no proof of
+complete modern obligations or active-franchise selection.
+
+Existing version1 registries remain readable for durable recovery. Convert a copy
+without rerolling any player identity, personality or contract schedule:
+
+```sh
+python3 -m tools.franchise_snapshot_bindings /path/to/SAVEGAME.DAT /path/to/existing-bindings.json --migrate-context /path/to/new-context-bindings.json
+```
+
+Both creation and conversion refuse an existing output. Historical named profiles
+are decoded only for old-registry compatibility; new creation never emits them.
+Conversion preserves their previously recorded calendar/units as explicit data.
+Do not replace a live registry automatically: existing stores and recovery journals
+may bind its original bytes/hash and need their own verified migration.
+
+A copy conversion of MyNFL1 preserves2070 player identities/personalities and1693
+active schedules across32 teams. The legacy exporter retains raw fitted terms and
+source, applying the validated unit factor after guest rounding. The read-only
+signing checkpoint compares live raw values to the save, then scaled obligations
+and cap to the ledger. Neither context nor a matching checkpoint authorizes AI,
+guest writes, cash assumptions or omitted non-roster liabilities. Calendar advance,
+complete opening books and live service binding remain separate acceptance gates.
 
 
 A separate source reconciliation command compares that registry to the pinned
@@ -142,8 +170,9 @@ guest checkpoint cannot authorize writes against corrected external balances
 until the guest and ledger enforce the same complete obligations.
 
 
-New captured offers use the pinned binding to select original_fxg_v1 (retail) or
-softdrink_fxg_v1 (4:1). The raw amount/flags stay unchanged. Python and the native
+New captured offers use the validated liability unit factor to select the existing
+wire encoding original_fxg_v1 (1:1) or softdrink_fxg_v1 (4:1). These historical
+encoding names do not select policy by mod identity. The raw amount/flags stay unchanged. Python and the native
 response validator scale annual salary and nominal bonus after guest rounding,
 then require exact modern allocation and exact reverse encoding. Proposal
 contexts state the actual display-dollar salary unit (4000 for SOFTDRINK);

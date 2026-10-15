@@ -29,8 +29,9 @@ native offer submission, player response, legal financial commit and save recove
 Use one addon/application pipeline for vanilla Remade and compatible mod packs;
 do not branch negotiation/accounting/story policy on a mod name or executable
 whitelist. Supply verified calendar, money units and roster/contract context to
-the same rules. Existing named bootstrap profiles still need conversion with
-saved franchise/actor identities preserved.
+the same rules. New v2 registries now persist explicit calendar/units/cap context without image
+whitelists. Copy-only v1 conversion preserves player IDs, personalities and
+contract schedules; live store/journal migration and service binding remain open.
 
 Windows + Proton is the Deck delivery priority. Defer further native Linux port
 work unless a concrete Proton limitation requires it; retain existing fixes.

@@ -7717,3 +7717,41 @@ The validation branch does not start the addon, so real game-boot delivery of th
 metadata still needs verification. No installed game/configuration, user save or
 remote control changed. Service binding, bootstrap generalization and live
 signing/save/reload remain incomplete.
+
+## October 15, 2026 — Shared explicit franchise context
+
+New snapshot creation now emits original-save-bindings-v2 with explicit logical
+season, raw scheduler index, liability unit factor and raw league cap. Source
+executable bytes optionally record provenance; no image name/hash chooses rules.
+The supported factors1 and4 use the same biography, contract and accounting path.
+Raw scheduler/cap drift and malformed/mixed version schemas reject. Financial
+exports separately reconcile payroll; an identity match grants no authority.
+
+Existing v1 registries remain readable, including historical named-profile data,
+so existing journals keep their recovery semantics. A copy-only --migrate-context
+command normalizes that previously recorded data without rerolling UUIDs or
+personalities. It refuses output overwrite and does not replace configured live
+registries or migrate DB/journal hashes automatically.
+
+All843 offline Python regressions pass in43.129s. Seven explicit-context tests
+also pass in actual Windows CPython under the isolated Deck Proton profile,
+followed by the native captured-acceptance/saved-candidate/ledger-confirmation/
+AI-disabled restart-recovery driver against authored files. Launcher0, child
+context-passed and explicit-context-windows-passed are verified. Receipt:
+explicit-context-v2/windows-receipt.json; source manifest SHA256
+8ff81448808dd0c0d596fe7b2827966f3224659cfd6a59cd1b6efc2c92c2e1d9.
+Native checker SHA256 a43e6bb54f491095aacc911649b53529712b5f60d35389933d1a9a8386256242.
+No paid inference was made.
+
+Actual MyNFL1 copy conversion preserves2070 identities/personalities and1693
+legacy schedules across32 clubs, with the original save and registry unchanged.
+Save SHA256 4c8c31b4f400e25175223163a948e126cb83d10aa4bb98979a564ef287761ec3;
+converted registry2e3b8d6b3cdf499dfdff10094d7edf34ab29d162477f7bdb92949c3aac4e5e86.
+Receipt: softdrink-v0.6/mynfl1/explicit-context-validation/receipt.json.
+The context records2026/index0/factor4/rawcap75300 as data. This does not reconcile
+omitted non-roster liabilities or establish complete modern Team Salary.
+
+Installed game/configuration, user saves, live DB and remote control were not
+changed. Live service binding, store/journal migration and actual permitted
+signing/accounting/save-reload acceptance remain open. Passing authored fixtures
+and copy conversion do not establish game integration or playability.

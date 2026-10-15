@@ -23,15 +23,14 @@ from tools.export_legacy_contracts import legacy_contracts
 class SoftdrinkSnapshotTests(unittest.TestCase):
     def setUp(self):
         self.xbe=b'authored executable hash fixture; not an Xbox asset'
-        self.pin=patch.object(bindings_tool,'SOFTDRINK_XBE_SHA256',hashlib.sha256(self.xbe).hexdigest())
-        self.pin.start();self.addCleanup(self.pin.stop)
         self.payload=fixtures.LegacyContractsTests().fixture()
         self.payload[:4]=b'\x01\0\0\0'
         self.payload[0x91326]=0
         struct.pack_into('<i',self.payload,0x91320+0x83DC+0x15D0,75300)
 
     def create(self):
-        return bindings_tool.create_bindings(bytes(self.payload),seed='authored',game_xbe=self.xbe)
+        return bindings_tool.create_bindings(bytes(self.payload),seed='authored',game_xbe=self.xbe,
+            game_context={'season_year':2026,'season_index':0,'money_scale':4,'league_cap_raw':75300})
 
     def test_explicit_pack_identity_and_export_preserve_scaled_schedules(self):
         before=bytes(self.payload);bindings=self.create()
@@ -105,12 +104,17 @@ class SoftdrinkSnapshotTests(unittest.TestCase):
             if case==2:struct.pack_into('<i',payload,0x91320+0x83DC+0x15D0,80500)
             if case==3:struct.pack_into('<I',payload,0x44A8+0x124,4765)
             with self.subTest(case=case),self.assertRaises(ValueError):
-                bindings_tool.resolve_bindings(bindings,bytes(payload))
+                # Biography binding is independent of payroll; financial exports
+                # still require all saved club totals to reconcile.
+                if case==3:legacy_contracts(bindings,bytes(payload))
+                else:bindings_tool.resolve_bindings(bindings,bytes(payload))
 
-    def test_profile_tampering_rejects(self):
+    def test_explicit_context_rejects_malformed_or_conflicting_data(self):
         bindings=self.create()
-        for profile in (None,{},'softdrink',{'id':bindings_tool.SOFTDRINK_PROFILE,'xbe_sha256':'0'*64},
-                        {**bindings['game_profile'],'money_scale':1}):
-            changed=copy.deepcopy(bindings);changed['game_profile']=profile
-            with self.subTest(profile=profile),self.assertRaises(ValueError):
+        for context in (None,{},'softdrink',{**bindings['game_context'],'money_scale':True},
+                        {**bindings['game_context'],'money_scale':2},
+                        {**bindings['game_context'],'season_index':1},
+                        {**bindings['game_context'],'league_cap_raw':80500}):
+            changed=copy.deepcopy(bindings);changed['game_context']=context
+            with self.subTest(context=context),self.assertRaises(ValueError):
                 bindings_tool.resolve_bindings(changed,bytes(self.payload))

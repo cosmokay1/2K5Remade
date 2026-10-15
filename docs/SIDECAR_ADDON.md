@@ -81,9 +81,12 @@ and SOFTDRINK v0.6 execution remain separate acceptance gates.
 The addon must use one negotiation/accounting/story pipeline for vanilla Remade
 and compatible mod packs. Mod names and a predefined executable whitelist must
 not select application behavior. Differences in calendar, units, roster and
-contract data must be supplied as verified context to the same rules. Existing
-named bootstrap profiles still need conversion to that explicit context without
-rerolling actors or invalidating existing franchise bindings.
+contract data must be supplied as verified context to the same rules. New v2 snapshot registries persist explicit calendar/units/cap context. Copy-only
+conversion preserves old franchise/player identities, personalities and legacy
+schedules. Named profiles remain a read-only v1 compatibility path for existing
+registries and recovery journals, never a new-creation policy selector. Live
+store/journal migration and active service binding remain unverified. See
+[franchise-creation.md](franchise-creation.md#shared-snapshot-context).
 
 The host now sends optional ABI2 metadata engine.loaded-image.v1 immediately
 after addon startup. native/game_addon/runtime_identity.h defines its65-byte
