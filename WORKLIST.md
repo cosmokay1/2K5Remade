@@ -69,7 +69,8 @@ native offer submission, player response, legal financial commit and save recove
       The addon now exposes a read-only whole-league financial snapshot with
       an independent saved-state comparison, including free agents and unrostered
       bank contracts. Local actual-addon comparisons and sanitizer checks pass;
-      Windows CI and live comparison remain to verify. This grants no permit and
+      d354faf passed Windows/Ubuntu Franchise38725532744 and Build38725532721.
+      Live comparison remains to verify. This grants no permit and
       does not establish guest quiescence, full identity or current authority.
       See docs/NATIVE_FINANCE_STATE.md for the boundary and remaining conditions.
 - [ ] Reconcile the required opening obligations/rules before permitting financial

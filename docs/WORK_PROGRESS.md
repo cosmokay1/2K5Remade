@@ -6474,3 +6474,11 @@ eeeb2175d84fff5b411c9189d6f6c07b45adc5bf8b954f6e1d9f4af5f9f10de5.
 The source save remained byte-identical. This is saved-only evidence, not a live
 comparison or complete opening-book proof. The installed Deck build/settings,
 user saves and remote controls are unchanged; no paid inference was made.
+
+Source d354faf passed Franchise38725532744 on Windows2022 and Ubuntu: all796
+regressions, both actual-addon28-case financial comparisons, standalone process
+checks and existing native/interpreter/saved-signing fixtures. Build38725532721
+also passed Windows/Linux runtime/tool and native presentation checks. These
+are component/build results, not a full newly integrated game. A read-only SSH
+retry failed DNS resolution for steamdeck.local, so no live financial snapshot,
+private installation or runtime/save verification was possible in this turn.
