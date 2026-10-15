@@ -8384,3 +8384,31 @@ paid inference, control renewal or production application occurred.
 
 Exact23946c9 Build38811766079 and Ubuntu Franchise checks pass; Windows
 Franchise38811766065 was still running at this installation check.
+
+## October 15, 2026 — Actual UDATA source identified; existing namespace preflight
+
+The user confirmed MyNFL1 loaded on the combined build. Actual process205319
+reports a decoded epoch1/phase3 checkpoint with720044 consumed bytes and source
+sequence1. Its native volume4061331925/index00000000:00945220 uniquely matches
+the Windows witness for saves/UDATA/53450030/12051C2F122B/SAVEGAME.DAT. The equal-byte
+saves/franchise/MyNFL1 copy has a different index00945223 and is not this read's
+source. Delivered/input/disk payload hashes all remain
+4c8c31b4f400e25175223163a948e126cb83d10aa4bb98979a564ef287761ec3.
+Installed EXE/DLL hashes match the deployment receipt. Actual trace, exact file
+witness and artifacts are retained in actual-source-receipt.json and the copied
+actual-load-session.log under source-binding-763c714-final on Deck; the receipt
+is also retained on the Mac. This proves the physical file for this decoded read.
+
+A SQLite backup from the prior registered snapshot-origin validation database
+was verified against the existing v2 registry and the exact now-observed payload.
+The association retains franchiseb8d2e88dbe2d4c96804a8c2dff050e19, its original
+personality seed fingerprint and player IDs. All2070 players resolve across32
+teams, logical2026, scale4:1, raw cap75300. Original database/registry/save hashes
+are unchanged. The copied preflight and observed-source-namespace-receipt.json
+are private in the local stage. No registry or personalities were recreated.
+
+Exact23946c9 Franchise38811766065 now passes both Windows and Ubuntu, alongside
+Build38811766079. Native physical origin and copied namespace preflight do not
+prove a live configured source/namespace handshake, full active-franchise lifetime,
+modern opening books, a production permit or actual signing/save-reload. Provider
+and controlled signing remain off; no AI request or real-save write occurred.
