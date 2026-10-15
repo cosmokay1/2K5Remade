@@ -7473,3 +7473,30 @@ protocol and adapter boundary pass. Full Windows CI/private execution is next.
 Actual application permission, complete books, uninterrupted mutation and real
 game signing/save/reload remain unverified. No user save, runtime, launch
 configuration, credentials or control was changed.
+
+Source7b536c2 now builds the full Windows game, DLL and updated handoff/client
+fixtures with the existing private offline compiler. Actual Windows protocol,
+adapter, owner-host/foreign refusal, and C-client/sidecar fixtures pass under the
+isolated Proton profile. The client hashes authored completion images while an
+older status is pending, obtains a true live comparison with the original save
+still present, then separately confirms the saved target, updates the ledger
+exactly once and reads recovery after disabled restart. This uses authored files
+and offline responses only; it is not game signing. Launcher exit0 plus child
+marker handoff-passed and handoff-windows-fixtures-passed are required. Receipt:
+native-05ac4e9/handoff-windows-receipt.json;314 owned source hashes are pinned
+by handoff-source-manifest.json (SHA256
+e4bda8b283befe697df6806a66bdfcbfe972d40d70e2a8ddfa9fe1659dc43263).
+
+The isolated full game --validate also passes with child marker validated and
+[TEST] Validation passed, recorded in validate-handoff-receipt.json. EXE SHA256
+d1db3a5197dedd32d93606da6fccb8bf29b23066328f7c6558fe4a77b25d2e4b; DLL
+a0a560ddd839850acef4581e8e8c7f1c50d37fc7e1dde55d579eaef3de0e8909.
+Existing isolated-validation mirror/tiled-aperture warnings remain; this does
+not verify rendering or gameplay. The installed Steam runtime was not replaced.
+
+Preceding source6f0e327 passes full Windows/Ubuntu Franchise38778655643 and
+Build38778655706. Current7b536c2 Build38779416490 and Ubuntu Franchise pass;
+Windows Franchise38779416527 is still running its Python regression step at
+observation, not failed. Follow that existing job rather than restarting it.
+Live application permits, complete opening books, runtime/franchise binding,
+uninterrupted mutation and actual signing/save/reload are still open.
