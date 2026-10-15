@@ -660,8 +660,14 @@ class FranchiseStore:
                 if ledger._cash is not None:
                     raise ValueError("Duplicate opening cash state")
                 records = tuple(CashObligation.from_dict(record) for record in payload["records"])
-                self._check_opening_cash(ledger, records)
-                ledger._cash = CashBook(records, payload["source"])
+                raw_unknown=payload.get('unknown_legacy_players',[])
+                if type(raw_unknown) is not list:
+                    raise ValueError('Recorded unknown legacy cash inventory must be a list')
+                book=CashBook(records, payload["source"],unknown_legacy_players=tuple(raw_unknown))
+                if list(book.unknown_legacy_players)!=raw_unknown:
+                    raise ValueError('Noncanonical recorded legacy cash inventory')
+                self._check_opening_cash(ledger, records,book.unknown_legacy_players)
+                ledger._cash=book
                 self._check_cash_components(ledger)
                 ledger.revision += 1
                 if payload["cash_posting"] != ledger.cash_snapshot():
@@ -1172,6 +1178,9 @@ class FranchiseStore:
     def _check_cash_components(ledger):
         if ledger._cash is None:
             return
+        unknown=set(ledger._cash.unknown_legacy_players)
+        if unknown and unknown!=set(ledger._legacy_contracts):
+            raise ValueError('Unknown cash inventory disagrees with preserved legacy contracts')
         for agreement in ledger.generation_agreements():
             # The archive view validates canonical identities and archive-map coverage.
             record=ledger._cash.records.get(agreement.identity.cash_obligation_id)
@@ -1184,27 +1193,29 @@ class FranchiseStore:
                 raise ValueError('Paid component exceeds or disagrees with original contract')
 
     @staticmethod
-    def _check_opening_cash(ledger, records):
-        if ledger._legacy_contracts:
-            raise Rejected('Legacy cash obligations require verified import; cannot assume zero')
+    def _check_opening_cash(ledger, records, unknown_legacy_players=()):
+        if set(unknown_legacy_players)!=set(ledger._legacy_contracts):
+            raise Rejected('Explicit cash scope must identify every preserved legacy contract; cannot assume zero')
         by_id = {record.obligation_id: record for record in records}
         for player, offer in ledger._contracts.items():
             record = by_id.get(ledger.contract_cash_id(player))
             if record is None or record.player_id != player or record.amount != sum(offer.salaries) + offer.signing_bonus:
                 raise ValueError("Opening cash must reconcile every original active contract")
 
-    def initialize_cash(self, team_id, records: tuple[CashObligation, ...], *, source: str):
-        book = CashBook(records, source)
+    def initialize_cash(self, team_id, records: tuple[CashObligation, ...], *, source: str, unknown_legacy_players=()):
+        book = CashBook(records, source,unknown_legacy_players=unknown_legacy_players)
         with self._connection(write=True) as db:
             ledger = self._load(db, team_id)
             if ledger._cash is not None:
                 raise Rejected("Cash already initialized; refusing to reset payments")
-            self._check_opening_cash(ledger, records)
+            self._check_opening_cash(ledger, records,book.unknown_legacy_players)
             ledger._cash = book
             self._check_cash_components(ledger)
             ledger.revision += 1
             payload = {"records": [record.to_dict() for record in records], "source": source,
                        "cash_posting": book.snapshot(), "posting": ledger.financial_snapshot()}
+            if book.unknown_legacy_players:
+                payload['unknown_legacy_players']=list(book.unknown_legacy_players)
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, 'cash:opening', 'cash_open', ?)",
                        (team_id, json.dumps(payload, allow_nan=False)))
 

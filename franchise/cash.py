@@ -49,7 +49,7 @@ class CashObligation:
 
 
 class CashBook:
-    def __init__(self, records: tuple[CashObligation, ...], source: str):
+    def __init__(self, records: tuple[CashObligation, ...], source: str, *, unknown_legacy_players=()):
         if type(records) is not tuple or any(not isinstance(item, CashObligation) for item in records):
             raise ValueError("Typed opening cash records required")
         if type(source) is not str or not source.strip():
@@ -58,9 +58,18 @@ class CashBook:
         self.records = {record.obligation_id: record for record in records}
         if len(self.records) != len(records):
             raise ValueError("Duplicate cash obligations")
+        if (type(unknown_legacy_players) is not tuple or
+                any(type(player) is not str or not player.strip() for player in unknown_legacy_players) or
+                len(set(unknown_legacy_players))!=len(unknown_legacy_players)):
+            raise ValueError('Explicit unique legacy cash identities required')
+        self.unknown_legacy_players=tuple(sorted(unknown_legacy_players))
+        if any(record.player_id in self.unknown_legacy_players for record in records):
+            raise ValueError('Unknown legacy cash cannot also be recorded as a known amount')
         self.revision = 0
 
     def add_contract(self, offer, source, *, track_components=True, obligation_id=None):
+        if offer.player_id in self.unknown_legacy_players:
+            raise Rejected('Legacy cash remains unknown; cannot replace it with a new obligation')
         key = "contract:" + offer.player_id if obligation_id is None else obligation_id
         if type(key) is not str or not key.strip():
             raise ValueError("Explicit contract cash identity required")
@@ -93,7 +102,11 @@ class CashBook:
 
     def snapshot(self):
         records = [self.records[key].to_dict() for key in sorted(self.records)]
-        return {"revision": self.revision, "source": self.source, "obligations": records,
-                "nominal_total": sum(record.amount for record in self.records.values()),
+        totals={"nominal_total": sum(record.amount for record in self.records.values()),
                 "paid_total": sum(record.paid for record in self.records.values()),
                 "unpaid_total": sum(record.amount - record.paid for record in self.records.values())}
+        result={"revision": self.revision, "source": self.source, "obligations": records,**totals}
+        if self.unknown_legacy_players:
+            result.update({key:None for key in totals})
+            result.update(known_totals=totals,unknown_legacy_players=list(self.unknown_legacy_players))
+        return result

@@ -48,6 +48,11 @@ class Bridge:
                     from franchise.receipts import compact_lifecycle_result
                     return compact_lifecycle_result(result,operation)
                 return result
+            def lifecycle_cash(*teams):
+                for team in teams:
+                    cash=self.store.load_team(team).cash_snapshot()
+                    if cash is not None and cash.get('unknown_legacy_players'):
+                        raise Rejected('Lifecycle bridge receipts require complete cash coverage; legacy cash remains unknown')
             if operation == "hello":
                 if set(request) != {"protocol", "request_id", "operation"}:
                     raise ValueError("Unexpected handshake fields")
@@ -266,6 +271,7 @@ class Bridge:
                 apply=(self.store.restructure_calendar_layered_preseason_veteran if calendar and request['calendar_format']=='calendar_v2'
                        else self.store.restructure_calendar_preseason_veteran if calendar
                        else self.store.restructure_preseason_veteran)
+                lifecycle_cash(request['team_id'])
                 receipt = apply(request['team_id'],request_id,request['player_id'],
                     scope=PreseasonRestructureScope(**scope),converted_base=converted,
                     expected_revision=request['expected_revision'],access_check=restructure_access,generation_id=generation_id,
@@ -325,6 +331,7 @@ class Bridge:
                             **({'amendment_history':receipt['amendment_history']} if request['calendar_format']=='calendar_v2' else {})} if calendar else {})})
                 trade=(self.store.trade_calendar_layered_preseason_veteran if calendar and request['calendar_format']=='calendar_v2'
                        else self.store.trade_calendar_preseason_veteran if calendar else self.store.trade_preseason_veteran)
+                lifecycle_cash(request['seller'],request['buyer'])
                 receipt=trade(request_id,request['seller'],request['buyer'],request['player_id'],
                     scope=PreseasonTradeScope(**scope),seller_revision=request['seller_revision'],buyer_revision=request['buyer_revision'],
                     access_check=trade_access,seller_generation_id=seller_generation,
@@ -375,6 +382,7 @@ class Bridge:
                     return receipt_result({'decision_mode':'manual','player_id':request['player_id'],'release':receipt})
                 release=(self.store.release_calendar_layered_preseason_veteran if calendar and request['calendar_format']=='calendar_v2'
                          else self.store.release_calendar_preseason_veteran if calendar else self.store.release_preseason_veteran)
+                lifecycle_cash(request['team_id'])
                 receipt=release(request['team_id'],request_id,request['player_id'],
                     scope=PreseasonReleaseScope(**scope),discount=DiscountProfile(**discount),
                     payment_year_offsets=tuple(request['payment_year_offsets']),expected_revision=request['expected_revision'],

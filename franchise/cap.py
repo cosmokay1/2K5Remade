@@ -1086,6 +1086,11 @@ class Ledger:
                 raise Rejected("Player is unknown or contract classification is missing")
             scale = self._rookies.get(player_id)
             _, reserved_one, reserved_total = self._draft_reserved(except_player=player_id)
+            cash_summary=self.cash_snapshot()
+            if cash_summary is not None:
+                cash_summary.pop('obligations')
+                unknown=cash_summary.pop('unknown_legacy_players',())
+                if unknown: cash_summary['unknown_legacy_contract_count']=len(unknown)
             return {"revision": self.revision, "cap": self.cap, "room": json_amount(self.room),
                     **({'classification_pending':True,'observed_player_source':self._observed_player_source}
                        if player_id not in self._rookies and player_id not in self._veteran_minimums and player_id not in self._legacy_contracts else {}),
@@ -1095,8 +1100,7 @@ class Ledger:
                     "promise_history": self.promise_history(player_id),
                     "annual_team_charges": [json_amount(value) for value in self._charges],
                     "roster_reserve": self.roster_reserve,
-                    "cash_summary": ({key: value for key, value in self.cash_snapshot().items()
-                                      if key != "obligations"} if self._cash is not None else None),
+                    "cash_summary": cash_summary,
                     "veteran_minimum_salaries": self._veteran_minimums.get(player_id),
                     "salary_floor_profile": ({"start_year": self._veteran_minimum_profile.start_year,
                                               "rule_version": self._veteran_minimum_profile.rule_version,

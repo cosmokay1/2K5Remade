@@ -530,3 +530,14 @@ Logs retain the receipt for recovery; no guest application, file restore, automa
 cancellation or recovery completion is implied. A restart does not clear a
 durable journal; the service's pending-work guard continues to reject competing
 writes. Recovery must inspect the saved journal before any later application.
+
+Explicit engine cash initialization may now declare preserved legacy cash unknown
+rather than inventing values. Partial snapshots retain null franchise-wide cash
+totals and separately name known totals and unknown legacy players; no such
+scope is selected automatically. Saved-signing prepare still requires initialized
+cash coverage on every club, but that coverage may explicitly mark preserved
+legacy cash unknown. New contract cash is fully enumerated. The negotiation cash
+summary includes only the count of unknown legacy contracts, not their IDs.
+Lifecycle bridge receipts currently require complete cash coverage and refuse a
+partial scope before release/trade/restructure writes. See the explicit-scope
+contract in docs/franchise-integration.md; guest application remains unconnected.

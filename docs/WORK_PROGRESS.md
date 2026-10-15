@@ -6235,3 +6235,46 @@ failure is not claimed as a passed run. Hosted CI covers the complete current
 checker. No installed binaries, user saves, game session or remote control was
 changed. The full native Linux game port, verified opening legacy import and
 actual application/save/reload/recovery remain open.
+
+## Explicit legacy-unknown cash scope for new contract accounting
+
+Identified a structural opening gate: legacy schedules were supported for cap,
+but cash initialization always rejected any legacy team, while journal prepare
+required a cash book on all32 clubs. Packed cap liability cannot establish old
+nominal cash, paid cash or guarantees. Added an optional explicit inventory of
+unknown legacy player IDs rather than assigning fabricated zero obligations.
+Default initialization remains strict, and no live franchise policy or data has
+been changed while the user's cash-scope preference is pending.
+
+Cash initialization must enumerate exactly the preserved legacy players; modern
+opening obligations still require matching known cash records. Unknown IDs cannot
+also have known/fabricated-zero records or be replaced through add_contract.
+The durable initialization event and replay validate scope, identity coverage,
+canonical ordering and matching cash postings. Existing full-coverage snapshots
+retain their original format. Partial snapshots publish null nominal/paid/unpaid
+franchise totals, separate known_totals and explicit unknown_legacy_players.
+New contracts and their allocated payments remain exact and idempotent.
+
+The journal can prepare/confirm a new accepted contract with this explicit scope,
+retaining all32 saved-cap/identity/contract/revision checks and atomic story,
+financial and saved-proof settlement. Legacy cap schedules remain unchanged;
+legacy conversion/termination and calendar aging remain unsupported. Native
+lifecycle receipt formats do not represent partial totals, so release/trade/
+restructure bridge routes refuse that mode before writing. This does not add a
+cash spending ceiling, synthetic revenue, automatic migration or guest writes.
+
+Eight authored tests cover null totals vs known subsets, unchanged legacy cap,
+known modern opening coverage, invalid/duplicate/missing/zero cash declarations,
+new payment/retry/restart, replay tampering, lifecycle bridge refusal and a full32
+saved-signing prepare/confirm/replay with one fixture provider call and exact new
+cash. Targeted checks passed0.550s. Initial full784 tests passed26.079s before
+three added cases. The final787 run caught one existing diagnostic-substring
+assertion after an error-message update; corrected the wording and reran. Final
+suite evidence and hosted Windows/Linux CI remain to record after completion.
+
+Final787 regressions passed25.401s after bounding the prompt cash summary to an
+unknown-contract count; full player IDs remain only in the ledger inventory.
+Money audit retained5050 bonus conservation cases. Compile and diff checks passed.
+No live database was initialized, cash history guessed, control enabled or paid
+request made. Next verification is hosted Windows/Linux CI, followed by explicit
+opening scope/source selection and native guest application/recovery work.

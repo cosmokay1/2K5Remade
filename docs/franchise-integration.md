@@ -843,3 +843,34 @@ game remain gates. Authenticated AI negotiation, legal guest contract commits,
 ledger/readback reconciliation and save/exit/reload agreement also remain open.
 This evidence does not complete the real negotiation UI or playable-delivery
 requirements in `WORKLIST.md`.
+
+### Explicitly unknown legacy cash
+
+Existing packed cap schedules are not evidence of original nominal cash, paid
+amounts or guarantees. The engine can explicitly retain this distinction through
+`FranchiseStore.initialize_cash(..., unknown_legacy_players=(...))`. This optional
+tuple must name exactly every preserved legacy player on that team. Omitting it
+still refuses cash initialization for legacy books. Known modern opening
+contracts still require matching sourced cash records; a legacy player cannot
+also receive a fabricated known obligation, including a zero-valued record.
+The initialization event retains the declaration and validates it on replay.
+No existing database is automatically initialized or migrated.
+
+For this explicit partial scope, `nominal_total`, `paid_total` and `unpaid_total`
+are `null`. `known_totals` contains only the sums of enumerated known obligations;
+`unknown_legacy_players` names the excluded original contracts. An empty known
+subset is not zero total franchise cash. New addon contracts and their payments
+are recorded exactly and survive retries/restart. Preserved cap schedules,
+exclusive ownership, salary floors and signing journal checks remain in force.
+Cash scope is not a spending limit, revenue adjustment, guarantee reconstruction,
+or authority to rewrite a legacy contract.
+
+The saved-signing journal accepts an explicitly initialized partial cash scope;
+it still checks all32 saved roster books, current terms, revision and save bytes.
+A matching saved after-state is required before financial/story settlement.
+Legacy termination/conversion and calendar aging remain unsupported. The lifecycle
+bridge (release/trade/restructure) currently requires a complete cash view because
+its native receipt formats do not represent partial totals; it refuses this mode
+before writing. This limitation does not block new contract journal settlement.
+Actual source selection/import, native guest application and game save/reload
+verification remain necessary before enabling live signing.

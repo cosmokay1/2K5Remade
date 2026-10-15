@@ -53,6 +53,10 @@ native offer submission, player response, legal financial commit and save recove
       required. Do not enable this unfinished mode in the installed user runtime.
 - [ ] Reconcile the required opening obligations/rules before permitting financial
       writes, then prove signing and save/reload on the pinned pack.
+      Optional explicit legacy-unknown cash scopes now preserve null total cash
+      and track new contracts exactly; no automatic live import or inferred
+      legacy cash/guarantees. Actual opening cap/non-roster/rookie data and
+      native application/save/reload remain to verify.
 - [ ] Complete draft, persistent stories/promises, shutdown and final delivery checks
       below. Defer broader stat mapping while the core signing flow is incomplete.
 

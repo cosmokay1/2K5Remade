@@ -52,7 +52,7 @@ def _before_books(store,db,bindings,payload,offer,guest_offer,team_id):
     ledgers=store._load_teams(db,TEAMS)
     for team,ledger in ledgers.items():
         if ledger.cash_snapshot() is None:
-            raise Rejected('Known league cash obligations required before guest signing')
+            raise Rejected('Explicit coverage of league cash obligations required before guest signing')
         contracts=saved[team]
         financial=ledger.financial_snapshot()
         schedules=[contract.charges() for contract in contracts]
