@@ -1,5 +1,6 @@
 #include "nfl2k5_franchise_host.h"
 #include "host_client.h"
+#include "finance_state.h"
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -185,7 +186,12 @@ void nfl2k5_franchise_poll(void)
                 else fprintf(stderr,"[FRANCHISE] Discarded obsolete signing context reply.\n");
             }
             if(current && was_proposal && journal_enabled) {
-                const FranchiseHostStatus status=franchise_host_prepare_accepted(franchise_client);
+                /* This owner read binds preparation to the observed league.
+                 * It does not lock guest mutations or authorize application. */
+                FranchiseFinanceSnapshot finance;
+                const int captured=nfl2k5_franchise_read_finance(&finance);
+                const FranchiseHostStatus status=franchise_host_prepare_accepted(franchise_client,
+                    captured?finance.bytes:NULL,captured?finance.size:0);
                 if(status!=FRANCHISE_HOST_NOT_READY) {
                     journal_locked=1;
                     if(status!=FRANCHISE_HOST_OK) goto failed;

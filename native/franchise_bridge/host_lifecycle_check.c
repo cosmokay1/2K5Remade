@@ -2,6 +2,7 @@
 #include "../../src/nfl2k5_franchise_host.h"
 #include <stdlib.h>
 #include <windows.h>
+int nfl2k5_franchise_read_finance(struct FranchiseFinanceSnapshot *out){(void)out;return 0;}
 
 int wmain(int argc, wchar_t **argv)
 {

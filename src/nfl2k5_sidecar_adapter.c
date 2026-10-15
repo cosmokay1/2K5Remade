@@ -109,6 +109,10 @@ static bool signing_screen_name(uint32_t address, char out[151])
 }
 
 #ifdef NFL2K5_FRANCHISE_CLIENT
+int nfl2k5_franchise_read_finance(FranchiseFinanceSnapshot *out)
+{
+    return franchise_finance_capture(&adapter_host,out);
+}
 static bool signing_screen_observation(FranchiseSigningObservation *out, uint32_t expected_context)
 {
     FranchiseSigningObservation observation = {0};
@@ -337,7 +341,7 @@ static int addon_snapshot(const char *name,void *out,size_t capacity) {
     if(name && out && !strcmp(name,FRANCHISE_FINANCE_SNAPSHOT) && capacity==sizeof(FranchiseFinanceSnapshot)) {
         FranchiseFinanceSnapshot state;
         memset(out,0,capacity);
-        if(!franchise_finance_capture(&adapter_host,&state)) return 0;
+        if(!nfl2k5_franchise_read_finance(&state)) return 0;
         memcpy(out,&state,sizeof(state));return 1;
     }
     if(!name || !out || strcmp(name,FRANCHISE_DISPLAY_SNAPSHOT) || capacity!=sizeof(FranchiseSigningDisplay)) return 0;

@@ -15,6 +15,7 @@ from franchise.store import FranchiseStore
 from tools.export_legacy_contracts import legacy_contracts
 from tools.inspect_franchise_calendar import inspect_calendar
 from tools.inspect_franchise_save import TEAMS
+from tools.franchise_finance_state import saved_finance_state
 
 
 def fixture(root):
@@ -44,9 +45,10 @@ def fixture(root):
     assert replay['error'] is None and replay['result']['evidence']==reply['result']['evidence']
     reply=replay # Checkpoint history now includes the already recorded proposal.
     provider.assert_called_once()
-    paths={key:root/name for key,name in (('save','current.dat'),('after','authored after.dat'),('bindings','bindings.json'),('proposal','proposal.json'))}
+    paths={key:root/name for key,name in (('save','current.dat'),('after','authored after.dat'),('bindings','bindings.json'),('proposal','proposal.json'),('finance','finance.dat'))}
     paths['save'].write_bytes(sample.before);paths['after'].write_bytes(sample.after)
     paths['bindings'].write_text(json.dumps(sample.bindings));paths['proposal'].write_text(json.dumps(request))
+    paths['finance'].write_bytes(saved_finance_state(sample.before))
     return dict(database=path,store=store,sample=sample,provider=provider,paths=paths,reply=reply)
 
 
@@ -57,16 +59,17 @@ def main():
         environment={key:value for key,value in os.environ.items() if not key.startswith('NFL2K5_FRANCHISE_')}
         environment.update(NFL2K5_FRANCHISE_GUEST_SIGNING='1',NFL2K5_FRANCHISE_GUEST_SAVE=str(paths['save']),
             NFL2K5_FRANCHISE_GUEST_BINDINGS=str(paths['bindings']),GOOGLE_APPLICATION_CREDENTIALS=str(Path(directory)/'missing-adc.json'))
-        result=subprocess.run([str(executable),sys.executable,str(data['database']),str(paths['proposal']),str(paths['after']),str(paths['save'])],
+        result=subprocess.run([str(executable),sys.executable,str(data['database']),str(paths['proposal']),str(paths['after']),str(paths['save']),str(paths['finance'])],
             env=environment,text=True,capture_output=True,timeout=60)
         assert result.returncode==0,(result.returncode,result.stdout,result.stderr)
         replies=[json.loads(line) for line in result.stdout.splitlines()]
-        assert len(replies)==9,replies
+        assert len(replies)==11,replies
         assert replies[1]==data['reply']
-        assert replies[2]['result']['state']=='prepared' and replies[3]['result']['save_position']=='before'
-        assert replies[4]['result']['save_position']=='candidate_after' and replies[5]['result']['state']=='settled'
-        assert replies[6]['result']['save_position']=='confirmed_after' and replies[7]['error']=='ai_disabled'
-        assert replies[8]['result']['save_position']=='confirmed_after'
+        assert replies[2]['error']=='state_rejected' and replies[3]==data['reply']
+        assert replies[4]['result']['state']=='prepared' and replies[5]['result']['save_position']=='before'
+        assert replies[6]['result']['save_position']=='candidate_after' and replies[7]['result']['state']=='settled'
+        assert replies[8]['result']['save_position']=='confirmed_after' and replies[9]['error']=='ai_disabled'
+        assert replies[10]['result']['save_position']=='confirmed_after'
         ledger=FranchiseStore(data['database']).load_team('49ers')
         assert ledger.revision==2 and ledger.cash_snapshot()['nominal_total'] is None
         assert ledger.cash_snapshot()['known_totals']['nominal_total']==sum(data['sample'].offer.salaries)+data['sample'].offer.signing_bonus
@@ -74,7 +77,7 @@ def main():
         assert paths['save'].read_bytes()==data['sample'].after
         assert len(data['store'].negotiation_history('49ers',data['sample'].player))==2
         data['provider'].assert_called_once()
-        assert replies[5]['result']['after_payload_sha256']==hashlib.sha256(data['sample'].after).hexdigest()
+        assert replies[7]['result']['after_payload_sha256']==hashlib.sha256(data['sample'].after).hexdigest()
     print('Native captured acceptance, saved candidate, ledger confirmation and disabled restart recovery passed (authored files only).')
 
 

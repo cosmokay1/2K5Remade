@@ -3,6 +3,7 @@
 namespace franchise {
 // Consume the captured proposal exactly; callers cannot replace its terms,
 // identity, save hash or revision. Null means no accepted captured proposal.
+// The native client adds the freshly captured live financial hash before submit.
 inline nlohmann::json saved_signing_prepare(const nlohmann::json& request,const nlohmann::json& response) {
     if(request.at("operation")!="negotiate_proposal" || !request.contains("observation") ||
        !response.at("error").is_null()) return nullptr;

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+int nfl2k5_franchise_read_finance(struct FranchiseFinanceSnapshot *out){(void)out;return 0;}
 
 static int require_status(FranchiseHostStatus actual, FranchiseHostStatus expected) {
     if (actual == expected) return 1;
@@ -22,7 +23,7 @@ static int receive(FranchiseHostClient* client) {
         if (!ready) Sleep(1);
     }
     if (!require_status(franchise_host_take(client,NULL,0,&required),FRANCHISE_HOST_BUFFER_TOO_SMALL) || !required) return 0;
-    if (!require_status(franchise_host_prepare_accepted(client),FRANCHISE_HOST_BUSY)) return 0;
+    if (!require_status(franchise_host_prepare_accepted(client,NULL,0),FRANCHISE_HOST_BUSY)) return 0;
     if (!require_status(franchise_host_check_saved(client),FRANCHISE_HOST_BUSY)) return 0;
     {
         char sentinel = 'x';
@@ -38,14 +39,14 @@ static int receive(FranchiseHostClient* client) {
             repeated != required || response[required-1] != '\0') { free(response); return 0; }
         puts(response); free(response);
     }
-    return require_status(franchise_host_prepare_accepted(client),FRANCHISE_HOST_NOT_READY) &&
+    return require_status(franchise_host_prepare_accepted(client,NULL,0),FRANCHISE_HOST_NOT_READY) &&
         require_status(franchise_host_check_saved(client),FRANCHISE_HOST_NOT_READY) &&
         require_status(franchise_host_take(client,NULL,0,&required),FRANCHISE_HOST_NOT_READY) &&
         require_status(franchise_host_ready(client,&ready),FRANCHISE_HOST_OK) && !ready;
 }
 
 int wmain(int argc, wchar_t** argv) {
-    if(!require_status(franchise_host_prepare_accepted(NULL),FRANCHISE_HOST_INVALID_ARGUMENT)) return 1;
+    if(!require_status(franchise_host_prepare_accepted(NULL,NULL,0),FRANCHISE_HOST_INVALID_ARGUMENT)) return 1;
     FranchiseHostClient* client = NULL;
     char oversized[4096];
     int ready = 1, ok = 0;

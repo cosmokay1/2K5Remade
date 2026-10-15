@@ -73,6 +73,10 @@ native offer submission, player response, legal financial commit and save recove
       Live comparison remains to verify. This grants no permit and
       does not establish guest quiescence, full identity or current authority.
       See docs/NATIVE_FINANCE_STATE.md for the boundary and remaining conditions.
+      Native preparation now supplies a fresh financial projection SHA256; the
+      service requires it to match the server-owned before-save before reserving
+      a journal. Missing/changed captures stay held. This is a consistency guard,
+      not quiescence or permission to apply; new Windows CNG execution is pending.
 - [ ] Reconcile the required opening obligations/rules before permitting financial
       writes, then prove signing and save/reload on the pinned pack.
       Optional explicit legacy-unknown cash scopes now preserve null total cash

@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from queue import Queue
 import subprocess
+import struct
 import sys
 from threading import Event, Thread
 import unittest
@@ -15,6 +16,8 @@ from franchise.bridge import Bridge, ResponseTooLarge
 from franchise.control import AccessDisabled
 from franchise.sidecar import read_guest_save, serve
 from franchise.store import FranchiseStore
+from tools.franchise_finance_state import saved_finance_state
+from tools.inspect_franchise_save import PLAYER_START, PLAYER_STRIDE
 import test_guest_signing_journal as journal_fixtures
 
 
@@ -40,7 +43,8 @@ class GuestSigningBridgeTests(unittest.TestCase):
     def prepare(self,**changes):
         return dict(protocol=1,request_id='journal',operation='guest_signing_prepare',timeout_ms=5000,
                     team_id='49ers',proposal_request_id='proposal',guest_offer=self.fixture.raw,
-                    expected_revision=self.fixture.revision,expected_before_sha256=digest(self.fixture.before),**changes)
+                    expected_revision=self.fixture.revision,expected_before_sha256=digest(self.fixture.before),
+                    live_finance_sha256=digest(saved_finance_state(self.fixture.before)),**changes)
 
     def confirm(self):
         return dict(protocol=1,request_id='confirm',operation='guest_signing_confirm',timeout_ms=5000,
@@ -67,6 +71,31 @@ class GuestSigningBridgeTests(unittest.TestCase):
         self.assertIn('guest_signing_confirm',self.bridge.handle(hello)['result']['operations'])
         with self.assertRaises(ValueError): self.make_bridge(guest_snapshot=None)
         self.provider.assert_not_called();self.assert_unchanged(False)
+
+    def test_financial_mismatch_rejects_before_creating_a_journal(self):
+        changed=bytearray(self.fixture.before)
+        struct.pack_into('<H',changed,PLAYER_START+2*PLAYER_STRIDE+10,1)
+        altered=digest(saved_finance_state(bytes(changed)))
+        for fingerprint in ('0'*64, altered):
+            request={**self.prepare(),'live_finance_sha256':fingerprint}
+            with self.subTest(fingerprint=fingerprint):
+                self.assertEqual(self.bridge.handle(request)['error'],'state_rejected')
+                self.assert_unchanged(False)
+        self.provider.assert_not_called()
+
+    def test_financial_capture_is_required_and_canonical(self):
+        missing=self.prepare();missing.pop('live_finance_sha256')
+        self.assertEqual(self.bridge.handle(missing)['error'],'invalid_request')
+        for value in (None, True, 0, '', 'a'*63, 'A'*64, 'g'*64):
+            with self.subTest(value=value):
+                self.assertEqual(self.bridge.handle({**self.prepare(),'live_finance_sha256':value})['error'],'invalid_request')
+        self.assert_unchanged(False);self.provider.assert_not_called()
+
+    def test_preparation_retry_checks_new_capture_without_changing_existing_journal(self):
+        prepared=self.bridge.handle(self.prepare());self.assertIsNone(prepared['error'],prepared)
+        self.assertEqual(self.bridge.handle({**self.prepare(),'live_finance_sha256':'f'*64})['error'],'state_rejected')
+        self.assertEqual(self.bridge.handle(self.prepare()),prepared)
+        self.assert_unchanged();self.provider.assert_not_called()
 
     def test_prepare_read_current_after_save_restart_and_settle_exactly_once(self):
         prepared=self.bridge.handle(self.prepare());self.assertIsNone(prepared['error'],prepared)

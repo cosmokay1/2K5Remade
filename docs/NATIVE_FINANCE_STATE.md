@@ -41,6 +41,21 @@ misaligned bank members, duplicate membership (including across clubs/free
 agents), aliased club records and header/table changes during capture. It
 rechecks bank, calendar, cap and table metadata at the end.
 
+The native owner now captures this image when preparing a captured accepted
+proposal. The C client requires its used bytes, hashes them with Windows CNG,
+and adds `live_finance_sha256` to the otherwise captured preparation request.
+The service requires that canonical SHA256 and compares it to the independently
+read saved projection before reserving the journal. Missing captures, unsupported
+images and differing financial states cannot prepare work through this path.
+The existing saved-file/control/connection/deadline checks still run inside the
+preparation transaction. A failed local capture keeps signing held.
+
+This is a cooperative-client consistency check; a client-supplied digest is not
+proof of the active process or atomicity. The new C wrapper signature and service
+preparation schema must be deployed together. Older requests without the digest
+are refused; saved-status/confirmation recovery and persisted journal formats
+are unchanged. No additional provider request is used for comparison or retry.
+
 **This is not an atomic world snapshot or a signing permit.** Contracts and
 roster entries could change while reading. A future application coordinator
 must establish guest quiescence, match the prepared journal's expected financial

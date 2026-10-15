@@ -7,6 +7,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <iterator>
 using Client=std::unique_ptr<FranchiseHostClient,decltype(&franchise_host_destroy)>;
 static void require(bool value) {if(!value) throw std::runtime_error("Native saved-signing invariant failed");}
 static nlohmann::json receive(FranchiseHostClient* client) {
@@ -31,7 +32,7 @@ static nlohmann::json submit(FranchiseHostClient* client,const nlohmann::json& r
 }
 int wmain(int argc,wchar_t** argv) {
     try {
-        require(argc==6);
+        require(argc==7);
         FranchiseHostClient* raw=nullptr;
         require(franchise_host_create(argv[1],argv[2],FRANCHISE_HOST_OFFLINE_FIXTURE,&raw)==FRANCHISE_HOST_OK);
         Client client(raw,&franchise_host_destroy);
@@ -42,7 +43,17 @@ int wmain(int argc,wchar_t** argv) {
         const auto accepted=submit(client.get(),proposal);
         require(accepted.at("error").is_null() && accepted.at("result").at("outcome")=="accepted_proposal");
         require(franchise_host_check_saved(client.get())==FRANCHISE_HOST_NOT_READY); // No implicit preparation.
-        require(franchise_host_prepare_accepted(client.get())==FRANCHISE_HOST_OK);
+        std::ifstream financial{std::filesystem::path(argv[6]),std::ios::binary};
+        require(financial.good());
+        std::vector<char> finance{std::istreambuf_iterator<char>(financial),std::istreambuf_iterator<char>()};
+        require(franchise_host_prepare_accepted(client.get(),nullptr,0)==FRANCHISE_HOST_INVALID_ARGUMENT);
+        require(franchise_host_prepare_accepted(client.get(),finance.data(),finance.size()-1)==FRANCHISE_HOST_INVALID_ARGUMENT);
+        auto changed=finance;changed.at(changed.size()-10)^=1; // unrelated final bank slot's amount
+        require(franchise_host_prepare_accepted(client.get(),changed.data(),changed.size())==FRANCHISE_HOST_OK);
+        require(receive(client.get()).at("error")=="state_rejected");
+        // Replaying the captured proposal must not spend another model request.
+        require(submit(client.get(),proposal).at("result").at("outcome")=="accepted_proposal");
+        require(franchise_host_prepare_accepted(client.get(),finance.data(),finance.size())==FRANCHISE_HOST_OK);
         const auto prepared=receive(client.get());
         require(prepared.at("error").is_null() && prepared.at("result").at("state")=="prepared");
         require(franchise_host_check_saved(client.get())==FRANCHISE_HOST_OK);

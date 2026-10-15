@@ -22,7 +22,8 @@ class NativeSavedSigningFixtureTests(unittest.TestCase):
             self.assertEqual(replay,data['reply'])
             prepare=dict(protocol=1,request_id='native-captured-guest',operation='guest_signing_prepare',timeout_ms=10000,
                 team_id='49ers',proposal_request_id=proposal['request_id'],guest_offer=proposal['guest_offer'],expected_revision=1,
-                expected_before_sha256=hashlib.sha256(sample.before).hexdigest())
+                expected_before_sha256=hashlib.sha256(sample.before).hexdigest(),
+                live_finance_sha256=hashlib.sha256(paths['finance'].read_bytes()).hexdigest())
             self.assertIsNone(bridge.handle(prepare)['error'])
             paths['save'].write_bytes(sample.after)
             confirm=dict(protocol=1,request_id='native-confirm',operation='guest_signing_confirm',timeout_ms=10000,

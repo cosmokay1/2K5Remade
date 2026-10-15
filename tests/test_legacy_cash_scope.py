@@ -17,6 +17,7 @@ from franchise.legacy_contracts import LegacyContract
 from franchise.store import FranchiseStore
 from tools.export_legacy_contracts import legacy_contracts
 from tools.inspect_franchise_save import TEAMS
+from tools.franchise_finance_state import saved_finance_state
 import test_confirm_saved_signing as saved_fixtures
 
 
@@ -165,7 +166,8 @@ class LegacyCashScopeTests(unittest.TestCase):
         before=store.load_team('49ers').financial_snapshot()
         request=dict(protocol=1,request_id='journal',operation='guest_signing_prepare',timeout_ms=5000,
             team_id='49ers',proposal_request_id='proposal',guest_offer=sample.raw,expected_revision=1,
-            expected_before_sha256=hashlib.sha256(sample.before).hexdigest())
+            expected_before_sha256=hashlib.sha256(sample.before).hexdigest(),
+            live_finance_sha256=hashlib.sha256(saved_finance_state(sample.before)).hexdigest())
         prepared=bridge.handle(request);self.assertIsNone(prepared['error'],prepared)
         self.assertEqual(store.load_team('49ers').financial_snapshot(),before)
         with self.assertRaises(Rejected): store.sign('Bears','competing',sample.offer,1)

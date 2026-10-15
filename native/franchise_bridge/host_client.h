@@ -50,8 +50,11 @@ FranchiseHostStatus franchise_host_create_with_token_budget(const wchar_t* pytho
 FranchiseHostStatus franchise_host_submit(FranchiseHostClient* client, const char* bytes, size_t length);
 /* Queue preparation only for the last consumed, validated captured acceptance.
  * Requires hello AI grant and advertised journal support. NOT_READY means no
- * accepted proposal. No caller overrides and no guest write grant. */
-FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient* client);
+ * accepted proposal. Supply used bytes of the fresh addon financial snapshot;
+ * the service checks its SHA256 against the server-owned saved projection.
+ * This is neither an atomic live read nor a guest write grant. */
+FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient* client,
+    const void* finance_state, size_t finance_size);
 /* Queue a read-only saved-state check for the prepared journal. Only a validated
  * candidate after-save plus the existing hello grant can queue confirmation;
  * the server rechecks current authority and bytes. NOT_READY means no journal or

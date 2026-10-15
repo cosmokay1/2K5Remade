@@ -6482,3 +6482,38 @@ also passed Windows/Linux runtime/tool and native presentation checks. These
 are component/build results, not a full newly integrated game. A read-only SSH
 retry failed DNS resolution for steamdeck.local, so no live financial snapshot,
 private installation or runtime/save verification was possible in this turn.
+
+## Bind native journal preparation to the sampled live financial world
+
+Connected the whole-league capture to the actual native owner's accepted-proposal
+preparation path inside the franchise addon. The C wrapper now requires the used
+image bytes, checks its version/shape/bounds and hashes them with Windows CNG
+before queuing the captured preparation. The service requires a canonical
+live_finance_sha256 and compares it with the independently payroll-reconciled
+server-owned before-save projection before reserving any journal. Existing
+control, save, connection, deadline, league-book and accepted-terms checks remain.
+No caller override of captured terms/revision/identity was added. Capture failure
+keeps signing held; no retail judgment or precommit permission was implemented.
+
+This comparison describes the sampled cooperative client state. It does not lock
+guest mutations, prove all identities/runtime or authorize later application.
+The actual transaction still requires those checks and a fresh one-use grant.
+The C wrapper signature and service prepare schema must be deployed together;
+older digest-free preparation requests are refused. Persisted journal formats,
+status/confirmation recovery and independent engine APIs are unchanged. No extra
+inference or cloud infrastructure is needed for the comparison or proposal replay.
+
+New service tests reject absent/noncanonical/different projections before journal
+creation and check changed-capture retries leave prepared work unchanged. The
+Windows native saved-signing fixture now hashes authored image bytes, rejects
+missing/truncated images locally and submits an unrelated unrostered contract
+change that must be refused by the service before replaying the same accepted
+proposal and preparing the correct state. Windows execution is pending CI.
+The first full regression run found the extracted observation harness needed
+the new financial header; the repaired actual-source observer test passes.
+
+Final local validation: all799 regressions pass26.027s, the three portable native
+CTests pass1.06s, the actual addon28-case financial comparison passes and the
+5050-case money conservation audit passes. The installed runtime and user saves
+are unchanged; this source is not a new playable delivery. Windows SHA256/client
+execution and new CI remain to verify after push.
