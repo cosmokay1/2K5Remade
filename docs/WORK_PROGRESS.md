@@ -6618,4 +6618,45 @@ model request changed. Live execution/application/save/reload remain unverified.
 The runtime query is committed/pushed as4359426 to cosmokay1/xboxrecomp on
 codex/platform-build-fixes, and the consumer pins that exact dependency. The
 serial is unique within the process, not a cross-process identity. Full source
-Windows/Linux CI and actual DLL read-scope execution remain pending after push.
+Windows/Linux CI and actual DLL read-scope execution were pending after push.
+
+## Guest-read ownership CI verified and newest upstream filesystem integration
+
+Source2cd98d4 passed Franchise38748479653 on Windows2022 and Ubuntu, including
+the actual runtime lock tests, DLL-owned/unowned/stale-scope reads, financial and
+identity capture and the saved-signing fixture. Build38748479778 also passed
+Windows/Linux runtime/tool and native presentation checks. This verifies component
+execution; no guest application permit or actual game signing/save/reload follows.
+
+At the user's request, fetched repack master86198cf, builds991cd02 and main9a46626,
+plus the runtime's game-specific branch8fcec41. Master's latest merge explicitly
+imports and attributes our Linux/POSIX prerequisites; its Windows/Linux build
+checks38677062168 pass with NFL2K5_BUILD_GAME=OFF. Latest public repack release
+remains v0.6.1-hotfix (portable mod packs). The game runtime has three newer
+filesystem commits not pinned by master: aa0e8b3,9603907,8fcec41.
+
+Imported those three commits with cherry-pick attribution into our runtime branch
+as96842da,d02d271,8e127f3. Resolved the GGL conflict by retaining our real portable
+lock and ownership-serial implementation; upstream's POSIX no-op stub is not
+adopted. The existing game-thread global already exists in our implementation.
+Follow-upc867ad3 guards the upstream strings.h include from Windows builds. No
+other runtime default-branch changes or generic compiler releases were imported.
+The consumer submodule and revision manifest now pin c867ad3 exactly.
+
+The new tests/runtime_paths_posix fixture compiles the actual kernel_path.c and
+uses authored files on a case-sensitive Linux container filesystem. Case lookup,
+missing final filename preservation, all three added-team path forms, user-save
+translation, partition table magic, cache image geometry and persistence across
+reinitialization, one-time settings migration without overwrite, nested profile
+directories and portable paths pass. Symbolic-link table lookup and logging are
+explicit fixture stubs; the fixture does not claim their kernel integration.
+The existing offline node:20 image ran with networking disabled and source
+read-only; no assets, packages or cloud services were downloaded. Actual GGL
+enabled/disabled checks also pass on Linux and macOS after the import. Hosted
+Windows/Linux runtime verification is pending and is required before deployment.
+
+The imported POSIX overlay loader explicitly returns0: mod-pack disc overlays
+remain unimplemented. These filesystem changes address native Linux prerequisites,
+not a verified Proton-free SOFTDRINK build. No installed executable, user save,
+AI control or paid inference changed. Core native signing/application, complete
+opening obligations, actual game execution and save/reload remain open.

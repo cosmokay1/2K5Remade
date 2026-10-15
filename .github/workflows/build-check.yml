@@ -89,3 +89,9 @@ jobs:
 
       - name: Build Linux runtime (no game)
         run: cmake --build build --parallel
+
+      - name: Check real Linux game, save and partition paths
+        run: |
+          cmake -S tests/runtime_paths_posix -B build-runtime-paths -G Ninja
+          cmake --build build-runtime-paths
+          ctest --test-dir build-runtime-paths --output-on-failure

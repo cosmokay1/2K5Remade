@@ -87,7 +87,9 @@ native offer submission, player response, legal financial commit and save recove
       quiescence remain open; no application permit has been granted.
       The host now restricts memory reads to one guest-lock ownership span per
       addon invocation; release/reacquire and unowned calls fail closed. Local
-      actual-runtime tests pass. New Windows/Linux execution is pending; this
+      actual-runtime tests pass. Source2cd98d4 passed Windows/Ubuntu
+      Franchise38748479653 and Build38748479778, including actual DLL read-scope
+      execution. This
       does not pin the original commit or grant application authority.
 - [ ] Reconcile the required opening obligations/rules before permitting financial
       writes, then prove signing and save/reload on the pinned pack.
@@ -123,6 +125,15 @@ it from the franchise application. Keep domain rules out of the reusable core.
 
 
 ## Native Steam Deck port — user requested
+
+Upstream review October15: repack master86198cf includes our attributed POSIX
+prerequisites; its runtime pin0baca1a trails the game runtime's three new Linux
+filesystem commits. Imported those commits with attribution into runtimec867ad3,
+preserving our actual POSIX guest lock and read serial. Authored offline Linux
+checks pass for case resolution, team/save paths, partition persistence and
+settings migration; Windows/Linux hosted verification of this import is pending.
+Linux mod-pack disc overlays remain explicitly unimplemented upstream; native
+SOFTDRINK boot/rendering/signing/save/reload remain unverified.
 
 Preserve the current broadcast styles while replacing WebView2; the user did not
 request a simplified scoreboard. Keep the working Windows/Proton installation
