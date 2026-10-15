@@ -2711,6 +2711,13 @@ void nfl2k5_scorebug_interp_hooks(void)
  * its generated-code deferral patches do not execute. Reuse the existing
  * interpreter hook facility; negotiation policy remains in the optional DLL. */
 extern int nfl2k5_franchise_hold_signing_at(uint32_t stage,uint32_t context);
+extern int nfl2k5_franchise_signing_was_held(uint32_t context);
+static uint32_t ih_franchise_sign_enter(void) {
+    nfl2k5_franchise_signing_was_held(0); return 0;
+}
+static uint32_t ih_franchise_sign_return(void) {
+    return nfl2k5_franchise_signing_was_held(MEM32(0xCB8C34)) ? 0x003478F0u : 0;
+}
 static uint32_t ih_franchise_hold_judgment(void) {
     return nfl2k5_franchise_hold_signing_at(1u,g_esi) ? 0x00323E99u : 0;
 }
@@ -2721,6 +2728,8 @@ void nfl2k5_franchise_interp_hooks(void) {
 #ifdef NFL2K5_FRANCHISE_CLIENT
     const char *mode=getenv("NFL2K5_FRANCHISE_NEGOTIATION");
     if(!mode || strcmp(mode,"1")) return;
+    recomp_interp_add_hook(0x00323D80u,0,ih_franchise_sign_enter);
+    recomp_interp_add_hook(0x003478B6u,0,ih_franchise_sign_return);
     recomp_interp_add_hook(0x00323F0Au,0,ih_franchise_hold_judgment);
     recomp_interp_add_hook(0x00323F17u,0,ih_franchise_hold_precommit);
 #endif

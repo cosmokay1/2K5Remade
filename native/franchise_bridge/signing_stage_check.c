@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+extern void nfl2k5_franchise_stop(void);
 static int gate_reply,legacy_reply;
 static unsigned gates,legacy;
 static uint32_t last_stage,last_context;
@@ -52,5 +53,33 @@ int main(void){
        !nfl2k5_franchise_hold_signing_at(FRANCHISE_SIGN_PRECOMMIT,0) || !nfl2k5_franchise_hold_signing(0)) return 7;
     if(mode("0") || nfl2k5_franchise_hold_signing_at(FRANCHISE_SIGN_JUDGMENT,0) ||
        nfl2k5_franchise_hold_signing_at(FRANCHISE_SIGN_PRECOMMIT,0)) return 8;
+    // Waiting is not a rejection, and a consumed/wrong-context token cannot
+    // exempt another offer from the retail rejection path.
+    gate_reply=1;
+    for(unsigned attempt=0;attempt<12;++attempt){
+        nfl2k5_diag_signing(0,0x1234,0,0,0);
+        if(!nfl2k5_franchise_hold_signing_at(1,0x1234) ||
+           !nfl2k5_franchise_signing_was_held(0x1234) ||
+           nfl2k5_franchise_signing_was_held(0x1234)) return 9;
+    }
+    nfl2k5_franchise_hold_signing_at(2,0x1234);
+    if(nfl2k5_franchise_signing_was_held(0x5678) ||
+       nfl2k5_franchise_signing_was_held(0x1234)) return 10;
+    nfl2k5_franchise_hold_signing_at(1,0x1234);
+    nfl2k5_diag_signing(0,0x1234,0,0,0);
+    if(nfl2k5_franchise_signing_was_held(0x1234)) return 11;
+    nfl2k5_franchise_hold_signing_at(1,0x1234);
+    gate_reply=legacy_reply=0;
+    if(nfl2k5_franchise_hold_signing_at(1,0x1234) ||
+       nfl2k5_franchise_signing_was_held(0x1234)) return 12;
+    if(mode("1") || !nfl2k5_franchise_hold_signing_at(1,0x1234) ||
+       !nfl2k5_franchise_signing_was_held(0x1234)) return 13;
+    if(mode("0")) return 14;
+    legacy_reply=1;
+    if(!nfl2k5_franchise_hold_signing(0x1234) ||
+       !nfl2k5_franchise_signing_was_held(0x1234)) return 15;
+    nfl2k5_franchise_hold_signing_at(1,0x1234);
+    nfl2k5_franchise_stop();
+    if(nfl2k5_franchise_signing_was_held(0x1234)) return 16;
     puts("Stage-aware signing shim, legacy hold fallback and no-write behavior passed");return 0;
 }

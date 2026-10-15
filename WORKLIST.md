@@ -57,6 +57,10 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       Windows/Ubuntu, including actual native-client saved settlement and a
       fresh AI-disabled recovery process with authored save files.
       Native application and save/reload remain unconnected.
+      Held interactive returns now preserve rejection attempts and leave the
+      offer screen open, using a single-use thread-local context match in both
+      compiled and interpreter hooks. Local actual-shim and generated-caller
+      checks pass; game execution of this opt-in fix remains unverified.
       Judgment and precommit now use distinct addon events, so bypass/precommit
       callers hold without creating interactive negotiation intents. Existing
       generated v1 hooks have an explicit upgrade check; application permits

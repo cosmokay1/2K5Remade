@@ -332,6 +332,11 @@ PATCHES = [
     ("FRANCHISE_SIGN_HOLD_COMMIT", "sub_00323D80", "loc_00323F17: ;", "after", """\
     { extern int nfl2k5_franchise_hold_signing_at(uint32_t, uint32_t); if(nfl2k5_franchise_hold_signing_at(2u, esi)) goto loc_00323E99; }
 """),
+    # Held offers leave the interactive screen open without spending a retail
+    # rejection attempt. Preserve its dirty flag and common stack cleanup.
+    ("FRANCHISE_SIGN_PENDING_RETURN", "sub_003478A0", "loc_003478B6: ;", "after", """\
+    { extern int nfl2k5_franchise_signing_was_held(uint32_t); if(nfl2k5_franchise_signing_was_held(MEM32(0xCB8C34))) goto loc_003478F0; }
+"""),
     # Shared signing checkpoints: observe original inputs and judgment without
     # replacing roster/cap/history effects. Pass addresses, not unchecked MEM32.
     ("FRANCHISE_SIGN_ENTER", "sub_00323D80", "loc_00323D80: ;", "after", """\

@@ -6843,3 +6843,31 @@ The live capture is still absent; the user was asked to load MyNFL1 and open an
 offer without submitting. Do not infer successful capture from merely loading a
 franchise/player table. Preserve the running game and wait for the actual file or
 the user's screen confirmation before diagnosing missing offer-screen capture.
+
+
+### Pending offers preserve retail negotiation attempts
+
+Found a concrete caller-level integration bug: our shared signing hold returns
+EAX0 through the original refusal epilogue, but interactive caller003478A0 treats
+that as rejection, increments context+9 (capped at7), and can pop the offer screen.
+The host shim now records a thread-local held context for that synchronous return.
+The compiled caller patch and interpreter return hook consume it once and jump to
+003478F0, preserving the original UI dirty flag and stack/callee-save cleanup
+without changing attempts or closing the screen. Entry resets stale state in
+both paths. Wrong-context consumption clears it; ordinary refusal/acceptance and
+missing-addon controlled holds retain their existing policy. No addon ABI change,
+financial writes, application permit or AI activation was introduced.
+
+Validation: actual host shim checks repeated holds, consumed/wrong-context tokens,
+entry reset, later retail decisions, legacy fallback, explicit controlled mode
+with no event handler and shutdown reset. Five focused Python patch tests pass,
+including compiling/executing the production patch plus actual shim against an
+authored caller:12 waits preserve attempts, real refusals increment/clamp and
+acceptance resets. A private local probe executes the actual generated003478A0
+body with the new production patch and authored shared-signing/UI callees:
+12 holds preserve attempts and screen, two original refusals increment attempts,
+and acceptance retains the original callbacks; every return preserves ESI/ESP
+and sets the UI dirty flag. The probe uses authored memory, runs on macOS, and
+is not actual game execution. Its generated code stays private/untracked.
+Windows CI and actual opt-in game execution remain to verify. The running Deck
+was not interrupted or replaced; the initial startup failure remains unexplained.

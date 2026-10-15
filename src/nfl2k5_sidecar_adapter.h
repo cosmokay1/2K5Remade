@@ -12,6 +12,9 @@ int nfl2k5_franchise_hold_signing(uint32_t context);
 /* Stage1 is interactive judgment; stage2 is the shared precommit boundary.
  * Nonzero holds both. This API never grants a guest write. */
 int nfl2k5_franchise_hold_signing_at(uint32_t stage, uint32_t context);
+/* Consume the synchronous hold result once, matching the interactive context.
+ * Context zero clears stale state. This never authorizes a transaction. */
+int nfl2k5_franchise_signing_was_held(uint32_t context);
 void nfl2k5_diag_signing(uint32_t stage, uint32_t context, uint32_t result,
                        uint32_t return_code, uint32_t stack);
 #ifdef NFL2K5_FRANCHISE_CLIENT
