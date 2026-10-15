@@ -8468,3 +8468,29 @@ No installed executable, launcher, database, save or controls have changed in th
 milestone. Actual in-game source/namespace reply consumption, complete lifecycle
 invalidation, modern opening books, permits and financial signing/save-reload still
 need verification. This staged observation connection is not an application grant.
+
+### Read-only batch installed after normal exit
+
+After the user's normal-exit confirmation, the guarded installer replaced only
+the executable, addon DLL and existing Steam wrapper with the validated5698281
+batch. All205 save hashes remain unchanged. The previous three artifacts are
+backed up in readonly-binding-0fda623/installed-before-readonly-binding, and the
+installation receipt is preserved on Deck and locally. Existing namespace data
+is used from the immutable copied context; identities were not recreated. Native
+negotiation/guest signing remain0, credentials are deliberately unavailable, and
+the read-only binding grants no AI or journal authority.
+
+The first actual launch reached the addon and emitted the expected loaded-image
+digestf67e6fc1cb76c9ea1f1ad504e4a6491ff126483d66a9da8ddb92950bbaf740ba,
+then exited with exception0xC0000094 at host0x1423CD9CF. This is an integer
+divide-by-zero; its cause is not established. The complete first-boot log is
+preserved locally as first-installed-boot-crash.log before retry. A single retry
+through the same Steam shortcut is running as PID212176 and emitted the same
+digest with held negotiation mode0. No running user game was interrupted, and no
+artifact was changed for the retry. Successful retry does not resolve the crash.
+
+The user was asked to load MyNFL1 and leave a player offer open without submitting
+for actual read-only source/namespace reply consumption. This remains unverified;
+startup metadata alone does not establish a live franchise binding or gameplay
+acceptance. Build38817632722 passed at5698281. Franchise38817632849's Ubuntu job
+passed; its Windows job remains in progress at the native handshake fixture.

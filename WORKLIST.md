@@ -188,8 +188,11 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       All871 Python tests, nine local native checks,17 Windows addon checks and
       both native client/service fixtures pass. An isolated Windows preflight on
       the actual UDATA source returns the preserved player context with zero model
-      attempts and unchanged source/database hashes. This next batch and its
-      read-only configuration are staged; live game callback binding is not yet
+      attempts and unchanged source/database hashes. Source5698281 and its
+      read-only configuration are installed with all205 saves unchanged. The
+      first boot emitted the expected loaded-image digest but then crashed with
+      integer divide-by-zero; its log is preserved and the single retry is running.
+      Live game callback binding is not yet
       verified, and full active-franchise lifetime/write authority remain open.
       Service-side durable binding and active franchise identity remain open;
       this metadata does not authorize application or prove code compatibility.
