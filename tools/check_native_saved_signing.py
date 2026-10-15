@@ -19,11 +19,13 @@ from tools.franchise_finance_state import saved_finance_state
 from tools.franchise_identity_state import saved_identity_state
 
 
-def fixture(root):
+def fixture(root, *, runtime_image=None):
     # Existing authored FXG fixture, never a retail file or caller-selected game save.
     sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tests'))
     import test_confirm_saved_signing as authored
     sample=authored.SavedSigningConfirmationTests();sample.setUp()
+    if runtime_image is not None:
+        sample.bindings['game_context']['loaded_image_sha256']=runtime_image
     path=root/'native saved signing.sqlite';store=FranchiseStore(path)
     contracts=legacy_contracts(sample.bindings,sample.before)
     teams={team:Ledger.from_opening(OpeningBooks(legacy_contracts=contracts[team]),
@@ -40,6 +42,8 @@ def fixture(root):
         observation=observation,guest_offer=sample.raw,expected_revision=1)
     provider=Mock(return_value=json.dumps(dict(action='accept',reason='Authored native saved-signing acceptance',salaries=None,signing_bonus=None)))
     bridge=Bridge(store,provider=provider,access_check=lambda:None,guest_snapshot=(sample.bindings,sample.before))
+    if runtime_image is not None:
+        assert bridge.handle(dict(protocol=1,request_id='fixture-hello',operation='hello',loaded_image_sha256=runtime_image))['error'] is None
     reply=bridge.handle(request)
     assert reply['error'] is None and reply['result']['outcome']=='accepted_proposal',reply
     replay=bridge.handle(request)
@@ -57,16 +61,26 @@ def fixture(root):
 
 
 def main():
+    if len(sys.argv) not in (2,3) or (len(sys.argv)==3 and sys.argv[2]!='--runtime-bound'):
+        raise ValueError('Expected native checker path and optional --runtime-bound')
     executable=Path(sys.argv[1]).resolve()
+    runtime_image='a'*64 if len(sys.argv)==3 else None
     with tempfile.TemporaryDirectory(prefix='native saved signing ') as directory:
-        data=fixture(Path(directory));paths=data['paths']
+        data=fixture(Path(directory),runtime_image=runtime_image);paths=data['paths']
         environment={key:value for key,value in os.environ.items() if not key.startswith('NFL2K5_FRANCHISE_')}
         environment.update(NFL2K5_FRANCHISE_GUEST_SIGNING='1',NFL2K5_FRANCHISE_GUEST_SAVE=str(paths['save']),
             NFL2K5_FRANCHISE_GUEST_BINDINGS=str(paths['bindings']),GOOGLE_APPLICATION_CREDENTIALS=str(Path(directory)/'missing-adc.json'))
-        result=subprocess.run([str(executable),sys.executable,str(data['database']),str(paths['proposal']),str(paths['after']),str(paths['save']),str(paths['finance']),str(paths['identity']),str(paths['after_finance']),str(paths['after_identity'])],
+        result=subprocess.run([str(executable),sys.executable,str(data['database']),str(paths['proposal']),str(paths['after']),str(paths['save']),str(paths['finance']),str(paths['identity']),str(paths['after_finance']),str(paths['after_identity'])]+([runtime_image] if runtime_image is not None else []),
             env=environment,text=True,capture_output=True,timeout=60)
         assert result.returncode==0,(result.returncode,result.stdout,result.stderr)
         replies=[json.loads(line) for line in result.stdout.splitlines()]
+        if runtime_image is not None:
+            assert len(replies)==17,replies
+            assert replies[0]['error']=='invalid_request' and replies[1]['error']=='state_rejected'
+            assert replies.pop(-3)['error']=='state_rejected'  # Failed re-handshake revokes native grant.
+            replies=replies[2:]
+            binding=replies[0]['result']['runtime_binding']
+            assert binding['loaded_image_sha256']==runtime_image and binding['franchise_id']==data['sample'].bindings['franchise_id']
         assert len(replies)==14,replies
         assert replies[1]==data['reply']
         assert replies[2]['error']=='state_rejected' and replies[3]==data['reply']

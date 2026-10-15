@@ -11,6 +11,9 @@ static unsigned submissions, takes;
 static int ready_value;
 static DWORD owner;
 static char last_request[4096];
+static int image_present;
+static char image_digest[65];
+int nfl2k5_franchise_read_image(char out[65]){memcpy(out,image_digest,65);return image_present;}
 static FranchiseHostStatus take_status = FRANCHISE_HOST_OK;
 int nfl2k5_franchise_read_finance(struct FranchiseFinanceSnapshot *out){(void)out;assert(0);return 0;}
 int nfl2k5_franchise_read_identity(const struct FranchiseFinanceSnapshot *finance,struct FranchiseIdentitySnapshot *out){(void)finance;(void)out;assert(0);return 0;}
@@ -193,6 +196,18 @@ int main(void)
     nfl2k5_franchise_on_fsm(0x557B2C,1); assert(submissions==9); /* No redundant hello. */
     strcpy(observation.first_name,"Bad\"Name");
     nfl2k5_franchise_signing_context(&observation); assert(submissions==9);
+    nfl2k5_franchise_stop();
+    /* Same host path forwards any canonical load identity, with no name lookup. */
+    for(unsigned i=0;i<2;++i) {
+        memset(image_digest,'a'+i,64);image_digest[64]=0;image_present=1;
+        assert(nfl2k5_franchise_start());
+        nfl2k5_franchise_on_fsm(0x557B2C,1);
+        assert(strstr(last_request,"\"loaded_image_sha256\":\"") && strstr(last_request,image_digest));
+        nfl2k5_franchise_stop();
+    }
+    assert(nfl2k5_franchise_start());
+    image_digest[0]='G';unsigned before=submissions;
+    nfl2k5_franchise_on_fsm(0x557B2C,1);assert(submissions==before);
     nfl2k5_franchise_stop();
     return 0;
 }

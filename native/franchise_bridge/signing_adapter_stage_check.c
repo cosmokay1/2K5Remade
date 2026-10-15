@@ -33,12 +33,15 @@ int main(void){
     if(!api || !api->start(&host)) return 1;
     NFL2K5AddonImageIdentity image={{0}},copied;
     char digest[65];memset(digest,'a',64);digest[64]=0;
-    if(api->snapshot(NFL2K5_ADDON_LOADED_IMAGE,&copied,sizeof(copied)) ||
+    char host_digest[65];
+    if(nfl2k5_franchise_read_image(host_digest) || host_digest[0] ||
+       api->snapshot(NFL2K5_ADDON_LOADED_IMAGE,&copied,sizeof(copied)) ||
        !addon_image_identity(&image,digest) ||
        api->event(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image)-1) ||
        !api->event(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image)) ||
        !api->event(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image)) ||
        !api->snapshot(NFL2K5_ADDON_LOADED_IMAGE,&copied,sizeof(copied)) || memcmp(&image,&copied,sizeof(image)) || reads) return 11;
+    if(!nfl2k5_franchise_read_image(host_digest) || strcmp(host_digest,digest) || reads) return 17;
     image.sha256[0]='b';
     if(api->event(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image)) ||
        !api->snapshot(NFL2K5_ADDON_LOADED_IMAGE,&copied,sizeof(copied)) || copied.sha256[0]!='a') return 12;
@@ -76,7 +79,8 @@ int main(void){
     if(api->event(FRANCHISE_SIGN_COMPLETED_EVENT,&completed,sizeof(completed)) ||
        api->event(FRANCHISE_SIGN_COMPLETED_EVENT,&completed,sizeof(completed)-1) || completions!=1) return 10;
     api->stop();
-    if(api->snapshot(NFL2K5_ADDON_LOADED_IMAGE,&copied,sizeof(copied))) return 15;
+    if(api->snapshot(NFL2K5_ADDON_LOADED_IMAGE,&copied,sizeof(copied)) ||
+       nfl2k5_franchise_read_image(host_digest) || host_digest[0]) return 15;
     image.sha256[0]='b';image.sha256[64]=0;
     if(!api->start(&host) || !api->event(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image)) ||
        !api->snapshot(NFL2K5_ADDON_LOADED_IMAGE,&copied,sizeof(copied)) || memcmp(&image,&copied,sizeof(image))) return 16;

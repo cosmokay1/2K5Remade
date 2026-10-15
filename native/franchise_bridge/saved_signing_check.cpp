@@ -32,12 +32,21 @@ static nlohmann::json submit(FranchiseHostClient* client,const nlohmann::json& r
 }
 int wmain(int argc,wchar_t** argv) {
     try {
-        require(argc==10);
+        require(argc==10 || argc==11);
         FranchiseHostClient* raw=nullptr;
         require(franchise_host_create(argv[1],argv[2],FRANCHISE_HOST_OFFLINE_FIXTURE,&raw)==FRANCHISE_HOST_OK);
         Client client(raw,&franchise_host_destroy);
         require(franchise_host_check_saved(client.get())==FRANCHISE_HOST_NOT_READY);
         auto hello=nlohmann::json{{"protocol",1},{"request_id","native-hello"},{"operation","hello"}};
+        if(argc==11) {
+            require(submit(client.get(),hello).at("error")=="invalid_request");
+            const std::string denied="{\"protocol\":1,\"request_id\":\"denied\",\"operation\":\"negotiate_proposal\"}";
+            require(franchise_host_submit(client.get(),denied.data(),denied.size())==FRANCHISE_HOST_SERVICE_FAILURE);
+            hello["loaded_image_sha256"]=std::string(64,'b');
+            require(submit(client.get(),hello).at("error")=="state_rejected");
+            const std::wstring digest(argv[10]);require(digest.size()==64);
+            hello["loaded_image_sha256"]=std::string(digest.begin(),digest.end());
+        }
         require(submit(client.get(),hello).at("error").is_null());
         std::ifstream input{std::filesystem::path(argv[3])};nlohmann::json proposal;input>>proposal;
         const auto accepted=submit(client.get(),proposal);
@@ -86,6 +95,12 @@ int wmain(int argc,wchar_t** argv) {
         require(franchise_host_check_saved(client.get())==FRANCHISE_HOST_OK);
         require(receive(client.get()).at("result").at("save_position")=="confirmed_after");
         require(franchise_host_check_saved(client.get())==FRANCHISE_HOST_NOT_READY);
+        if(argc==11) {
+            auto wrong=hello;wrong["loaded_image_sha256"]=std::string(64,'b');
+            require(submit(client.get(),wrong).at("error")=="state_rejected");
+            const std::string denied="{\"protocol\":1,\"request_id\":\"revoked\",\"operation\":\"negotiate_proposal\"}";
+            require(franchise_host_submit(client.get(),denied.data(),denied.size())==FRANCHISE_HOST_SERVICE_FAILURE);
+        }
         client.reset();
         // No runtime budget/ADC: hello fails, but explicit saved-journal recovery reads remain available.
         require(franchise_host_create(argv[1],argv[2],FRANCHISE_HOST_VERTEX_RUNTIME,&raw)==FRANCHISE_HOST_OK);

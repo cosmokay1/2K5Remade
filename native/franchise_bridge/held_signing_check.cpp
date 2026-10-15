@@ -33,6 +33,8 @@ FranchiseHostStatus franchise_host_submit(FranchiseHostClient* c,const char* byt
     require(submitted.at("protocol")==1);++submissions;c->pending=true;return FRANCHISE_HOST_OK;
 }
 FranchiseHostStatus franchise_host_ready(FranchiseHostClient*,int* out) { require(GetCurrentThreadId()==owner);*out=ready;return FRANCHISE_HOST_OK; }
+static bool image_available=true;
+int nfl2k5_franchise_read_image(char out[65]){std::memset(out,'a',64);out[64]=0;return image_available;}
 int nfl2k5_franchise_read_finance(FranchiseFinanceSnapshot* out) {
     require(GetCurrentThreadId()==owner);if(!completion_readable) return 0;*out={};out->size=FRANCHISE_FINANCE_HEADER+FRANCHISE_FINANCE_RECORD;
     finance_put32(out->bytes,1);finance_put32(out->bytes+4,1);finance_put32(out->bytes+8,2);finance_put32(out->bytes+24,32);
@@ -207,6 +209,13 @@ int main(int argc,char** argv) {
         nfl2k5_franchise_signing_context(&observation);
         ++observation.offer_amount;nfl2k5_franchise_signing_context(&observation);
         nfl2k5_franchise_poll();require(preparations==0);nfl2k5_franchise_stop();
+        image_available=false;
+        require(nfl2k5_franchise_start()==1);
+        const auto unbound_submissions=submissions;
+        nfl2k5_franchise_on_fsm(0x557B2C,1);nfl2k5_franchise_poll();
+        require(submissions==unbound_submissions); // No legacy hello fallback for enabled negotiation.
+        require(nfl2k5_franchise_submit_held(nullptr,0)==1);
+        nfl2k5_franchise_stop();
         require(argc==1 || argc==2);
         if(argc==2) {
             std::ofstream receipt(argv[1]);receipt<<"held-signing-host-passed\n";receipt.close();require(receipt.good());

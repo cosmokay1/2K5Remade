@@ -1599,6 +1599,19 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         if (!result.contains("ai_enabled") || !result["ai_enabled"].is_boolean() || result["ai_enabled"] != true ||
             !result.contains("operations") || !result["operations"].is_array()) throw std::runtime_error("Invalid handshake result");
         for (const auto& item : result["operations"]) if (!item.is_string()) throw std::runtime_error("Invalid operation list");
+        if(request.contains("loaded_image_sha256")) {
+            auto hex=[](const nlohmann::json& value,size_t size) {
+                if(!value.is_string()) return false;
+                const auto text=value.get<std::string>();
+                return text.size()==size && text.find_first_not_of("0123456789abcdef")==std::string::npos;
+            };
+            const auto& binding=result.at("runtime_binding");
+            if(!hex(request.at("loaded_image_sha256"),64) || !binding.is_object() || binding.size()!=4 ||
+               binding.at("loaded_image_sha256")!=request.at("loaded_image_sha256") ||
+               !hex(binding.at("franchise_id"),32) || !hex(binding.at("bindings_sha256"),64) ||
+               !hex(binding.at("snapshot_payload_sha256"),64))
+                throw std::runtime_error("Runtime handshake identity mismatch");
+        } else if(result.contains("runtime_binding")) throw std::runtime_error("Unrequested runtime binding");
         return;
     }
     if (operation == "preview" || operation == "negotiate" || operation == "negotiate_proposal" || operation == "manual_sign") {

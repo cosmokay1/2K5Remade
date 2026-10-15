@@ -24,6 +24,25 @@ int main(int argc,char** argv) {
             return 0;
         }
         if(argc!=1) throw std::runtime_error("Unsupported protocol-check arguments");
+        // A load-image hello must receive an exact bound echo before a local AI grant.
+        nlohmann::json hello_request={{"operation","hello"},{"loaded_image_sha256",std::string(64,'a')}};
+        nlohmann::json hello_reply={{"error",nullptr},{"result",{
+            {"ai_enabled",true},{"operations",{"negotiate_proposal"}},
+            {"runtime_binding",{{"loaded_image_sha256",std::string(64,'a')},{"franchise_id",std::string(32,'b')},
+                {"bindings_sha256",std::string(64,'c')},{"snapshot_payload_sha256",std::string(64,'d')}}}}}};
+        franchise::validate_result(hello_reply,hello_request);
+        for(int scenario=0;scenario<7;++scenario) {
+            auto bad=hello_reply;auto req=hello_request;
+            if(scenario==0) bad["result"].erase("runtime_binding");
+            if(scenario==1) bad["result"]["runtime_binding"]["loaded_image_sha256"]=std::string(64,'e');
+            if(scenario==2) bad["result"]["runtime_binding"]["franchise_id"]="invalid";
+            if(scenario==3) bad["result"]["runtime_binding"]["bindings_sha256"]=std::string(64,'G');
+            if(scenario==4) bad["result"]["runtime_binding"]["snapshot_payload_sha256"]=false;
+            if(scenario==5) bad["result"]["runtime_binding"]["write_authorized"]=true;
+            if(scenario==6) req.erase("loaded_image_sha256");
+            bool rejected=false;try{franchise::validate_result(bad,req);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Unbound runtime hello accepted");
+        }
         const franchise::BudgetLaunch launch_budget{LR"(C:\budget path\ledger.sqlite)",L"scope \"quoted\" --provider offline-fixture",17};
         const auto budget_command=franchise::launch_command(L"python path",L"database path",franchise::ServiceMode::VertexRuntime,launch_budget);
         const auto expected_budget=franchise::quote(L"python path")+L" \"-m\" \"franchise.sidecar\" \"--database\" "+franchise::quote(L"database path")+

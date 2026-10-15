@@ -2,6 +2,7 @@
 #include "host_client.h"
 #include "finance_state.h"
 #include "identity_state.h"
+#include "../native/game_addon/runtime_identity.h"
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -124,8 +125,18 @@ void nfl2k5_franchise_on_fsm(uint32_t descriptor, int push)
     nfl2k5_franchise_poll();
     if (hello_failed || hello_pending || context_pending || journal_locked) return;
     if (push && descriptor == 0x00557B2Cu && (!context_enabled || !hello_consumed)) {
-        static const char request[] = "{\"protocol\":1,\"request_id\":\"game-sign-hello\",\"operation\":\"hello\"}";
-        if (franchise_host_submit(franchise_client, request, sizeof(request) - 1) != FRANCHISE_HOST_OK)
+        char request[256], digest[65]={0};
+        NFL2K5AddonImageIdentity image;
+        const int present=nfl2k5_franchise_read_image(digest);
+        AcquireSRWLockShared(&submission_lock);
+        const int image_required=submission_enabled;
+        ReleaseSRWLockShared(&submission_lock);
+        if((!present && image_required) || (present && !addon_image_identity(&image,digest))) goto failed;
+        const int length=present ? snprintf(request,sizeof(request),
+            "{\"protocol\":1,\"request_id\":\"game-sign-hello\",\"operation\":\"hello\",\"loaded_image_sha256\":\"%s\"}",image.sha256) :
+            snprintf(request,sizeof(request),"{\"protocol\":1,\"request_id\":\"game-sign-hello\",\"operation\":\"hello\"}");
+        if(length<=0 || (size_t)length>=sizeof(request) ||
+            franchise_host_submit(franchise_client, request, (size_t)length) != FRANCHISE_HOST_OK)
             goto failed;
         hello_pending = 1;
     }

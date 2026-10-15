@@ -5,7 +5,7 @@ from tools.inspect_franchise_calendar import inspect_calendar
 
 def context_fields(context):
     fields = {'season_year', 'season_index', 'money_scale', 'league_cap_raw'}
-    if type(context) is not dict or set(context) not in (fields, fields | {'source_image_sha256'}):
+    if type(context) is not dict or not fields <= set(context) or set(context) - fields - {'source_image_sha256', 'loaded_image_sha256'}:
         raise ValueError('Complete explicit game context required')
     year, index, scale, cap = (context[k] for k in ('season_year', 'season_index', 'money_scale', 'league_cap_raw'))
     if (type(year) is not int or not 2000 <= year <= 2255 or
@@ -13,8 +13,10 @@ def context_fields(context):
             type(scale) is not int or scale not in (1, 4) or
             (cap is not None and (type(cap) is not int or not 1 <= cap <= 0x7fffffff))):
         raise ValueError('Supported explicit calendar, units and raw cap required')
-    if 'source_image_sha256' in context:
-        digest = context['source_image_sha256']
+    for key in ('source_image_sha256', 'loaded_image_sha256'):
+        if key not in context:
+            continue
+        digest = context[key]
         if type(digest) is not str or len(digest) != 64 or any(c not in '0123456789abcdef' for c in digest):
             raise ValueError('Canonical executable provenance digest required')
     return dict(context)

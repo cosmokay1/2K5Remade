@@ -120,6 +120,14 @@ python3 -m tools.franchise_snapshot_bindings /path/to/SAVEGAME.DAT /path/to/new-
 The optional executable records source-image provenance; its name or hash never
 selects calendar, units or rules. This digest describes the supplied source file,
 not the host's engine.loaded-image.v1 digest after built-in file patches.
+An independently verified expected load-input digest may be supplied as optional
+loaded_image_sha256 in the context JSON. It is separate from source_image_sha256;
+neither is inferred from the other. When configured, the service requires an exact
+loaded-image hello before inference or saved-journal writes. Its reply echoes the
+image, configured franchise namespace, canonical registry hash and service-start
+snapshot hash. A failed re-handshake or restart requires a new match. Remote
+shutdown remains checked independently. This associates a connection with its
+configured snapshot; it does not prove which save is active in guest memory.
 Without explicit context, creation uses the decoded scheduler year/index, raw cap
 and unit factor1, and rejects a different scheduled-game year. Supported liability
 unit factors are currently1 and4. The raw cap must match the save; null is allowed

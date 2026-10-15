@@ -19,6 +19,14 @@
 #endif
 
 static NFL2K5AddonImageIdentity loaded_image;
+#ifdef NFL2K5_FRANCHISE_CLIENT
+int nfl2k5_franchise_read_image(char out[65])
+{
+    if(!out) return 0;
+    memcpy(out,loaded_image.sha256,sizeof(loaded_image.sha256));
+    return out[0]!=0;
+}
+#endif
 static NFL2K5AddonHost adapter_host;
 static int capture_attempted;
 static bool signing_screen_range(uint32_t address,uint64_t size)

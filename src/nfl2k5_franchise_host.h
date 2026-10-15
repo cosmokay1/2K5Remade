@@ -24,6 +24,8 @@ typedef struct {
 } FranchiseSigningObservation;
 /* Optional pinned-snapshot inspection only; never a transaction or AI grant. */
 int nfl2k5_franchise_context_enabled(void);
+/* Immutable loader metadata; source file and post-patch load image differ. */
+int nfl2k5_franchise_read_image(char out[65]);
 /* Application adapter, owner thread only. Read-only; no transaction lock. */
 struct FranchiseFinanceSnapshot;
 int nfl2k5_franchise_read_finance(struct FranchiseFinanceSnapshot *out);

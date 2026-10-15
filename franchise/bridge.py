@@ -25,6 +25,12 @@ class Bridge:
                 or type(guest_snapshot[0]) is not dict or type(guest_snapshot[1]) is not bytes):
             raise ValueError('Pinned bindings and saved payload required')
         self.guest_snapshot = guest_snapshot
+        self.runtime_image = None
+        self.runtime_verified = False
+        if guest_snapshot is not None:
+            from tools.franchise_snapshot_bindings import resolve_bindings
+            resolve_bindings(*guest_snapshot)
+            self.runtime_image = guest_snapshot[0].get('game_context', {}).get('loaded_image_sha256')
         if guest_signing_reader is not None and (guest_snapshot is None or not callable(guest_signing_reader)):
             raise ValueError('Journal coordination requires pinned bindings and a server-owned save reader')
         self.guest_signing_reader = guest_signing_reader
@@ -32,11 +38,16 @@ class Bridge:
     def handle(self, request):
         request_id = request.get("request_id") if type(request) is dict else None
         try:
+            if type(request) is dict and request.get('operation') == 'hello':
+                self.runtime_verified = False
             if type(request) is not dict or type(request_id) is not str or not request_id.strip():
                 raise ValueError("Request object and stable request ID required")
             if type(request.get("protocol")) is not int or request["protocol"] != PROTOCOL:
                 return self._reply(request_id, error="protocol_mismatch")
             operation = request.get("operation")
+            if self.runtime_image is not None and not self.runtime_verified and operation in (
+                    'negotiate', 'negotiate_proposal', 'guest_signing_prepare', 'guest_signing_confirm'):
+                raise AccessDisabled('Verified runtime handshake required')
             compact='receipt_format' in request
             if compact:
                 from franchise.receipts import TARGET_FORMAT
@@ -54,15 +65,33 @@ class Bridge:
                     if cash is not None and cash.get('unknown_legacy_players'):
                         raise Rejected('Lifecycle bridge receipts require complete cash coverage; legacy cash remains unknown')
             if operation == "hello":
-                if set(request) != {"protocol", "request_id", "operation"}:
+                fields = {"protocol", "request_id", "operation"}
+                if self.runtime_image is not None:
+                    fields.add('loaded_image_sha256')
+                if set(request) != fields:
                     raise ValueError("Unexpected handshake fields")
-                self.access_check()
+                binding = None
+                if self.runtime_image is not None:
+                    if request['loaded_image_sha256'] != self.runtime_image:
+                        raise Rejected('Loaded image differs from configured franchise context')
+                    import hashlib
+                    registry, payload = self.guest_snapshot
+                    binding = dict(loaded_image_sha256=self.runtime_image,
+                        franchise_id=registry['franchise_id'],
+                        bindings_sha256=hashlib.sha256(json.dumps(registry,sort_keys=True,separators=(',', ':')).encode()).hexdigest(),
+                        snapshot_payload_sha256=hashlib.sha256(payload).hexdigest())
+                if self.access_check() is False:
+                    raise AccessDisabled('AI control denied handshake')
                 operations = ["preview", "negotiate", "negotiate_proposal", "manual_sign", "manual_release", "manual_trade", "manual_restructure", "player_context", "contract_context"]
                 if self.guest_snapshot is not None:
                     operations.append('signing_context')
                 if self.guest_signing_reader is not None:
                     operations.extend(('guest_signing_prepare','guest_signing_confirm','guest_signing_status'))
-                return self._reply(request_id, result={"ai_enabled": True, "operations": operations})
+                result = {"ai_enabled": True, "operations": operations}
+                if binding is not None:
+                    result['runtime_binding'] = binding
+                self.runtime_verified = binding is not None
+                return self._reply(request_id, result=result)
             if operation in ('guest_signing_prepare','guest_signing_confirm','guest_signing_status'):
                 from franchise import guest_signing
                 import hashlib
@@ -187,7 +216,8 @@ class Bridge:
                     raise ValueError('Bounded signing proposal timeout required')
                 deadline = time.monotonic() + timeout / 1000
                 self.connection_check()
-                self.access_check()  # A read checkpoint alone never grants inference.
+                if self.access_check() is False:  # A read checkpoint alone never grants inference.
+                    raise AccessDisabled('AI control denied proposal')
                 checkpoint_request = {key: request[key] for key in fields}
                 checkpoint_request.update(operation='signing_context', performance_format='saved_history_v1')
                 checkpoint_reply = self.handle(checkpoint_request)
@@ -475,7 +505,8 @@ class Bridge:
                     raise TimeoutError("Request expired")
             def guarded_access():
                 local_access()
-                self.access_check()
+                if self.access_check() is False:
+                    raise AccessDisabled('AI control denied negotiation')
                 if time.monotonic() >= deadline:
                     raise TimeoutError("Request expired")
             data = request["offer"]

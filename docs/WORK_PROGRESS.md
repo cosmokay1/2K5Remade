@@ -7755,3 +7755,52 @@ Installed game/configuration, user saves, live DB and remote control were not
 changed. Live service binding, store/journal migration and actual permitted
 signing/accounting/save-reload acceptance remain open. Passing authored fixtures
 and copy conversion do not establish game integration or playability.
+
+## October 15, 2026 — Loaded-image handshake reaches the Windows service
+
+The game adapter now exposes its immutable loader-provided image digest to the
+franchise host. Hello forwards that digest on the owner thread without guest
+reads. Negotiation-enabled callbacks fail closed if metadata is missing or
+malformed. Neither an image name nor a predefined hash selects application rules.
+
+An optional explicit loaded_image_sha256 in the v2 game context pins the expected
+post-file-patch load input separately from source_image_sha256. The service
+requires an exact match before inference or saved-journal preparation/confirmation.
+Successful hello echoes that image, configured franchise namespace, canonical
+registry SHA256 and service-start snapshot SHA256. Native response validation
+requires the exact image echo and typed identities; unrequested binding replies
+reject. Restart and every failed re-handshake clear the session match. Read-only
+checkpoint/recovery and independent manual engine operations remain available.
+
+A new failing test exposed explicit False control returns being ignored by the
+two negotiation entry points. Both now deny before inference/recording. Raised
+shutdown denials retain their behavior; matching runtime identity never overrides
+remote control. No control object or credentials were renewed or enabled.
+
+All850 offline Python tests pass in46.750s. All six local native CTests pass.
+The actual offline MSVC Windows build succeeds, including the production addon
+DLL, host client and saved-signing checker. Under isolated Deck Proton, protocol
+identity validation, actual C-host forwarding of two arbitrary digests, malformed/
+missing metadata holds, held-offer state, addon/DLL reload and14 Windows Python
+context/handshake tests pass. Both the ordinary14-reply and runtime-bound17-reply
+native client/sidecar authored saved-signing flows pass, including exact accepted
+terms, preparation, live comparison, candidate save, ledger confirmation, failed
+re-handshake revocation and AI-disabled restarted recovery. No paid inference.
+
+The first private Windows runner failed before executing a child because its
+inline grouped command was not accepted. Replacing it with an explicit .cmd file
+resolved the runner failure; launcher0, child runtime-passed and emitted
+runtime-handshake-windows-passed are all verified. Receipt:
+runtime-handshake-c226e36/windows-receipt.json. All342 manifested source files
+match the checkout; manifest SHA256
+342d0fd94a77f24eb86b42017040839853dd364f5fc3c5d921ea3671c9c6dfe7.
+DLL SHA256 df5a6d3fc936077e681c81b415e3e8f03419dfa8de6a04811808881259beaa53;
+native saved-signing checker71d89d2964063d88c7392ff01cd6728a5ca75719f4dea655449bac5f401892ab.
+Prior shared-context sourcec226e36 passes Franchise38790707525 and Build38790707466.
+
+This matches a connection to its configured snapshot; it does not establish that
+snapshot is the active guest franchise, verify arbitrary executable compatibility,
+reconcile complete modern opening books, or issue a one-use guest application
+permit. Installed game/configuration, real saves and live DB were untouched.
+Actual game-boot handshake, application permits, legal live signing and durable
+save/reload reconciliation remain open. No integrated-playability claim is made.

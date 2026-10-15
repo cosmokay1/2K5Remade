@@ -31,7 +31,10 @@ do not branch negotiation/accounting/story policy on a mod name or executable
 whitelist. Supply verified calendar, money units and roster/contract context to
 the same rules. New v2 registries now persist explicit calendar/units/cap context without image
 whitelists. Copy-only v1 conversion preserves player IDs, personalities and
-contract schedules; live store/journal migration and service binding remain open.
+contract schedules. The service now checks an explicitly configured expected
+load-image digest at hello, echoes the configured registry/snapshot identity and
+holds AI/journal writes until that connection matches. Active guest-franchise
+binding, live store/journal migration and actual game handshake remain open.
 
 Windows + Proton is the Deck delivery priority. Defer further native Linux port
 work unless a concrete Proton limitation requires it; retain existing fixes.
@@ -129,7 +132,10 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       this metadata does not authorize application or prove code compatibility.
       The actual Windows game/DLL build now passes isolated --validate and the
       game-built DLL identity/reload fixture under Proton. Real game-boot delivery
-      and service handshake consumption of the digest remain unverified.
+      delivery remains unverified. Service handshake consumption now validates
+      explicit expected load-image data without a version whitelist; native
+      validation requires the exact echo. A session match grants no application
+      permit or active guest-franchise identity. Actual game handshake remains open.
       Guard source7a39913 passes Windows/Ubuntu Franchise38781544199 and
       Build38781544176, actual private Windows/Proton queue/DLL checks and
       isolated full-game --validate. The installed runtime remains unchanged.

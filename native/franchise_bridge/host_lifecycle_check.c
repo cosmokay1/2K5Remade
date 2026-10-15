@@ -2,6 +2,7 @@
 #include "../../src/nfl2k5_franchise_host.h"
 #include <stdlib.h>
 #include <windows.h>
+int nfl2k5_franchise_read_image(char out[65]){out[0]=0;return 0;}
 int nfl2k5_franchise_read_finance(struct FranchiseFinanceSnapshot *out){(void)out;return 0;}
 int nfl2k5_franchise_read_identity(const struct FranchiseFinanceSnapshot *finance,struct FranchiseIdentitySnapshot *out){(void)finance;(void)out;return 0;}
 

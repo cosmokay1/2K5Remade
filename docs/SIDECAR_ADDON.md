@@ -102,7 +102,16 @@ startup message. Invalid unbound input clears stale metadata; stop/reload clears
 the addon's copy and receives the host's current binding again. This is trusted
 local metadata, not a sandbox or independent attestation. It grants no guest
 writes, remote AI access, franchise identity or compatibility with unknown code.
-Connecting this identity to the durable service handshake remains work.
+The franchise host now forwards this digest in hello. A configured explicit
+loaded_image_sha256 in the v2 registry must match before the service allows
+inference or saved-journal writes. The native response validator requires an exact
+image echo plus well-formed configured franchise/registry/snapshot identities.
+Negotiation-enabled game callbacks fail closed when loader metadata is missing;
+legacy engine-only fixtures can still use hello without a load-image claim.
+Failed re-handshakes revoke the session match, and remote shutdown remains an
+independent requirement. This is a connection-to-configured-snapshot check,
+not proof of the active guest save, complete opening books or application authority.
+Actual game-boot delivery/handshake and live signing/save-reload remain unverified.
 
 Franchise interpreter hooks are now registered independently of an executable
 name/hash. The dispatcher compatibility path follows whether the interpreter
