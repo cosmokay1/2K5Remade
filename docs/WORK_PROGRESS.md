@@ -8075,3 +8075,29 @@ At this checkpoint no installed game, wrapper, saves or AI controls changed.
 Actual game read delivery, selected-container/load completion, current franchise
 identity, full modern opening obligations and real signing/save-reload remain
 open. This evidence does not establish playable integrated negotiations.
+
+## October 15, 2026 — Read-only save observer privately installed
+
+Source2bab3a4 and its authored checks are committed/pushed. With both the game
+and sidecar absent, the guarded installer verified the expected old EXE, DLL and
+wrapper, all373 declared source hashes, private Windows fixture completion and
+the isolated game validation receipt. It backed up the previous pair/wrapper
+under save-read-b937df0/installed-before-save-read and installed the validated
+EXE daab780e...88ad3d and DLL983dcf42...7e253a in the existing Steam runtime.
+The wrapper now enables trace and explicitly sets controlled negotiation and guest
+application to0 while retaining its unset provider/Python/database policy.
+Original retail signing is available; no AI or sidecar financial authority was
+enabled and remote controls were not changed. New wrapper SHA256
+946c98866fb1a9b2fe6ded31d4a967bb277c59a181f42e3deed6682682be2143.
+
+All205 files currently under that runtime's saves directory have identical
+before/after hashes; no registry/store or save migration was performed. The
+installation receipt records those hashes and all installed hashes privately.
+Actual game boot/load remains unverified. A request is pending for the user to
+launch the same Steam entry, load MyNFL1 and leave its franchise menu open without
+submitting. Inspect the new log for delivered-save candidates; do not equate one
+with complete selected-container/load binding.
+
+Exact source2bab3a4 CI is still running: Build38803210462 and Franchise38803210766.
+Prior b937df0 Build38801913988 and Franchise38801913914 both pass. Keep the new
+handles; do not restart them merely because a status observation times out.

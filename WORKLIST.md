@@ -149,8 +149,10 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       test has a separate small upstream PR#2.
       The franchise addon now records a full supported save-read candidate's
       delivered-byte hash and owned native file identity, with no guest access or
-      retained handle/buffer. Windows production-DLL fixtures pass on Deck; this
-      still needs real game read delivery and causal load completion.
+      retained handle/buffer. Windows production-DLL fixtures pass on Deck. Source2bab3a4 is privately
+      installed read-only with all205 save files unchanged; user MyNFL1 load
+      verification is pending. Real read delivery and causal load completion
+      remain unverified.
       Service-side durable binding and active franchise identity remain open;
       this metadata does not authorize application or prove code compatibility.
       The actual Windows game/DLL build now passes isolated --validate and the
