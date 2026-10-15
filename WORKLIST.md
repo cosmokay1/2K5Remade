@@ -160,7 +160,8 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       hash and decoded byte count on the same owner/frame/destination. Generated
       and interpreted paths share the checkpoints across compatible packs.
       All17 Windows standalone tests and isolated game --validate pass; the
-      combined build is staged, not installed. Actual MyNFL1 checkpoint delivery,
+      combined source09fcc07 is privately installed after normal exit, with all205
+      save files unchanged and AI off. Actual MyNFL1 checkpoint delivery,
       selected-container identity and active-load lifetime still need verification.
       Service-side durable binding and active franchise identity remain open;
       this metadata does not authorize application or prove code compatibility.

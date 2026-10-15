@@ -8200,3 +8200,13 @@ AI controls remain off; no inference, save edits or application grant occurred.
 Exact preceding commit8d4f3cd passes Build38805048068 and Windows/Ubuntu
 Franchise38805048342, including the corrected bcrypt link. Those CI results
 cover the preceding connection change, not the new uncommitted checkpoint code.
+
+After the user confirmed normal exit, the guarded installer verified no game or
+service process, the exact previous EXE/DLL/wrapper and the tested380-file source
+overlay. Source09fcc07's combined EXE/DLL above are now installed, with the prior
+pair backed up under load-read-8d4f3cd/installed-before-load-read. All205 save-file
+hashes are unchanged. The wrapper is unchanged and retains AI/controlled signing
+off. Installation receipt is retained on Deck; actual new game boot and MyNFL1
+read/input/decoded checkpoint delivery are pending the requested normal launch.
+Exact09fcc07 Build38807043193 and Franchise38807043294 were still running at
+this installation check; do not describe them as passing yet.
