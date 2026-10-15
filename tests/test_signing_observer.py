@@ -30,6 +30,8 @@ class SigningObserverTests(unittest.TestCase):
 #include "finance_state.h"
 #include "identity_state.h"
 #define NFL2K5_FRANCHISE_CLIENT 1
+static int reads_allowed=1;
+int nfl2k5_addon_guest_read_allowed(void) {return reads_allowed;}
 static int context_enabled;
 static unsigned contexts;
 static unsigned invalidations;
@@ -74,6 +76,8 @@ static bool xbox_guest_memory_read(uintptr_t base, uint64_t addr, void *out, siz
 static void put32(uint32_t address, uint32_t value) { memcpy(ram + address, &value, 4); }
 int main(void) {
     adapter_host=(NFL2K5AddonHost){sizeof(NFL2K5AddonHost),nfl2k5_addon_guest_range,nfl2k5_addon_guest_read};
+    uint32_t untouched=42;reads_allowed=0;
+    assert(!nfl2k5_addon_guest_read(0x1000,&untouched,sizeof(untouched)) && untouched==42);reads_allowed=1;
     uint32_t slot = 99;
     uint32_t team_index = 99, team_mode = 99;
     char name[151];

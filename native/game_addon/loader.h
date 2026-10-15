@@ -7,4 +7,6 @@ int nfl2k5_sidecar_loaded(void);
 void nfl2k5_addon_poll(void);
 int nfl2k5_addon_event(const char *name,const void *data,size_t size);
 int nfl2k5_addon_snapshot(const char *name,void *out,size_t capacity);
+/* True only inside one uninterrupted guest-lock-owned addon invocation. */
+int nfl2k5_addon_guest_read_allowed(void);
 #endif

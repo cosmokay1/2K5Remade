@@ -18,12 +18,18 @@ static unsigned toasts;
 void xbox_PresentToast(const char *header,const char *line1,const char *line2,unsigned ms) {
     (void)header;(void)line1;(void)line2;(void)ms;++toasts;
 }
-int nfl2k5_addon_guest_range(uint32_t address,size_t size) { (void)address;(void)size;return 0; }
+static uint64_t execution_serial;
+static int break_scope;
+uint64_t xbox_ggl_current_serial(void){return execution_serial;}
+int nfl2k5_addon_guest_range(uint32_t address,size_t size) {return address==0x1000 && size==4;}
 int nfl2k5_addon_guest_read(uint32_t address,void *out,size_t size) {
-    (void)address;(void)out;(void)size;return 0;
+    if(!nfl2k5_addon_guest_read_allowed() || !nfl2k5_addon_guest_range(address,size)) return 0;
+    uint32_t value=42;memcpy(out,&value,4);
+    if(break_scope){++execution_serial;break_scope=0;}
+    return 1;
 }
 int wmain(int argc,wchar_t **argv) {
-    if(argc!=5) return 1;
+    if(argc!=6) return 1;
     _wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER",L"");
     SetEnvironmentVariableW(L"NFL2K5_TRACE_FRANCHISE",NULL);
     wchar_t installed[32768],selection[32768],folder[32768];
@@ -116,6 +122,15 @@ int wmain(int argc,wchar_t **argv) {
        nfl2k5_addon_snapshot("example.counter.v1",NULL,sizeof(observed))) return 34;
     nfl2k5_addon_stop();
     if(nfl2k5_addon_snapshot("example.counter.v1",&observed,sizeof(observed))) return 35;
+    SetEnvironmentVariableW(L"NFL2K5_SIDECAR_ADDON",argv[5]);
+    if(!nfl2k5_addon_start() || nfl2k5_addon_guest_read_allowed()) return 53;
+    if(nfl2k5_addon_event("scope.read-twice",&counter,4)) return 54; /* no lock owner */
+    execution_serial=10;
+    if(nfl2k5_addon_event("scope.read-twice",&counter,4)!=3 || nfl2k5_addon_guest_read_allowed()) return 55;
+    break_scope=1;
+    if(nfl2k5_addon_event("scope.read-twice",&counter,4)!=1) return 56;
+    if(!nfl2k5_addon_snapshot("scope.read",&observed,4) || observed!=42 || nfl2k5_addon_guest_read_allowed()) return 57;
+    execution_serial=0;nfl2k5_addon_stop();
     nfl2k5_modpacks_set(0,0);
     if(sidecar_selected() || !nfl2k5_franchise_start() || !nfl2k5_modpacks_get(1)) return 17;
     nfl2k5_franchise_stop();

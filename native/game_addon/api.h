@@ -10,6 +10,9 @@ extern "C" {
 typedef struct NFL2K5AddonHost {
     uint32_t size;
     int (*memory_range)(uint32_t address, size_t size);
+    /* The Remade host refuses reads outside an uninterrupted guest-lock-owned
+     * invocation. Treat zero as unavailable; a saved function pointer does not
+     * extend that scope. */
     int (*read_memory)(uint32_t address, void *destination, size_t size);
 } NFL2K5AddonHost;
 typedef struct NFL2K5AddonAPI {

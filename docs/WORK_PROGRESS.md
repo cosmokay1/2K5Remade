@@ -6581,3 +6581,41 @@ direct reinspection of the same runs confirmed both completed successfully.
 A fresh read-only Deck SSH attempt still failed steamdeck.local DNS resolution.
 No installation, private game execution, guest application, save/reload proof,
 paid inference or remote-control renewal occurred. The goal remains incomplete.
+
+## Restrict addon reads to an uninterrupted guest CPU ownership span
+
+Source audit found that GGL serializes translated guest execution, but neither
+the addon API nor its old host read capability established current ownership.
+Added a nonblocking runtime query returning a non-reused acquisition serial only
+to the enabled lock's current owner. Recursion preserves it; a full release or
+blocking yield invalidates it, including immediate reacquisition by the same
+thread. Serial exhaustion returns unavailable rather than reusing an identity.
+The query neither initializes, acquires nor pins the lock.
+
+The loader brackets start/stop/poll/event/snapshot callbacks with a thread-local
+read scope. The host memory-read capability refuses calls outside that scope or
+after its serial changes. Nested calls cannot revive an unowned/stale outer
+scope; range queries remain read-free and unchanged. ABI2 and the callback table
+are preserved. Actual franchise preparation captures both financial and identity
+images in the same poll scope. A compatible rebuilt host is required; older
+hosts do not gain this behavior from a DLL-only update.
+
+This is guest-CPU read consistency, not global DMA/host-writer exclusion, runtime
+authentication, a lock pin or an application permit. Kernel and blocking
+boundaries can release GGL; entry ownership alone cannot establish an atomic
+original signing commit. No transaction was released or guest write added.
+
+The new authored fixture compiles the real runtime GGL and platform primitives.
+Enabled/disabled CTests pass locally, including recursive ownership, a competing
+thread that cannot inherit ownership, release/reacquire and blocking-yield
+invalidation (0.34s). All805 Python regressions pass25.857s, including the actual
+observer/read function with an unavailable-scope sentinel check. A Windows DLL
+fixture now checks owned/unowned invocation reads and a changed serial between
+two reads; Windows execution is pending. CI fetches the pinned runtime explicitly
+for the new portable lock tests. No installed game, save, remote control or paid
+model request changed. Live execution/application/save/reload remain unverified.
+
+The runtime query is committed/pushed as4359426 to cosmokay1/xboxrecomp on
+codex/platform-build-fixes, and the consumer pins that exact dependency. The
+serial is unique within the process, not a cross-process identity. Full source
+Windows/Linux CI and actual DLL read-scope execution remain pending after push.

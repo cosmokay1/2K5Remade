@@ -539,6 +539,8 @@ int nfl2k5_addon_guest_range(uint32_t address,size_t size)
 }
 int nfl2k5_addon_guest_read(uint32_t address, void *out, size_t size)
 {
+    extern int nfl2k5_addon_guest_read_allowed(void);
+    if(!nfl2k5_addon_guest_read_allowed()) return 0;
     uintptr_t base=(uintptr_t)xbox_GetMemoryOffset();
     if(!base || !nfl2k5_addon_guest_range(address,size)) return 0;
     return xbox_guest_memory_read(base,address,out,size);

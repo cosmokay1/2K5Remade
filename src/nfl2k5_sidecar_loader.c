@@ -7,6 +7,16 @@
 #include <wchar.h>
 #include "game_addon.h"
 #include "addon_selection.h"
+#include "../native/game_addon/read_scope.h"
+extern uint64_t xbox_ggl_current_serial(void);
+#if defined(_MSC_VER)
+static __declspec(thread) NFL2K5AddonReadScope read_scope;
+#else
+static _Thread_local NFL2K5AddonReadScope read_scope;
+#endif
+int nfl2k5_addon_guest_read_allowed(void) {
+    return addon_read_allowed(&read_scope,xbox_ggl_current_serial());
+}
 extern int nfl2k5_addon_guest_range(uint32_t,size_t);
 extern int nfl2k5_addon_guest_read(uint32_t,void *,size_t);
 static SRWLOCK module_lock=SRWLOCK_INIT;
@@ -38,7 +48,13 @@ static int load_addon(void) {
         api=NULL;FreeLibrary(module);module=NULL;return 0;
     }
     const NFL2K5AddonHost host={sizeof(NFL2K5AddonHost),nfl2k5_addon_guest_range,nfl2k5_addon_guest_read};
-    if(!api->start(&host)) { api->stop();api=NULL;FreeLibrary(module);module=NULL;return 0; }
+    addon_read_begin(&read_scope,xbox_ggl_current_serial());
+    int started=api->start(&host);
+    addon_read_end(&read_scope);
+    if(!started) {
+        addon_read_begin(&read_scope,xbox_ggl_current_serial());api->stop();addon_read_end(&read_scope);
+        api=NULL;FreeLibrary(module);module=NULL;return 0;
+    }
     return 1;
 }
 int nfl2k5_addon_start(void) {
@@ -49,7 +65,9 @@ int nfl2k5_addon_start(void) {
 }
 void nfl2k5_addon_stop(void) {
     AcquireSRWLockExclusive(&module_lock);
-    if(api) api->stop();
+    if(api) {
+        addon_read_begin(&read_scope,xbox_ggl_current_serial());api->stop();addon_read_end(&read_scope);
+    }
     api=NULL;
     if(module) FreeLibrary(module);
     module=NULL;
@@ -63,18 +81,28 @@ int nfl2k5_sidecar_loaded(void) {
 }
 void nfl2k5_addon_poll(void) {
     AcquireSRWLockShared(&module_lock);
-    if(api) api->poll();
+    if(api) {
+        addon_read_begin(&read_scope,xbox_ggl_current_serial());api->poll();addon_read_end(&read_scope);
+    }
     ReleaseSRWLockShared(&module_lock);
 }
 int nfl2k5_addon_event(const char *name,const void *data,size_t size) {
     AcquireSRWLockShared(&module_lock);
-    int handled=api && name && data ? api->event(name,data,size) : 0;
+    int handled=0;
+    if(api && name && data) {
+        addon_read_begin(&read_scope,xbox_ggl_current_serial());
+        handled=api->event(name,data,size);addon_read_end(&read_scope);
+    }
     ReleaseSRWLockShared(&module_lock);
     return handled;
 }
 int nfl2k5_addon_snapshot(const char *name,void *out,size_t capacity) {
     AcquireSRWLockShared(&module_lock);
-    int shown=api && name && out ? api->snapshot(name,out,capacity) : 0;
+    int shown=0;
+    if(api && name && out) {
+        addon_read_begin(&read_scope,xbox_ggl_current_serial());
+        shown=api->snapshot(name,out,capacity);addon_read_end(&read_scope);
+    }
     ReleaseSRWLockShared(&module_lock);
     return shown;
 }

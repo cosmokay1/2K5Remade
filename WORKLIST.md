@@ -85,6 +85,10 @@ native offer submission, player response, legal financial commit and save recove
       Franchise38738527171 and Build38738527281, including native identity
       mismatch/replay/preparation/settlement. Active franchise/runtime and
       quiescence remain open; no application permit has been granted.
+      The host now restricts memory reads to one guest-lock ownership span per
+      addon invocation; release/reacquire and unowned calls fail closed. Local
+      actual-runtime tests pass. New Windows/Linux execution is pending; this
+      does not pin the original commit or grant application authority.
 - [ ] Reconcile the required opening obligations/rules before permitting financial
       writes, then prove signing and save/reload on the pinned pack.
       Optional explicit legacy-unknown cash scopes now preserve null total cash

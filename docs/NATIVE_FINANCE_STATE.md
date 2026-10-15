@@ -93,6 +93,16 @@ the pinned runtime is executing or that guest mutations have stopped. These
 conditions and revalidation at the actual transaction remain required before
 granting a one-use application permit. Current signing is still held.
 
+The rebuilt host now restricts guest-memory reads to one uninterrupted
+guest-lock-owned addon invocation. Both images in the native preparation path
+are captured inside the same poll invocation. A disabled lock, an unowned call
+or any full lock release/reacquire makes subsequent reads unavailable. This
+excludes competing translated guest threads during a successful capture on this
+host; it is not a DMA/host-writer lock or a permit for later writes. The original
+transaction may yield at kernel/blocking boundaries, so checking ownership at
+entry does not establish an uninterrupted commit. Older host builds do not
+gain this restriction from a DLL update, and runtime compatibility remains open.
+
 The CI command `python -m tools.check_native_finance_state <fixture executable>`
 runs the actual addon snapshot callback against authored relocated-memory files
 and compares it with saved semantics. It covers expanded banks, benign pointer

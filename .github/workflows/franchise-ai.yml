@@ -19,6 +19,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Fetch pinned guest runtime for execution checks
+        run: git submodule update --init external/xboxrecomp
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -37,6 +39,11 @@ jobs:
           cmake -S addons/engine-sidecar -B build-engine-sidecar
           cmake --build build-engine-sidecar --config Release
           ctest --test-dir build-engine-sidecar -C Release --output-on-failure
+      - name: Check actual guest lock and addon read ownership
+        run: |
+          cmake -S native/guest_execution -B build-guest-execution
+          cmake --build build-guest-execution --config Release
+          ctest --test-dir build-guest-execution -C Release --output-on-failure
       - name: Compile asset-free native protocol and Windows pipe client
         run: |
           cmake -S native/franchise_bridge -B build-franchise-bridge
