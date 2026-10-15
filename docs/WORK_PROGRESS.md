@@ -7653,3 +7653,45 @@ The earlier ownership source1bf1013 is now fully green in Windows/Ubuntu
 Franchise38783097191 and Build38783098207. Current61c1c81 also passes full
 Windows/Ubuntu Franchise38783661071 and Build38783661101; these terminal results
 supersede the preceding pending observations.
+
+
+### October 15 — One addon path for vanilla and modded runtimes
+
+The user requires vanilla Remade and compatible mod packs to share one addon,
+without named-mod or executable-whitelist branches in application policy.
+Removed the uncommitted version-specific signing-code whitelist. The replacement
+is optional generic engine.loaded-image.v1 metadata over the existing ABI2 event/
+snapshot mechanism. The host supplies its actual validated XBE load-input digest
+after built-in file patches, and publishes it just after addon startup. No new
+public ABI, game bytes, network calls or financial authority were introduced.
+
+The loader accepts any canonical SHA256 through the same path, refuses a different
+binding while loaded, clears stale unbound metadata on invalid input and reserves
+the startup event against ordinary forwarded injection. Both the franchise addon
+and generic counter example own an immutable snapshot; stop/reload resets their
+copies. Actual Windows DLL fixtures exercise two authored identities, idempotent
+binding, attempted retarget/injection, invalid binding and reload. The same path
+handles both identities without game/mod detection. Metadata is trusted local
+load-input identity, not attestation of subsequent guest writes, the native build,
+active franchise or code compatibility. Durable service binding remains open.
+
+Franchise interpreter hook registration now runs independently of an executable
+hash. The dispatcher workaround follows interpreter activity rather than a
+SOFTDRINK name/hash. Built-in file-patch rehash failure now stops before publishing
+an uncertain digest. Existing named financial bootstrap profiles still need
+conversion to explicit verified calendar/units/data context while preserving
+saved bindings and actor identities; this change does not claim that migration.
+
+All836 offline Python regressions pass in45.940s, and all six local native CTests
+pass. The actual offline MSVC Windows build and Proton DLL/adapter/application/
+pending-work fixtures pass with marker identity-passed, launcher exit0 and all339
+source hashes verified. Receipt: shared-image-fa2673a/identity-receipt.json.
+DLL SHA256 d1c112183b386c335eac2b30bb9f067b6d85bc8bf89701f26e68a0dcc4bfe049;
+example DLL960a84bbbbc5d04e478630eccddeaf56eb81d5df9c2e9f7708683f88c799ac4b.
+The fixture's intentional bad-DLL load failure126 remains an expected passing case.
+
+The actual full Windows game build is still running after effective339-file source
+verification and generated-patch checks. Follow that existing build; startup
+validation and actual boot delivery of metadata are not yet proven. Installed
+runtime/configuration, user saves and remote AI control were not changed. No live
+signing/application permit or save/reload acceptance is claimed.

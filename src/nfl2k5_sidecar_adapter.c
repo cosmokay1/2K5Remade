@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include "../native/game_addon/runtime_identity.h"
 #include "game_addon.h"
 #include "franchise_addon.h"
 #include "finance_state.h"
@@ -17,6 +18,7 @@
 #include "nfl2k5_franchise_host.h"
 #endif
 
+static NFL2K5AddonImageIdentity loaded_image;
 static NFL2K5AddonHost adapter_host;
 static int capture_attempted;
 static bool signing_screen_range(uint32_t address,uint64_t size)
@@ -339,6 +341,7 @@ void nfl2k5_diag_signing(uint32_t stage, uint32_t context, uint32_t result,
 
 static int addon_start(const NFL2K5AddonHost *host) {
     if(!host || host->size!=sizeof(*host) || !host->read_memory || !host->memory_range) return 0;
+    memset(&loaded_image,0,sizeof(loaded_image));
     adapter_host=*host;
     capture_attempted=0;
     if(!nfl2k5_franchise_start()) { memset(&adapter_host,0,sizeof(adapter_host));return 0; }
@@ -346,6 +349,7 @@ static int addon_start(const NFL2K5AddonHost *host) {
 }
 static void addon_stop(void) {
     nfl2k5_franchise_stop();
+    memset(&loaded_image,0,sizeof(loaded_image));
     memset(&adapter_host,0,sizeof(adapter_host));
 }
 int nfl2k5_franchise_hold_signing(uint32_t context) {
@@ -361,6 +365,12 @@ int nfl2k5_franchise_hold_signing_at(uint32_t stage,uint32_t context) {
     return 1;
 }
 static int addon_event(const char *name,const void *data,size_t size) {
+    if(name && data && !strcmp(name,NFL2K5_ADDON_LOADED_IMAGE) && size==sizeof(NFL2K5AddonImageIdentity)) {
+        NFL2K5AddonImageIdentity next;
+        if(!addon_image_identity(&next,((const NFL2K5AddonImageIdentity*)data)->sha256)) return 0;
+        if(loaded_image.sha256[0]) return !memcmp(&loaded_image,&next,sizeof(next));
+        loaded_image=next;return 1;
+    }
     if(!name || !data) return 0;
     if(!strcmp(name,FRANCHISE_SIGN_APPLICATION_EVENT) && size==sizeof(FranchiseSignGateEvent)) {
         FranchiseSignGateEvent event;memcpy(&event,data,sizeof(event));
@@ -392,6 +402,10 @@ static int addon_event(const char *name,const void *data,size_t size) {
     return 0;
 }
 static int addon_snapshot(const char *name,void *out,size_t capacity) {
+    if(name && out && !strcmp(name,NFL2K5_ADDON_LOADED_IMAGE) && capacity==sizeof(loaded_image)) {
+        if(!loaded_image.sha256[0]) return 0;
+        memcpy(out,&loaded_image,sizeof(loaded_image));return 1;
+    }
     if(name && out && !strcmp(name,FRANCHISE_IDENTITY_SNAPSHOT) && capacity==sizeof(FranchiseIdentitySnapshot)) {
         FranchiseFinanceSnapshot finance;
         memset(out,0,capacity);

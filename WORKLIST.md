@@ -26,6 +26,12 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 The user deferred additional statistics investigation on October14. Prioritize
 native offer submission, player response, legal financial commit and save recovery.
+Use one addon/application pipeline for vanilla Remade and compatible mod packs;
+do not branch negotiation/accounting/story policy on a mod name or executable
+whitelist. Supply verified calendar, money units and roster/contract context to
+the same rules. Existing named bootstrap profiles still need conversion with
+saved franchise/actor identities preserved.
+
 Windows + Proton is the Deck delivery priority. Defer further native Linux port
 work unless a concrete Proton limitation requires it; retain existing fixes.
 
@@ -115,6 +121,11 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       spans each tested call and the competing thread acquires after leave. This
       covers one authored deal/roster, not a live MyNFL1 signing or all pack paths.
       Source61c1c81 passes Windows/Ubuntu Franchise38783661071 and Build38783661101.
+      A shared loader-supplied XBE identity event/snapshot now carries the actual
+      load-input digest to any addon, without a version whitelist. Registration
+      of franchise interpreter hooks is independent of the image name/hash.
+      Service-side durable binding and active franchise identity remain open;
+      this metadata does not authorize application or prove code compatibility.
       Guard source7a39913 passes Windows/Ubuntu Franchise38781544199 and
       Build38781544176, actual private Windows/Proton queue/DLL checks and
       isolated full-game --validate. The installed runtime remains unchanged.

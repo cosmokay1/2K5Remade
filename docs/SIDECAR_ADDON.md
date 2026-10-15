@@ -74,3 +74,34 @@ An explicit diagnostic DLL path still obeys the manager selection. Enabling the
 addon does not enable cloud AI or renew its remote grant. ABI/service checks still
 apply at startup. Installation automation, runtime visuals/controller behavior
 and SOFTDRINK v0.6 execution remain separate acceptance gates.
+
+
+## Shared executable identity
+
+The addon must use one negotiation/accounting/story pipeline for vanilla Remade
+and compatible mod packs. Mod names and a predefined executable whitelist must
+not select application behavior. Differences in calendar, units, roster and
+contract data must be supplied as verified context to the same rules. Existing
+named bootstrap profiles still need conversion to that explicit context without
+rerolling actors or invalidating existing franchise bindings.
+
+The host now sends optional ABI2 metadata engine.loaded-image.v1 immediately
+after addon startup. native/game_addon/runtime_identity.h defines its65-byte
+canonical lowercase SHA256 payload. The digest describes the XBE bytes supplied
+to the loader after built-in file patches, before later runtime/guest writes.
+The same event is used for every image; there is no vanilla/mod-name branch or
+hash whitelist. Other addons may ignore it. The generic example and franchise
+addon expose an immutable owned copy through a same-name snapshot.
+
+The host binds the digest before startup, refuses a different binding while a
+DLL is loaded and prevents ordinary forwarded events from impersonating this
+startup message. Invalid unbound input clears stale metadata; stop/reload clears
+the addon's copy and receives the host's current binding again. This is trusted
+local metadata, not a sandbox or independent attestation. It grants no guest
+writes, remote AI access, franchise identity or compatibility with unknown code.
+Connecting this identity to the durable service handshake remains work.
+
+Franchise interpreter hooks are now registered independently of an executable
+name/hash. The dispatcher compatibility path follows whether the interpreter
+is active, rather than a SOFTDRINK-specific digest. Actual signing/save/reload
+acceptance on each supported runtime remains required.

@@ -37,6 +37,7 @@
 #include "nfl2k5_presentation.h"
 #include "nfl2k5_widescreen_patch.h"
 #ifdef NFL2K5_FRANCHISE_CLIENT
+#include "../native/game_addon/loader.h"
 #include "nfl2k5_franchise_host.h"
 #endif
 
@@ -747,7 +748,7 @@ int main(int argc, char **argv)
             if ((uint64_t)k_widescreen_runs[r].offset + k_widescreen_runs[r].length <= (uint64_t)length)
                 memcpy(data + k_widescreen_runs[r].offset, k_widescreen_runs[r].bytes, k_widescreen_runs[r].length);
         }
-        compute_sha256_hex(data, (size_t)length, digest_hex);
+        if (!compute_sha256_hex(data, (size_t)length, digest_hex)) { free(data); return 2; }
         printf("[BOOT] Built-in widescreen patch applied to the retail executable\n");
     }
 
@@ -821,13 +822,13 @@ int main(int argc, char **argv)
     }
 
     nfl2k5_scorebug_interp_hooks();
+    nfl2k5_franchise_interp_hooks();
     if (!g_interp_pack && NFL2K5_BASE_CMP(NFL2K5_XBE_SHA256) == 0)
         nfl2k5_expand_limits();
     nfl2k5_controller_setup_init();
 
-    if (!strcmp(digest_hex, "f67e6fc1cb76c9ea1f1ad504e4a6491ff126483d66a9da8ddb92950bbaf740ba")) {
-        nfl2k5_franchise_interp_hooks();
-        printf("[BOOT] SOFTDRINK v0.6 dispatcher compatibility: %u function\n",
+    if (g_interp_active) {
+        printf("[BOOT] Interpreter dispatcher compatibility: %u function\n",
                nfl2k5_interp_force(0x0006E4E5u, 0x0006E5F5u));
     }
 
@@ -914,7 +915,7 @@ int main(int argc, char **argv)
         }
         xbox_WatchdogStart();
 #ifdef NFL2K5_FRANCHISE_CLIENT
-        if (!nfl2k5_franchise_start()) return 5;
+        if (!nfl2k5_addon_bind_image(digest_hex) || !nfl2k5_franchise_start()) return 5;
 #endif
         printf("[BOOT] Entering recompiled NFL 2K5 code.\n");
         xbox_ggl_enter();

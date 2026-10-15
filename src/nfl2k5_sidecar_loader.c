@@ -8,6 +8,7 @@
 #include "game_addon.h"
 #include "addon_selection.h"
 #include "../native/game_addon/read_scope.h"
+#include "../native/game_addon/runtime_identity.h"
 extern uint64_t xbox_ggl_current_serial(void);
 #if defined(_MSC_VER)
 static __declspec(thread) NFL2K5AddonReadScope read_scope;
@@ -22,6 +23,17 @@ extern int nfl2k5_addon_guest_read(uint32_t,void *,size_t);
 static SRWLOCK module_lock=SRWLOCK_INIT;
 static HMODULE module;
 static const NFL2K5AddonAPI *api;
+static NFL2K5AddonImageIdentity loaded_image;
+int nfl2k5_addon_bind_image(const char *sha256) {
+    NFL2K5AddonImageIdentity next;
+    const int valid=addon_image_identity(&next,sha256);
+    AcquireSRWLockExclusive(&module_lock);
+    int bound=valid;
+    if(api) bound=valid && !memcmp(&next,&loaded_image,sizeof(next));
+    else loaded_image=next;
+    ReleaseSRWLockExclusive(&module_lock);
+    return bound;
+}
 static int load_addon(void) {
     if(module) return 0;
     if(!sidecar_selected()) return 1;
@@ -54,6 +66,12 @@ static int load_addon(void) {
     if(!started) {
         addon_read_begin(&read_scope,xbox_ggl_current_serial());api->stop();addon_read_end(&read_scope);
         api=NULL;FreeLibrary(module);module=NULL;return 0;
+    }
+    if(loaded_image.sha256[0]) {
+        addon_read_begin(&read_scope,xbox_ggl_current_serial());
+        /* Optional metadata: older/other addons may ignore it. */
+        api->event(NFL2K5_ADDON_LOADED_IMAGE,&loaded_image,sizeof(loaded_image));
+        addon_read_end(&read_scope);
     }
     return 1;
 }
@@ -89,7 +107,7 @@ void nfl2k5_addon_poll(void) {
 int nfl2k5_addon_event(const char *name,const void *data,size_t size) {
     AcquireSRWLockShared(&module_lock);
     int handled=0;
-    if(api && name && data) {
+    if(api && name && data && strcmp(name,NFL2K5_ADDON_LOADED_IMAGE)) {
         addon_read_begin(&read_scope,xbox_ggl_current_serial());
         handled=api->event(name,data,size);addon_read_end(&read_scope);
     }

@@ -3,6 +3,7 @@
 #include "franchise_addon.h"
 #include "finance_state.h"
 #include "identity_state.h"
+#include "../game_addon/runtime_identity.h"
 #include <stdlib.h>
 #include "../../src/nfl2k5_franchise_host.h"
 #include <stdio.h>
@@ -30,6 +31,21 @@ int main(void){
     const NFL2K5AddonAPI* api=nfl2k5_addon_query(NFL2K5_ADDON_ABI);
     NFL2K5AddonHost host={sizeof(host),range,read_memory};
     if(!api || !api->start(&host)) return 1;
+    NFL2K5AddonImageIdentity image={{0}},copied;
+    char digest[65];memset(digest,'a',64);digest[64]=0;
+    if(api->snapshot(NFL2K5_ADDON_LOADED_IMAGE,&copied,sizeof(copied)) ||
+       !addon_image_identity(&image,digest) ||
+       api->event(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image)-1) ||
+       !api->event(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image)) ||
+       !api->event(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image)) ||
+       !api->snapshot(NFL2K5_ADDON_LOADED_IMAGE,&copied,sizeof(copied)) || memcmp(&image,&copied,sizeof(image)) || reads) return 11;
+    image.sha256[0]='b';
+    if(api->event(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image)) ||
+       !api->snapshot(NFL2K5_ADDON_LOADED_IMAGE,&copied,sizeof(copied)) || copied.sha256[0]!='a') return 12;
+    image.sha256[0]='G';
+    if(api->event(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image))) return 13;
+    image.sha256[0]='a';image.sha256[64]='x';
+    if(api->event(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image))) return 14;
     FranchiseSignGateEvent event={FRANCHISE_SIGN_PRECOMMIT,0x12345678u};
     if(!api->event(FRANCHISE_SIGN_GATE_EVENT,&event,sizeof(event)) || reads || epochs || submits!=1 ||
        submitted_observation || submitted_epoch) return 2;
@@ -59,6 +75,11 @@ int main(void){
     completed=0;
     if(api->event(FRANCHISE_SIGN_COMPLETED_EVENT,&completed,sizeof(completed)) ||
        api->event(FRANCHISE_SIGN_COMPLETED_EVENT,&completed,sizeof(completed)-1) || completions!=1) return 10;
+    api->stop();
+    if(api->snapshot(NFL2K5_ADDON_LOADED_IMAGE,&copied,sizeof(copied))) return 15;
+    image.sha256[0]='b';image.sha256[64]=0;
+    if(!api->start(&host) || !api->event(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image)) ||
+       !api->snapshot(NFL2K5_ADDON_LOADED_IMAGE,&copied,sizeof(copied)) || memcmp(&image,&copied,sizeof(image))) return 16;
     api->stop();
     puts("Actual adapter distinguishes judgment from precommit without extra sampling or offer intent");return 0;
 }

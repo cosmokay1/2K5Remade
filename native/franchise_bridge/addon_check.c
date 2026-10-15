@@ -4,6 +4,7 @@
 #include <string.h>
 #include "game_addon.h"
 #include "../game_addon/loader.h"
+#include "../game_addon/runtime_identity.h"
 #include "franchise_addon.h"
 #include "addon_selection.h"
 #include "../../src/nfl2k5_sidecar_adapter.h"
@@ -115,7 +116,14 @@ int wmain(int argc,wchar_t **argv) {
     if(_putenv_s("NFL2K5_FRANCHISE_NEGOTIATION","")) return 52;
     /* Load a DLL that only includes the domain-neutral public API. */
     SetEnvironmentVariableW(L"NFL2K5_SIDECAR_ADDON",argv[3]);
-    if(!nfl2k5_addon_start()) return 31;
+    char digest[65];memset(digest,'a',64);digest[64]=0;
+    NFL2K5AddonImageIdentity image;
+    if(!nfl2k5_addon_bind_image(digest) || !nfl2k5_addon_start()) return 31;
+    if(!nfl2k5_addon_snapshot(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image)) || strcmp(image.sha256,digest)) return 58;
+    if(!nfl2k5_addon_bind_image(digest)) return 59;
+    digest[0]='b';
+    if(nfl2k5_addon_bind_image(digest) || nfl2k5_addon_event(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image)) ||
+       !nfl2k5_addon_snapshot(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image)) || image.sha256[0]!='a') return 60;
     uint32_t counter=41,observed=0;
     if(!nfl2k5_addon_event("example.counter.v1",&counter,sizeof(counter))) return 32;
     nfl2k5_addon_poll();
@@ -126,6 +134,12 @@ int wmain(int argc,wchar_t **argv) {
        nfl2k5_addon_snapshot("example.counter.v1",NULL,sizeof(observed))) return 34;
     nfl2k5_addon_stop();
     if(nfl2k5_addon_snapshot("example.counter.v1",&observed,sizeof(observed))) return 35;
+    if(nfl2k5_addon_bind_image(NULL) || !nfl2k5_addon_start() ||
+       nfl2k5_addon_snapshot(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image))) return 61;
+    nfl2k5_addon_stop();
+    if(!nfl2k5_addon_bind_image(digest) || !nfl2k5_addon_start() ||
+       !nfl2k5_addon_snapshot(NFL2K5_ADDON_LOADED_IMAGE,&image,sizeof(image)) || strcmp(image.sha256,digest)) return 62;
+    nfl2k5_addon_stop();
     SetEnvironmentVariableW(L"NFL2K5_SIDECAR_ADDON",argv[5]);
     if(!nfl2k5_addon_start() || nfl2k5_addon_guest_read_allowed()) return 53;
     if(nfl2k5_addon_event("scope.read-twice",&counter,4)) return 54; /* no lock owner */
