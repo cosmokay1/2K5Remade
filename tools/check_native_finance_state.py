@@ -6,6 +6,7 @@ import sys
 import tempfile
 
 from tools.franchise_finance_state import saved_finance_state
+from tools.compare_live_franchise import compare
 
 
 def main(argv=None):
@@ -54,6 +55,20 @@ def main(argv=None):
             malformed = live_fixture(payload); struct.pack_into(fmt, malformed, address, value)
             check(malformed, 'invalid')
         check(live_fixture(payload)[:0xE57870], 'invalid')
+        # Exercise the production opt-in capture through its actual FSM event,
+        # with no sidecar/AI started by the authored-memory fixture.
+        capture=root/'live capture.dat';memory.write_bytes(live_fixture(payload))
+        result=subprocess.run([str(executable),str(memory),str(capture),'capture'],timeout=15,capture_output=True)
+        assert result.returncode==0, (result.returncode,result.stderr)
+        original=capture.read_bytes(); comparison=compare(payload,original)
+        assert comparison['financial_match'] and comparison['identity_match'], comparison
+        changed=live_fixture(payload);struct.pack_into('<H',changed,0x200000+10,830);memory.write_bytes(changed)
+        result=subprocess.run([str(executable),str(memory),str(capture),'capture'],timeout=15,capture_output=True)
+        assert result.returncode==0 and capture.read_bytes()==original, 'Existing capture was overwritten'
+        capture.unlink();memory.write_bytes(live_fixture(payload)[:0xE57870])
+        result=subprocess.run([str(executable),str(memory),str(capture),'capture'],timeout=15,capture_output=True)
+        assert result.returncode==1 and not capture.exists(), 'Invalid memory produced a capture'
+        cases+=3
     print(f'{cases} native financial comparison cases passed; no write authorization or game execution.')
 
 

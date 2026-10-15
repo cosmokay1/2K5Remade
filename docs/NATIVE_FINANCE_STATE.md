@@ -112,3 +112,30 @@ The same executable's `identity` mode is exercised by
 `python -m tools.check_native_identity_state <fixture executable>`, covering
 relocation, reordered free agents, expanded banks, unrelated player guard/name
 changes, valid Unicode and bounded/malformed name handling.
+
+### Opt-in live capture for reconciliation
+
+On a compatible rebuilt host/addon pair, set `NFL2K5_FRANCHISE_CAPTURE` to a new
+absolute output filename in an existing directory. For example, a private Deck
+test can use `Z:/home/deck/live-franchise.dat`. Open a player's offer screen in
+the loaded franchise without submitting. The existing screen event captures the
+financial and identity projections through the host's scoped read callbacks.
+No provider, cloud grant or negotiation mode is required. With the variable unset,
+this diagnostic performs no capture. It attempts one file creation per addon start
+after valid reads, refuses to overwrite a file, and logs written/failed. Invalid
+memory can retry at a later screen event. Keep captured player data private.
+
+Compare against the corresponding saved franchise payload:
+
+```sh
+python3 -m tools.compare_live_franchise SAVEGAME.DAT live-franchise.dat
+```
+
+The file contains the 8-byte `2K5CAP1\0` magic, two little-endian 32-bit payload
+lengths, then financial and identity projection bytes. The reader bounds both
+images, requires matching bank counts and exact dimensions, and rejects partial
+or trailing data. Existing saved-state builders independently derive both
+expected projections. A mismatch exits nonzero; matching hashes do not establish
+the active franchise namespace, official NFL obligations, current AI authority,
+host/DMA exclusion or permission to apply a transaction. This is diagnostic
+evidence and is never consumed as an application permit.

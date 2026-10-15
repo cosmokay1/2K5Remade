@@ -17,6 +17,7 @@
 #endif
 
 static NFL2K5AddonHost adapter_host;
+static int capture_attempted;
 static bool signing_screen_range(uint32_t address,uint64_t size)
 {
     return size<=SIZE_MAX && adapter_host.memory_range && adapter_host.memory_range(address,(size_t)size)!=0;
@@ -169,8 +170,44 @@ void nfl2k5_franchise_guest_poll(void)
     if (!signing_screen_context()) nfl2k5_franchise_signing_context(NULL);
 }
 #endif
+/* Explicit, single-file diagnostic for live/save reconciliation. Never a
+ * transaction receipt or permission to write guest memory. */
+static void capture_franchise_state(void)
+{
+    const char *path=getenv("NFL2K5_FRANCHISE_CAPTURE");
+    if(capture_attempted || !path || !*path) return;
+#ifdef _WIN32
+    const int absolute=((path[0]>='A' && path[0]<='Z') || (path[0]>='a' && path[0]<='z')) &&
+        path[1]==':' && (path[2]=='/' || path[2]=='\\');
+    if(!absolute && !(path[0]=='\\' && path[1]=='\\')) return;
+#else
+    if(path[0]!='/') return;
+#endif
+    FranchiseFinanceSnapshot finance;
+    FranchiseIdentitySnapshot *identity=malloc(sizeof(*identity));
+    if(!identity) return;
+    if(!nfl2k5_franchise_read_finance(&finance) || !nfl2k5_franchise_read_identity(&finance,identity)) {
+        free(identity);return; /* Retry on the next valid franchise screen. */
+    }
+    capture_attempted=1;
+    /* Exclusive creation preserves any previous capture. A reader requires the
+     * complete bounded header/payload; partial output is never accepted. */
+    FILE *file=fopen(path,"wbx");
+    unsigned char header[16]={'2','K','5','C','A','P','1',0};
+    for(unsigned i=0;i<4;++i) {
+        header[8+i]=(unsigned char)(finance.size>>(8*i));
+        header[12+i]=(unsigned char)(identity->size>>(8*i));
+    }
+    int good=file && fwrite(header,1,sizeof(header),file)==sizeof(header) &&
+        fwrite(finance.bytes,1,finance.size,file)==finance.size &&
+        fwrite(identity->bytes,1,identity->size,file)==identity->size;
+    if(file && fclose(file)) good=0;
+    free(identity);
+    fprintf(stderr,"[FRANCHISE-TRACE] live_capture=%s scope=read_only_no_application_authority\n",good?"written":"failed");
+}
 void nfl2k5_diag_fsm(uint32_t obj, uint32_t desc, int push)
 {
+    if(push && desc==0x00557B2Cu) capture_franchise_state();
 #ifdef NFL2K5_FRANCHISE_CLIENT
     nfl2k5_franchise_on_fsm(desc, push);
     if (push && desc == 0x00557B2Cu && !signing_screen_context()) nfl2k5_franchise_signing_context(NULL);
@@ -302,6 +339,7 @@ void nfl2k5_diag_signing(uint32_t stage, uint32_t context, uint32_t result,
 static int addon_start(const NFL2K5AddonHost *host) {
     if(!host || host->size!=sizeof(*host) || !host->read_memory || !host->memory_range) return 0;
     adapter_host=*host;
+    capture_attempted=0;
     if(!nfl2k5_franchise_start()) { memset(&adapter_host,0,sizeof(adapter_host));return 0; }
     return 1;
 }

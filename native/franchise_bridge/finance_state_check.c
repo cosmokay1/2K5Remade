@@ -1,6 +1,7 @@
 /* Authored memory file only, using the production capture implementation. */
 #include "finance_state.h"
 #include "identity_state.h"
+#include "franchise_addon.h"
 #include "../../src/nfl2k5_franchise_host.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +26,8 @@ static int read_memory(uint32_t address,void *out,size_t size) {
 }
 int main(int argc,char **argv) {
     const int identity=argc==4 && !strcmp(argv[3],"identity");
-    if((argc!=3 && !identity) || !(memory=fopen(argv[1],"rb"))) return 2;
+    const int capture=argc==4 && !strcmp(argv[3],"capture");
+    if((argc!=3 && !identity && !capture) || !(memory=fopen(argv[1],"rb"))) return 2;
     if(fseek(memory,0,SEEK_END) || (extent=ftell(memory))<0) {fclose(memory);return 2;}
     NFL2K5AddonHost host={sizeof(host),range,read_memory};
     size_t capacity=identity?sizeof(FranchiseIdentitySnapshot):sizeof(FranchiseFinanceSnapshot);
@@ -33,6 +35,20 @@ int main(int argc,char **argv) {
     if(!state) {fclose(memory);return 2;}
     const NFL2K5AddonAPI *api=nfl2k5_addon_query(NFL2K5_ADDON_ABI);
     if(!api || !api->start(&host)) {free(state);fclose(memory);return 2;}
+    if(capture) {
+#ifdef _WIN32
+        if(_putenv_s("NFL2K5_FRANCHISE_CAPTURE",argv[2])) return 2;
+#else
+        if(setenv("NFL2K5_FRANCHISE_CAPTURE",argv[2],1)) return 2;
+#endif
+        const FranchiseFSMEvent event={0,0x00557B2Cu,1};
+        api->event(FRANCHISE_FSM_EVENT,&event,sizeof(event));
+        api->event(FRANCHISE_FSM_EVENT,&event,sizeof(event));
+        api->stop();free(state);fclose(memory);
+        FILE *result=fopen(argv[2],"rb");
+        if(!result) return 1;
+        fclose(result);return 0;
+    }
     int captured=api->snapshot(identity?FRANCHISE_IDENTITY_SNAPSHOT:FRANCHISE_FINANCE_SNAPSHOT,state,capacity);
     api->stop();
     fclose(memory);

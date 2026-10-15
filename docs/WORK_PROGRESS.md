@@ -6712,3 +6712,47 @@ plan is superseded. Ship the matching game/addon/dependencies and concise setup
 instructions with relative runtime paths; verify fresh extraction, Gaming Mode
 controls and save preservation through that normal Steam flow. A custom launcher
 or automated Steam-library editor is not a delivery requirement.
+
+## Read-only live reconciliation capture and confirmed private validation
+
+Windows + Proton remains the Deck delivery priority after the user questioned
+the value of the native port. Further native Linux port work is deferred; retain
+the already validated portability fixes. No custom launcher is being built.
+
+Added opt-in NFL2K5_FRANCHISE_CAPTURE to the franchise addon, using the existing
+offer-screen event and existing financial/identity readers. It performs no reads
+or output by default. With an absolute new filename, it captures both projections
+inside the host invocation and exclusively creates one bounded diagnostic file.
+Existing files survive, malformed memory produces no capture, and no provider,
+inference or transaction is involved. The standalone comparison tool derives
+expected projections from the save and rejects truncated/oversized/inconsistent
+images. This is not an active-franchise identity or application authorization.
+
+Actual adapter/fixture execution passes31 financial/capture and25 identity cases
+on macOS and offline Linux. All807 Python regressions pass60.356s. The initial
+sandbox run exposed an observer-fixture environment assertion, now updated to
+explicitly leave capture disabled, and four existing loopback socket permission
+errors; the full rerun outside the sandbox passes. Standalone native CMake's
+unconditional JSON download was unavailable in the sandbox, so these C boundary
+fixtures were compiled directly from the same actual source files. Hosted
+Windows/Ubuntu execution of the new capture remains pending.
+
+The user opened the installed game, which was confirmed running through the
+existing Gaming Mode Steam entry, then closed it. No executable was replaced.
+Once closed, isolated source05ac4e9 Windows validation ran against the legal pinned
+SOFTDRINK XBE f67e6fc1cb76c9ea1f1ad504e4a6491ff126483d66a9da8ddb92950bbaf740ba.
+The first runner's launcher-only exit lacked child evidence; its corrected
+Windows cmd invocation supplies both a child completion marker and actual
+[TEST] Validation passed output, exit0 and memory-layout shutdown. Logs show
+128MB guest RAM,186/186 bridged thunks, the selected portable SOFTDRINK pack and
+recompiled entry readiness. This validation mode does not execute gameplay.
+It reports two failed RAM mirrors and a failed tiled aperture with a rendering
+fault warning, so rendering must be checked before installing this pair.
+
+Private source05ac4e9 EXE SHA256
+222d0b123b064111a62c47d95157ba3e54b065bc1bfd8618133b2ea0e5fe42a7;
+DLL5b3248d5c4955a4df198dd2db94a09b0cb6b05e114eab3847b4ba171244d6708.
+Receipt: native-05ac4e9/validate-receipt.json on the Deck. The new capture feature
+is not in that staged pair and has not been installed. Actual capture, contract
+application, full opening accounting and signing/save/reload remain open. No AI
+control was renewed or enabled, and no paid inference occurred.

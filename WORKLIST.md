@@ -26,6 +26,8 @@ Resume from the earliest unblocked unchecked item, respecting dependencies.
 
 The user deferred additional statistics investigation on October14. Prioritize
 native offer submission, player response, legal financial commit and save recovery.
+Windows + Proton is the Deck delivery priority. Defer further native Linux port
+work unless a concrete Proton limitation requires it; retain existing fixes.
 
 - [ ] Finish held native submission through accepted proposal, guest/ledger commit
       and recovery. An opt-in source path now defers retail judgment/precommit,
@@ -91,6 +93,10 @@ native offer submission, player response, legal financial commit and save recove
       Franchise38748479653 and Build38748479778, including actual DLL read-scope
       execution. This
       does not pin the original commit or grant application authority.
+      An opt-in single-file capture at the existing offer-screen event now makes
+      live financial/identity comparison possible without starting AI or signing.
+      Local macOS/Linux native capture/overwrite-refusal checks and807 Python
+      regressions pass; Windows execution and actual in-game capture are pending.
 - [ ] Reconcile the required opening obligations/rules before permitting financial
       writes, then prove signing and save/reload on the pinned pack.
       Optional explicit legacy-unknown cash scopes now preserve null total cash

@@ -53,6 +53,7 @@ static size_t g_xbox_total_ram = sizeof ram;
 static unsigned reads;
 static const char *trace_env;
 static const char *test_getenv(const char *key) {
+    if(!strcmp(key,"NFL2K5_FRANCHISE_CAPTURE")) return NULL;
     assert(!strcmp(key, "NFL2K5_TRACE_FRANCHISE"));
     return trace_env;
 }
