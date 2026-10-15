@@ -96,10 +96,14 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       the owner and requires their comparison before automatic saved confirmation.
       Wrong-thread/unreadable/unbound results and mismatches keep recovery held;
       this flow has no application issuer and actual game execution remains open.
+      Application attempts now also hold when the selected player has pending
+      native trades/offers or the queue sample is unreadable/changing. Clear
+      queues still grant nothing. The known cleanup/popup path has a verified
+      queue prerequisite; full exclusive-application proof remains open.
       Source7b536c2 passes actual Windows/Proton protocol, owner-host, adapter
       and client/sidecar live-before-save/completion/settlement/restart fixtures
       with authored data, plus isolated full-game --validate. Build38779416490
-      and Ubuntu pass; Windows Franchise38779416527 remains pending.
+      and full Windows/Ubuntu Franchise38779416527 pass.
       An explicitly requested controlled-signing mode now also holds when the
       addon is unavailable, rather than silently falling through to retail.
       This now includes builds with sidecar support compiled out: both judgment

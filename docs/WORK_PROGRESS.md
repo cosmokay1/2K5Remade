@@ -7500,3 +7500,37 @@ Windows Franchise38779416527 is still running its Python regression step at
 observation, not failed. Follow that existing job rather than restarting it.
 Live application permits, complete opening books, runtime/franchise binding,
 uninterrupted mutation and actual signing/save/reload are still open.
+
+### October 15 — Hold native applications with competing pending work
+
+The original shared signing routine runs pending trade/offer cleanup after
+contract writes; when it finds matching work, the later warning popup can enter
+a blocking UI loop before roster/payroll/history finish. Added a private read-only
+guard at the production application event before either stage can proceed. It
+validates the context's selected bank slot, checks all15 active trade rows/six
+participant fields and100 inline offer records/status bits, and holds matching,
+unreadable or changing data. Context/bank/queues are reread before a clear result.
+The guard never grants application, queues a proposal or writes guest memory.
+Clear queues still fall through to existing held negotiation; original UI code
+is retained. No generic ABI or new environment switch was introduced.
+
+A new CTest executes the actual guard and addon dispatcher with authored memory,
+covering every trade participant/row, all offer rows and active states, unrelated/
+inactive records, read failures, context/bank/queue changes, relocation and invalid
+bank locators. Positive results explicitly grant nothing and submit no inference.
+The actual DLL fixture now expects unreadable application state to hold. All six
+local native CTests pass; all836 Python regressions pass in59.120s.
+
+Private queue-probe.c executes the actual generated2BAAE0/323060 lookups and
+callees against the same guard, agreeing in771 authored cases. No generated
+retail source is committed. Local legal retail versus pinned v0.6 comparison
+confirms byte-identical code ranges2BAAE0(64),322840(13),322BA0(16),323060(48),
+2BB6E0(128); hashes are in native-application-probe/pending-queue-code-receipt.json.
+This supports the queue prerequisite of the known warning path; it is not a
+full no-yield/mutation-ownership proof or actual game execution. Runtime/pack
+binding, complete books, durable current-control permits and actual signing/
+save/reload remain open. No installed runtime, save, control or credentials changed.
+
+The preceding7b536c2 source is now fully green in Windows/Ubuntu
+Franchise38779416527 and Build38779416490. This supersedes its earlier pending
+status. New Windows CI and actual private Windows guard execution remain next.

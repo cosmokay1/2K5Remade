@@ -11,6 +11,7 @@
 #include "franchise_addon.h"
 #include "finance_state.h"
 #include "identity_state.h"
+#include "pending_signing.h"
 #include "nfl2k5_sidecar_adapter.h"
 #ifdef NFL2K5_FRANCHISE_CLIENT
 #include "nfl2k5_franchise_host.h"
@@ -361,6 +362,12 @@ int nfl2k5_franchise_hold_signing_at(uint32_t stage,uint32_t context) {
 }
 static int addon_event(const char *name,const void *data,size_t size) {
     if(!name || !data) return 0;
+    if(!strcmp(name,FRANCHISE_SIGN_APPLICATION_EVENT) && size==sizeof(FranchiseSignGateEvent)) {
+        FranchiseSignGateEvent event;memcpy(&event,data,sizeof(event));
+        if((event.stage!=FRANCHISE_SIGN_JUDGMENT && event.stage!=FRANCHISE_SIGN_PRECOMMIT) ||
+           !franchise_pending_signing_clear(&adapter_host,event.context)) return 1;
+        return 0; /* Clear queues never authorize application. No issuer yet. */
+    }
     if(!strcmp(name,FRANCHISE_SIGN_COMPLETED_EVENT) && size==sizeof(uint32_t)) {
         uint32_t context;memcpy(&context,data,sizeof(context));
         return context ? nfl2k5_franchise_completed() : 0;

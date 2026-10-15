@@ -95,7 +95,7 @@ int wmain(int argc,wchar_t **argv) {
         if(!nfl2k5_franchise_start() || nfl2k5_franchise_start()) return 7;
         for(uint32_t stage=1;stage<=2;++stage) {
             const FranchiseSignGateEvent application={stage,0x1234};
-            if(nfl2k5_addon_event(FRANCHISE_SIGN_APPLICATION_EVENT,&application,sizeof(application))) return 53;
+            if(nfl2k5_addon_event(FRANCHISE_SIGN_APPLICATION_EVENT,&application,sizeof(application))!=1) return 53;
         }
         nfl2k5_diag_fsm(0,0x557B2C,1);
         nfl2k5_franchise_guest_poll();

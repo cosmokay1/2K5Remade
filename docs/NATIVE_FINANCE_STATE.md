@@ -216,8 +216,8 @@ invalidate it. Turning either requested mode off after judgment holds that call.
 The compiled and interpreter hooks follow the same continuations. Known v1/v2
 cached patches upgrade explicitly; custom bodies or moved gates reject.
 
-**The production franchise addon does not implement this event and issues no
-application authorization.** No service/remote permit issuer was added. Future
+**The production franchise addon only checks pending-work refusal for this event
+and issues no application authorization.** No service/remote permit issuer was added. Future
 implementation must bind the prepared journal, exact current offer and complete
 books, active franchise/runtime, current remote authority, durable one-use
 permission and an uninterrupted mutation plan before either reply2. A trusted
@@ -302,3 +302,23 @@ This is source-level integration, not an enabled game signing flow. The installe
 runtime is unchanged. Complete opening accounting, application permits, runtime/
 franchise binding, uninterrupted mutation and actual signing/save/reload remain
 required. Restart recovery still relies on independently verified saved effects.
+
+### Pending native work before an application attempt
+
+Before either application stage can proceed, the production addon now samples
+the selected bank player and the original15 trade rows/100 offer records. It
+holds unreadable or changing data and active records involving that player.
+It returns no grant when the queues are clear. This prevents an application
+attempt from proceeding to the original cleanup of those pending transactions;
+the guard itself does not submit a negotiation or mutate guest memory.
+
+The inspected original shared signing routine calls002BB6E0 after contract
+writes. Its matching trade/offer cleanup can trigger the blocking warning popup
+at00323FC7. With neither lookup matching the selected player, that helper returns
+zero and the popup branch is skipped. The five relevant lookup/cleanup code
+ranges are byte-identical in the local retail and pinned SOFTDRINK v0.6 assets.
+A private cross-check agrees with the actual generated lookups across771 authored
+queue cases. This does not prove the full transaction cannot yield: the permit
+issuer still needs pinned runtime/pack identity, exclusive mutation ownership
+and current authority. Other packs or pending-work scenarios need revalidation;
+no popup was removed or silently skipped by a native patch.
