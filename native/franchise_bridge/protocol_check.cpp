@@ -824,6 +824,25 @@ int main(int argc,char** argv) {
             {"current_payload_sha256",checkpoint["saved_payload_sha256"]},
             {"before_payload_sha256",checkpoint["saved_payload_sha256"]},{"after_payload_sha256",nullptr}}}};
         journal.consume(status_request,saved_status);
+        auto live_request=status_request;
+        live_request["live_finance_sha256"]=std::string(64,'a');
+        live_request["live_identity_sha256"]=std::string(64,'b');
+        auto live_status=saved_status;
+        for(bool matches:{false,true}) {
+            live_status["result"]["live_application_matches"]=matches;
+            franchise::validate_result(live_status,live_request);
+        }
+        for(int scenario=0;scenario<5;++scenario) {
+            auto request=live_request;auto response=live_status;
+            if(scenario==0) response["result"].erase("live_application_matches");
+            if(scenario==1) response["result"]["live_application_matches"]=1;
+            if(scenario==2) request.erase("live_identity_sha256");
+            if(scenario==3) request["live_finance_sha256"]=std::string(64,'A');
+            if(scenario==4) request=status_request;
+            bool rejected=false;
+            try{franchise::validate_result(response,request);}catch(...){rejected=true;}
+            if(!rejected) throw std::runtime_error("Invalid live completion status accepted");
+        }
         if(journal.next(true).at("operation")!="guest_signing_status") throw std::runtime_error("Unchanged save queued settlement");
         saved_status["result"]["save_position"]="candidate_after";
         saved_status["result"]["current_payload_sha256"]=std::string(64,'d');

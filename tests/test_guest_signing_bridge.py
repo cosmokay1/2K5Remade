@@ -56,6 +56,65 @@ class GuestSigningBridgeTests(unittest.TestCase):
         return dict(protocol=1,request_id='status',operation='guest_signing_status',timeout_ms=5000,
                     journal_request_id='journal')
 
+    def applied_status(self,payload=None):
+        payload=self.fixture.after if payload is None else payload
+        return {**self.status(),'live_finance_sha256':digest(saved_finance_state(payload)),
+                'live_identity_sha256':digest(saved_identity_state(payload))}
+
+    def test_completed_live_target_is_read_only_with_old_save_and_disabled_ai(self):
+        self.assertIsNone(self.bridge.handle(self.prepare())['error'])
+        self.access.side_effect=AccessDisabled('Off after guest writes')
+        before=self.fixture.path.read_bytes()
+        reply=self.bridge.handle(self.applied_status())
+        self.assertIsNone(reply['error'],reply)
+        self.assertTrue(reply['result']['live_application_matches'])
+        self.assertEqual(reply['result']['save_position'],'before')
+        self.assertFalse(reply['result']['write_authorized'])
+        self.assertEqual(self.fixture.path.read_bytes(),before)
+        self.assert_unchanged();self.provider.assert_not_called()
+
+    def test_live_target_mismatch_never_changes_saved_position_or_finances(self):
+        self.assertIsNone(self.bridge.handle(self.prepare())['error'])
+        for key in ('live_finance_sha256','live_identity_sha256'):
+            reply=self.bridge.handle({**self.applied_status(),key:'0'*64})
+            self.assertIsNone(reply['error'],reply)
+            self.assertFalse(reply['result']['live_application_matches'])
+            self.assertEqual(reply['result']['save_position'],'before')
+            self.assertFalse(reply['result']['write_authorized'])
+        self.assertFalse(self.bridge.handle(self.applied_status(self.fixture.before))['result']['live_application_matches'])
+        self.assert_unchanged();self.provider.assert_not_called()
+
+    def test_live_status_requires_a_complete_canonical_projection_pair(self):
+        self.assertIsNone(self.bridge.handle(self.prepare())['error'])
+        for key in ('live_finance_sha256','live_identity_sha256'):
+            request=self.applied_status();request.pop(key)
+            self.assertEqual(self.bridge.handle(request)['error'],'invalid_request')
+            for value in (True,None,'','A'*64,'a'*63):
+                self.assertEqual(self.bridge.handle({**self.applied_status(),key:value})['error'],'invalid_request')
+        self.assertEqual(self.bridge.handle({**self.confirm(),'live_finance_sha256':'a'*64,
+                                           'live_identity_sha256':'b'*64})['error'],'invalid_request')
+        self.assert_unchanged();self.provider.assert_not_called()
+
+    def test_cancelled_journal_cannot_validate_application(self):
+        self.assertIsNone(self.bridge.handle(self.prepare())['error'])
+        guest_signing.cancel(FranchiseStore(self.fixture.path),'journal',self.fixture.before,game_stopped_check=lambda:True)
+        self.assertEqual(self.bridge.handle(self.applied_status())['error'],'state_rejected')
+        self.assertEqual(self.bridge.handle(self.status())['result']['state'],'cancelled')
+        self.provider.assert_not_called()
+
+    def test_live_target_check_survives_saved_settlement_without_repeating_it(self):
+        self.assertIsNone(self.bridge.handle(self.prepare())['error'])
+        self.current=self.fixture.after
+        self.assertIsNone(self.bridge.handle(self.confirm())['error'])
+        before=self.fixture.path.read_bytes()
+        self.access.side_effect=AccessDisabled('Disabled recovery')
+        reply=self.make_bridge().handle(self.applied_status())
+        self.assertIsNone(reply['error'],reply)
+        self.assertTrue(reply['result']['live_application_matches'])
+        self.assertEqual((reply['result']['state'],reply['result']['save_position']),('settled','confirmed_after'))
+        self.assertEqual(self.fixture.path.read_bytes(),before)
+        self.provider.assert_not_called()
+
     def assert_unchanged(self,pending=True):
         reopened=FranchiseStore(self.fixture.path)
         self.assertEqual(reopened.load_team('49ers').financial_snapshot(),self.fixture.initial)
@@ -327,6 +386,11 @@ class GuestSigningBridgeTests(unittest.TestCase):
             self.assertIn('must be 0 or 1',result.stderr)
         command+=['--guest-signing']
         reply=self.process_request(command,self.prepare());self.assertIsNone(reply['error'],reply)
+        reply=self.process_request(command,self.applied_status())
+        self.assertIsNone(reply['error'],reply)
+        self.assertTrue(reply['result']['live_application_matches'])
+        self.assertEqual(reply['result']['save_position'],'before')
+        self.assertEqual(self.fixture.store.load_team('49ers').revision,self.fixture.revision)
         save.write_bytes(self.fixture.after)
         reply=self.process_request(command,self.confirm());self.assertIsNone(reply['error'],reply)
         command[command.index('offline-fixture')]='vertex'
@@ -334,6 +398,10 @@ class GuestSigningBridgeTests(unittest.TestCase):
         reply=self.process_request(command,self.status(),environment)
         self.assertIsNone(reply['error'],reply)
         self.assertEqual(reply['result']['save_position'],'confirmed_after')
+        reply=self.process_request(command,self.applied_status(),environment)
+        self.assertIsNone(reply['error'],reply)
+        self.assertTrue(reply['result']['live_application_matches'])
+        self.assertFalse(reply['result']['write_authorized'])
         self.assertEqual(self.fixture.store.load_team('49ers').revision,self.fixture.revision+1)
         self.assertEqual(read_guest_save(save),self.fixture.after)
         save.write_bytes(self.fixture.after+b'x')

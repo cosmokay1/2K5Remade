@@ -942,8 +942,13 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
             const auto text=value.get<std::string>();
             return text.size()==size && text.find_first_not_of("0123456789abcdef")==std::string::npos;
         };
-        if(!result.is_object() || result.size()!=7 || result.at("request_id")!=request.at("journal_request_id") ||
+        const bool live=operation=="guest_signing_status" &&
+            (request.contains("live_finance_sha256") || request.contains("live_identity_sha256"));
+        if(!result.is_object() || result.size()!=(live?8u:7u) || result.at("request_id")!=request.at("journal_request_id") ||
            result.at("write_authorized")!=false) throw std::runtime_error("Invalid saved-signing identity or authority");
+        if(live && (!hex(request.at("live_finance_sha256"),64) || !hex(request.at("live_identity_sha256"),64) ||
+                    !result.at("live_application_matches").is_boolean()))
+            throw std::runtime_error("Invalid live application observation");
         if(operation=="guest_signing_confirm") {
             if(result.at("state")!="settled" || !hex(result.at("player_id"),32) ||
                !hex(result.at("after_payload_sha256"),64) || result.at("after_payload_sha256")!=request.at("expected_after_sha256") ||

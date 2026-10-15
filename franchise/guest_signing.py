@@ -120,13 +120,17 @@ def _read(store,db,request_id):
     return intent,state,before,after,proof
 
 
-def _check_live_preparation(payload, bindings, player_id, live_projection):
-    if live_projection is None:
-        return  # Direct offline journal callers do not claim a live capture.
+def _validate_live_projection(live_projection):
     if (type(live_projection) is not dict or set(live_projection) != {'finance', 'identity'} or
             any(type(v) is not str or len(v) != 64 or any(c not in '0123456789abcdef' for c in v)
                 for v in live_projection.values())):
         raise ValueError('Canonical live financial and identity digests required')
+
+
+def _check_live_preparation(payload, bindings, player_id, live_projection):
+    if live_projection is None:
+        return  # Direct offline journal callers do not claim a live capture.
+    _validate_live_projection(live_projection)
     from tools.franchise_finance_state import saved_finance_state
     from tools.franchise_identity_state import saved_identity_state
     actual = (live_projection['finance'], live_projection['identity'])
@@ -229,7 +233,7 @@ def cancel(store,request_id,current_payload,*,game_stopped_check):
         return {'request_id':request_id,'state':'cancelled'}
 
 
-def inspect(store,request_id,current_payload):
+def inspect(store,request_id,current_payload,*,live_projection=None):
     """Read recovery status/verified backups even while AI is disabled."""
     with store._connection() as db:
         intent,state,before,after,proof=_read(store,db,request_id)
@@ -245,6 +249,15 @@ def inspect(store,request_id,current_payload):
                 pass
             else:
                 position='candidate_after'
-        return {'request_id':request_id,'state':state,'save_position':position,
+        result={'request_id':request_id,'state':state,'save_position':position,
                 'before_payload':before,'after_payload':after,'confirmation':proof,
                 'candidate_confirmation':candidate,'write_authorized':False}
+        if live_projection is not None:
+            _validate_live_projection(live_projection)
+            if state=='cancelled':
+                raise Rejected('Cancelled signing cannot validate a live application')
+            from tools.franchise_offer_state import expected_signed_state
+            target=expected_signed_state(intent['bindings'],before,
+                offer=Offer.from_dict(intent['offer']),guest_offer=intent['guest_offer'],team_id=intent['team_id'])
+            result['live_application_matches']=tuple(live_projection[k] for k in ('finance','identity'))==tuple(_hash(v) for v in target)
+        return result

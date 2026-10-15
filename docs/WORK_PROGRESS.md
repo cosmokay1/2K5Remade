@@ -7413,3 +7413,30 @@ Full Windows/Ubuntu Franchise CI38776861697 and Build38776861856 now pass for
 coordination checks. This supersedes the pending CI statement above. Actual
 production application authority, complete opening accounting, uninterrupted
 mutation, automatic in-game context and signing/save/reload remain unverified.
+
+### October 15 — Compare completion projections against the durable journal
+
+Extended existing read-only saved-signing status with an optional complete pair
+of live financial/identity SHA256s. The service reconstructs the exact expected
+native target from the persisted journal's original save, bindings and accepted
+terms, returning a boolean live_application_matches independently of save state.
+Canonical pair validation and cancellation refusal precede comparison. No new
+operation, database schema, application authority, financial mutation or provider
+call was introduced. Existing status responses retain their shape when hashes
+are absent. Native response validation covers both permitted shapes and rejects
+missing/malformed/unsolicited live-match fields and invalid input hashes.
+
+Five added bridge cases cover true live results with an unchanged original save
+and AI disabled, independent financial/identity mismatches, incomplete/noncanonical
+pairs, cancelled journals and read-only inspection after saved settlement. They
+assert unchanged database bytes, financial history and zero provider calls. The
+actual separate-process fixture now checks this comparison before saving and
+after settlement in a restarted credential-unavailable/AI-disabled service.
+
+All836 local regressions pass in41.723s; focused bridge checks and the actual
+compiled native protocol/response fixture pass. Windows/Ubuntu CI is pending for
+this source. The game completion callback is not yet wired to submit these
+hashes, and reported hashes do not prove fresh guest sampling or uninterrupted
+application. No installed runtime, save, configuration, credentials or control
+changed. Next is the native completion handoff and comparison consumption,
+retaining required saved proof and all unresolved accounting/authority gates.

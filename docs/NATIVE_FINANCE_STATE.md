@@ -256,3 +256,23 @@ the prepared target and obtain actual saved/reloaded proof before ledger
 settlement. This notification alone is not a commit receipt, save proof or
 evidence that the original routine never yielded. The optional post-contract
 UI path and all existing authority/accounting gates remain unresolved.
+
+### Read-only comparison of completed live projections
+
+The existing guest_signing_status request optionally accepts both canonical
+live_finance_sha256 and live_identity_sha256. When supplied together it adds
+only live_application_matches, comparing both client-reported digests against
+the exact native target reconstructed from that journal's persisted original
+save, bindings and accepted terms. Missing/invalid pairs fail; cancelled journals
+cannot validate an application. Requests without projections keep the existing
+seven-field response. The native response validator requires the conditional
+boolean and refuses unsolicited, missing or malformed extensions.
+
+A live match is independent of save_position: it may be true while the current
+save still equals the original. It does not settle a journal, advance finances,
+change cash or grant a write. Recovery remains available with AI disabled and
+without inference. These are client-reported hashes, not independent proof of
+current guest state, lock continuity, active runtime or application authority.
+The production completion event is not yet connected to this status request.
+Saved confirmation still requires an exact candidate after-save and current
+settlement authority; actual game signing/save/reload remains unverified.

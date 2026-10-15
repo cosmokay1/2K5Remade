@@ -74,6 +74,8 @@ class Bridge:
                 else:
                     fields|={'journal_request_id'}
                     if operation=='guest_signing_confirm': fields|={'expected_after_sha256'}
+                    elif 'live_finance_sha256' in request or 'live_identity_sha256' in request:
+                        fields|={'live_finance_sha256','live_identity_sha256'}
                 if set(request)!=fields:
                     raise ValueError('Complete saved-signing request required; paths and save bytes are server-owned')
                 timeout=request['timeout_ms']
@@ -102,12 +104,16 @@ class Bridge:
                         raise Rejected('Saved payload changed during journal coordination')
                     local()
                 if operation=='guest_signing_status':
-                    status=guest_signing.inspect(self.store,request['journal_request_id'],payload)
+                    projection=({'finance':request['live_finance_sha256'],'identity':request['live_identity_sha256']}
+                                if 'live_finance_sha256' in request else None)
+                    status=guest_signing.inspect(self.store,request['journal_request_id'],payload,live_projection=projection)
                     result={key:status[key] for key in ('request_id','state','save_position','write_authorized')}
                     result.update(current_payload_sha256=digest,
                         before_payload_sha256=hashlib.sha256(status['before_payload']).hexdigest(),
                         after_payload_sha256=(hashlib.sha256(status['after_payload']).hexdigest()
                                               if status['after_payload'] is not None else None))
+                    if projection is not None:
+                        result['live_application_matches']=status['live_application_matches']
                     local();self._require_frame(request_id,result)
                 elif operation=='guest_signing_prepare':
                     if digest!=request['expected_before_sha256']:
