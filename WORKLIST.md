@@ -112,6 +112,13 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       Actual installed addon mapping and continued guest execution are verified;
       the user reports one startup failure followed by a successful retry.
       The first failure remains unexplained; no live capture has arrived yet.
+      The user confirms an offer screen is open. The pinned pack detours FSM
+      push through the interpreter, bypassing the generated observer. Source
+      268e8d8 adds interpreter observation independently of negotiation mode;
+      its actual private Windows game build, child validation and DLL checks
+      pass. After normal game exit, the validated pair is installed with all16
+      save hashes and the launcher preserved. The user was asked to reopen a
+      MyNFL1 offer screen for actual capture; AI and controlled signing remain off.
 - [ ] Reconcile the required opening obligations/rules before permitting financial
       writes, then prove signing and save/reload on the pinned pack.
       Optional explicit legacy-unknown cash scopes now preserve null total cash

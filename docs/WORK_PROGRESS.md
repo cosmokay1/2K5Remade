@@ -6945,3 +6945,45 @@ with exact object/descriptor/push values, unchanged registers and no guest jump;
 enabled mode adds the existing signing gates. Local test passes. Actual Windows
 build and new installed menu event/capture remain to verify; the running game
 has not been interrupted or changed.
+
+
+### Interpreter menu fix: private Windows build and preflight passed
+
+Source268e8d8 compiled the actual Windows game, updated generated signing callers
+and franchise DLL using the existing licensed MSVC offline container. The source
+stage retains baseline05ac4e9 plus prior6291411 capture overlay and the exact new
+source manifest; no retail/mod assets are published. New EXE SHA256
+eefe906af888deab73270b056accc050bea50061f2f7fbfd85c2800a52f3f5c9;
+DLL SHA2568b9bfb63052ae8294a746f807be4ad9d5cdb8570db65dacc1fada07ef6e2b32a.
+
+Actual isolated Proton game --validate exited0, wrote its child completion marker
+and logged[TEST] Validation passed. The separate actual Windows addon boundary
+fixture exited0 with addon-passed and ABI/forwarding/disabled-service/reload
+checks passed, including ownership read-scope checks. Receipts are private local
+and Deck native-05ac4e9/validate-menu-hooks-receipt.json and
+addon-boundary-menu-hooks-receipt.json. These are preflights, not actual restored
+menu/capture/signing/save verification. Sourcea969b53 passed both complete CI
+workflows38762188708/38762188772, including the corrected Windows format test;
+268e8d8 Build38762515073 passed, Franchise38762514947 is still running.
+
+The user was asked to exit normally without submitting so the staged pair can be
+installed safely. A guarded private installer preserves saves/launcher, validates
+source/binary receipt hashes, requires the old installed hashes and no running
+game, and saves rollback files. It has not run; no installed files have changed.
+AI/provider and controlled signing remain off; no controls have been renewed.
+
+
+### Interpreter menu fix installed after normal exit
+
+The user reports Closed; the guarded installer independently verified no running
+NFL2K5.exe and matched the expected previous installed hashes before replacing
+only EXE/DLL. It verified the staged source manifest and both Windows receipts.
+Installed hashes are eefe906af888deab73270b056accc050bea50061f2f7fbfd85c2800a52f3f5c9
+and8b9bfb63052ae8294a746f807be4ad9d5cdb8570db65dacc1fada07ef6e2b32a.
+All16 save hashes are unchanged, as is the existing private launch entry
+09e60e9eeea2d1a527031e067ea96e9044a2b9e68d790f81c7f1154022bd47b1.
+Rollback pair is under native-05ac4e9/installed-backup-268e8d8; receipt
+installed-menu-hooks-receipt.json is copied locally. AI and controlled signing
+remain off. The user was asked to launch the same Steam entry, load MyNFL1 and
+open a contract offer without submitting. Actual post-install callback/capture,
+visual behavior and game/save comparison remain unverified.
