@@ -38,8 +38,8 @@ native offer submission, player response, legal financial commit and save recove
       store writes and commits confirmed effects with the ledger atomically.
       Explicit opt-in service operations now prepare/confirm against server-owned
       current save reads and expose bounded recovery status without AI access.
-      Windows CI exposed a restarted save-reader failure; timestamp compatibility
-      repair is under validation before further native integration.
+      Windows restarted save-reader compatibility is repaired and CI-verified
+      at f876edb (Franchise38680339623, Build38680339592).
       Native application and save/reload remain unconnected.
       Game-facing acceptance remains held until native application, save/reload
       and recovery are connected and verified. Actual game execution remains

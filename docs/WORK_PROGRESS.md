@@ -6148,3 +6148,15 @@ fixtures permitted; the initial sandbox run had four socket-bind permission
 errors, not assertion failures. Targeted15 signing bridge tests passed5.403s.
 Money audit retained5050 bonus conservation cases. Hosted Windows validation is
 pending the repair push; native apply/save/reload remains unfinished.
+
+Repair f876edb is now CI-verified: Franchise38680339623 passed Ubuntu and
+Windows2022, including all779 regressions, money audit, native protocol,
+interpreter and actual Windows pipe/restart checks. Build38680339592 passed
+Windows/native presentation and Linux runtime checks. The previously failing
+Windows saved-signing process restart/confirmation test now passes. Separately,
+Windows Python3.13.16 under the isolated Deck Proton prefix passed all19 targeted
+reader/journal bridge tests in15.693s, including actual child prepare/restart/
+confirm and disabled recovery. The fresh log is guest-journal-windows/probe.log
+in the private build stage. These are component fixtures, not game signing or
+save/reload acceptance. Next core work remains native journal coordination and
+verified opening obligations, followed by controlled apply/save/reload/recovery.
