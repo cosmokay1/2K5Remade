@@ -7392,3 +7392,24 @@ edits were restored byte-for-byte. This is not actual game/save execution.
 All831 final local regressions pass in62.227s; four loopback tests required
 running outside the network-restricted sandbox. New Windows CI and full private
 Windows game validation remain to run. No installed game, user save, launch configuration or remote control was changed.
+
+The same7c45a76 source now has a full private offline Windows game build and
+actual isolated Proton child validation. The success boundary fixture, production
+addon ABI/forwarding/refusal/reload fixture, and game --validate all return0 with
+required child markers addon-passed/addon-passed/validated; game output contains
+[TEST] Validation passed. Exact owned source hashes are checked before the game
+check. EXE SHA256d6098f50f8914773274e9ece2b92669006383dff085aba0ba5c064581a013f8b;
+DLL3a74be2363e391b3ce1246b1a0b25daacfdffd8931895c627cfcb41e1dfc56e0.
+Private receipts are native-05ac4e9/validate-completion-receipt.json,
+addon-boundary-completion-receipt.json and signing-completion-receipt.json,
+separately retained from the48c3c55 receipts. The existing isolated validation
+mirror/tiled-aperture warnings remain; this is not rendering/gameplay proof.
+Installed EXE/DLL/launcher still match eefe906a...f5c9/8b9bfb63...2b32a/
+94f7dccc...c718. They were not replaced. The read-only service configuration
+still awaits normal confirmed game exit; no AI, control or save changed.
+
+Full Windows/Ubuntu Franchise CI38776861697 and Build38776861856 now pass for
+7c45a76, including the native completion boundary, pipe/restart and saved-signing
+coordination checks. This supersedes the pending CI statement above. Actual
+production application authority, complete opening accounting, uninterrupted
+mutation, automatic in-game context and signing/save/reload remain unverified.

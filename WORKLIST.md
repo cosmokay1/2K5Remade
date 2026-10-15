@@ -87,6 +87,9 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       completion notification after roster/payroll/history, in generated and
       interpreter paths. Production consumption, exact live-target comparison
       and actual saved/reloaded confirmation remain to connect.
+      Completion source7c45a76 passes Windows/Ubuntu Franchise38776861697
+      and Build38776861856, plus actual private Windows/Proton completion/addon
+      fixture children and isolated game --validate. No new native pair installed.
       An explicitly requested controlled-signing mode now also holds when the
       addon is unavailable, rather than silently falling through to retail.
       This now includes builds with sidecar support compiled out: both judgment
