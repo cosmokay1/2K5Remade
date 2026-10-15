@@ -7141,3 +7141,23 @@ zero reserve is explicitly a projection convention, missing obligations and
 classification remain unresolved. No live DB, installed game, controls, inference
 or saves changed. Native creation hookup, positive contract application and
 actual game save/reload are still open; no signing authority is claimed.
+
+### October 15 — Honor controlled signing in builds without the client
+
+Tracing the native application boundary found a real fallback inconsistency:
+`nfl2k5_franchise_hold_signing` honored an explicit negotiation mode even without
+compiled client support, but `hold_signing_at` returned0 in that configuration.
+The judgment/precommit patches use the latter, so this could silently execute
+retail signing when controlled mode was requested. The no-client branch now
+uses the same existing hold function, preserving the single-use context marker.
+Normal mode still allows retail behavior. No permit, acceptance, memory write
+capability or remote control activation was added.
+
+A new CTest executable compiles the actual adapter without the client define or
+addon stubs. It verifies both valid stages, CPU context0, exact single-use token
+consumption, mismatched contexts, new-call invalidation, disabled/noncanonical
+mode strings and invalid stages. Both this actual no-client fixture and the
+existing with-client signing-stage fixture pass locally; the10 focused compiled/
+interpreter/patch-cache tests also pass. Windows/Ubuntu CI for this new source is
+pending. The installed Deck runtime and its settings remain untouched. Native
+positive application and actual signing/save/reload are still incomplete.

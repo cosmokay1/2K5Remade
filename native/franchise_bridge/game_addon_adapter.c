@@ -68,6 +68,6 @@ int nfl2k5_franchise_hold_signing_at(uint32_t stage,uint32_t context) {
      * a transaction that the legacy addon would have held. */
     return nfl2k5_franchise_hold_signing(context);
 #else
-    (void)context;held_signing_context=0;return 0;
+    return nfl2k5_franchise_hold_signing(context);
 #endif
 }

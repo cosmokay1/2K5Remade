@@ -74,6 +74,9 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       and the retail judgment-result replacement remain unfinished.
       An explicitly requested controlled-signing mode now also holds when the
       addon is unavailable, rather than silently falling through to retail.
+      This now includes builds with sidecar support compiled out: both judgment
+      and precommit gates preserve the requested hold and single-use held marker;
+      a dedicated no-client native fixture covers the fallback.
       Stage/guard sourcec388051 passed Franchise38715022063 and
       Build38715022192 on Windows/Ubuntu, including real DLL boundary checks.
       Game-facing acceptance remains held until native application, save/reload
