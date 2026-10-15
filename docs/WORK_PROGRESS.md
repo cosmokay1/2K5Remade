@@ -5456,3 +5456,17 @@ Gamescope screenshot (retry-screen.png) visibly shows players on the field at
 MetLife with the in-game pause menu, independently confirming entry into a match.
 This verifies the specific match-start recovery, not a full quarter, game, franchise
 or save/load round trip. Windows CI38662620516 is still running; Ubuntu passed.
+
+
+## October 14, 2026 — manager disabled default observed; interpreter CI passed
+
+User confirms the actual Deck Mod Packs screen shows Franchise Sidecar Off.
+This verifies row visibility and disabled default only; asked user to toggle On,
+observe On - restart, exit normally, relaunch the existing Steam entry and check
+On without the restart marker. No provider/credentials/control changes are made.
+
+Source4e3d3d5 CI38662620516 completed successfully on Windows2022 and Ubuntu.
+The new Windows interpreted_shared_epilogue regression passed, alongside existing
+native protocol/manager/DLL and franchise tests. This complements the actual Deck
+on-field recovery evidence; save/reload and enabled-addon game execution remain
+separate unchecked gates.

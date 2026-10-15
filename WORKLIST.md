@@ -44,7 +44,8 @@ conversion is not claimed.
 
 - [x] Validate independent addon selection, disabled default, restart status and
       missing-addon handling through existing manager callbacks and real Windows DLL:
-      d3ca4aa CI38658080834 passed. Actual UI/controller execution remains pending.
+      d3ca4aa CI38658080834 passed. User now confirms the installed manager
+      displays Franchise Sidecar Off; toggle/restart/controller acceptance remains open.
 - [ ] Verify addon installation/upgrade for pinned repacks; preserve user saves
       and reject unsupported native executable versions.
 - [ ] Verify manager UI/controller behavior and addon plus SOFTDRINK execution.
