@@ -125,14 +125,15 @@ extern int nfl2k5_modpacks_count(void);
 extern const char *nfl2k5_modpacks_name(int row);
 extern int nfl2k5_modpacks_get(int row);
 extern void nfl2k5_modpacks_set(int row, int on);
-static int mods_toggle(int r) { (void)r; return 1; }
+extern int nfl2k5_modpacks_toggle(int row);
+extern void nfl2k5_modpacks_value(int row,int value,char *out,size_t capacity);
+static int mods_toggle(int r) { return nfl2k5_modpacks_toggle(r); }
 static int mods_values(int r) { (void)r; return 2; }
 static int mods_get(int r) { return nfl2k5_modpacks_get(r); }
 static void mods_set(int r, int v) { nfl2k5_modpacks_set(r, v != 0); }
 static void mods_name(int r, int v, char *b, size_t n)
 {
-    (void)r;
-    snprintf(b, n, "%s", v ? "On" : "Off");
+    nfl2k5_modpacks_value(r,v,b,n);
 }
 
 static const char *s_video_labels[VM_MAX_ROWS];

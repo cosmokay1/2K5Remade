@@ -5362,3 +5362,22 @@ handshake and lifecycle. Native/Python guest-term comparison and the durable
 pipe/restart fixtures also passed. This is component execution, not game execution:
 no new game build was deployed, no paid inference or guest write occurred, and
 SOFTDRINK compatibility/legal signing/save-reload remain unverified.
+
+
+## October 14, 2026 — existing mod manager gains addon selection
+
+User clarified manager extension then SOFTDRINK application. Added separate
+Franchise Sidecar row through existing manager callbacks. Persistent opt-in state
+is independent of content packs, defaults off and applies on next launch. UI
+status distinguishes missing module and pending restart; toggling never restarts
+a running franchise. Existing native16-row limit reserves one addon row/15 packs.
+DLL ABI/provider/control policy remains enforced, including explicit diagnostic
+paths. Windows fixture now exercises manager selection alongside the real DLL
+and confirms the active content-pack file remains unchanged. Verification pending;
+no game deployment, cloud inference or save/contract writes occurred.
+
+Local702 regressions passed in23.072s. The manager/selection/DLL Windows fixture
+adds default-off and malformed-state denial, installed/missing status, delayed
+selection, unchanged content-pack choice and real module lifecycle. Source UI
+callbacks preserve the incumbent native menu; visual/controller verification is
+still pending.

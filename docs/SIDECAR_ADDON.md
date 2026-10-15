@@ -54,3 +54,23 @@ Verified source6f75219: CI38656804337 passed Windows DLL ABI/load/forward/stop/r
 and all702 regressions on Windows/Ubuntu; Build38656804259 passed. The DLL fixture
 keeps the service disabled; actual-game deployment and service-through-DLL checks
 are still required.
+
+## Mod manager integration
+
+The existing Mods screen now includes a separate Franchise Sidecar row. Its
+selection is independent of the content pack: SOFTDRINK can stay selected while
+the addon is enabled or disabled. The file next to the installed addon,
+addons/franchise/enabled.ini, stores exactly enabled=1 or enabled=0 with LF.
+Missing/malformed state defaults off. Installing a DLL does not enable it.
+
+The row shows Not installed when its DLL is absent, and On/Off - restart when
+saved selection differs from the current loaded module. Changes persist for the
+next launch; they do not restart the game, unload code during gameplay, or save a
+franchise automatically. The prompt asks the player to save, exit and relaunch.
+The current native menu has16 rows; one is reserved for the addon and15 for packs
+in addon-enabled builds. Existing pack selection/restart behavior is retained.
+
+An explicit diagnostic DLL path still obeys the manager selection. Enabling the
+addon does not enable cloud AI or renew its remote grant. ABI/service checks still
+apply at startup. Installation automation, runtime visuals/controller behavior
+and SOFTDRINK v0.6 execution remain separate acceptance gates.

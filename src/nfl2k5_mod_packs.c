@@ -11,7 +11,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef NFL2K5_FRANCHISE_CLIENT
+#include "addon_selection.h"
+extern int nfl2k5_sidecar_loaded(void);
+#define MP_ADDON_ROWS 1
+#define MP_MAX_PACKS 15
+#else
+#define MP_ADDON_ROWS 0
 #define MP_MAX_PACKS 16
+#endif
 #define MP_NAME_CHARS 64
 
 typedef struct {
@@ -284,12 +292,39 @@ void nfl2k5_modpacks_init(const char *root)
             s_active >= 0 ? s_packs[s_active].name : "Original ESPN NFL 2K5");
 }
 
-int nfl2k5_modpacks_count(void) { return s_pack_count; }
+int nfl2k5_modpacks_count(void) { return s_pack_count+MP_ADDON_ROWS; }
 const char *nfl2k5_modpacks_name(int row)
 {
+#ifdef NFL2K5_FRANCHISE_CLIENT
+    if(row==0) return sidecar_installed()?"Franchise Sidecar":"Franchise Sidecar (not installed)";
+#endif
+    row-=MP_ADDON_ROWS;
     return row >= 0 && row < s_pack_count ? s_packs[row].name : "Mod Pack";
 }
-int nfl2k5_modpacks_get(int row) { return row == s_active; }
+int nfl2k5_modpacks_get(int row) {
+#ifdef NFL2K5_FRANCHISE_CLIENT
+    if(row==0) return sidecar_selected();
+#endif
+    return row>=MP_ADDON_ROWS && row-MP_ADDON_ROWS==s_active;
+}
+int nfl2k5_modpacks_toggle(int row) {
+#ifdef NFL2K5_FRANCHISE_CLIENT
+    if(row==0) return sidecar_installed();
+#endif
+    return row>=MP_ADDON_ROWS && row<MP_ADDON_ROWS+s_pack_count;
+}
+void nfl2k5_modpacks_value(int row,int value,char *out,size_t capacity) {
+#ifdef NFL2K5_FRANCHISE_CLIENT
+    if(row==0) {
+        if(!sidecar_installed()) { snprintf(out,capacity,"Not installed");return; }
+        snprintf(out,capacity,"%s%s",value?"On":"Off",
+            (value!=0)!=nfl2k5_sidecar_loaded()?" - restart":"");return;
+    }
+#else
+    (void)row;
+#endif
+    snprintf(out,capacity,"%s",value?"On":"Off");
+}
 
 typedef struct {
     char exe[MAX_PATH];
@@ -314,6 +349,17 @@ void nfl2k5_modpacks_set(int row, int on)
     int previous = s_active;
     RestartArgs *a;
     HANDLE th;
+#ifdef NFL2K5_FRANCHISE_CLIENT
+    if(row==0) {
+        if(!sidecar_select(on!=0)) {
+            xbox_PresentToast("MODS","Could not change addon selection",
+                "Check the installed addon and folder permissions",10000);return;
+        }
+        xbox_PresentToast("MODS","Addon selection saved",
+            "Save your franchise, then exit and relaunch",10000);return;
+    }
+#endif
+    row-=MP_ADDON_ROWS;
     if (row < 0 || row >= s_pack_count) return;
     if (on) {
         if (s_active == row) return;

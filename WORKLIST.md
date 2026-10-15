@@ -35,6 +35,19 @@ it from the franchise application. Keep domain rules out of the reusable core.
 - [ ] Select a public reuse license before public distribution.
 - [x] Build and validate separately loadable franchise addon and thin shim: 6f75219 Windows DLL ABI/load/forward/unload/reload fixture passed in CI38656804337; authored RAM observation remained read-only. Actual game execution remains below.
 
+## Mod-manager extension — current scope
+
+The user clarified that this fork updates the existing mod manager to support
+addons, then applies the sidecar addon alongside SOFTDRINK. Retain one manager.
+A repack converter must target verified compatible hosts; universal binary
+conversion is not claimed.
+
+- [ ] Validate independent addon selection, disabled default, restart status and
+      missing-addon handling through the existing manager and real Windows DLL.
+- [ ] Verify addon installation/upgrade for pinned repacks; preserve user saves
+      and reject unsupported native executable versions.
+- [ ] Verify manager UI/controller behavior and addon plus SOFTDRINK execution.
+
 ## Active base decision — October 14, 2026
 
 The user selected SOFTDRINK if compatible. Prioritize the Xbox Remade pack path;

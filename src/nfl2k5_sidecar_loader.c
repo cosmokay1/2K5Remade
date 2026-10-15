@@ -7,6 +7,7 @@
 #include <wchar.h>
 #include "nfl2k5_franchise_host.h"
 #include "game_addon.h"
+#include "addon_selection.h"
 extern int nfl2k5_addon_guest_range(uint32_t,size_t);
 extern int nfl2k5_addon_guest_read(uint32_t,void *,size_t);
 static SRWLOCK display_lock=SRWLOCK_INIT;
@@ -14,19 +15,13 @@ static HMODULE module;
 static const NFL2K5AddonAPI *api;
 static int load_addon(void) {
     if(module) return 0;
+    if(!sidecar_selected()) return 1;
     wchar_t path[32768];
     DWORD length=GetEnvironmentVariableW(L"NFL2K5_SIDECAR_ADDON",path,32768);
     if(length>=32768) return 0;
     const int explicit_path=length!=0;
     if(!length) {
-        length=GetModuleFileNameW(NULL,path,32768);
-        if(!length || length>=32768) return 0;
-        wchar_t *slash=wcsrchr(path,L'\\');
-        if(!slash) return 0;
-        *slash=0;
-        const wchar_t suffix[]=L"\\addons\\franchise\\franchise-addon.dll";
-        if(wcslen(path)+wcslen(suffix)>=32768) return 0;
-        wcscat(path,suffix);
+        if(!sidecar_path(path,32768,L"franchise-addon.dll")) return 0;
     }
     /* Require an absolute path; never search the working directory or PATH. */
     if(!((path[0] && path[1]==L':' && (path[2]==L'\\' || path[2]==L'/')) ||
@@ -60,6 +55,12 @@ void nfl2k5_franchise_stop(void) {
     if(module) FreeLibrary(module);
     module=NULL;
     ReleaseSRWLockExclusive(&display_lock);
+}
+int nfl2k5_sidecar_loaded(void) {
+    AcquireSRWLockShared(&display_lock);
+    int loaded=api!=NULL;
+    ReleaseSRWLockShared(&display_lock);
+    return loaded;
 }
 void nfl2k5_franchise_guest_poll(void) { if(api) api->poll(); }
 int nfl2k5_franchise_display(FranchiseSigningDisplay *out) {
