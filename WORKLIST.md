@@ -29,7 +29,8 @@ native offer submission, player response, legal financial commit and save recove
 
 - [ ] Finish held native submission through accepted proposal, guest/ledger commit
       and recovery. An opt-in source path now defers retail judgment/precommit,
-      queues one captured proposal and presents the response; accepted deals remain
+      queues one captured proposal (including a bounded cross-thread submit handoff)
+      and presents the response; accepted deals remain
       held until the settlement path is implemented. Actual game execution remains
       required. Do not enable this unfinished mode in the installed user runtime.
 - [ ] Reconcile the required opening obligations/rules before permitting financial

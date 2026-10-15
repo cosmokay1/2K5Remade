@@ -108,15 +108,15 @@ static bool signing_screen_name(uint32_t address, char out[151])
 }
 
 #ifdef NFL2K5_FRANCHISE_CLIENT
-static bool signing_screen_context(void)
+static bool signing_screen_observation(FranchiseSigningObservation *out, uint32_t expected_context)
 {
-    if (!nfl2k5_franchise_context_enabled()) return false;
     FranchiseSigningObservation observation = {0};
     uint32_t context, player, team, mode, first, last;
     uint8_t record[0x28];
     uint16_t accumulator;
     uint16_t offer_amount;
     if (!signing_screen_read(0x00CB8C34u,&context,sizeof(context)) ||
+        (expected_context && context!=expected_context) ||
         !signing_screen_read(context,&player,sizeof(player)) || context > UINT32_MAX-0x0Cu ||
         !signing_screen_read(context+4u,&team,sizeof(team)) ||
         !signing_screen_read(player,record,sizeof(record)) ||
@@ -139,6 +139,16 @@ static bool signing_screen_context(void)
         (unsigned)record[4],(unsigned)record[5],(unsigned)record[6],(unsigned)record[7]);
     snprintf(observation.dob,sizeof(observation.dob),"%02x%02x%02x",
         (unsigned)record[0x19],(unsigned)record[0x1A],(unsigned)record[0x1B]);
+    uint32_t selected;
+    if (!signing_screen_read(0x00CB8C34u,&selected,sizeof(selected)) || selected!=context) return false;
+    *out=observation;
+    return true;
+}
+static bool signing_screen_context(void)
+{
+    if (!nfl2k5_franchise_context_enabled()) return false;
+    FranchiseSigningObservation observation;
+    if (!signing_screen_observation(&observation,0)) return false;
     nfl2k5_franchise_signing_context(&observation);
     return true;
 }
@@ -290,9 +300,9 @@ static void addon_stop(void) {
     memset(&adapter_host,0,sizeof(adapter_host));
 }
 int nfl2k5_franchise_hold_signing(uint32_t context) {
-    uint32_t selected=0;
-    const int matches=signing_screen_read(0x00CB8C34u,&selected,sizeof(selected)) && selected==context;
-    return nfl2k5_franchise_submit_held(matches);
+    const unsigned long long epoch=nfl2k5_franchise_submission_epoch();
+    FranchiseSigningObservation observation;
+    return nfl2k5_franchise_submit_held(epoch && context && signing_screen_observation(&observation,context) ? &observation : NULL,epoch);
 }
 static int addon_event(const char *name,const void *data,size_t size) {
     if(!name || !data) return 0;

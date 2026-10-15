@@ -22,7 +22,9 @@ typedef struct {
 /* Optional pinned-snapshot inspection only; never a transaction or AI grant. */
 int nfl2k5_franchise_context_enabled(void);
 /* Explicit opt-in proposal mode always defers native writes; no commit grant. */
-int nfl2k5_franchise_submit_held(int selected_context_matches);
+/* Any callback thread may copy a captured intent; only the owner consumes it. */
+unsigned long long nfl2k5_franchise_submission_epoch(void);
+int nfl2k5_franchise_submit_held(const FranchiseSigningObservation *observation, unsigned long long epoch);
 /* NULL invalidates sample freshness without submitting or resetting debounce. */
 void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *observation);
 /* Renderer-safe owned copy; never touches transport or guest memory. */

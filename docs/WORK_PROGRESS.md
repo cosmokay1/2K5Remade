@@ -5802,3 +5802,41 @@ crash/save recovery remain core requirements before this mode can be delivered.
 
 Prior sourcec4e073d CI was verified green: Build38668052493 and Franchise AI
 38668052451. New held-source CI remains to verify after push.
+
+## Core negotiation: submit intent across game threads
+
+Fixed a functional gap in the held proposal path: a foreign-thread signing
+callback previously deferred retail signing but could not request a proposal.
+The private adapter now captures the selected player's complete normalized
+observation and exact offer, with selected-context checks before/after sampling.
+A lock-protected single-slot intent copies that observation without touching the
+single-owner transport. A generation token invalidates callbacks crossing screen
+exit/reopen or service restart. Only a fresh matching owner observation consumes
+an intent; player/offer/calendar/payroll changes or unreadable samples discard it.
+Duplicate unchanged submissions remain suppressed. Also cancel consumed intent
+waiting behind a read reply when a later observation fails. The public addon ABI
+and control policy are unchanged; this adds no guest write or settlement permission.
+
+Validation: final private MSVC Windows game/DLL build passed. Staged EXE SHA256
+4ae10a05769657487c874b3ef83473353566e0b767a0d9a26ada9aaa7dc4ffdb;
+staged DLL3ca08d35bc3dd9e4409e0ef65fbaa22bd872bdd9e5894ae3085df69d7290ce9e.
+Actual Windows held-host, handshake and addon fixtures passed in the separate
+Proton prefix. The host fixture asserts transport owner identity for submit,
+ready and take, and checks foreign submission delivery, duplicate suppression,
+changed-term rejection, invalid observations before/after intent consumption,
+screen-generation rejection, malformed bounded strings and default-off behavior.
+Each fixture has a fresh CMD success marker and expected child output; the host
+also writes its own final completion receipt. The initial private runner command
+failed before child output; isolated echo probes identified quoting/redirection
+as the issue. The corrected invocation executed all three fixtures successfully.
+Receipt: .local-runtime/manager-addon-5605345/handoff-fixtures-receipt.json.
+
+Verified installed hashes unchanged: EXE1742d8c261f661a46434d0345a05e4b59270676ab27e18fc4585672d441d6bcb,
+DLLd4d1020eee8732aa3b60ba08a8a93237922619548344ab8c9540ff9f81750190.
+No user game launch/install/save write, cloud change, control renewal or paid
+inference occurred. Actual owner/UI interaction, accepted-deal guest/ledger
+settlement, complete required opening books/rules and save/load recovery remain
+unfinished. The installed runtime does not enable this experimental mode.
+
+Prior held-source65f913a is confirmed green in fork CI: Build38671991468 and
+Franchise AI38671991412. This handoff change's CI remains to verify after push.

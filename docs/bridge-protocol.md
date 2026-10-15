@@ -359,7 +359,14 @@ request on the transport owner. It waits for an already-pending read reply witho
 blocking the game thread. Duplicate submissions for unchanged terms do not queue
 another proposal; changed terms clear that per-screen state. Session-qualified
 request IDs avoid request-number collisions across process restarts. Foreign
-callbacks never operate the single-owner transport. Unmatched/unsupported paths
+callbacks copy one bounded submit intent under a lock; they never operate the
+single-owner transport. The adapter captures the selected player, exact terms,
+calendar and financial fields and rechecks the selected-context pointer after
+sampling. A screen-generation token rejects callbacks spanning exit/reopen or
+service restart. Only a fresh matching owner observation consumes the intent;
+changed terms/player/financial state, invalid samples and screen exit discard it.
+An invalid sample also cancels an already-consumed intent waiting behind a context
+reply. Unmatched/unsupported paths
 remain held and never grant a commit.
 
 Validated replies present the player's response and reason. A counter displays
