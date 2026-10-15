@@ -6202,3 +6202,22 @@ Installed EXE1742d8c and DLLd4d1020 hashes remain unchanged. These authored
 component checks do not establish accepted live game application or save/reload.
 Hosted Windows/Linux CI and plain-C service lifecycle assertions remain to verify
 after push. No game execution, installation or paid request was performed.
+
+2abc9a6 hosted validation completed successfully: Franchise38682855612 passed
+Windows2022/Ubuntu, including the new actual plain-C client cached-reply and
+nonacceptance API checks against offline sidecar children. Build38682855623 also
+passed Windows/native presentation and Linux runtime checks. This is native
+Windows addon preparation, not a native Linux full-game port. The extra private
+Deck client/service runner initially could not find its unbuilt C++ smoke EXE;
+that fixture is being built separately, not treated as a product failure or a
+passed run. Installed user binaries/saves remain unchanged.
+
+Review follow-up: keep sampling offer freshness while preparation blocks further
+requests. Changed terms clear the displayed proposal without queuing another
+request, and obsolete preparation receipts stay hidden. The host fixture now
+checks this before navigating away with preparation still pending. The private
+rebuild compiled/linked the updated C host/DLL, but its SSH connection stalled;
+independent Deck process inspection found no remaining private build/fixture
+process, and no fresh completion receipt was produced. Closed only the stale
+local SSH client. That run is unverified, not passed; the installed game process
+was left running and untouched. Hosted Windows must verify the final follow-up.

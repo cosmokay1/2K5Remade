@@ -247,7 +247,7 @@ static void consume_submission(const FranchiseSigningObservation *o) {
 }
 void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
 {
-    if (!nfl2k5_franchise_context_enabled() || !franchise_client || journal_locked) return;
+    if (!nfl2k5_franchise_context_enabled() || !franchise_client) return;
     observation_fresh=0; /* NULL or failed sampling invalidates reply freshness. */
     if (!o) {
         consume_submission(NULL);proposal_requested=0;
@@ -261,6 +261,7 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
         proposal_requested=proposal_sent=0;
     }
     observation_fresh=1;
+    if(journal_locked) return; /* Still sample freshness; never queue another offer. */
     consume_submission(o);
     AcquireSRWLockExclusive(&display_lock); display_valid=display.title[0]!=0; ReleaseSRWLockExclusive(&display_lock);
     if (context_pending || (!proposal_requested && context_sent && (same_observation(&requested,&observed) ||

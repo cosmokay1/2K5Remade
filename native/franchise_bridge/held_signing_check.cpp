@@ -140,8 +140,15 @@ int main(int argc,char** argv) {
             require(preparations==1);
             if(status==FRANCHISE_HOST_OK) {
                 require(submitted["operation"]=="guest_signing_prepare");
+                const auto count=submissions;
+                ready=false;++observation.offer_amount;
+                nfl2k5_franchise_signing_context(&observation);
+                nfl2k5_franchise_poll();require(submissions==count);
+                FranchiseSigningDisplay view={};require(!nfl2k5_franchise_display(&view));
                 // Navigate away with preparation pending, then consume it.
-                nfl2k5_franchise_on_fsm(0,0);nfl2k5_franchise_poll();
+                nfl2k5_franchise_on_fsm(0,0);
+                ready=true;nfl2k5_franchise_poll();
+                require(!nfl2k5_franchise_display(&view)); // Stale receipt stays hidden.
             }
             const auto count=submissions;
             nfl2k5_franchise_on_fsm(0x557B2C,1);
