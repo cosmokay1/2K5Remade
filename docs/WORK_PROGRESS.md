@@ -7695,3 +7695,25 @@ verification and generated-patch checks. Follow that existing build; startup
 validation and actual boot delivery of metadata are not yet proven. Installed
 runtime/configuration, user saves and remote AI control were not changed. No live
 signing/application permit or save/reload acceptance is claimed.
+
+
+The full-game compile caught a missing declaration for g_interp_active. Including
+the interpreter's public header in main.c fixes that actual compiler error.
+The first resume lacked the existing SDL SDK mount; restoring the private build
+configuration allowed the same build to finish without repeating generation.
+The actual Windows game and matching DLLs now link successfully. Isolated
+--validate returns launcher0, child validated and [TEST] Validation passed.
+Receipt: shared-image-fa2673a/validate-game-receipt.json. The existing isolated
+mirror/tiled-aperture warning remains; rendering/gameplay is not verified.
+
+The game-built host/DLL fixture also passes the shared identity/load/reload tests
+under Proton, marker identity-passed and launcher0, with all339 effective source
+hashes matching the checkout. The private runner initially expected a differently
+named marker; matching its assertion to the actual emitted marker resolves that
+verification-driver failure. Receipt: game-pair-identity-receipt.json.
+EXE SHA256 ba915e6564b65e0204ba18a4ac9c90e35a897d0c3dcad76b0e2fa0a18d847d72;
+game-built DLL9a1f7843a6b251a268186eb8b627b2cf0ccf619fa2cf4304623943e14cf3434c.
+The validation branch does not start the addon, so real game-boot delivery of this
+metadata still needs verification. No installed game/configuration, user save or
+remote control changed. Service binding, bootstrap generalization and live
+signing/save/reload remain incomplete.

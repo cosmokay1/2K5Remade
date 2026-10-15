@@ -36,6 +36,7 @@
 #include "recomp_icall_feedback.h"
 #include "nfl2k5_presentation.h"
 #include "nfl2k5_widescreen_patch.h"
+#include "interp/x86_interp.h"
 #ifdef NFL2K5_FRANCHISE_CLIENT
 #include "../native/game_addon/loader.h"
 #include "nfl2k5_franchise_host.h"

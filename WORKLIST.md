@@ -126,6 +126,9 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       of franchise interpreter hooks is independent of the image name/hash.
       Service-side durable binding and active franchise identity remain open;
       this metadata does not authorize application or prove code compatibility.
+      The actual Windows game/DLL build now passes isolated --validate and the
+      game-built DLL identity/reload fixture under Proton. Real game-boot delivery
+      and service handshake consumption of the digest remain unverified.
       Guard source7a39913 passes Windows/Ubuntu Franchise38781544199 and
       Build38781544176, actual private Windows/Proton queue/DLL checks and
       isolated full-game --validate. The installed runtime remains unchanged.
