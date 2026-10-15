@@ -33,8 +33,11 @@ the same rules. New v2 registries now persist explicit calendar/units/cap contex
 whitelists. Copy-only v1 conversion preserves player IDs, personalities and
 contract schedules. The service now checks an explicitly configured expected
 load-image digest at hello, echoes the configured registry/snapshot identity and
-holds AI/journal writes until that connection matches. Active guest-franchise
-binding, live store/journal migration and actual game handshake remain open.
+holds AI/journal writes until that connection matches. An explicit persisted
+registry/database association now audits seed, actor origins/coverage and initial
+ownership, and normalizes v1/v2 identity without rewriting journal intents.
+Runtime verifies its namespace/bootstrap fingerprint. Active guest-franchise
+binding, broader live migration and actual game handshake remain open.
 
 Windows + Proton is the Deck delivery priority. Defer further native Linux port
 work unless a concrete Proton limitation requires it; retain existing fixes.

@@ -41,6 +41,9 @@ def fixture(root, *, runtime_image=None):
     request=dict(protocol=1,request_id='native-captured',operation='negotiate_proposal',timeout_ms=10000,
         observation=observation,guest_offer=sample.raw,expected_revision=1)
     provider=Mock(return_value=json.dumps(dict(action='accept',reason='Authored native saved-signing acceptance',salaries=None,signing_bonus=None)))
+    if runtime_image is not None:
+        from franchise.snapshot_origin import bind
+        bind(store,sample.bindings,sample.before)
     bridge=Bridge(store,provider=provider,access_check=lambda:None,guest_snapshot=(sample.bindings,sample.before))
     if runtime_image is not None:
         assert bridge.handle(dict(protocol=1,request_id='fixture-hello',operation='hello',loaded_image_sha256=runtime_image))['error'] is None

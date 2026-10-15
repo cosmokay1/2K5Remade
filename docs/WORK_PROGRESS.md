@@ -7804,3 +7804,63 @@ reconcile complete modern opening books, or issue a one-use guest application
 permit. Installed game/configuration, real saves and live DB were untouched.
 Actual game-boot handshake, application permits, legal live signing and durable
 save/reload reconciliation remain open. No integrated-playability claim is made.
+
+## October 15, 2026 — Persisted registry/database namespace association
+
+Loaded-image-bound hello now also requires an explicitly registered association
+between the configured snapshot registry and initialized database. The new
+franchise.snapshot_origin module and tools.bind_franchise_snapshot command use
+the existing transactional metadata table and pending-journal write guard.
+Registration requires the original personality seed, all32 supported clubs,
+complete bound actor coverage with correct generated origins, and matching
+initial ownership. It adds one namespace record; no personalities, financial
+records, save files or original journal intents are rewritten.
+
+The association normalizes v1/v2 representations and reordered binding rows.
+Its fingerprint includes the namespace, initial source/biography identities,
+calendar/money context and immutable team bootstraps. Source/load-image digests
+remain separate provenance rather than namespace/rule selectors. Conflicting
+registries, altered seed/players/bootstraps, corrupted actor origins, concurrent
+namespace claims and pending-work registration reject. Existing matching origins
+are idempotent. Recovery reads retain the namespace while saved guest ownership
+and pending ledger ownership temporarily differ; the old v1 journal's serialized
+intent/hash remains byte-for-byte unchanged through verified settlement.
+
+Initial full-club replay was too expensive on the actual private MyNFL1 database,
+which contains66240 actor records for2070 distinct players. Registration instead
+audits the immutable actor origins directly, reusing each generated identity
+within that read transaction. Runtime verification reads the persisted association,
+seed and bootstrap fingerprint. Financial/current actor-history validation stays
+in its existing checkpoint/transaction paths; this is not an accounting shortcut
+or a claim that every stored financial posting was verified at registration.
+
+All862 offline regressions pass in74.928s. Actual Windows CPython under the private
+Deck Proton profile passes19 namespace/handshake tests, followed by both ordinary
+14-reply and runtime-bound17-reply native saved-signing/disabled-restart recovery
+flows with authored files. The first Windows test run exposed SQLite fixture
+connections whose transaction context managers did not close their handles;
+explicit closing fixes the cleanup failures without changing product behavior.
+Launcher0, child origin-passed and snapshot-origin-windows-passed are verified.
+Receipt: snapshot-origin-24eeed1/windows-receipt.json; source manifest SHA256
+34664e0c98cbc7b74371e3384b803810c92cd99a926ac3c5eeae682ef1881913.
+The already compiled native checker71d89d2964063d88c7392ff01cd6728a5ca75719f4dea655449bac5f401892ab
+is unchanged; this milestone changes Python application code only.
+Prior source24eeed1 passes Franchise38792322978 and Build38792323233.
+
+Actual MyNFL1 copies pass on both Mac and Windows. Logical SQL dump hashing proves
+all pre-existing rows remain unchanged; only the explicit association was added.
+The original DB b08a836f26ce65d4d5429d99134cb6610d1f53509b950b14bf5798684a279662,
+registry9955880d3fb6a02eaebc4c1662cfac075afb59443a1191e709bf2dd51c9ee442 and
+save4c8c31b4f400e25175223163a948e126cb83d10aa4bb98979a564ef287761ec3
+remain unchanged. Existing logical rows SHA256
+7db7c9fd87907c220a2754345273851512feed5fec92afea9941db2fe899a087.
+The final Windows copy is ce06504319f4eb2e4a3c41cc835184a2750720c99b492ab74853e2e2bcd10cb5;
+one-time registration3.598s, runtime namespace verification0.0745s. Receipt:
+snapshot-origin-24eeed1/mynfl-windows-receipt.json. The actual copy paths are
+isolated from installed runtime/configuration, original save and live DB.
+
+No paid inference or remote-control change. This proves the configured registry/
+database relationship, not the identity of the save active in guest memory,
+complete modern opening obligations or a one-use guest application permit.
+Actual game-boot handshake, legal signing/accounting/save-reload, supported rookie
+integration and final playable-build acceptance remain open.

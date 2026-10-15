@@ -1,4 +1,5 @@
 """Loaded-image matching gates configured sessions, never guest write authority."""
+import contextlib
 import copy
 import hashlib
 import json
@@ -21,11 +22,20 @@ class RuntimeHandshakeTests(unittest.TestCase):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         self.store = FranchiseStore(Path(directory.name)/'state.sqlite')
-        self.store.create_team('a',Ledger.from_opening(OpeningBooks(),cap=100,roster_reserve=0,
-            max_bonus_years=5,veteran_minimums={'v':(1,)}))
         self.payload = bytes(fixtures.LegacyContractsTests().fixture())
         self.bindings = create_bindings(self.payload,game_xbe=b'authored source bytes',
             game_context={**raw_context(self.payload),'loaded_image_sha256':'a'*64})
+        from tools.export_legacy_contracts import legacy_contracts
+        from tools.franchise_snapshot_bindings import resolve_bindings
+        from tools.inspect_franchise_save import TEAMS
+        from franchise.snapshot_origin import bind
+        members=resolve_bindings(self.bindings,self.payload)
+        self.player=members[1]['player_id']
+        contracts=legacy_contracts(self.bindings,self.payload)
+        teams={team:Ledger.from_opening(OpeningBooks(legacy_contracts=contracts[team]),cap=80500000,
+            roster_reserve=0,max_bonus_years=5,veteran_minimums=({self.player:(1000,)} if team=='49ers' else {})) for team in TEAMS}
+        self.store.create_franchise(teams,seed=self.bindings['personality_seed'])
+        bind(self.store,self.bindings,self.payload)
         self.calls = 0
         self.allowed = True
         def provider(_):
@@ -42,8 +52,8 @@ class RuntimeHandshakeTests(unittest.TestCase):
         return dict(protocol=1,request_id='hello',operation='hello',loaded_image_sha256='a'*64,**changes)
 
     def proposal(self):
-        return dict(protocol=1,request_id='proposal',operation='negotiate_proposal',team_id='a',
-            offer=dict(player_id='v',salaries=[10],signing_bonus=0),expected_revision=0,
+        return dict(protocol=1,request_id='proposal',operation='negotiate_proposal',team_id='49ers',
+            offer=dict(player_id=self.player,salaries=[1000],signing_bonus=0),expected_revision=0,
             timeout_ms=1000,personality={},performance={},relationships={})
 
     def test_any_explicit_digest_uses_same_handshake_and_echoes_registry(self):
@@ -67,7 +77,7 @@ class RuntimeHandshakeTests(unittest.TestCase):
             self.assertIsNotNone(self.bridge.handle(request)['error'])
             self.assertEqual(self.bridge.handle(self.proposal())['error'],'ai_disabled')
         self.assertEqual(self.calls,0)
-        self.assertEqual(self.store.load_team('a').revision,0)
+        self.assertEqual(self.store.load_team('49ers').revision,0)
 
     def test_restart_and_failed_rehandshake_require_new_match(self):
         self.assertEqual(self.bridge.handle(self.proposal())['error'],'ai_disabled')
@@ -94,7 +104,7 @@ class RuntimeHandshakeTests(unittest.TestCase):
         self.allowed=False
         self.assertEqual(self.bridge.handle(self.proposal())['error'],'ai_disabled')
         self.assertEqual(self.calls,0)
-        self.assertEqual(self.store.negotiation_history('a','v'),[])
+        self.assertEqual(self.store.negotiation_history('49ers',self.player),[])
 
     @staticmethod
     def disabled():
@@ -105,9 +115,22 @@ class RuntimeHandshakeTests(unittest.TestCase):
             self.assertEqual(self.bridge.handle(dict(protocol=1,request_id='x',operation=operation))['error'],'ai_disabled')
         request=self.proposal();request['operation']='preview'
         for key in ('personality','performance','relationships'):request.pop(key)
-        self.assertEqual(self.bridge.handle(request)['result']['room_after'],90)
+        self.assertEqual(self.bridge.handle(request)['result']['room_after'],75733000)
         status=self.bridge.handle(dict(protocol=1,request_id='status',operation='guest_signing_status'))
         self.assertEqual(status['error'],'state_rejected')  # Unconfigured journal, not an AI gate.
+        self.assertEqual(self.calls,0)
+
+    def test_image_match_cannot_claim_missing_or_other_database_namespace(self):
+        from franchise.snapshot_origin import KEY
+        import sqlite3
+        changed=copy.deepcopy(self.bindings);changed['franchise_id']='d'*32
+        bridge=Bridge(self.store,provider=self.provider,access_check=lambda:self.allowed,
+            guest_snapshot=(changed,self.payload))
+        self.assertEqual(bridge.handle(self.hello())['error'],'state_rejected')
+        self.assertEqual(bridge.handle(self.proposal())['error'],'ai_disabled')
+        with contextlib.closing(sqlite3.connect(self.store.path)) as db:
+            db.execute('DELETE FROM franchise_metadata WHERE key=?',(KEY,));db.commit()
+        self.assertEqual(self.bridge.handle(self.hello())['error'],'state_rejected')
         self.assertEqual(self.calls,0)
 
     def test_image_claim_without_explicit_expected_context_rejects(self):

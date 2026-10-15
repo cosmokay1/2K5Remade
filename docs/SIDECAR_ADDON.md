@@ -104,7 +104,12 @@ local metadata, not a sandbox or independent attestation. It grants no guest
 writes, remote AI access, franchise identity or compatibility with unknown code.
 The franchise host now forwards this digest in hello. A configured explicit
 loaded_image_sha256 in the v2 registry must match before the service allows
-inference or saved-journal writes. The native response validator requires an exact
+inference or saved-journal writes. That handshake also requires an explicit
+persisted database/registry association, created with tools.bind_franchise_snapshot.
+Registration audits actor origins and initial ownership; runtime verification
+checks the stored namespace and immutable bootstrap fingerprint. It neither
+replaces old journal intents nor proves active guest-franchise selection.
+The native response validator requires an exact
 image echo plus well-formed configured franchise/registry/snapshot identities.
 Negotiation-enabled game callbacks fail closed when loader metadata is missing;
 legacy engine-only fixtures can still use hello without a load-image claim.

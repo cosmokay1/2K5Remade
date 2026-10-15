@@ -140,6 +140,30 @@ biography, same-year identity and the pinned scheduler index/raw cap. Payroll an
 contract export still require independent reconciliation; context is no proof of
 complete modern obligations or active-franchise selection.
 
+Before using a load-image-bound service, explicitly associate its existing
+initialized database with the registry and saved snapshot:
+
+```sh
+python3 -m tools.bind_franchise_snapshot /path/to/franchise.sqlite /path/to/SAVEGAME.DAT /path/to/bindings.json
+```
+
+Registration requires all32 clubs, the original personality seed, matching player
+identities, correct generated actor origins and complete initial ownership. It
+persists one namespace record and a fingerprint of immutable team bootstraps;
+it does not initialize/reroll actors, alter finances, edit a save or enable AI.
+Matching registration is idempotent. A different namespace, seed, player mapping
+or bootstrap requires an explicit verified migration. Pending guest work blocks
+registration through the store's existing recovery guard.
+
+The runtime handshake reads that association and bootstrap fingerprint without
+replaying every club. Current actor history, ownership and financial obligations
+remain checked by checkpoint/transaction operations. Saved-signing recovery can
+therefore inspect the same namespace while guest and ledger ownership temporarily
+differ. The association normalizes v1/v2 registry representations and ignores
+source/load-image provenance when choosing the namespace. Original journal
+intents and their binding hashes remain unchanged. This establishes the configured
+database/registry relationship; the active guest save still needs verification.
+
 Existing version1 registries remain readable for durable recovery. Convert a copy
 without rerolling any player identity, personality or contract schedule:
 

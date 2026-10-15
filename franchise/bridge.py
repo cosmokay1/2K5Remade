@@ -75,7 +75,9 @@ class Bridge:
                     if request['loaded_image_sha256'] != self.runtime_image:
                         raise Rejected('Loaded image differs from configured franchise context')
                     import hashlib
+                    from franchise.snapshot_origin import verify
                     registry, payload = self.guest_snapshot
+                    verify(self.store,registry,payload)
                     binding = dict(loaded_image_sha256=self.runtime_image,
                         franchise_id=registry['franchise_id'],
                         bindings_sha256=hashlib.sha256(json.dumps(registry,sort_keys=True,separators=(',', ':')).encode()).hexdigest(),
