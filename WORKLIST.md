@@ -81,8 +81,10 @@ native offer submission, player response, legal financial commit and save recove
       Build38730370102. Actual game application/save/reload remains unverified.
       Preparation now also compares all bound roster/free-agent biography fields
       through a separate sampled identity SHA256; no raw names or ratings are
-      sent to the model. Local identity/memory-safety checks pass; new Windows
-      execution is pending. Active franchise/runtime and quiescence remain open.
+      sent to the model. Source2fbc3cf passed Windows/Ubuntu
+      Franchise38738527171 and Build38738527281, including native identity
+      mismatch/replay/preparation/settlement. Active franchise/runtime and
+      quiescence remain open; no application permit has been granted.
 - [ ] Reconcile the required opening obligations/rules before permitting financial
       writes, then prove signing and save/reload on the pinned pack.
       Optional explicit legacy-unknown cash scopes now preserve null total cash

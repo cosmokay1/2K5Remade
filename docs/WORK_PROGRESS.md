@@ -6569,3 +6569,15 @@ Read-only identity projection covers2619 bank slots/2070 bound members with43678
 bytes and SHA256 a0dd8621024e0dffdc13282c27adddf085769ea308004a369b387eb8dbcc0386.
 The source save remained unchanged. This is saved-only evidence, not a live
 comparison, complete opening-book import or game application/save/reload result.
+
+Source2fbc3cf passed Franchise38738527171 on Windows2022/Ubuntu, including all805
+regressions, both25-case actual native identity comparisons, both28-case financial
+comparisons, native boundaries and interpreter checks. The Windows CNG/native
+client/service fixture refused an unselected player's changed identity, replayed
+the captured proposal and prepared/settled matching authored saved effects with
+AI-disabled restart recovery. Build38738527281 also passed Windows/Linux runtime,
+tool and presentation checks. The CI watchers temporarily lost GitHub connectivity;
+direct reinspection of the same runs confirmed both completed successfully.
+A fresh read-only Deck SSH attempt still failed steamdeck.local DNS resolution.
+No installation, private game execution, guest application, save/reload proof,
+paid inference or remote-control renewal occurred. The goal remains incomplete.
