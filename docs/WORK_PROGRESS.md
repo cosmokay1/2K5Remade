@@ -7101,3 +7101,43 @@ clock and decided-game cutoff are separate enabled features. MyNFL is a naming
 change; functional changes are broader gameplay/franchise patches. Full modern
 roster/IR enforcement is not delivered. The inventory separates intended source/
 recipe features from actual runtime evidence and preserves Remade attribution.
+
+### October 15 — Publish initialized personalities and explicit cash scope together
+
+The creation command now accepts an optional all-team cash import beside its
+existing source-backed opening ledgers. Each team explicitly supplies records,
+source and unavailable legacy cash identities. Existing store reconciliation
+checks every known original agreement and the complete preserved legacy unknown
+inventory. All cash initialization happens in the unpublished temporary DB;
+a later team's reconciliation failure discards the entire artifact, including
+earlier imports and generated personalities. Omitted cash retains prior behavior.
+The receipt now counts registered legacy/observed players as well as classified
+modern players, and reports the number of initialized cash books.
+
+Eight creation tests pass, including mixed modern/legacy/observed identities,
+reopened paid/unpaid/unknown cash, deterministic personalities, invalid team
+coverage and failure after one successful cash import. All820 Python regressions
+pass in30.462s with localhost fixture binding allowed; the sandbox-only attempt
+failed four existing HTTP/TLS tests because socket binding was prohibited.
+The money audit passes5050 bonus-conservation cases. Prior source160c53d full
+Windows/Ubuntu Franchise38766311581 is now verified successful (Build38766311589
+also succeeded); the new bootstrap source still requires its own CI.
+
+A private full MyNFL1 bootstrap exercised this exact command, then reopened every
+team independently:32 teams,2070 unique bound identities,66240 saved player/team
+personality records,1693 preserved legacy deals. Every actor matches its saved
+seed-derived fictional initialization across teams/restart; all32 roster payrolls
+reconcile at the pinned4:1 scale. Cash totals remain null for the explicit legacy
+unknown inventory. Unclassified free-agent offers still reject rather than
+inventing minimums. Input publication took97.718s; final independent verification
+completed in131.425s. Private receipt:
+softdrink-v0.6/mynfl1/personality-bootstrap-7n67xew_/receipt.json.
+Original save SHA4c8c31b4f400e25175223163a948e126cb83d10aa4bb98979a564ef287761ec3
+and bindings SHA9955880d3fb6a02eaebc4c1662cfac075afb59443a1191e709bf2dd51c9ee442
+remain unchanged. Source input and DB remain private/untracked.
+
+This is a known-roster offline projection, not complete modern Team Salary:
+zero reserve is explicitly a projection convention, missing obligations and
+classification remain unresolved. No live DB, installed game, controls, inference
+or saves changed. Native creation hookup, positive contract application and
+actual game save/reload are still open; no signing authority is claimed.

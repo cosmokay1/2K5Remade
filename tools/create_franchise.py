@@ -8,6 +8,7 @@ from pathlib import Path
 import sqlite3
 import tempfile
 from franchise.store import FranchiseStore,from_config
+from franchise.cash import CashObligation
 
 MAX_INPUT = 16 * 1024 * 1024
 
@@ -27,13 +28,25 @@ def create_from_file(input_path,database_path):
     if len(raw) > MAX_INPUT:
         raise ValueError('Bootstrap exceeds 16 MiB')
     bundle = json.loads(raw,object_pairs_hook=unique_object)
-    if type(bundle) is not dict or set(bundle) != {'format','source','seed','teams'} or type(bundle['format']) is not int or bundle['format'] != 1:
+    required = {'format','source','seed','teams'}
+    if type(bundle) is not dict or set(bundle) not in (required, required | {'cash'}) or type(bundle['format']) is not int or bundle['format'] != 1:
         raise ValueError('Unsupported franchise bootstrap fields/version')
     if type(bundle['source']) is not str or not bundle['source'].strip() or type(bundle['teams']) is not dict or not bundle['teams']:
         raise ValueError('Declared import source and nonempty team configs required')
     if any(type(config) is not dict for config in bundle['teams'].values()):
         raise ValueError('Each team config must be a JSON object')
     teams = {team:from_config(config) for team,config in bundle['teams'].items()}
+    cash = bundle.get('cash', {})
+    if type(cash) is not dict or (set(cash) != set(teams) and 'cash' in bundle):
+        raise ValueError('Declared cash import must cover every team exactly')
+    cash_inputs = {}
+    for team, opening in cash.items():
+        if (type(opening) is not dict or set(opening) != {'source','records','unknown_legacy_players'} or
+                type(opening['records']) is not list or any(type(record) is not dict for record in opening['records']) or
+                type(opening['unknown_legacy_players']) is not list):
+            raise ValueError('Explicit cash records, legacy unknown identities and source required')
+        cash_inputs[team] = dict(records=tuple(CashObligation.from_dict(record) for record in opening['records']),
+            source=opening['source'], unknown_legacy_players=tuple(opening['unknown_legacy_players']))
     destination = Path(database_path).absolute()
     if destination.exists() or destination.is_symlink():
         raise FileExistsError('Refusing to overwrite an existing franchise')
@@ -44,6 +57,8 @@ def create_from_file(input_path,database_path):
     try:
         store = FranchiseStore(building)
         origin = store.create_franchise(teams,seed=bundle['seed'])
+        for team, opening in cash_inputs.items():
+            store.initialize_cash(team, **opening)
         with closing(sqlite3.connect(building)) as db:
             db.execute("INSERT INTO franchise_metadata VALUES ('bootstrap-source',?)",
                        (json.dumps({'source':bundle['source'],'input_sha256':digest,'format':1}),))
@@ -52,7 +67,8 @@ def create_from_file(input_path,database_path):
             store.load_team(team)  # Original charges, ownership, actor coverage.
         os.link(building,destination)  # EEXIST also protects concurrent creators.
         return {'database':str(destination),'teams':len(teams),
-                'players':len(set().union(*(ledger._veteran_minimums.keys() | ledger._rookies.keys() for ledger in teams.values()))),
+                'players':len(set().union(*(ledger.registered_player_ids for ledger in teams.values()))),
+                'cash_initialized_teams':len(cash_inputs),
                 'personality_version':origin['version'],'input_sha256':digest,'game_runtime_verified':False}
     finally:
         for suffix in ('','-journal','-wal','-shm'):

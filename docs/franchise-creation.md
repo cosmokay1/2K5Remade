@@ -71,6 +71,31 @@ Failure removes only its own temporary artifacts. The receipt reports engine
 creation counts and explicitly says game runtime verification is false. Existing
 franchises are never rerolled by retrying creation.
 
+An optional `cash` object imports opening compensation/payment history before
+publication. When present it must cover every team exactly. Each value contains
+`source`, `records` (serialized `CashObligation` records) and
+`unknown_legacy_players` (explicit legacy IDs whose cash history is unavailable).
+Existing cash reconciliation validates contract amounts and coverage. For example,
+a team containing only preserved legacy player `legacy-id` may declare:
+
+```json
+"cash": {
+  "team-id": {
+    "source": "Legacy payment history unavailable in the declared source",
+    "records": [],
+    "unknown_legacy_players": ["legacy-id"]
+  }
+}
+```
+
+Unknown legacy totals remain null; this does not assert zero compensation or
+payment. Omitting `cash` retains the previous behavior of unavailable cash books.
+Any failed team import discards the unpublished database, including earlier teams'
+successful imports and generated personalities. The receipt counts all registered
+players (including legacy and classification-pending identities) and reports
+`cash_initialized_teams`. Neither importing cash nor publishing a DB establishes
+complete modern cap obligations, classification, native binding or write authority.
+
 
 ## Pinned SOFTDRINK opening snapshot
 
