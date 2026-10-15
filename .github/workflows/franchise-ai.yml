@@ -45,6 +45,12 @@ jobs:
         run: ctest --test-dir build-franchise-bridge -C Release --output-on-failure
       - name: Cross-check exact native guest salary schedules
         run: python -m tools.check_native_guest_terms build-franchise-bridge
+      - name: Check interpreter shared epilogues
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/interpreter -B build-interpreter-check
+          cmake --build build-interpreter-check --config Release
+          ctest --test-dir build-interpreter-check -C Release --output-on-failure
       - name: Execute native pipe handshake and durable restart fixture
         if: runner.os == 'Windows'
         run: python -m tools.check_native_bridge build-franchise-bridge/Release/franchise_bridge_check.exe build-franchise-bridge/Release/franchise_c_host_check.exe

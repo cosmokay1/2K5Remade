@@ -48,6 +48,10 @@ conversion is not claimed.
 - [ ] Verify addon installation/upgrade for pinned repacks; preserve user saves
       and reject unsupported native executable versions.
 - [ ] Verify manager UI/controller behavior and addon plus SOFTDRINK execution.
+      Private Windows candidate built and installed on Deck; DLL/manager fixture
+      passed under Proton. SOFTDRINK reached team selection, then crashed when
+      starting a match. Shared-epilogue interpreter regression reproduced and fixed;
+      actual match retry remains required.
 
 ## Active base decision — October 14, 2026
 
@@ -73,7 +77,10 @@ not establish v0.6 compatibility or a new completion percentage.
 ## Latest verified state — October 14, 2026
 
 - Latest published verified implementation: `d3ca4aa`. Build `38658080837` and Franchise AI
-  `38658080834` passed. Manager selection and DLL component checks passed. Windows DLL addon fixture and702 tests on Windows/Ubuntu passed; this addon build has not been installed or executed in the actual game. CI checks asset-free runtime and bridge components;
+  `38658080834` passed. Manager selection and DLL component checks passed. Windows DLL addon fixture and702 tests on Windows/Ubuntu passed; the private candidate is now installed and executed on Deck with the addon disabled.
+  SOFTDRINK reached team selection but crashed at match start; compatibility remains
+  unverified. A synthetic regression confirms an interpreter shared-epilogue bug;
+  its fix passes under Proton, with the real match retry pending. CI checks asset-free runtime and bridge components;
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.

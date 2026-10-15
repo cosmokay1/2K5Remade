@@ -5390,3 +5390,57 @@ missing DLL and ABI failure handling, and module unload/reload. Both platforms
 passed702 regressions and native checks; durable transport/restart checks passed.
 No screenshots/controller interaction, SOFTDRINK v0.6 runtime, repack conversion
 or private-game deployment were performed. Those acceptance gates remain open.
+
+
+## October 14, 2026 — private addon/manager build and SOFTDRINK match-start failure
+
+Built the full Windows game and loadable franchise DLL on the awake Deck using
+MSVC14.44/SDK10.0.26100 under the existing private build container. A fresh cloned
+compiler prefix resolved MSVC D8037 temporary-file failure. The actual manager/DLL
+fixture completed under Proton (exit0 and final fixture cleanup), including opt-in
+selection, independent content pack, ABI failure, load/unload/reload and disabled
+service checks. Initial headless fixture startup stalled; rerun with Gaming Mode
+DISPLAY succeeded. No AI provider, credentials or paid inference were enabled.
+
+Pinned official SOFTDRINK v0.6 patch SHA256
+8f38472ec12d1c4d9745683d10e5df15d426b8b339ab9ff4a886bcfaf6caceb0.
+The local installer checked all19 retail input file hashes and14 changed output
+hashes. Reconstructed XBE SHA256
+f67e6fc1cb76c9ea1f1ad504e4a6491ff126483d66a9da8ddb92950bbaf740ba.
+This proves the file overlay, not a reconstructed ISO layout. No retail downloads
+or asset publication. Existing upstream/SOFTDRINK attribution remains required.
+
+Candidate manager-addon-5605345 has its own runtime, saves and cloned Proton
+prefix. Existing Steam entry3759717425 and validated controller profile retained;
+only its launcher was reversibly redirected. Original EXE and saves untouched;
+launcher backup is launch-2k5.sh.pre-manager-addon-5605345. Initial candidate EXE
+SHA2561d83fb8d29d5f4717c7c0b92bd5783bd1466be203b99c8b2eb659a7d832b3366;
+DLL d4d1020eee8732aa3b60ba08a8a93237922619548344ab8c9540ff9f81750190.
+These identify the failed first run, not the subsequent interpreter-fix build.
+
+Actual Gaming Mode run reached team selection, captured through Gamescope.
+User reports starting a match immediately before closure. Active overlay is
+confirmed by session.log (14/19 disc files changed,1287/31081 converted functions
+interpreted,128MiB guest memory). It failed with C0000005 at host1401903D2 after
+invalid interpreted jumps. Addon was disabled throughout; AI signing was not run.
+Preserved private failure-20261014-174625/session.log and steam-launch.log before
+relaunch. No clean gameplay, fresh franchise, signing or save/reload acceptance.
+
+First invalid jump follows guest4721A ->470DB, a shared cleanup entry which
+removes16 bytes of locals before returning. Interpreter native-jump dispatch
+instead cached the top local word as the return address (trace43E80000). Fix keeps
+ordinary guest JMP targets interpreted so actual RET discovers the address after
+cleanup; native CALL and explicit manual/kernel bridges remain native. This can
+increase interpretation work on tail-jump paths; game performance remains to test.
+Added asset-free native/interpreter fixture: nested call with16 local bytes and
+shared epilogue, plus native CALL/manual/kernel bridge checks. The unchanged
+interpreter fails it under Proton (exit1); fixed interpreter passes (exit0).
+Windows compilation/link succeeded. Added Windows CI coverage. This reproduces a
+concrete defect matching the trace; it does not yet prove the real crash resolved.
+
+Installed the fixed private EXE after confirming no game process:
+SHA2561742d8c261f661a46434d0345a05e4b59270676ab27e18fc4585672d441d6bcb.
+Interpreter source SHA256ddfae28de4f256578b25ff4affbb1a77a8de52bb06247db516911182b4cc5d06.
+Failed EXE retained privately as NFL2K5.pre-interpreter-fix.exe. Same Steam
+launcher, addon disabled and AI unconfigured. User asked to repeat the same
+matchup and opening snap; real-game retry remains pending.

@@ -336,13 +336,13 @@ int recomp_interp_dirty(uint32_t va)
 }
 
 /* The native function for `va`, or NULL when it must be interpreted. */
-static recomp_func_t native_for(uint32_t va)
+static recomp_func_t native_for(uint32_t va, int allow_generated)
 {
     recomp_func_t fn;
     if (va >= 0xFE000000u) return recomp_lookup_kernel(va);   /* kernel thunk bridge */
     if (recomp_interp_dirty(va)) return NULL;
     fn = recomp_lookup_manual(va);
-    if (!fn) fn = recomp_lookup(va);
+    if (!fn && allow_generated) fn = recomp_lookup(va);
     return fn;
 }
 
@@ -904,7 +904,7 @@ void recomp_interp_call(uint32_t va)
 
     do_call: {
             uint32_t ret = c->eip;
-            recomp_func_t fn = native_for(target);
+            recomp_func_t fn = native_for(target, 1);
             push32(c, ret);
             if (fn) {
                 sync_out(c);
@@ -921,11 +921,14 @@ void recomp_interp_call(uint32_t va)
             continue;
         }
     do_jmp: {
-            recomp_func_t fn = native_for(target);
+            /* A converted entry may be a shared epilogue with live locals
+             * above its return address. Keep guest jumps interpreted: the
+             * actual RET finds the address after deallocating those locals.
+             * Native calls and explicit manual/kernel bridges remain native. */
+            recomp_func_t fn = native_for(target, 0);
             if (fn) {
-                /* A jump to a converted function's start is a tail call: it
-                 * returns through the return address on top of our stack, to
-                 * whoever pushed it. */
+                /* Explicit native bridges use the return address on top of
+                 * the stack, like their corresponding CALL dispatch. */
                 uint32_t at = c->r[ESP];
                 uint32_t ret = rd32(at);
                 sync_out(c);
