@@ -36,6 +36,16 @@ static void submission_screen(int active) {
 static unsigned long long context_revision;
 static unsigned context_sequence, context_logged;
 static unsigned long long request_session;
+static uint64_t requested_source_epoch;
+static int loaded_source_current(uint64_t *epoch) {
+    char digest[65];
+    return franchise_client && nfl2k5_franchise_read_loaded_source(digest,epoch) &&
+        franchise_host_loaded_payload_matches(franchise_client,digest)==FRANCHISE_HOST_OK &&
+        nfl2k5_franchise_source_path_matches(*epoch);
+}
+static int requested_source_current(void) {
+    uint64_t epoch=0;return loaded_source_current(&epoch) && epoch==requested_source_epoch;
+}
 static FranchiseSigningObservation observed, requested;
 static int observation_valid, observation_fresh;
 static unsigned long long changed_tick, screen_epoch, requested_epoch;
@@ -169,7 +179,7 @@ void nfl2k5_franchise_poll(void)
                 snprintf(journal_last_reply,sizeof(journal_last_reply),"%s",response);
                 fprintf(stderr,"[FRANCHISE] Held signing saved-state reply: %s\n",response);
             }
-            if(signing_active && observation_valid && observation_fresh &&
+            if(signing_active && observation_valid && observation_fresh && requested_source_current() &&
                screen_epoch==requested_epoch && same_observation(&observed,&requested)) {
                 FranchiseSigningDisplay next={0};
                 if(franchise_host_signing_display(response,&next)!=FRANCHISE_HOST_OK) {
@@ -182,7 +192,7 @@ void nfl2k5_franchise_poll(void)
         } else if (context_pending) {
             context_pending = 0;
             const int was_proposal=proposal_pending;proposal_pending=0;
-            int current=signing_active && observation_valid && observation_fresh &&
+            int current=signing_active && observation_valid && observation_fresh && requested_source_current() &&
                 screen_epoch==requested_epoch && same_observation(&observed,&requested);
             if(current) {
                 FranchiseSigningDisplay next={0};
@@ -229,6 +239,7 @@ void nfl2k5_franchise_poll(void)
         }
     }
     if(journal_enabled && journal_locked && !journal_pending && GetTickCount64()>=journal_next_check) {
+        if(!requested_source_current()){journal_next_check=GetTickCount64()+2000;return;}
         const FranchiseHostStatus status=franchise_host_check_saved(franchise_client);
         if(status==FRANCHISE_HOST_OK) journal_pending=1;
         else if(status==FRANCHISE_HOST_NOT_READY) journal_next_check=~0ULL;
@@ -247,7 +258,7 @@ int nfl2k5_franchise_completed(void)
     if((DWORD)InterlockedCompareExchange(&franchise_owner_thread,0,0)!=GetCurrentThreadId()) {
         InterlockedExchange(&completion_failed,1);return 0;
     }
-    if(!franchise_client || hello_failed || !journal_enabled || !journal_locked) {
+    if(!franchise_client || hello_failed || !journal_enabled || !journal_locked || !requested_source_current()) {
         InterlockedExchange(&completion_failed,1);return 0;
     }
     FranchiseFinanceSnapshot finance;
@@ -313,6 +324,11 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
         AcquireSRWLockExclusive(&display_lock); display_valid=0; ReleaseSRWLockExclusive(&display_lock);
         return;
     }
+    uint64_t source_epoch=0;char source_digest[65];
+    if(!nfl2k5_franchise_read_loaded_source(source_digest,&source_epoch)){consume_submission(NULL);proposal_requested=0;context_sent=0;clear_display();return;}
+    if(requested_source_epoch && source_epoch!=requested_source_epoch){
+        consume_submission(NULL);proposal_requested=proposal_sent=context_sent=observation_valid=0;clear_display();
+    }
     if (!valid_observation(o)) { consume_submission(NULL); proposal_requested=0; clear_display(); return; }
     if (!observation_valid || !same_observation(&observed,o)) {
         clear_display();
@@ -325,6 +341,10 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
     AcquireSRWLockExclusive(&display_lock); display_valid=display.title[0]!=0; ReleaseSRWLockExclusive(&display_lock);
     if (context_pending || (!proposal_requested && context_sent && (same_observation(&requested,&observed) ||
         GetTickCount64()-changed_tick<300))) return;
+    uint64_t checked_epoch=0;
+    if(!loaded_source_current(&checked_epoch) || checked_epoch!=source_epoch){
+        observation_fresh=0;context_sent=0;proposal_requested=0;consume_submission(NULL);clear_display();return;
+    }
     char request[4096];
     char offer_field[128] = {0};
     if (inspect_guest_offer) {
@@ -359,7 +379,7 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
     if(proposing) {proposal_requested=0;proposal_sent=1;}
     context_sent = 1;
     requested=observed;
-    requested_epoch=screen_epoch;
+    requested_epoch=screen_epoch;requested_source_epoch=source_epoch;
 }
 unsigned long long nfl2k5_franchise_submission_epoch(void) {
     unsigned long long epoch;
@@ -465,7 +485,7 @@ int nfl2k5_franchise_start(void)
     request_session=GetTickCount64();
     signing_active = context_sent = 0;
     observation_valid = observation_fresh = 0;
-    screen_epoch=requested_epoch=changed_tick=0;
+    screen_epoch=requested_epoch=changed_tick=0;requested_source_epoch=0;
     InterlockedExchange(&franchise_foreign_sign_logged, 0);
     InterlockedExchange(&franchise_owner_thread, (LONG)GetCurrentThreadId());
     fprintf(stderr, "[FRANCHISE] Transport launched on owner thread=%lu; held negotiation mode=%d; guest commits unavailable.\n",

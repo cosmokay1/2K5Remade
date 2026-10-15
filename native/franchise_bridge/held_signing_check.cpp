@@ -34,6 +34,10 @@ FranchiseHostStatus franchise_host_submit(FranchiseHostClient* c,const char* byt
 }
 FranchiseHostStatus franchise_host_ready(FranchiseHostClient*,int* out) { require(GetCurrentThreadId()==owner);*out=ready;return FRANCHISE_HOST_OK; }
 static bool image_available=true;
+static bool source_matches=true,payload_matches=true,path_matches=true;static unsigned path_checks;static uint64_t source_epoch=1;
+int nfl2k5_franchise_source_path_matches(uint64_t epoch){++path_checks;return path_matches && epoch!=0;}
+int nfl2k5_franchise_read_loaded_source(char out[65],uint64_t *epoch){std::memset(out,'d',64);out[64]=0;*epoch=source_epoch;return source_matches;}
+FranchiseHostStatus franchise_host_loaded_payload_matches(FranchiseHostClient*,const char*){return payload_matches?FRANCHISE_HOST_OK:FRANCHISE_HOST_NOT_READY;}
 int nfl2k5_franchise_read_image(char out[65]){std::memset(out,'a',64);out[64]=0;return image_available;}
 int nfl2k5_franchise_read_finance(FranchiseFinanceSnapshot* out) {
     require(GetCurrentThreadId()==owner);if(!completion_readable) return 0;*out={};out->size=FRANCHISE_FINANCE_HEADER+FRANCHISE_FINANCE_RECORD;
@@ -104,8 +108,15 @@ int main(int argc,char** argv) {
         observation.offer_amount=829;observation.offer_flags=(1u<<29)|(2u<<16)|4u;
         std::strcpy(observation.first_name,"Authored");std::strcpy(observation.last_name,"Receiver");
         std::strcpy(observation.photo,"00000000");std::strcpy(observation.dob,"000000");
+        source_matches=false;nfl2k5_franchise_signing_context(&observation);require(submissions==1);
+        source_matches=true;payload_matches=false;nfl2k5_franchise_signing_context(&observation);require(submissions==1);
+        require(!path_checks);payload_matches=true;path_matches=false;
+        nfl2k5_franchise_signing_context(&observation);require(submissions==1 && path_checks==1);
+        path_matches=true;
         nfl2k5_franchise_signing_context(&observation);require(submissions==2);
         require(nfl2k5_franchise_submit_held(&observation,nfl2k5_franchise_submission_epoch())==1);
+        const auto pending_path_checks=path_checks;
+        nfl2k5_franchise_signing_context(&observation);require(path_checks==pending_path_checks);
         ready=false;nfl2k5_franchise_poll();require(submissions==2);
         ready=true;nfl2k5_franchise_poll();
         nfl2k5_franchise_signing_context(&observation);
@@ -209,6 +220,15 @@ int main(int argc,char** argv) {
         nfl2k5_franchise_signing_context(&observation);
         ++observation.offer_amount;nfl2k5_franchise_signing_context(&observation);
         nfl2k5_franchise_poll();require(preparations==0);nfl2k5_franchise_stop();
+        // A new load cannot consume an older acceptance, even with identical terms.
+        preparations=0;require(nfl2k5_franchise_start()==1);
+        nfl2k5_franchise_on_fsm(0x557B2C,1);nfl2k5_franchise_poll();
+        nfl2k5_franchise_signing_context(&observation);nfl2k5_franchise_poll();
+        submit_foreign(observation,nfl2k5_franchise_submission_epoch());
+        nfl2k5_franchise_signing_context(&observation);++source_epoch;
+        nfl2k5_franchise_poll();require(!preparations);
+        FranchiseSigningDisplay stale={};require(!nfl2k5_franchise_display(&stale));
+        nfl2k5_franchise_stop();source_epoch=1;
         image_available=false;
         require(nfl2k5_franchise_start()==1);
         const auto unbound_submissions=submissions;

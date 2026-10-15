@@ -2,6 +2,8 @@
 #include "../../src/nfl2k5_franchise_host.h"
 #include <stdlib.h>
 #include <windows.h>
+int nfl2k5_franchise_source_path_matches(uint64_t epoch){return epoch!=0;}
+int nfl2k5_franchise_read_loaded_source(char out[65],uint64_t *epoch){for(unsigned i=0;i<64;++i)out[i]='d';out[64]=0;*epoch=1;return 1;}
 int nfl2k5_franchise_read_image(char out[65]){out[0]=0;return 0;}
 int nfl2k5_franchise_read_finance(struct FranchiseFinanceSnapshot *out){(void)out;return 0;}
 int nfl2k5_franchise_read_identity(const struct FranchiseFinanceSnapshot *finance,struct FranchiseIdentitySnapshot *out){(void)finance;(void)out;return 0;}

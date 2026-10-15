@@ -26,6 +26,10 @@ typedef struct {
 int nfl2k5_franchise_context_enabled(void);
 /* Immutable loader metadata; source file and post-patch load image differ. */
 int nfl2k5_franchise_read_image(char out[65]);
+/* Cheap owned decoded-origin observation; no file I/O or active-session grant. */
+int nfl2k5_franchise_read_loaded_source(char out[65],uint64_t *epoch);
+/* Bounded physical-file/hash check at request boundaries, outside guest reads. */
+int nfl2k5_franchise_source_path_matches(uint64_t epoch);
 /* Application adapter, owner thread only. Read-only; no transaction lock. */
 struct FranchiseFinanceSnapshot;
 int nfl2k5_franchise_read_finance(struct FranchiseFinanceSnapshot *out);

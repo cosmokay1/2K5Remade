@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "game_addon.h"
-#include "load_read.h"
+#include "source_binding.h"
 static unsigned char *payload;
 static int readable;
 static uint32_t table[3]={FRANCHISE_SAVE_BYTES,0,9};
@@ -29,7 +29,11 @@ int wmain(int argc,wchar_t **argv){
     FranchiseLoadEvent event={FRANCHISE_LOAD_BEGIN,0x100000,0,0,0x400000};
     NFL2K5AddonFileReadV2 read={0};read.guest_mapped=1;read.guest_address=event.buffer;
     read.read.native_handle=(uintptr_t)file;read.read.bytes=payload;read.read.completed=read.read.requested=FRANCHISE_SAVE_BYTES;
-    FranchiseLoadRead state;
+    wchar_t wide[MAX_PATH];require(MultiByteToWideChar(CP_ACP,0,path,-1,wide,MAX_PATH));
+    char duplicate[MAX_PATH];require(GetTempFileNameA(root,"dup",0,duplicate));require(CopyFileA(path,duplicate,FALSE));
+    wchar_t duplicate_wide[MAX_PATH];require(MultiByteToWideChar(CP_ACP,0,duplicate,-1,duplicate_wide,MAX_PATH));
+    FranchiseLoadRead state;FranchiseSourceMatch match;
+    _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SAVE",L"");
     for(unsigned attempt=0;attempt<4;++attempt){
         readable=1;event.stage=FRANCHISE_LOAD_BEGIN;event.offset=0;require(api->event(FRANCHISE_LOAD_EVENT,&event,sizeof(event)));
         readable=0;require(api->event(NFL2K5_ADDON_FILE_READ_V2,&read,sizeof(read)));
@@ -41,10 +45,21 @@ int wmain(int argc,wchar_t **argv){
         require(api->snapshot(FRANCHISE_LOAD_READ_SNAPSHOT,&state,sizeof(state)) && state.epoch==attempt+1);
         require(state.phase==(attempt?FRANCHISE_LOAD_INVALID:FRANCHISE_LOAD_DECODED_SEEN));
         if(!attempt){require(state.source.guest_address==event.buffer && state.source.sequence==1);require(!strcmp(state.source.payload_sha256,"029c7da24320dc1eb2422141a2b6fa777c1f3d276c7fbb709510ecb45b531450"));}
+        require(api->snapshot(FRANCHISE_SOURCE_MATCH_SNAPSHOT,&match,sizeof(match)));
+        require(!match.matched || !attempt);
+        if(!attempt){
+            require(!match.configured);
+            _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SAVE",duplicate_wide);
+            require(api->snapshot(FRANCHISE_SOURCE_MATCH_SNAPSHOT,&match,sizeof(match)) && match.configured && !match.matched);
+            _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SAVE",wide);
+            require(api->snapshot(FRANCHISE_SOURCE_MATCH_SNAPSHOT,&match,sizeof(match)) && match.matched && match.epoch==1);
+        }
+
     }
     readable=1;event.stage=FRANCHISE_LOAD_BEGIN;event.offset=0;table[2]=8;require(api->event(FRANCHISE_LOAD_EVENT,&event,sizeof(event)));
     require(api->snapshot(FRANCHISE_LOAD_READ_SNAPSHOT,&state,sizeof(state)) && state.phase==FRANCHISE_LOAD_INVALID);
     api->stop();require(api->start(&host));require(!api->snapshot(FRANCHISE_LOAD_READ_SNAPSHOT,&state,sizeof(state)));api->stop();
-    require(CloseHandle(file) && DeleteFileA(path));free(payload);require(FreeLibrary(module));
+    _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SAVE",L"");
+    require(CloseHandle(file) && DeleteFileA(path) && DeleteFileA(duplicate));free(payload);require(FreeLibrary(module));
     puts("PASS: production load read/input/decoded correlation, duplicate/changed/unreadable rejection, restart; no namespace or application grant");return 0;
 }

@@ -8313,3 +8313,48 @@ production permits, financial signing and save/reload remain open. No game input
 was injected and no saves were edited. AI/controlled signing remain off. The
 optional bounded Spectacle observation produced no screenshot; no screen state
 is inferred from it.
+
+## October 15, 2026 — Batched physical-source and negotiation-origin guards
+
+The user requested grouping changes before another game restart. This batch stays
+in the franchise addon/bridge; no new native guest hooks or mod-specific policy
+are added. The owned loaded-source snapshot reports a decoded origin and an
+explicit configured-path match. Matching requires the same native volume/file
+index, length, last-write version and exact delivered payload SHA256; identical
+bytes in another physical container are rejected. Handles/buffers are temporary.
+Load epoch/source/phase are checked again after the bounded file read.
+
+The Windows C client retains the payload hash from its consumed, validated runtime
+hello. A new hello immediately clears the old grant/hash; a denied handshake or
+missing binding cannot match. On the owner, context/proposal submission, reply
+presentation, accepted preparation, completion and automatic journal checks now
+require the decoded source hash to match that handshake and the configured
+physical save. Replies also require their original load epoch, so a later load
+cannot consume an older acceptance even with identical observed offer terms.
+Existing persistent namespace/origin verification remains in the service.
+
+Per-frame context sampling copies only owned load scalars/hash. Full file
+verification occurs at request/reply boundaries after debounce; held journal
+checks retry on their existing two-second cadence. An authored host regression
+checks that pending frame samples do not repeat file verification. Physical
+source identity is included in the load trace for later actual-container audit.
+
+All869 Python tests pass across the main run and the permitted loopback rerun:
+the sandbox rejected four localhost bind attempts; all five web tests pass with
+loopback permission. Nine local native CTests pass. The initial Windows build
+and final refinement both compile. The final382-file source overlay passes all17
+actual Windows standalone CTests under isolated Proton, including production-DLL
+duplicate-container rejection and host unbound/payload-mismatch/stale-load cases.
+Both actual Windows C-client/sidecar saved-settlement runs pass with authored
+inputs, including runtime-bound payload match/mismatch and failed re-handshake
+revocation. No paid inference or real save inputs are used by those fixtures.
+The full game/DLL pair passes isolated --validate, marker validated, launcher0.
+
+Final receipts are private under source-binding-763c714-final. EXE SHA256
+f991f49c7aacd0625d264dced1686c6b25ccb1d007e3e1619e0507488189de45;
+DLL SHA256005a0e1cb4e65b4288403556ffd6237a1b9c8a57ba25f8e42c5d6d62277a62da.
+These are staged, not installed. Actual selected-container matching and current
+franchise lifetime invalidation, complete opening books, production application
+permits and actual signing/save-reload remain open. A decoded origin is historical
+evidence, not a complete active-session proof or write grant. The running user
+game, saves and AI controls are unchanged; AI remains off.

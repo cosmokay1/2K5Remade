@@ -47,7 +47,14 @@ int wmain(int argc,wchar_t** argv) {
             const std::wstring digest(argv[10]);require(digest.size()==64);
             hello["loaded_image_sha256"]=std::string(digest.begin(),digest.end());
         }
-        require(submit(client.get(),hello).at("error").is_null());
+        require(franchise_host_loaded_payload_matches(client.get(),std::string(64,'a').c_str())==FRANCHISE_HOST_NOT_READY);
+        const auto greeting=submit(client.get(),hello);require(greeting.at("error").is_null());
+        if(argc==11){
+            const auto digest=greeting.at("result").at("runtime_binding").at("snapshot_payload_sha256").get<std::string>();
+            require(franchise_host_loaded_payload_matches(client.get(),digest.c_str())==FRANCHISE_HOST_OK);
+            std::string different=digest;different[0]=digest[0]=='a'?'b':'a';
+            require(franchise_host_loaded_payload_matches(client.get(),different.c_str())==FRANCHISE_HOST_INVALID_ARGUMENT);
+        }
         std::ifstream input{std::filesystem::path(argv[3])};nlohmann::json proposal;input>>proposal;
         const auto accepted=submit(client.get(),proposal);
         require(accepted.at("error").is_null() && accepted.at("result").at("outcome")=="accepted_proposal");
@@ -98,6 +105,7 @@ int wmain(int argc,wchar_t** argv) {
         if(argc==11) {
             auto wrong=hello;wrong["loaded_image_sha256"]=std::string(64,'b');
             require(submit(client.get(),wrong).at("error")=="state_rejected");
+            require(franchise_host_loaded_payload_matches(client.get(),std::string(64,'a').c_str())==FRANCHISE_HOST_NOT_READY);
             const std::string denied="{\"protocol\":1,\"request_id\":\"revoked\",\"operation\":\"negotiate_proposal\"}";
             require(franchise_host_submit(client.get(),denied.data(),denied.size())==FRANCHISE_HOST_SERVICE_FAILURE);
         }

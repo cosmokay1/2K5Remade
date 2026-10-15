@@ -26,6 +26,8 @@ typedef struct FranchiseSigningDisplay {
     char title[310], priorities[160], offer[256], history[160];
 } FranchiseSigningDisplay;
 /* Format an already transport-validated read-only context; no I/O or grant. */
+/* Compare against the most recently consumed, validated runtime hello. */
+FranchiseHostStatus franchise_host_loaded_payload_matches(FranchiseHostClient *client,const char *sha256);
 FranchiseHostStatus franchise_host_signing_display(const char *response, FranchiseSigningDisplay *out);
 
 FranchiseHostStatus franchise_host_create(const wchar_t* python, const wchar_t* database,

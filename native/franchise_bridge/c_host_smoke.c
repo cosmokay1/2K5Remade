@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+int nfl2k5_franchise_source_path_matches(uint64_t epoch){return epoch!=0;}
+int nfl2k5_franchise_read_loaded_source(char out[65],uint64_t *epoch){out[0]=0;*epoch=0;return 0;}
 int nfl2k5_franchise_read_image(char out[65]){out[0]=0;return 0;}
 int nfl2k5_franchise_read_finance(struct FranchiseFinanceSnapshot *out){(void)out;return 0;}
 int nfl2k5_franchise_read_identity(const struct FranchiseFinanceSnapshot *finance,struct FranchiseIdentitySnapshot *out){(void)finance;(void)out;return 0;}

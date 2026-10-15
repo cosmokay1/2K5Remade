@@ -21,7 +21,7 @@
 static uint64_t reported_save_read,reported_load_epoch;
 static uint32_t reported_load_phase;
 #ifdef _WIN32
-#include "save_read_win.h"
+#include "source_binding_win.h"
 static SRWLOCK save_read_lock=SRWLOCK_INIT;
 static FranchiseSaveRead save_read;
 static FranchiseLoadRead load_read;
@@ -430,6 +430,43 @@ static void load_read_boundary(const FranchiseLoadEvent *event) {
     ReleaseSRWLockExclusive(&save_read_lock);
 }
 #endif
+#ifdef _WIN32
+static void loaded_source_copy(FranchiseSourceMatch *out) {
+    FranchiseLoadRead before,after;wchar_t *path=NULL;size_t length=0;
+    memset(out,0,sizeof(*out));
+    AcquireSRWLockShared(&save_read_lock);before=load_read;ReleaseSRWLockShared(&save_read_lock);
+    out->epoch=before.epoch;out->source=before.source;
+    if(_wdupenv_s(&path,&length,L"NFL2K5_FRANCHISE_GUEST_SAVE") || !path || length<=1){free(path);return;}
+    out->configured=1;
+    out->matched=before.phase==FRANCHISE_LOAD_DECODED_SEEN && franchise_source_matches_file(&before.source,path);
+    free(path);
+    AcquireSRWLockShared(&save_read_lock);after=load_read;ReleaseSRWLockShared(&save_read_lock);
+    if(before.epoch!=after.epoch || before.phase!=after.phase || memcmp(&before.source,&after.source,sizeof(before.source)))out->matched=0;
+}
+#endif
+#ifdef NFL2K5_FRANCHISE_CLIENT
+int nfl2k5_franchise_read_loaded_source(char out[65],uint64_t *epoch) {
+    if(!out || !epoch)return 0;
+    out[0]=0;*epoch=0;
+#ifdef _WIN32
+    AcquireSRWLockShared(&save_read_lock);
+    const int ready=load_read.phase==FRANCHISE_LOAD_DECODED_SEEN && load_read.source.sequence;
+    if(ready){memcpy(out,load_read.source.payload_sha256,65);*epoch=load_read.epoch;}
+    ReleaseSRWLockShared(&save_read_lock);return ready;
+#else
+    return 0;
+#endif
+}
+#endif
+#ifdef NFL2K5_FRANCHISE_CLIENT
+int nfl2k5_franchise_source_path_matches(uint64_t epoch) {
+#ifdef _WIN32
+    FranchiseSourceMatch match;loaded_source_copy(&match);return epoch && match.matched && match.epoch==epoch;
+#else
+    (void)epoch;return 0;
+#endif
+}
+#endif
 static int addon_event(const char *name,const void *data,size_t size) {
     if(name && data && !strcmp(name,NFL2K5_ADDON_LOADED_IMAGE) && size==sizeof(NFL2K5AddonImageIdentity)) {
         NFL2K5AddonImageIdentity next;
@@ -488,6 +525,9 @@ static int addon_event(const char *name,const void *data,size_t size) {
 }
 static int addon_snapshot(const char *name,void *out,size_t capacity) {
 #ifdef _WIN32
+    if(name && out && !strcmp(name,FRANCHISE_SOURCE_MATCH_SNAPSHOT) && capacity==sizeof(FranchiseSourceMatch)) {
+        loaded_source_copy(out);return 1;
+    }
     if(name && out && !strcmp(name,FRANCHISE_LOAD_READ_SNAPSHOT) && capacity==sizeof(FranchiseLoadRead)) {
         AcquireSRWLockShared(&save_read_lock);memcpy(out,&load_read,sizeof(load_read));int present=load_read.epoch!=0;
         ReleaseSRWLockShared(&save_read_lock);return present;
@@ -533,8 +573,8 @@ static void addon_poll(void) {
     AcquireSRWLockShared(&save_read_lock);load=load_read;ReleaseSRWLockShared(&save_read_lock);
     if(trace && !strcmp(trace,"1") && load.epoch && (reported_load_epoch!=load.epoch || reported_load_phase!=load.phase)) {
         reported_load_epoch=load.epoch;reported_load_phase=load.phase;
-        fprintf(stderr,"[FRANCHISE-TRACE] load_read epoch=%llu phase=%u stage=%u buffer=0x%08x size=%u kind=%u consumed=%u source_sequence=%llu source_scope=load_checkpoint namespace_bound=0\n",
-            (unsigned long long)load.epoch,load.phase,load.last_stage,load.buffer,load.raw_size,load.raw_kind,load.last_offset,(unsigned long long)load.source.sequence);
+        fprintf(stderr,"[FRANCHISE-TRACE] load_read epoch=%llu phase=%u stage=%u buffer=0x%08x size=%u kind=%u consumed=%u source_sequence=%llu source_volume=%u source_index=%08x:%08x source_scope=load_checkpoint namespace_bound=0\n",
+            (unsigned long long)load.epoch,load.phase,load.last_stage,load.buffer,load.raw_size,load.raw_kind,load.last_offset,(unsigned long long)load.source.sequence,load.source.volume,load.source.file_index_high,load.source.file_index_low);
     }
 #endif
     nfl2k5_franchise_guest_poll();

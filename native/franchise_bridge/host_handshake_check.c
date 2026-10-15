@@ -13,6 +13,9 @@ static DWORD owner;
 static char last_request[4096];
 static int image_present;
 static char image_digest[65];
+int nfl2k5_franchise_source_path_matches(uint64_t epoch){return epoch!=0;}
+int nfl2k5_franchise_read_loaded_source(char out[65],uint64_t *epoch){memset(out,'d',64);out[64]=0;*epoch=1;return 1;}
+FranchiseHostStatus franchise_host_loaded_payload_matches(FranchiseHostClient *c,const char *hash){(void)c;(void)hash;return FRANCHISE_HOST_OK;}
 int nfl2k5_franchise_read_image(char out[65]){memcpy(out,image_digest,65);return image_present;}
 static FranchiseHostStatus take_status = FRANCHISE_HOST_OK;
 int nfl2k5_franchise_read_finance(struct FranchiseFinanceSnapshot *out){(void)out;assert(0);return 0;}
