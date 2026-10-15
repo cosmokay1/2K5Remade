@@ -55,6 +55,10 @@ native offer submission, player response, legal financial commit and save recove
       Windows/Ubuntu, including actual native-client saved settlement and a
       fresh AI-disabled recovery process with authored save files.
       Native application and save/reload remain unconnected.
+      Judgment and precommit now use distinct addon events, so bypass/precommit
+      callers hold without creating interactive negotiation intents. Existing
+      generated v1 hooks have an explicit upgrade check; application permits
+      and the retail judgment-result replacement remain unfinished.
       Game-facing acceptance remains held until native application, save/reload
       and recovery are connected and verified. Actual game execution remains
       required. Do not enable this unfinished mode in the installed user runtime.

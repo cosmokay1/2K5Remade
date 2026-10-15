@@ -81,6 +81,7 @@ int wmain(int argc,wchar_t **argv) {
     uint32_t sentinel=0xAABBCCDD;
     if(api->event("unknown",&sentinel,sizeof(sentinel)) ||
        api->event(FRANCHISE_FSM_EVENT,&sentinel,sizeof(sentinel)) ||
+       api->event(FRANCHISE_SIGN_GATE_EVENT,&sentinel,sizeof(sentinel)) ||
        api->snapshot(FRANCHISE_DISPLAY_SNAPSHOT,&sentinel,sizeof(sentinel)) ||
        api->snapshot("unknown",&sentinel,sizeof(sentinel)) || sentinel!=0xAABBCCDD) return 30;
     FreeLibrary(dll);
@@ -90,6 +91,9 @@ int wmain(int argc,wchar_t **argv) {
         nfl2k5_franchise_guest_poll();
         nfl2k5_diag_signing(0,0,0,0,0);
         if(nfl2k5_franchise_hold_signing(0)) return 49;
+        if(nfl2k5_franchise_hold_signing_at(FRANCHISE_SIGN_JUDGMENT,0) ||
+           nfl2k5_franchise_hold_signing_at(FRANCHISE_SIGN_PRECOMMIT,0) ||
+           !nfl2k5_franchise_hold_signing_at(0,0)) return 50;
         FranchiseSigningDisplay display={0};
         if(nfl2k5_franchise_display(&display)) return 8;
         nfl2k5_franchise_stop();nfl2k5_franchise_stop();

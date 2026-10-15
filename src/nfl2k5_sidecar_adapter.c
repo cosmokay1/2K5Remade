@@ -304,8 +304,20 @@ int nfl2k5_franchise_hold_signing(uint32_t context) {
     FranchiseSigningObservation observation;
     return nfl2k5_franchise_submit_held(epoch && context && signing_screen_observation(&observation,context) ? &observation : NULL,epoch);
 }
+int nfl2k5_franchise_hold_signing_at(uint32_t stage,uint32_t context) {
+    if(stage==FRANCHISE_SIGN_JUDGMENT) return nfl2k5_franchise_hold_signing(context);
+    /* Bypass/CPU callers reaching precommit must still stop, but cannot
+     * masquerade as a new interactive offer and trigger inference. */
+    if(stage==FRANCHISE_SIGN_PRECOMMIT) return nfl2k5_franchise_submit_held(NULL,0);
+    return 1;
+}
 static int addon_event(const char *name,const void *data,size_t size) {
     if(!name || !data) return 0;
+    if(!strcmp(name,FRANCHISE_SIGN_GATE_EVENT) && size==sizeof(FranchiseSignGateEvent)) {
+        FranchiseSignGateEvent event;memcpy(&event,data,sizeof(event));
+        if(event.stage!=FRANCHISE_SIGN_JUDGMENT && event.stage!=FRANCHISE_SIGN_PRECOMMIT) return 0;
+        return nfl2k5_franchise_hold_signing_at(event.stage,event.context);
+    }
     if(!strcmp(name,FRANCHISE_SIGN_SUBMIT_EVENT) && size==sizeof(uint32_t)) {
         uint32_t context;memcpy(&context,data,sizeof(context));
         return nfl2k5_franchise_hold_signing(context);

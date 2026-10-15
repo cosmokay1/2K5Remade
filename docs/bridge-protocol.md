@@ -568,3 +568,25 @@ save; this loop does not prove that selection, guest application or game reload.
 A new process does not guess its old journal: explicit-ID recovery remains
 available through `guest_signing_status`, including with failed AI initialization.
 Unreadable-startup recovery and safe guest application remain unfinished.
+
+### Stage-aware native signing holds
+
+The application-private `franchise.sign-gate.v2` event carries two uint32 fields:
+`stage` (1=interactive judgment, 2=shared precommit) and `context`. It retains
+boolean hold semantics: nonzero means stop through the original failure cleanup;
+zero permits the existing retail path. This is not an application permit, retail
+judgment bypass, guest write API or public addon ABI version change.
+
+The current addon captures an interactive offer only at judgment. Precommit
+checks the existing held-mode flag without sampling player memory, obtaining a
+submission epoch or creating a new offer intent. This prevents bypass/CPU callers
+from being mistaken for a new interactive negotiation. Invalid stages/sizes are
+rejected. The game shim holds unknown stage values and retains the v1 fallback
+for older addons, so lack of v2 support cannot defeat a legacy hold.
+
+Both interpreter and generated-code hooks label the two boundaries explicitly.
+The generator patch tool upgrades only recognized old signing bodies in cached
+source; `--check` rejects old hooks, edited bodies fail visibly, and CRLF is
+preserved. Other marked patches retain their existing behavior. An application
+permit still needs exact current-state/control checks and a verified replacement
+for the original judgment result before any native write may be enabled.

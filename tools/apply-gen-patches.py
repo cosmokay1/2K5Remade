@@ -13,6 +13,7 @@ addresses, so they survive regeneration). Idempotent: a patch whose marker is
 already present is skipped. Fails loudly if an anchor can't be found, so a
 toolchain change that moves the code is noticed instead of silently dropping
 the patch again. tools/build.ps1 -Game runs this before every build.
+Recognized old signing gate bodies are upgraded in place; edited ones fail.
 
 The AC97 reset ack is included too; if the pre-existing hand-applied copy is
 already there (no marker), the anchor check below skips re-inserting it.
@@ -326,10 +327,10 @@ PATCHES = [
     # offers defer before retail judgment; bypass callers also defer before
     # ownership/contract writes. The addon never grants a commit here.
     ("FRANCHISE_SIGN_HOLD_JUDGMENT", "sub_00323D80", "loc_00323F0A: ;", "after", """\
-    { extern int nfl2k5_franchise_hold_signing(uint32_t); if(nfl2k5_franchise_hold_signing(esi)) goto loc_00323E99; }
+    { extern int nfl2k5_franchise_hold_signing_at(uint32_t, uint32_t); if(nfl2k5_franchise_hold_signing_at(1u, esi)) goto loc_00323E99; }
 """),
     ("FRANCHISE_SIGN_HOLD_COMMIT", "sub_00323D80", "loc_00323F17: ;", "after", """\
-    { extern int nfl2k5_franchise_hold_signing(uint32_t); if(nfl2k5_franchise_hold_signing(esi)) goto loc_00323E99; }
+    { extern int nfl2k5_franchise_hold_signing_at(uint32_t, uint32_t); if(nfl2k5_franchise_hold_signing_at(2u, esi)) goto loc_00323E99; }
 """),
     # Shared signing checkpoints: observe original inputs and judgment without
     # replacing roster/cap/history effects. Pass addresses, not unchecked MEM32.
@@ -735,8 +736,26 @@ def main():
             continue
         # The function ends at the next top-level closing brace.
         end = next((j for j in range(start + 1, len(lines)) if lines[j].rstrip("\r") == "}"), len(lines))
-        body = lines[start:end]
-        if any(marker(pid) in l for l in body):
+        marked = next((j for j in range(start,end) if marker(pid) in lines[j]),None)
+        if marked is not None and pid in ("FRANCHISE_SIGN_HOLD_JUDGMENT","FRANCHISE_SIGN_HOLD_COMMIT"):
+            # Upgrade only the recognized old one-line hold. Existing generated
+            # caches otherwise retain v1 forever because their marker is present.
+            old="{ extern int nfl2k5_franchise_hold_signing(uint32_t); if(nfl2k5_franchise_hold_signing(esi)) goto loc_00323E99; }"
+            expected=code.strip()
+            current=lines[marked+1].strip() if marked+1<end else ""
+            if current!=expected:
+                if current!=old:
+                    failed.append("%s: unrecognized signing gate body" % pid)
+                elif check_only:
+                    failed.append("%s: old signing gate requires upgrade" % pid)
+                else:
+                    eol="\r" if lines[marked+1].endswith("\r") else ""
+                    lines[marked+1]="    "+expected+eol
+                    with open(path,"w",encoding="utf-8",newline="") as f:
+                        f.write("\n".join(lines))
+                    applied.append("%s upgraded -> %s" % (pid,os.path.basename(path)))
+                continue
+        if marked is not None:
             present.append(pid)
             continue
         hit = next((j for j in range(start, end) if lines[j].strip() == anchor), None)

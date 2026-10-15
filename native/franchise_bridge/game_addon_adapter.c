@@ -34,3 +34,16 @@ int nfl2k5_franchise_hold_signing(uint32_t context) {
     (void)context;return 0;
 #endif
 }
+
+int nfl2k5_franchise_hold_signing_at(uint32_t stage,uint32_t context) {
+    if(stage!=1u && stage!=2u) return 1;
+#ifdef NFL2K5_FRANCHISE_CLIENT
+    const FranchiseSignGateEvent event={stage,context};
+    if(nfl2k5_addon_event(FRANCHISE_SIGN_GATE_EVENT,&event,sizeof(event))) return 1;
+    /* Older ABI2 addons only know v1. An unknown v2 event must not release
+     * a transaction that the legacy addon would have held. */
+    return nfl2k5_franchise_hold_signing(context);
+#else
+    (void)context;return 0;
+#endif
+}

@@ -50558,7 +50558,7 @@ loc_00323EF7: ;
 
 loc_00323F0A: ;
     /* NFL2K5-GENPATCH:FRANCHISE_SIGN_HOLD_JUDGMENT */
-    { extern int nfl2k5_franchise_hold_signing(uint32_t); if(nfl2k5_franchise_hold_signing(esi)) goto loc_00323E99; }
+    { extern int nfl2k5_franchise_hold_signing_at(uint32_t, uint32_t); if(nfl2k5_franchise_hold_signing_at(1u, esi)) goto loc_00323E99; }
     edi = ebp;
     ecx = esi;
     PUSH32(esp, 0x00323F13u); RECOMP_ABI_CALL(0x00323A60u, sub_00323A60); /* call 0x00323A60 */
@@ -50575,7 +50575,7 @@ loc_00323F17: ;
     /* NFL2K5-GENPATCH:FRANCHISE_SIGN_PRECOMMIT */
     { extern void nfl2k5_diag_signing(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); nfl2k5_diag_signing(2, esi, ebp, 0, esp); }
     /* NFL2K5-GENPATCH:FRANCHISE_SIGN_HOLD_COMMIT */
-    { extern int nfl2k5_franchise_hold_signing(uint32_t); if(nfl2k5_franchise_hold_signing(esi)) goto loc_00323E99; }
+    { extern int nfl2k5_franchise_hold_signing_at(uint32_t, uint32_t); if(nfl2k5_franchise_hold_signing_at(2u, esi)) goto loc_00323E99; }
     edi = MEM32(esp + 0x10);
     _fa = (uint32_t)(edi) & 0xFFFFFFFFu; _fb = (uint32_t)(edi) & 0xFFFFFFFFu;
     _fas = (int32_t)(int32_t)(_fa); _fbs = (int32_t)(int32_t)(_fb); /* test edi, edi (32-bit) */

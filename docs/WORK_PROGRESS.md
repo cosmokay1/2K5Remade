@@ -6371,3 +6371,44 @@ C-client/cache/handshake/interpreter fixtures and money audit also passed.
 This closes native saved-state coordination for the active journal, not real
 in-game guest application, active-save discovery, session rebinding or reload.
 No installation, retail file mutation, paid inference or control change occurred.
+
+## Separate judgment and precommit addon boundaries
+
+Static inspection confirmed that the existing single boolean hook conflates the
+interactive judgment return and the bypass/shared precommit path. Added the
+application-private franchise.sign-gate.v2 payload (stage/context) without
+changing public ABI2. Judgment retains existing captured-offer submission.
+Precommit calls only the held-mode check with NULL/zero intent, without guest
+sampling or treating a bypass/CPU call as a new interactive negotiation. The
+thin host preserves v1 fallback for older addons; nonboolean nonzero results and
+unknown stages remain held. No code issues an application permit or bypasses
+retail judgment. The interpreter keeps the same cleanup target and splits its
+callbacks by stage. The generated patches now pass the same stage labels.
+
+Existing generator markers previously caused cached code to skip updated patch
+bodies indefinitely. The patcher now upgrades exactly the recognized old one-line
+signing hook, rejects old hooks under --check, refuses edited bodies and preserves
+CRLF. It does not replace arbitrary contributor edits or generalize patch upgrades.
+Fresh, old, edited, repeated and CRLF authored-cache cases are covered.
+
+Validation:792 local Python regressions passed26.327s. Three portable native
+checks passed0.47s: protocol, actual thin shim (including old-addon hold fallback)
+and actual DLL adapter with inert host callbacks. Precommit sampled no memory or
+epoch and created no observation intent; judgment retained its normal sampling
+path. Disabled behavior and invalid message sizes/stages were checked. Windows
+DLL forwarding fixtures now exercise the new stages while service is disabled.
+A full local generated-tree --check is running to verify its existing cached
+hooks are detected; Windows compilation/execution and new source CI remain to
+verify. The installed game, controls and saves are unchanged. Safe application
+still requires a verified live-state/control permit and replacement judgment
+result semantics, followed by actual game save/reload evidence.
+
+Full generated-tree --check reported exactly the two recognized old signing
+bodies; every other patch was already present. Applied only those two upgrades
+to the existing local cache and the scoped stage check then passed. The tracked
+generated diff contains only the two owned hook call/prototype changes; no new
+retail data or executable is added. Static inspection also showed that the retail
+judgment routine supplies an output score through the transaction's out-parameter.
+A future authorized bypass must preserve verified result semantics as well as
+current-state guards; blindly jumping to precommit is not a completed solution.
+No permit or result-score substitution was implemented in this hold-only change.
