@@ -6756,3 +6756,27 @@ Receipt: native-05ac4e9/validate-receipt.json on the Deck. The new capture featu
 is not in that staged pair and has not been installed. Actual capture, contract
 application, full opening accounting and signing/save/reload remain open. No AI
 control was renewed or enabled, and no paid inference occurred.
+
+### Isolated SOFTDRINK guest execution after validation
+
+The source05ac4e9 pair also entered actual recompiled guest execution under Deck
+Proton in its isolated runtime/profile. The boot log reports D3D11 readiness,
+1200 GPU frames/1197 draws, ongoing vblank,1478 audio submissions with zero
+reported dropped/underrun submissions, and later60FPS samples. These are runtime
+activity counters, not a visual, frame-pacing or gameplay acceptance test.
+The tiled-aperture warning remains and must not be dismissed from these counters.
+
+Spectacle screenshot capture timed out, so the unattended boot runner did not
+reach its automatic cleanup. A subsequent window-close request targeted the owned
+test game PID136118; process inspection confirmed no remaining game or screenshot
+process. No clean-exit marker was recorded, so orderly game shutdown is not
+proven. The private runner now handles screenshot timeout before cleanup for a
+future run. No franchise was opened or saved, no installed files were replaced,
+and no image/screenshot or playable-delivery claim follows.
+
+Private boot.log, validate-receipt.json and addon-boundary-receipt.json are copied
+to .local-runtime/native-05ac4e9 for continuity. New capture source6291411 passed
+Build38754170971 on Windows/Linux and its Ubuntu Franchise38754170960 job.
+The same run's Windows job remains active in Python regressions; native Windows
+capture execution is not yet verified. Do not deploy the new capture DLL based
+on the older source05ac4e9 component/game evidence.
