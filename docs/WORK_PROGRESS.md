@@ -7534,3 +7534,22 @@ save/reload remain open. No installed runtime, save, control or credentials chan
 The preceding7b536c2 source is now fully green in Windows/Ubuntu
 Franchise38779416527 and Build38779416490. This supersedes its earlier pending
 status. New Windows CI and actual private Windows guard execution remain next.
+
+Source7a39913 now also builds the actual Windows pending-work fixture, matching
+DLL/host boundary fixture and full game using the private offline compiler. Under
+the isolated Proton fixture profile, actual child output verifies pending queue
+refusal, no grant on clear queues, and separate DLL load/forward/refusal/reload
+checks. Launcher exit0 and marker addon-passed are required; receipt:
+native-05ac4e9/pending-boundary-receipt.json. The isolated game --validate also
+returns0 with child marker validated and [TEST] Validation passed, recorded in
+validate-pending-receipt.json. All318 effective owned source hashes match the
+current committed source; layered manifest is pending-effective-source-manifest.json.
+EXE SHA256ec6d59595c7e7ef2bd82764c6e90051e2151a5df3ee0758760fb6ec1a58edb83;
+DLLf591e83c8c1c8a7e081a9eb88da6271f025223d20b2e10081fdad4d2a750f660.
+Existing isolated-validation mirror/tiled-aperture warnings remain. This is not
+rendering, live signing, save/reload or permit evidence. Installed EXE/DLL/launcher
+still match their previous eefe906a...f5c9/8b9bfb63...2b32a/94f7dccc...c718 hashes.
+No installed pair, launch configuration, user save or remote control changed.
+
+Build38781544176 and full Windows/Ubuntu Franchise38781544199 now pass.
+The terminal GitHub result supersedes the earlier pending observation.

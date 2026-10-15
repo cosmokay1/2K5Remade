@@ -100,6 +100,9 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       native trades/offers or the queue sample is unreadable/changing. Clear
       queues still grant nothing. The known cleanup/popup path has a verified
       queue prerequisite; full exclusive-application proof remains open.
+      Guard source7a39913 passes Windows/Ubuntu Franchise38781544199 and
+      Build38781544176, actual private Windows/Proton queue/DLL checks and
+      isolated full-game --validate. The installed runtime remains unchanged.
       Source7b536c2 passes actual Windows/Proton protocol, owner-host, adapter
       and client/sidecar live-before-save/completion/settlement/restart fixtures
       with authored data, plus isolated full-game --validate. Build38779416490
