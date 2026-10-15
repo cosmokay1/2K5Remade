@@ -574,7 +574,7 @@ Unreadable-startup recovery and safe guest application remain unfinished.
 The application-private `franchise.sign-gate.v2` event carries two uint32 fields:
 `stage` (1=interactive judgment, 2=shared precommit) and `context`. It retains
 boolean hold semantics: nonzero means stop through the original failure cleanup;
-zero permits the existing retail path. This is not an application permit, retail
+zero defers to the host's legacy/explicit-mode guard. This is not an application permit, retail
 judgment bypass, guest write API or public addon ABI version change.
 
 The current addon captures an interactive offer only at judgment. Precommit
@@ -590,3 +590,11 @@ source; `--check` rejects old hooks, edited bodies fail visibly, and CRLF is
 preserved. Other marked patches retain their existing behavior. An application
 permit still needs exact current-state/control checks and a verified replacement
 for the original judgment result before any native write may be enabled.
+
+For a controlled game build, `NFL2K5_FRANCHISE_NEGOTIATION=1` also keeps the host's
+signing guard active if the addon is missing, disabled, fails startup or does not
+handle the event. Neither an unavailable module nor a zero legacy/v2 reply may
+silently release retail signing in that mode. Unset/0 retains vanilla behavior
+when no addon requests a hold. Manager selection alone does not clear this
+explicit launch setting; it must remain consistent with the selected franchise
+mode. This guard is not a remote AI grant or a safe enhanced-save uninstall path.

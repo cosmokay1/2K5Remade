@@ -3,10 +3,18 @@
 #include "../game_addon/loader.h"
 #include "franchise_addon.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 static int gate_reply,legacy_reply;
 static unsigned gates,legacy;
 static uint32_t last_stage,last_context;
+static int mode(const char* value){
+#ifdef _WIN32
+    return _putenv_s("NFL2K5_FRANCHISE_NEGOTIATION",value);
+#else
+    return setenv("NFL2K5_FRANCHISE_NEGOTIATION",value,1);
+#endif
+}
 int nfl2k5_addon_start(void){return 1;}
 void nfl2k5_addon_stop(void){}
 void nfl2k5_addon_poll(void){}
@@ -22,6 +30,7 @@ int nfl2k5_addon_event(const char* name,const void* data,size_t size){
     return 0;
 }
 int main(void){
+    if(mode("0")) return 6;
     for(uint32_t stage=FRANCHISE_SIGN_JUDGMENT;stage<=FRANCHISE_SIGN_PRECOMMIT;++stage){
         gates=legacy=0;gate_reply=1;legacy_reply=0;
         if(!nfl2k5_franchise_hold_signing_at(stage,0x12345678u) || gates!=1 || legacy ||
@@ -36,5 +45,12 @@ int main(void){
     }
     gates=legacy=0;
     if(!nfl2k5_franchise_hold_signing_at(0,0) || !nfl2k5_franchise_hold_signing_at(3,0) || gates || legacy) return 5;
+    // Explicit controlled mode cannot silently become retail when a module is
+    // missing, disabled, fails startup, or does not handle these messages.
+    gate_reply=legacy_reply=0;
+    if(mode("1") || !nfl2k5_franchise_hold_signing_at(FRANCHISE_SIGN_JUDGMENT,0) ||
+       !nfl2k5_franchise_hold_signing_at(FRANCHISE_SIGN_PRECOMMIT,0) || !nfl2k5_franchise_hold_signing(0)) return 7;
+    if(mode("0") || nfl2k5_franchise_hold_signing_at(FRANCHISE_SIGN_JUDGMENT,0) ||
+       nfl2k5_franchise_hold_signing_at(FRANCHISE_SIGN_PRECOMMIT,0)) return 8;
     puts("Stage-aware signing shim, legacy hold fallback and no-write behavior passed");return 0;
 }

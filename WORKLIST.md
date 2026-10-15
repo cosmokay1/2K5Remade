@@ -59,6 +59,8 @@ native offer submission, player response, legal financial commit and save recove
       callers hold without creating interactive negotiation intents. Existing
       generated v1 hooks have an explicit upgrade check; application permits
       and the retail judgment-result replacement remain unfinished.
+      An explicitly requested controlled-signing mode now also holds when the
+      addon is unavailable, rather than silently falling through to retail.
       Game-facing acceptance remains held until native application, save/reload
       and recovery are connected and verified. Actual game execution remains
       required. Do not enable this unfinished mode in the installed user runtime.

@@ -6412,3 +6412,17 @@ judgment routine supplies an output score through the transaction's out-paramete
 A future authorized bypass must preserve verified result semantics as well as
 current-state guards; blindly jumping to precommit is not a completed solution.
 No permit or result-score substitution was implemented in this hold-only change.
+
+33ea4ec stage source passed Franchise38711085426 Windows2022/Ubuntu and
+Build38711085469 Windows/Linux, including actual DLL/shim/adapter stage checks.
+Review then found a fail-open edge in the pre-existing host shim: if explicit
+controlled negotiation was requested but addon event dispatch returned zero
+(missing/disabled/failed module), the original retail transaction could continue.
+The shim now retains the hold whenever NFL2K5_FRANCHISE_NEGOTIATION=1, for v1
+and stage-aware paths. Unset/0 retains vanilla behavior when no addon holds.
+This source-only guard does not enable AI, change launch settings or grant writes.
+Portable actual-shim tests verify missing-handler responses under both launch
+settings, and the Windows loader fixture exercises the hold after module stop.
+The fixture uses CRT environment setters to match the shim's getenv semantics.
+All three local native checks passed0.65s. Fresh Windows CI is required for this
+follow-up; the installed runtime remains untouched.

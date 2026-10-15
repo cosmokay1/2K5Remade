@@ -99,6 +99,10 @@ int wmain(int argc,wchar_t **argv) {
         nfl2k5_franchise_stop();nfl2k5_franchise_stop();
         if(nfl2k5_franchise_display(&display)) return 9;
     }
+    if(_putenv_s("NFL2K5_FRANCHISE_NEGOTIATION","1") ||
+       !nfl2k5_franchise_hold_signing_at(FRANCHISE_SIGN_JUDGMENT,0) ||
+       !nfl2k5_franchise_hold_signing_at(FRANCHISE_SIGN_PRECOMMIT,0)) return 51;
+    if(_putenv_s("NFL2K5_FRANCHISE_NEGOTIATION","")) return 52;
     /* Load a DLL that only includes the domain-neutral public API. */
     SetEnvironmentVariableW(L"NFL2K5_SIDECAR_ADDON",argv[3]);
     if(!nfl2k5_addon_start()) return 31;

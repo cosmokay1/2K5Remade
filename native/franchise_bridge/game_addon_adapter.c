@@ -1,5 +1,11 @@
 /* Existing game call sites speak franchise; the module loader does not. */
 #include "../../src/nfl2k5_sidecar_adapter.h"
+#include <stdlib.h>
+#include <string.h>
+static int controlled_signing_requested(void) {
+    const char *mode=getenv("NFL2K5_FRANCHISE_NEGOTIATION");
+    return mode && !strcmp(mode,"1");
+}
 #ifdef NFL2K5_FRANCHISE_CLIENT
 #include "../game_addon/loader.h"
 #include "franchise_addon.h"
@@ -29,9 +35,9 @@ void nfl2k5_diag_signing(uint32_t stage,uint32_t context,uint32_t result,uint32_
 
 int nfl2k5_franchise_hold_signing(uint32_t context) {
 #ifdef NFL2K5_FRANCHISE_CLIENT
-    return nfl2k5_addon_event(FRANCHISE_SIGN_SUBMIT_EVENT,&context,sizeof(context))!=0;
+    return nfl2k5_addon_event(FRANCHISE_SIGN_SUBMIT_EVENT,&context,sizeof(context))!=0 || controlled_signing_requested();
 #else
-    (void)context;return 0;
+    (void)context;return controlled_signing_requested();
 #endif
 }
 
