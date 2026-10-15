@@ -6924,3 +6924,24 @@ The user reported the Deck ready; SSH now connects and confirms the same running
 PID137707. Its capture path remains configured and the capture file is absent.
 The user was asked to confirm a MyNFL1 offer screen without submitting. No game,
 addon, save or launcher replacement was made while the session was running.
+
+
+### SOFTDRINK interpreted FSM observation gap
+
+The user confirms a MyNFL1 offer screen is open, while the configured live
+capture is absent. Comparing legally supplied retail and pinned SOFTDRINK v0.6
+images shows that FSM push0006E390 is detoured in the pack, so the generated
+DIAG_FSMPUSH callback never executes. The offer descriptor00557B2C and original
+push checkpoint0006E3E6 are unchanged. The pack detour rejoins the original
+routine at0006E39A; its descriptor mapper only substitutes two other screen
+identifiers, preserving the contract-offer descriptor. FSM pop is unchanged.
+
+Added interpreter observation callbacks at the same push/pop checkpoints, before
+the negotiation-mode check, because read-only context/capture must work with AI
+off. The existing main call installs them only for the pinned v0.6 pack hash.
+Transaction gates remain opt-in. An asset-free test compiles the actual owned
+hook block and verifies disabled negotiation installs just the observation hooks,
+with exact object/descriptor/push values, unchanged registers and no guest jump;
+enabled mode adds the existing signing gates. Local test passes. Actual Windows
+build and new installed menu event/capture remain to verify; the running game
+has not been interrupted or changed.

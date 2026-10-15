@@ -2710,6 +2710,13 @@ void nfl2k5_scorebug_interp_hooks(void)
 /* The pinned pack changes the shared signing routine's roster-limit call, so
  * its generated-code deferral patches do not execute. Reuse the existing
  * interpreter hook facility; negotiation policy remains in the optional DLL. */
+extern void nfl2k5_diag_fsm(uint32_t object,uint32_t descriptor,int push);
+static uint32_t ih_franchise_fsm_push(void) {
+    nfl2k5_diag_fsm(g_esi,g_edi,1); return 0;
+}
+static uint32_t ih_franchise_fsm_pop(void) {
+    nfl2k5_diag_fsm(g_esi,0,0); return 0;
+}
 extern int nfl2k5_franchise_hold_signing_at(uint32_t stage,uint32_t context);
 extern int nfl2k5_franchise_signing_was_held(uint32_t context);
 static uint32_t ih_franchise_sign_enter(void) {
@@ -2731,6 +2738,10 @@ static uint32_t ih_franchise_hold_precommit(void) {
 }
 void nfl2k5_franchise_interp_hooks(void) {
 #ifdef NFL2K5_FRANCHISE_CLIENT
+    /* Pack detours can interpret FSM code even with AI/negotiation disabled.
+     * Keep observation/capture independent of the opt-in transaction gates. */
+    recomp_interp_add_hook(0x0006E3E6u,0,ih_franchise_fsm_push);
+    recomp_interp_add_hook(0x0006E439u,0,ih_franchise_fsm_pop);
     const char *mode=getenv("NFL2K5_FRANCHISE_NEGOTIATION");
     if(!mode || strcmp(mode,"1")) return;
     recomp_interp_add_hook(0x00324088u,0,ih_franchise_hold_cpu_offer);
