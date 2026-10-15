@@ -2706,3 +2706,19 @@ void nfl2k5_scorebug_interp_hooks(void)
     if (mask & 8) recomp_interp_add_hook(0x000FCFA7u, 0, ih_native);          /* SCOREBUG_NATIVE_HOOK */
     if (mask & 16) recomp_interp_add_hook(0x000FD178u, 0x000FD175u, ih_place); /* SCOREBUG_NATIVE_HIDE2, before the loop label */
 }
+
+/* The pinned pack changes the shared signing routine's roster-limit call, so
+ * its generated-code deferral patches do not execute. Reuse the existing
+ * interpreter hook facility; negotiation policy remains in the optional DLL. */
+extern int nfl2k5_franchise_hold_signing(uint32_t context);
+static uint32_t ih_franchise_hold(void) {
+    return nfl2k5_franchise_hold_signing(g_esi) ? 0x00323E99u : 0;
+}
+void nfl2k5_franchise_interp_hooks(void) {
+#ifdef NFL2K5_FRANCHISE_CLIENT
+    const char *mode=getenv("NFL2K5_FRANCHISE_NEGOTIATION");
+    if(!mode || strcmp(mode,"1")) return;
+    recomp_interp_add_hook(0x00323F0Au,0,ih_franchise_hold);
+    recomp_interp_add_hook(0x00323F17u,0,ih_franchise_hold);
+#endif
+}

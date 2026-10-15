@@ -26,3 +26,11 @@ void nfl2k5_diag_signing(uint32_t stage,uint32_t context,uint32_t result,uint32_
     (void)stage;(void)context;(void)result;(void)code;(void)stack;
 #endif
 }
+
+int nfl2k5_franchise_hold_signing(uint32_t context) {
+#ifdef NFL2K5_FRANCHISE_CLIENT
+    return nfl2k5_addon_event(FRANCHISE_SIGN_SUBMIT_EVENT,&context,sizeof(context))!=0;
+#else
+    (void)context;return 0;
+#endif
+}

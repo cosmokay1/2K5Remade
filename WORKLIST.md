@@ -22,7 +22,22 @@ Repository: https://github.com/cosmokay1/2K5Remade
 Branch: `codex/franchise-negotiation`. Progress evidence: [WORK_PROGRESS.md](docs/WORK_PROGRESS.md).
 Resume from the earliest unblocked unchecked item, respecting dependencies.
 
-## Current priority — standalone connection addon
+## Current priority — core franchise negotiation
+
+The user deferred additional statistics investigation on October14. Prioritize
+native offer submission, player response, legal financial commit and save recovery.
+
+- [ ] Finish held native submission through accepted proposal, guest/ledger commit
+      and recovery. An opt-in source path now defers retail judgment/precommit,
+      queues one captured proposal and presents the response; accepted deals remain
+      held until the settlement path is implemented. Actual game execution remains
+      required. Do not enable this unfinished mode in the installed user runtime.
+- [ ] Reconcile the required opening obligations/rules before permitting financial
+      writes, then prove signing and save/reload on the pinned pack.
+- [ ] Complete draft, persistent stories/promises, shutdown and final delivery checks
+      below. Defer broader stat mapping while the core signing flow is incomplete.
+
+## Connection addon foundation
 
 The user requested extracting connection tooling into its own addon, then consuming
 it from the franchise application. Keep domain rules out of the reusable core.

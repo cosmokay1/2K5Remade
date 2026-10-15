@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "host_client.h"
 #define FRANCHISE_FSM_EVENT "franchise.fsm.v1"
+#define FRANCHISE_SIGN_SUBMIT_EVENT "franchise.sign-submit.v1"
 #define FRANCHISE_SIGNING_EVENT "franchise.signing.v1"
 #define FRANCHISE_DISPLAY_SNAPSHOT "franchise.signing-display.v1"
 typedef struct FranchiseFSMEvent { uint32_t object, descriptor, push; } FranchiseFSMEvent;

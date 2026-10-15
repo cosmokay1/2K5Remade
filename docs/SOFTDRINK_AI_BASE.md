@@ -62,5 +62,6 @@ values a second time would be wrong. See [Mynfl1 audit](MYNFL1_CAP_AUDIT.md).
 The pack's encoded contract total represents fitted remaining cap liability, not
 necessarily original headline value, cash or guarantees. Existing real-world
 released-player debt/reserve obligations and exact schedules remain to reconcile.
-The retail-only strict reader currently rejects valid changed settings/expanded
-record counts; fix that schema support before automated pack import.
+The strict reader now supports the declared expanded bank and variable settings.
+An explicit hash-pinned opening binding supplies logical2026 and4:1 legacy export.
+Complete obligations and actual guest/ledger commit verification remain open.

@@ -21,6 +21,8 @@ typedef struct {
 } FranchiseSigningObservation;
 /* Optional pinned-snapshot inspection only; never a transaction or AI grant. */
 int nfl2k5_franchise_context_enabled(void);
+/* Explicit opt-in proposal mode always defers native writes; no commit grant. */
+int nfl2k5_franchise_submit_held(int selected_context_matches);
 /* NULL invalidates sample freshness without submitting or resetting debounce. */
 void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *observation);
 /* Renderer-safe owned copy; never touches transport or guest memory. */

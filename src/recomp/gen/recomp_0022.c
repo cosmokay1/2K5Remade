@@ -50287,6 +50287,8 @@ void sub_00323D80(void)
     ebp = g_seh_ebp; /* fpo_leaf: inherit caller's frame */
 
 loc_00323D80: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_SIGN_ENTER */
+    { extern void nfl2k5_diag_signing(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); nfl2k5_diag_signing(0, ecx, edx, 0, esp); }
     _fb = (uint32_t)(0xC) & 0xFFFFFFFFu; _fbs = (int32_t)(int32_t)(_fb); /* sub source, before the write */
     _cf = (int)((uint32_t)(esp) < (uint32_t)(0xC));
     esp = esp - 0xC;
@@ -50555,17 +50557,25 @@ loc_00323EF7: ;
     if (TEST_NZ(_fa, _fb)) goto loc_00323F17; /* jne: not equal / not zero */
 
 loc_00323F0A: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_SIGN_HOLD_JUDGMENT */
+    { extern int nfl2k5_franchise_hold_signing(uint32_t); if(nfl2k5_franchise_hold_signing(esi)) goto loc_00323E99; }
     edi = ebp;
     ecx = esi;
     PUSH32(esp, 0x00323F13u); RECOMP_ABI_CALL(0x00323A60u, sub_00323A60); /* call 0x00323A60 */
 
 loc_00323F13: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_SIGN_JUDGED */
+    { extern void nfl2k5_diag_signing(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); nfl2k5_diag_signing(1, esi, ebp, eax, esp); }
     _fa = (uint32_t)(eax) & 0xFFFFFFFFu; _fb = (uint32_t)(eax) & 0xFFFFFFFFu;
     _fas = (int32_t)(int32_t)(_fa); _fbs = (int32_t)(int32_t)(_fb); /* test eax, eax (32-bit) */
     _cf = 0; /* test/cmp-logical clears CF */
     if (TEST_Z(_fa, _fb)) goto loc_00323E99; /* je: equal / zero */
 
 loc_00323F17: ;
+    /* NFL2K5-GENPATCH:FRANCHISE_SIGN_PRECOMMIT */
+    { extern void nfl2k5_diag_signing(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); nfl2k5_diag_signing(2, esi, ebp, 0, esp); }
+    /* NFL2K5-GENPATCH:FRANCHISE_SIGN_HOLD_COMMIT */
+    { extern int nfl2k5_franchise_hold_signing(uint32_t); if(nfl2k5_franchise_hold_signing(esi)) goto loc_00323E99; }
     edi = MEM32(esp + 0x10);
     _fa = (uint32_t)(edi) & 0xFFFFFFFFu; _fb = (uint32_t)(edi) & 0xFFFFFFFFu;
     _fas = (int32_t)(int32_t)(_fa); _fbs = (int32_t)(int32_t)(_fb); /* test edi, edi (32-bit) */

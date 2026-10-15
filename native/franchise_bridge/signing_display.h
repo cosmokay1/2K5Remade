@@ -4,11 +4,38 @@
 #include <algorithm>
 #include <array>
 #include <string>
+#include <iomanip>
+#include <sstream>
 namespace franchise {
 struct SigningDisplayText { std::string priorities,offer,history; };
 inline SigningDisplayText signing_display(const nlohmann::json& response) {
     if(!response.at("error").is_null()) throw std::runtime_error("No valid signing context");
     const auto& result=response.at("result");
+    if(result.contains("signing_checkpoint")) {
+        auto checkpoint=response;checkpoint["result"]=result.at("signing_checkpoint");
+        auto text=signing_display(checkpoint);
+        const auto outcome=result.at("outcome").get<std::string>();
+        if(outcome=="accepted_proposal") text.offer="Player accepts the proposal. Signing remains held.";
+        else if(outcome=="counteroffer") {
+            const auto& counter=result.at("counter");
+            long double total=counter.at("signing_bonus").get<int64_t>();
+            for(const auto& salary:counter.at("salaries")) total+=salary.get<int64_t>();
+            std::ostringstream label;
+            label<<"Counter: "<<counter.at("salaries").size()<<" years, $"<<std::fixed<<std::setprecision(3)
+                 <<total/1000000<<"M total. Signing remains held.";
+            text.offer=label.str();
+        }
+        else if(outcome=="player_rejected") text.offer="Player rejected the offer. Signing remains held.";
+        else if(outcome=="accounting_rejected") text.offer="Offer failed accounting checks. Signing remains held.";
+        else throw std::runtime_error("Unsupported held negotiation outcome");
+        const auto reason=result.at("reason").get<std::string>();
+        size_t count=std::min<size_t>(reason.size(),140);
+        while(count && count<reason.size() && (static_cast<unsigned char>(reason[count])&0xC0)==0x80) --count;
+        text.history="Reason: "+reason.substr(0,count);
+        for(auto& c:text.history) if(static_cast<unsigned char>(c)<32) c=' ';
+        return text;
+    }
+
     if(result.at("write_authorized")!=false || result.at("ai_authorized")!=false)
         throw std::runtime_error("Display cannot grant negotiation authority");
     const auto& personality=result.at("player_context").at("personality");

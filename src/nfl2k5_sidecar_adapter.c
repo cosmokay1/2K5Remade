@@ -289,8 +289,17 @@ static void addon_stop(void) {
     nfl2k5_franchise_stop();
     memset(&adapter_host,0,sizeof(adapter_host));
 }
+int nfl2k5_franchise_hold_signing(uint32_t context) {
+    uint32_t selected=0;
+    const int matches=signing_screen_read(0x00CB8C34u,&selected,sizeof(selected)) && selected==context;
+    return nfl2k5_franchise_submit_held(matches);
+}
 static int addon_event(const char *name,const void *data,size_t size) {
     if(!name || !data) return 0;
+    if(!strcmp(name,FRANCHISE_SIGN_SUBMIT_EVENT) && size==sizeof(uint32_t)) {
+        uint32_t context;memcpy(&context,data,sizeof(context));
+        return nfl2k5_franchise_hold_signing(context);
+    }
     if(!strcmp(name,FRANCHISE_FSM_EVENT) && size==sizeof(FranchiseFSMEvent)) {
         FranchiseFSMEvent event;memcpy(&event,data,sizeof(event));
         nfl2k5_diag_fsm(event.object,event.descriptor,event.push!=0);return 1;

@@ -805,6 +805,18 @@ int main(int argc,char** argv) {
         captured_event["evidence"]={{"financial_revision",0},{"personality",checkpoint["player_context"]["personality"]},
             {"relationships",checkpoint["player_context"]["relationships"]},{"performance",checkpoint["performance_context"]}};
         franchise::validate_result(captured_reply,captured_request);
+        auto held_display_reply=captured_reply;
+        held_display_reply["result"]["signing_checkpoint"]["player_context"]["personality"]={
+            {"money",0.5},{"security",0.2},{"playing_time",0.9},{"winning",0.8},{"loyalty",0.1}};
+        held_display_reply["result"]["counter"]=held_display_reply["result"]["offer"];
+        held_display_reply["result"]["reason"]="I want a larger role on this team.";
+        for(const auto& outcome:{"accepted_proposal","counteroffer","player_rejected","accounting_rejected"}) {
+            held_display_reply["result"]["outcome"]=outcome;
+            const auto text=franchise::signing_display(held_display_reply);
+            if(text.offer.find("Signing remains held.")==std::string::npos ||
+               text.history!="Reason: I want a larger role on this team.")
+                throw std::runtime_error("Held proposal display lost response or implied a signing");
+        }
         auto scaled_captured=captured_reply;
         auto& scaled_event=scaled_captured["result"];
         auto& scaled_terms=scaled_event["signing_checkpoint"]["offer_context"];

@@ -322,6 +322,15 @@ PATCHES = [
     ("DIAG_RESFREE", "sub_000450D0", "loc_000450D0: ;", "after", """\
     { extern void nfl2k5_diag_res(uint32_t res, int load, uint32_t ret, uint32_t r2, uint32_t r3); nfl2k5_diag_res(ecx, 0, MEM32(esp), MEM32(esp + 8), MEM32(esp + 0x18)); }
 """),
+    # Optional addon deferral uses the original failure cleanup. Interactive
+    # offers defer before retail judgment; bypass callers also defer before
+    # ownership/contract writes. The addon never grants a commit here.
+    ("FRANCHISE_SIGN_HOLD_JUDGMENT", "sub_00323D80", "loc_00323F0A: ;", "after", """\
+    { extern int nfl2k5_franchise_hold_signing(uint32_t); if(nfl2k5_franchise_hold_signing(esi)) goto loc_00323E99; }
+"""),
+    ("FRANCHISE_SIGN_HOLD_COMMIT", "sub_00323D80", "loc_00323F17: ;", "after", """\
+    { extern int nfl2k5_franchise_hold_signing(uint32_t); if(nfl2k5_franchise_hold_signing(esi)) goto loc_00323E99; }
+"""),
     # Shared signing checkpoints: observe original inputs and judgment without
     # replacing roster/cap/history effects. Pass addresses, not unchecked MEM32.
     ("FRANCHISE_SIGN_ENTER", "sub_00323D80", "loc_00323D80: ;", "after", """\

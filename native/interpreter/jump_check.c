@@ -10,6 +10,11 @@ RECOMP_TLS int g_fp_top,g_fp_cmp,g_df;
 RECOMP_TLS uint16_t g_fp_control_word,g_fp_cc;
 RECOMP_TLS RecompXmm g_xmm0,g_xmm1,g_xmm2,g_xmm3,g_xmm4,g_xmm5,g_xmm6,g_xmm7;
 static unsigned generated_jumps,native_calls,manual_jumps,kernel_jumps;
+static unsigned held,hold_hits;
+static uint32_t hold_before_write(void) {
+    if(g_esi!=0x12345678u) return 0xDEAD0000u;
+    ++hold_hits;return held ? 0x1913u : 0;
+}
 static unsigned char memory[0x4000];
 ptrdiff_t xbox_GetMemoryOffset(void) {return g_xbox_mem_offset;}
 static void shared_epilogue(void) {++generated_jumps;g_esp+=20;}
@@ -46,5 +51,14 @@ int main(void) {
     run(0x1600);if(g_eax!=17 || g_esp!=0x3f04 || native_calls!=1) return 2;
     run(0x1700);if(g_eax!=19 || g_esp!=0x3f04 || manual_jumps!=1) return 3;
     run(0x1800);if(g_eax!=23 || g_esp!=0x3f04 || kernel_jumps!=1) return 4;
-    puts("Shared epilogue, native call, manual and kernel jump checks passed");return 0;
+    /* A held transaction skips its write and uses the same frame cleanup. */
+    const unsigned char signing[]={0x56,0x83,0xEC,0x10,0xBE,0x78,0x56,0x34,0x12,
+        0xC7,0x05,0x00,0x28,0x00,0x00,0x01,0x00,0x00,0x00,0x83,0xC4,0x10,0x5E,0xC3};
+    memcpy(memory+0x1900,signing,sizeof signing);
+    recomp_interp_add_hook(0x1909,0,hold_before_write);
+    g_esi=0xAABBCCDD;MEM32(0x2800)=0;held=0;run(0x1900);
+    if(MEM32(0x2800)!=1 || g_esi!=0xAABBCCDD || g_esp!=0x3F04) return 5;
+    MEM32(0x2800)=0;held=1;run(0x1900);
+    if(MEM32(0x2800)!=0 || g_esi!=0xAABBCCDD || g_esp!=0x3F04 || hold_hits!=2) return 6;
+    puts("Shared epilogue, calls/jumps and held write/cleanup checks passed");return 0;
 }

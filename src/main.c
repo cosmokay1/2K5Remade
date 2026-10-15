@@ -79,6 +79,7 @@ unsigned nfl2k5_interp_force(uint32_t lo, uint32_t hi);
 uint32_t nfl2k5_interp_mark_va(uint32_t va);
 extern int  nfl2k5_modpacks_boot_dispatch(const char *root);
 extern void nfl2k5_scorebug_interp_hooks(void);
+extern void nfl2k5_franchise_interp_hooks(void);
 extern void nfl2k5_controller_setup_init(void);
 extern void nfl2k5_save_library_start(const char *save_root);
 extern void nfl2k5_local_music_start(const char *root, const char *save_dir);
@@ -823,6 +824,7 @@ int main(int argc, char **argv)
     nfl2k5_controller_setup_init();
 
     if (!strcmp(digest_hex, "f67e6fc1cb76c9ea1f1ad504e4a6491ff126483d66a9da8ddb92950bbaf740ba")) {
+        nfl2k5_franchise_interp_hooks();
         printf("[BOOT] SOFTDRINK v0.6 dispatcher compatibility: %u function\n",
                nfl2k5_interp_force(0x0006E4E5u, 0x0006E5F5u));
     }

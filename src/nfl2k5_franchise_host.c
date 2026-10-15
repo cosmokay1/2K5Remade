@@ -14,8 +14,10 @@ static int context_enabled, hello_consumed, context_pending;
 static int signing_active, context_sent;
 static int saved_performance;
 static int inspect_guest_offer;
+static int negotiation_enabled, proposal_requested, proposal_sent, proposal_pending;
 static unsigned long long context_revision;
 static unsigned context_sequence, context_logged;
+static unsigned long long request_session;
 static FranchiseSigningObservation observed, requested;
 static int observation_valid, observation_fresh;
 static unsigned long long changed_tick, screen_epoch, requested_epoch;
@@ -66,6 +68,7 @@ void nfl2k5_franchise_stop(void)
     context_enabled = hello_consumed = context_pending = 0;
     saved_performance = 0;
     inspect_guest_offer = 0;
+    negotiation_enabled=proposal_requested=proposal_sent=proposal_pending=0;
     context_sequence = context_logged = 0;
     signing_active = context_sent = 0;
     observation_valid = observation_fresh = 0;
@@ -91,6 +94,7 @@ void nfl2k5_franchise_on_fsm(uint32_t descriptor, int push)
         clear_display();
         ++screen_epoch;
         context_sent=observation_valid=observation_fresh=0;
+        proposal_requested=proposal_sent=0;
     }
     signing_active=active;
     nfl2k5_franchise_poll();
@@ -122,6 +126,7 @@ void nfl2k5_franchise_poll(void)
             goto failed;
         if (context_pending) {
             context_pending = 0;
+            const int was_proposal=proposal_pending;proposal_pending=0;
             int current=signing_active && observation_valid && observation_fresh &&
                 screen_epoch==requested_epoch && same_observation(&observed,&requested);
             if(current) {
@@ -137,7 +142,7 @@ void nfl2k5_franchise_poll(void)
                 context_sent=0;
             if (context_logged++ < 16) {
                 if (current)
-                    fprintf(stderr, "[FRANCHISE] Read-only signing context reply: %s\n", response);
+                    fprintf(stderr, "[FRANCHISE] %s reply: %s\n", was_proposal ? "Held negotiation" : "Read-only signing context", response);
                 else fprintf(stderr,"[FRANCHISE] Discarded obsolete signing context reply.\n");
             }
         } else {
@@ -188,10 +193,11 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
     if (!observation_valid || !same_observation(&observed,o)) {
         clear_display();
         observed=*o; observation_valid=1; changed_tick=GetTickCount64();
+        proposal_requested=proposal_sent=0;
     }
     observation_fresh=1;
     AcquireSRWLockExclusive(&display_lock); display_valid=display.title[0]!=0; ReleaseSRWLockExclusive(&display_lock);
-    if (context_pending || (context_sent && (same_observation(&requested,&observed) ||
+    if (context_pending || (!proposal_requested && context_sent && (same_observation(&requested,&observed) ||
         GetTickCount64()-changed_tick<300))) return;
     char request[4096];
     char offer_field[128] = {0};
@@ -200,8 +206,9 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
         snprintf(offer_field,sizeof(offer_field),"\"guest_offer\":{\"amount_word\":%u,\"flags_word\":%u},",
             o->offer_amount,o->offer_flags);
     }
+    const int proposing=proposal_requested && !proposal_sent;
     int length = snprintf(request,sizeof(request),
-        "{\"protocol\":1,\"request_id\":\"game-sign-context-%u\",\"operation\":\"signing_context\","
+        "{\"protocol\":1,\"request_id\":\"game-sign-%s-%lu-%llu-%u\",\"operation\":\"%s\","
         "%s%s\"expected_revision\":%llu,\"timeout_ms\":10000,\"observation\":{"
         "\"biography\":{\"source_slot\":%u,\"first_name\":\"%s\",\"last_name\":\"%s\","
         "\"pbp_photo_raw\":\"%s\",\"dob_region_raw\":\"%s\"},"
@@ -209,7 +216,8 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
         "\"team_flag_raw\":%u,\"first_year_accumulator_raw\":%u},"
         "\"calendar\":{\"season_index\":%u,\"display_year\":%u,\"phase_01_raw\":%u,\"phase_02_raw\":%u,"
         "\"step_04_raw\":%u,\"step_05_raw\":%u,\"counter_08_raw\":%u}}}",
-        ++context_sequence,saved_performance ? "\"performance_format\":\"saved_history_v1\"," : "",
+        proposing ? "proposal" : "context",(unsigned long)GetCurrentProcessId(),request_session,++context_sequence,
+        proposing ? "negotiate_proposal" : "signing_context",saved_performance && !proposing ? "\"performance_format\":\"saved_history_v1\"," : "",
         offer_field,context_revision,o->slot,o->first_name,o->last_name,o->photo,o->dob,
         o->team_index,o->payroll,o->cap,o->team_flag,o->accumulator,o->calendar[5],2004u+o->calendar[5],
         o->calendar[0],o->calendar[1],o->calendar[3],o->calendar[4],o->calendar[6]);
@@ -221,9 +229,30 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
         return;
     }
     context_pending = 1;
+    proposal_pending=proposing;
+    if(proposing) {proposal_requested=0;proposal_sent=1;}
     context_sent = 1;
     requested=observed;
     requested_epoch=screen_epoch;
+}
+int nfl2k5_franchise_submit_held(int selected_context_matches)
+{
+    if(!negotiation_enabled) return 0;
+    /* Deferral is nonblocking and never a commit permit. A future verified
+     * settlement path must reconcile guest/save/ledger before releasing it. */
+    if((DWORD)InterlockedCompareExchange(&franchise_owner_thread,0,0)==GetCurrentThreadId() &&
+       signing_active && observation_valid && observation_fresh && !proposal_sent) {
+        if(selected_context_matches==1) {
+            proposal_requested=1;
+            AcquireSRWLockExclusive(&display_lock);
+            snprintf(display.title,sizeof(display.title),"%s %s",observed.first_name,observed.last_name);
+            snprintf(display.offer,sizeof(display.offer),"Negotiating with player. Original signing held.");
+            snprintf(display.history,sizeof(display.history),"Waiting for a controlled, cap-checked response.");
+            display_valid=1;
+            ReleaseSRWLockExclusive(&display_lock);
+        }
+    }
+    return 1;
 }
 int nfl2k5_franchise_start(void)
 {
@@ -253,6 +282,10 @@ int nfl2k5_franchise_start(void)
     if (offer_mode && *offer_mode && wcscmp(offer_mode,L"0") && wcscmp(offer_mode,L"1")) return 0;
     int offer_enabled = offer_mode && !wcscmp(offer_mode,L"1");
     if (offer_enabled && !inspect_context) return 0;
+    const wchar_t *negotiate=_wgetenv(L"NFL2K5_FRANCHISE_NEGOTIATION");
+    if(negotiate && *negotiate && wcscmp(negotiate,L"0") && wcscmp(negotiate,L"1")) return 0;
+    const int hold_enabled=negotiate && !wcscmp(negotiate,L"1");
+    if(hold_enabled && (!inspect_context || !inspect_performance || !offer_enabled)) return 0;
     const wchar_t *budget_database = _wgetenv(L"NFL2K5_FRANCHISE_AI_BUDGET_DATABASE");
     const wchar_t *budget_scope = _wgetenv(L"NFL2K5_FRANCHISE_AI_BUDGET_SCOPE");
     const wchar_t *budget_limit = _wgetenv(L"NFL2K5_FRANCHISE_AI_REQUEST_LIMIT");
@@ -289,14 +322,16 @@ int nfl2k5_franchise_start(void)
     context_enabled = inspect_context;
     saved_performance = inspect_performance;
     inspect_guest_offer = offer_enabled;
+    negotiation_enabled=hold_enabled;proposal_requested=proposal_sent=proposal_pending=0;
     context_revision = revision;
     context_sequence = context_logged = 0;
+    request_session=GetTickCount64();
     signing_active = context_sent = 0;
     observation_valid = observation_fresh = 0;
     screen_epoch=requested_epoch=changed_tick=0;
     InterlockedExchange(&franchise_foreign_sign_logged, 0);
     InterlockedExchange(&franchise_owner_thread, (LONG)GetCurrentThreadId());
-    fprintf(stderr, "[FRANCHISE] Transport launched on owner thread=%lu; signing-screen control handshake available; guest transaction hooks remain unavailable.\n",
-        (unsigned long)GetCurrentThreadId());
+    fprintf(stderr, "[FRANCHISE] Transport launched on owner thread=%lu; held negotiation mode=%d; guest commits unavailable.\n",
+        (unsigned long)GetCurrentThreadId(),hold_enabled);
     return 1;
 }

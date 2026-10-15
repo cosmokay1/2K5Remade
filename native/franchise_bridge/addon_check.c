@@ -89,6 +89,7 @@ int wmain(int argc,wchar_t **argv) {
         nfl2k5_diag_fsm(0,0x557B2C,1);
         nfl2k5_franchise_guest_poll();
         nfl2k5_diag_signing(0,0,0,0,0);
+        if(nfl2k5_franchise_hold_signing(0)) return 49;
         FranchiseSigningDisplay display={0};
         if(nfl2k5_franchise_display(&display)) return 8;
         nfl2k5_franchise_stop();nfl2k5_franchise_stop();

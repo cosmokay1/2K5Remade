@@ -334,3 +334,36 @@ Provider instructions exclude these historical records from salary-credit and
 promise scoring. Export is not proof of the active game/save or authority to
 negotiate/sign; the real guest bridge still needs verified snapshot selection,
 calendar/revision reconciliation and sourced financial classification.
+
+
+## Native held-offer integration (staged, not delivered)
+
+`NFL2K5_FRANCHISE_NEGOTIATION=1` is an explicit experimental native switch. It
+requires the pinned save/bindings/revision plus saved-performance and guest-offer
+inspection configuration. It does not enable remote AI, supply credentials, renew
+a control grant or bypass native/service budgets. The installed runtime remains
+unchanged with this mode off. The incomplete commit path prevents enabling it as
+a playable delivery.
+
+When enabled, the optional franchise DLL defers the shared native signing routine
+before retail judgment, and also before the bypass path can commit. The thin host
+shim only forwards a private named event. The original routine uses its existing
+failure cleanup, preserving its caller frame. In SOFTDRINK v0.6 the shared routine
+has a redirected roster-limit call and is interpreted, so the same two boundaries
+are registered through the existing interpreter hook API only for that pinned
+XBE hash. Policy stays in the optional DLL; the reusable process/pipe core has no
+franchise policy or new guest-write capability.
+
+A fresh matching signing-screen observation queues a captured negotiate_proposal
+request on the transport owner. It waits for an already-pending read reply without
+blocking the game thread. Duplicate submissions for unchanged terms do not queue
+another proposal; changed terms clear that per-screen state. Session-qualified
+request IDs avoid request-number collisions across process restarts. Foreign
+callbacks never operate the single-owner transport. Unmatched/unsupported paths
+remain held and never grant a commit.
+
+Validated replies present the player's response and reason. A counter displays
+its term and total; acceptance explicitly says the signing remains held. Stale
+observations/screens discard the reply. This records a proposal, never an actual
+signing: accepted-deal settlement, current control/revision checks, guest contract
+application, ledger confirmation and crash/save recovery remain required.

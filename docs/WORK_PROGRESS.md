@@ -5749,3 +5749,56 @@ No Windows/game execution, deployment, guest commit, paid inference or remote
 control renewal occurred. Current installed ABI1 pair remains unchanged. Complete
 opening obligations, supported rules/classification and actual save/reload still
 gate live financial use.
+
+
+## Core reprioritization: held native offers and response presentation
+
+User deferred further statistics investigation. Added the opt-in native
+NFL2K5_FRANCHISE_NEGOTIATION mode: the private franchise addon holds the shared
+signing routine before retail judgment and before bypass-path contract writes,
+using the original failure epilogue. The public generic addon API is unchanged;
+a thin private event adapter forwards submission intent. Policy remains in DLL.
+
+A matching fresh owner-thread observation queues one captured negotiate_proposal
+request. It waits for pending context without blocking; repeat submits for the
+same terms do not queue another request. Changed terms clear per-screen state;
+session-qualified IDs avoid process-restart counter collisions. Foreign callbacks
+remain held without accessing the transport. This is not a financial commit grant.
+Response projection presents accept/reject/counter, counter term/total and a
+bounded reason; acceptance explicitly remains held. It cannot silently sign.
+
+Static comparison showed the pack redirects the shared323D80 routine's247AF0
+roster-limit call to295320 (three changed call-displacement bytes), so generated
+hooks alone are skipped. Registered the same two deferrals through the existing
+interpreter hook API for the pinned v0.6 XBE only, and only when the experimental
+mode is explicitly enabled. Default-off execution adds no interpreter-hook span.
+No new generic interception framework or guest-write capability was introduced.
+
+Validation:726 Python regressions passed21.585s. Host clang protocol checks pass.
+Final private MSVC game/DLL build passed with staged EXE
+c3c22716b3a5897e96b211bfe940a87caa1c426476eb8d1fb6cfadb75d0b8e81
+and DLL850c2ff196aae5adf32d838934507021569c230fcad610c549bb8021dd96fb27.
+Native Windows/Proton held-host, handshake, protocol, interpreter and addon
+fixtures all executed successfully in a separate prefix. Each child success is
+proved by a fresh Windows CMD completion file, not merely Proton launcher exit.
+Held-host also writes its own completion receipt after all assertions. The
+interpreter fixture proves skip-write deferral preserves stack/register cleanup;
+protocol fixture checks response text never claims a proposal was signed.
+
+The private compiler needed its already-installed SDK cppwinrt include supplied
+through CL. An attempted standalone-interpreter target in the game build was
+corrected to a separate native/interpreter CMake build. Refreshed archive input
+timestamps and regenerated register-local copies to prevent stale Ninja objects;
+final builds include the actual generated hooks and interpreter registration.
+Build helper .local-runtime/manager-addon-5605345/build-held.sh records commands.
+
+Installed EXE1742d8c261f661a46434d0345a05e4b59270676ab27e18fc4585672d441d6bcb
+and DLLd4d1020eee8732aa3b60ba08a8a93237922619548344ab8c9540ff9f81750190
+remain unchanged. Prior game PID102235 was no longer present at the final check;
+no install, launch, game/save write, cloud change, control renewal or paid inference
+occurred. New game execution/playability is not claimed. Accepted-deal settlement,
+complete required books/rules, live owner/UI flow, guest/ledger agreement and
+crash/save recovery remain core requirements before this mode can be delivered.
+
+Prior sourcec4e073d CI was verified green: Build38668052493 and Franchise AI
+38668052451. New held-source CI remains to verify after push.
