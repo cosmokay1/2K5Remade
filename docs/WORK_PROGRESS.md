@@ -7581,3 +7581,24 @@ the original-game writes after precommit, issue a durable permit or prove live
 game signing/save/reload. Production grants remain unavailable. The Deck game
 was still running at observation; no installed binaries/configuration, saves,
 AI control or credentials changed. Windows CI for this source is pending.
+
+
+Static follow-up compared all43 full generated extents used by the private signing
+probe to both legally local XBE files. Thirty-six are identical; seven differ,
+including five entry detours, a mask change and a redirected helper call in shared
+signing. The private callgraph-code/instruction-changes receipts identify them;
+no retail generated source or executable bytes are committed. This changes the
+next integration check: the existing authored generated-body result cannot prove
+SOFTDRINK's interpreted detours. Those routes must run with the production hooks
+and match the expected targets before relying on them for a live permit.
+
+
+Source1bf1013 also passes an actual offline MSVC19.44 Windows build and Proton
+execution of the authored ownership fixture. The child marker is ownership-passed,
+launcher exit0, and all six transferred source hashes match the committed inputs.
+Receipt: ownership-1bf1013/windows-receipt.json. Fixture EXE SHA256
+ aa7291ce47601e9800d801c425a17e693fe85977d9d4af4e73e64de8e0ced6a9.
+No game runtime/profile or user save was replaced. Ubuntu Franchise38783097191
+passes; Windows remains live in its Python regression step. Build38783098207 has
+passed Linux with Windows still running. Follow those existing handles; neither
+full workflow is yet counted as green.

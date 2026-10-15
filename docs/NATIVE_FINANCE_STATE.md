@@ -329,3 +329,23 @@ queue cases. This does not prove the full transaction cannot yield: the permit
 issuer still needs pinned runtime/pack identity, exclusive mutation ownership
 and current authority. Other packs or pending-work scenarios need revalidation;
 no popup was removed or silently skipped by a native patch.
+
+
+### SOFTDRINK signing call graph still needs interpreter validation
+
+A private comparison of full generated function extents against the legally local
+retail XBE and pinned v0.6 XBE covers all43 functions used by the authored signing
+probe. Thirty-six extents are identical; seven differ. Entries000C3EE0,
+000C4D50,00242560,0013ECA0 and0013ED30 redirect into mod code;00247AF0 changes
+a mask, and00323D80 redirects one helper call to00295320. The private receipts
+are native-application-probe/callgraph-code-receipt.json and
+callgraph-instruction-changes.json. No executable bytes or retail generated
+source are published with this evidence.
+
+Consequently, the existing probe's exact expected finance/identity result proves
+the generated retail-body path under authored application grants only. It does
+not establish the patched pack's post-signing behavior or absence of yielding.
+The next application check must execute the dirty-function interpreter routes,
+including these detours, with the production signing hooks and compare the final
+images before any live permit can rely on that path. Active runtime/pack binding,
+complete books and actual signing/save/reload remain required independently.

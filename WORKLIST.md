@@ -104,6 +104,13 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       acquisition serial, including across each addon callback. Missing ownership
       or release/reacquisition holds and consumes the attempt. This pins the checks,
       not the subsequent original-game writes; production still grants nothing.
+      Ownership source1bf1013 passes six local CTests, the actual guest-lock checks,
+      Python regressions and a private MSVC/Proton ownership fixture. Windows CI
+      Franchise38783097191 and Build38783098207 are still running.
+      A full43-function static comparison finds seven SOFTDRINK-modified ranges,
+      including five entry detours and a redirected signing helper. Execute these
+      interpreter routes with the production hooks before treating the private
+      generated-body target result as pack compatibility evidence.
       Guard source7a39913 passes Windows/Ubuntu Franchise38781544199 and
       Build38781544176, actual private Windows/Proton queue/DLL checks and
       isolated full-game --validate. The installed runtime remains unchanged.
