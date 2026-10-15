@@ -6660,3 +6660,45 @@ remain unimplemented. These filesystem changes address native Linux prerequisite
 not a verified Proton-free SOFTDRINK build. No installed executable, user save,
 AI control or paid inference changed. Core native signing/application, complete
 opening obligations, actual game execution and save/reload remain open.
+
+## Imported-runtime CI and isolated Windows game build verified
+
+Source05ac4e9 passed Build38750533958 on Windows/Linux and
+Franchise38750534000 on Windows2022/Ubuntu. Linux's new runtime filesystem
+CTest passed in the hosted build. These suites exclude full-game execution.
+
+The Deck became reachable and no NFL2K5/service process was present. Prepared
+private stage native-05ac4e9 from a copy of the existing private source/build
+snapshot, then verified all1227 transferred tracked-source hashes (110 source
+files changed). Runtimec867ad3 preserves our real guest-lock implementation.
+The already accepted private MSVC toolchain built the actual Windows NFL2K5.exe
+and franchise-addon.dll successfully, with retained original build options.
+The persistent SSH build handle completed with exit0. Nothing was installed over
+the user's game. The build's existing renderer warnings remain; compilation alone
+does not establish rendering or runtime correctness.
+
+Executed the newly built Windows addon boundary fixture under actual Deck Proton.
+Launcher exit0 plus child completion addon-passed and the expected success output
+verify ABI/refusal/forwarding/reload and the owned/unowned/stale read-scope checks.
+The intentional missing-DLL case logs load error126; the fixture completed.
+New DLL SHA2565b3248d5c4955a4df198dd2db94a09b0cb6b05e114eab3847b4ba171244d6708.
+Private receipt: native-05ac4e9/addon-boundary-receipt.json. Isolated copies of the
+runtime and Proton profile finished, but the subsequent SSH connection timed out
+before game validation could start. A separate read-only check also timed out;
+this is an external connection gate, not evidence of a game crash. Do not install
+or relaunch blindly; recheck the Deck and process state first.
+
+Further bounded signing-source inspection found that the optional post-contract
+warning call at0x00323FC7 routes via0x0014E520/0x0014E440/0x0014E070 into UI
+callbacks with indirect dispatch. Checking guest-lock ownership at precommit
+cannot by itself prove that the original routine will remain uninterrupted.
+The direct helper closures excluding this UI branch are small, but generated
+retail source inspection is not proof of the active SOFTDRINK interpreter path.
+No application permit, guest write, AI grant or paid inference was introduced.
+
+User asked specifically about Deck packaging. The current explicit-manifest ZIP
+tool and previously working Gaming Mode shortcut are component evidence, not a
+verified reusable installation/update package. Launcher bundling, removal of
+private build-folder assumptions and fresh package/save-preservation validation
+remain part of final delivery. Windows/Proton remains the current delivery path;
+the incomplete native Linux port does not replace it.

@@ -131,7 +131,10 @@ prerequisites; its runtime pin0baca1a trails the game runtime's three new Linux
 filesystem commits. Imported those commits with attribution into runtimec867ad3,
 preserving our actual POSIX guest lock and read serial. Authored offline Linux
 checks pass for case resolution, team/save paths, partition persistence and
-settings migration; Windows/Linux hosted verification of this import is pending.
+settings migration. Source05ac4e9 passed Windows/Ubuntu Franchise38750534000
+and Build38750533958. An isolated private Windows game/addon build and actual
+Proton DLL-boundary/read-scope fixture also pass; game validation could not start
+after the Deck connection timed out. Installed game/saves remain unchanged.
 Linux mod-pack disc overlays remain explicitly unimplemented upstream; native
 SOFTDRINK boot/rendering/signing/save/reload remain unverified.
 
@@ -631,6 +634,16 @@ repeated unchanged blocker messages. Disable the follow-up when delivery is
 verified or the user cancels it.
 
 ## Steam Deck and draft delivery additions
+
+Packaging status October15: tools/package_steamdeck.py builds an explicit-manifest
+candidate ZIP with per-file hashes; it is not yet the final self-contained Deck
+installation flow. Existing private Gaming Mode shortcut/controller evidence does
+not verify a newly extracted package. Bundle the reusable launcher and installation
+instructions, eliminate private build-directory assumptions, and verify a fresh
+install/update with preserved saves before marking Deck delivery complete. Keep
+Windows/Proton as the working delivery path while the native Linux port remains
+unfinished. Current private source05ac4e9 game/DLL compilation and Proton boundary
+fixture passed; no new installed game or playable-package claim follows.
 
 - [x] Prepare explicit-file local Proton candidate ZIP tooling and runtime requirements.
 - [ ] Build a verified integrated Windows runtime with portable sidecar dependencies. Private CPython and25 hash-pinned Google SDK wheels now pass an actual Proton offline import/client-construction check with retained notices. Revised SDK check exits0 through Proton's Wine executable; the original launch-shim wait is isolated from Python execution. Explicit sidecar-owned SDK cleanup is tested on EOF/transport failure. Runtime authentication, real-franchise import and game AI integration remain pending.
