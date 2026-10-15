@@ -5607,3 +5607,25 @@ unverified modern import. Next integration work owns the explicit pack calendar,
 Validation:710 Python regressions passed in24.109s including three new tests
 for expanded bank/settings compatibility and corrupt bank/header rejection.
 No running game, cloud control, paid inference or save was modified.
+
+
+## Preserved fitted liabilities at verified pack money scale
+
+LegacyContract now stores optional game_dollar_scale4, retaining the raw amount,
+bonus, shape and remaining/original term fields. Charge reconstruction applies
+the scale after original guest truncation. It never treats encoded fitted cap
+liability as headline cash, guarantees or modern bonus terms. Supported scales
+are original1 and verified4 only; booleans/other scales reject. Retail wire
+records omit the new default, preserving existing checkpoint hashes and replay.
+
+A durable synthetic ledger test reopens the scaled inherited contract, rejects
+a new deal exceeding remaining room by one dollar, accepts the exact boundary,
+and continues rejecting unknown inherited cash initialization. Full712-test
+suite passed22.713s. Read-only use of the typed scaled schedules on private
+MyNFL1 reproduced all32 roster totals across1693 active contracts; Giants53
+contracts total211984000 against301200000 base cap. No persistent slot IDs,
+actual imported database, guest writes or runtime deployment were created.
+
+Explicit pack calendar/identity bindings and dated non-roster obligation mapping
+remain required before modern franchise import or signing authorization. This
+is persisted schedule support, not completion of pack negotiation integration.

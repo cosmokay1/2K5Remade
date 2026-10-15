@@ -93,7 +93,10 @@ Do not deploy superseded staged diagnostics blindly or overwrite existing saves.
       regressions pass. This does not authorize modern ledger import.
 - [ ] Reconcile dated inherited cap obligations and fitted contracts at franchise
       creation, preserving the verified4:1 scale, with explicit pack calendar
-      policy and no double-counted reserve players or retained debt.
+      policy and no double-counted reserve players or retained debt. Preserved
+      legacy schedules now support explicit4:1 cap scaling after guest rounding,
+      with durable cap enforcement; actual import/calendar/non-roster mapping
+      remains open.
 - [ ] Capture controlled pack signing/save/reload evidence; verify player identity,
       history, experience, calendar, salaries/payroll/cap and effective money scale.
 - [ ] Revalidate existing Xbox observer and bridge against pack code and saves;

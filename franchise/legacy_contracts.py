@@ -63,24 +63,33 @@ class LegacyContract:
     original_years: int
     remaining_years: int
     source: str
+    game_dollar_scale: int = 1
 
     def __post_init__(self):
         if any(type(value) is not str or not value.strip() for value in (self.player_id, self.source)):
             raise ValueError('Stable legacy player identity and source required')
+        if type(self.game_dollar_scale) is not int or self.game_dollar_scale not in (1, 4):
+            raise ValueError('Supported original or verified four-to-one money scale required')
         original_annual_rows(self.amount_word, self.bonus_code, self.shape_code, self.original_years)
         if type(self.remaining_years) is not int or not 1 <= self.remaining_years <= self.original_years:
             raise ValueError('Legacy active contract requires supported remaining term')
 
     def charges(self):
         rows = original_annual_rows(self.amount_word, self.bonus_code, self.shape_code, self.original_years)
-        return tuple(row['original_game_charge_dollars'] for row in rows[self.original_years-self.remaining_years:])
+        return tuple(row['original_game_charge_dollars'] * self.game_dollar_scale
+                     for row in rows[self.original_years-self.remaining_years:])
 
     def to_dict(self):
-        return asdict(self)
+        result = asdict(self)
+        # Preserve existing checkpoint hashes and wire records at retail scale.
+        if self.game_dollar_scale == 1:
+            del result['game_dollar_scale']
+        return result
 
     @classmethod
     def from_dict(cls, data):
-        if type(data) is not dict or set(data) != {'player_id','amount_word','bonus_code','shape_code',
-                                                 'original_years','remaining_years','source'}:
+        fields = {'player_id','amount_word','bonus_code','shape_code',
+                  'original_years','remaining_years','source'}
+        if type(data) is not dict or set(data) not in (fields, fields | {'game_dollar_scale'}):
             raise ValueError('Complete original legacy contract record required')
         return cls(**data)

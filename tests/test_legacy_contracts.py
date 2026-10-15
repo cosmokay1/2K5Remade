@@ -90,6 +90,42 @@ class LegacyContractsTests(unittest.TestCase):
         struct.pack_into('<I', data, 0x44A8 + 0x124, 5000)
         with self.assertRaises(ValueError): legacy_contracts(bindings, bytes(data))
 
+    def test_scaled_fitted_liabilities_enforce_cap_and_survive_restart(self):
+        # Authored fitted schedule. Scaling applies after guest truncation;
+        # it must not inflate raw amount_word and change rounding boundaries.
+        contract = LegacyContract('old',829,4,1,2,2,
+                                  'authored four-to-one fitted liability',4)
+        self.assertEqual(contract.charges(),(19064000,14092000))
+        self.assertEqual(contract.amount_word,829)
+        self.assertEqual(LegacyContract.from_dict(contract.to_dict()),contract)
+        ledger=Ledger.from_opening(OpeningBooks(legacy_contracts=(contract,)),
+            cap=20000000,roster_reserve=0,max_bonus_years=5,
+            veteran_minimums={'free':(1,)})
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'state.sqlite';store=FranchiseStore(path)
+            store.create_team('a',ledger)
+            before=store.load_team('a').financial_snapshot()
+            with self.assertRaises(Rejected):
+                store.sign('a','too-much',Offer('free',(936001,),0),0)
+            self.assertEqual(store.load_team('a').financial_snapshot(),before)
+            store.sign('a','fits',Offer('free',(936000,),0),0)
+            reopened=FranchiseStore(path).load_team('a')
+            self.assertEqual(reopened.charges,(20000000,14092000))
+            self.assertEqual(reopened._opening_books.legacy_contracts,(contract,))
+            self.assertEqual(reopened._opening_books.to_dict()['legacy_contracts'][0]
+                             ['game_dollar_scale'],4)
+            # Unknown cash remains unknown even after preserving cap liabilities.
+            with self.assertRaises(Rejected):
+                FranchiseStore(path).initialize_cash('a',(),source='incomplete fixture')
+
+    def test_retail_wire_records_remain_identical_and_unsupported_scales_reject(self):
+        contract=LegacyContract('p',900,4,2,8,7,'authored')
+        self.assertNotIn('game_dollar_scale',contract.to_dict())
+        self.assertEqual(LegacyContract.from_dict(contract.to_dict()).charges(),contract.charges())
+        for scale in (True,0,-1,2,4.0,'4'):
+            with self.subTest(scale=scale),self.assertRaises(ValueError):
+                LegacyContract('p',900,4,2,8,7,'authored',scale)
+
     def test_unknown_term_or_record_fields_reject_without_defaults(self):
         for remaining in (0, 9, True):
             with self.assertRaises(ValueError): LegacyContract('p', 900, 4, 2, 8, remaining, 'fixture')

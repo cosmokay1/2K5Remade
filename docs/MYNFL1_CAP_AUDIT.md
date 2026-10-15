@@ -58,7 +58,13 @@ SOFTDRINK fits annual cap schedules into the game's limited contract fields.
 The [author's fitter](https://github.com/cruuz/2k-football-mod-tools/blob/e19384123c23a3601949dda67c9a3ab754d65fd6/tools/franchise_economy/contracts.py)
 explicitly distinguishes encoded remaining cap liability from original headline
 contract value, actual cash and guarantees. Our integration must preserve that
-distinction and the four-to-one scale.
+distinction and the four-to-one scale. `LegacyContract` now preserves an explicit
+`game_dollar_scale=4` alongside the raw fitted fields and scales reconstructed
+charges after guest truncation. Default retail records serialize identically,
+preserving existing checkpoint hashes. This does not infer cash or guarantees,
+choose a pack profile automatically, or authorize calendar/lifecycle conversion.
+Read-only validation against MyNFL1 reproduces all1693 active schedules across32
+clubs at display scale; Giants total211984000. No ledger was created from the save.
 
 Selected opening-year comparisons:
 
