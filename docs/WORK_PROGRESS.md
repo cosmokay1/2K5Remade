@@ -6436,3 +6436,41 @@ it does not verify a full new game build, live judgment replacement, an apply
 permit or game execution/save/reload. Those remain required before enabling the
 unfinished negotiation mode in the installed runtime. No private assets were
 published, user save changed, control renewed or paid model request made.
+
+## Whole-league native financial comparison before application
+
+The next application prerequisite is a financial comparison of live memory with
+the prepared saved world. A selected player's biography/offer and the original
+save alone do not exclude unsaved changes elsewhere. Added the application-private
+franchise.finance-state.v1 snapshot on the existing addon ABI2. It is read-only,
+explicitly requested and contains raw cap/calendar, all32 payroll/flag/accumulator
+triples and every bank slot's packed contract/flags plus normalized ownership.
+Names, ratings, pointer values and roster order are excluded. No public ABI,
+generic sidecar policy or native signing decision changed.
+
+Static inspection of324060 and2425C0 resolved the live free-agent vector as
+bank+38, DWORD count and relocated list pointer+4. It is not a Team record.
+The capture bounds the observed expanded bank and all32 clubs, rejects duplicate
+or malformed membership and rechecks selection/bank/calendar/table/cap metadata.
+It cannot lock guest mutations and is explicitly not an atomic snapshot, identity
+proof or application permit. A future coordinator still needs quiescence, bound
+identities/runtime, current remote authority and one-use application semantics.
+No live permit, retail output-score replacement or guest commit is implemented.
+
+Added an independent saved projection through the existing roster/calendar and
+payroll-reconciled cap readers, plus an explicit-file comparison CLI. The actual
+addon callback (with inert service callbacks) matches independently authored
+saved semantics across relocated banks and reordered free-agent lists.28 cases
+cover unrelated/unrostered contract changes, all32 adjustment coverage, payroll,
+ownership, calendar/cap changes, duplicates, overflow, invalid modes/counts and
+truncated memory. The same28 pass AddressSanitizer/UndefinedBehaviorSanitizer.
+All796 Python tests pass25.352s; the three existing native CTests pass0.96s.
+Windows/Ubuntu CI now includes the cross-language comparison; new CI is pending.
+
+Read-only projection of the existing pinned MyNFL1 save succeeds: before hash
+4c8c31b4f400e25175223163a948e126cb83d10aa4bb98979a564ef287761ec3,
+29241 projection bytes, SHA256
+eeeb2175d84fff5b411c9189d6f6c07b45adc5bf8b954f6e1d9f4af5f9f10de5.
+The source save remained byte-identical. This is saved-only evidence, not a live
+comparison or complete opening-book proof. The installed Deck build/settings,
+user saves and remote controls are unchanged; no paid inference was made.

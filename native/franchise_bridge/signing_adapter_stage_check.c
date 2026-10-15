@@ -1,6 +1,7 @@
 /* Exercise the real DLL adapter with inert host callbacks, not retail memory. */
 #include "game_addon.h"
 #include "franchise_addon.h"
+#include "finance_state.h"
 #include "../../src/nfl2k5_franchise_host.h"
 #include <stdio.h>
 #include <string.h>
@@ -40,6 +41,10 @@ int main(void){
     if(api->event(FRANCHISE_SIGN_GATE_EVENT,&event,sizeof(event)) || reads || epochs || submits!=1) return 5;
     event.stage=FRANCHISE_SIGN_JUDGMENT;
     if(api->event(FRANCHISE_SIGN_GATE_EVENT,&event,sizeof(event)) || reads || epochs!=1 || submits!=2) return 6;
+    FranchiseFinanceSnapshot state;
+    memset(&state,0xFF,sizeof(state));
+    if(api->snapshot(FRANCHISE_FINANCE_SNAPSHOT,&state,sizeof(state)-1) ||
+       api->snapshot(FRANCHISE_FINANCE_SNAPSHOT,&state,sizeof(state)) || state.size) return 7;
     api->stop();
     puts("Actual adapter distinguishes judgment from precommit without extra sampling or offer intent");return 0;
 }

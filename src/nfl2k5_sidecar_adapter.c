@@ -9,6 +9,7 @@
 #include <string.h>
 #include "game_addon.h"
 #include "franchise_addon.h"
+#include "finance_state.h"
 #include "nfl2k5_sidecar_adapter.h"
 #ifdef NFL2K5_FRANCHISE_CLIENT
 #include "nfl2k5_franchise_host.h"
@@ -333,6 +334,12 @@ static int addon_event(const char *name,const void *data,size_t size) {
     return 0;
 }
 static int addon_snapshot(const char *name,void *out,size_t capacity) {
+    if(name && out && !strcmp(name,FRANCHISE_FINANCE_SNAPSHOT) && capacity==sizeof(FranchiseFinanceSnapshot)) {
+        FranchiseFinanceSnapshot state;
+        memset(out,0,capacity);
+        if(!franchise_finance_capture(&adapter_host,&state)) return 0;
+        memcpy(out,&state,sizeof(state));return 1;
+    }
     if(!name || !out || strcmp(name,FRANCHISE_DISPLAY_SNAPSHOT) || capacity!=sizeof(FranchiseSigningDisplay)) return 0;
     FranchiseSigningDisplay display;
     if(!nfl2k5_franchise_display(&display)) return 0;

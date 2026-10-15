@@ -1,0 +1,58 @@
+# Native financial comparison
+
+The franchise addon exposes the read-only `franchise.finance-state.v1` snapshot
+through the existing ABI2 snapshot callback. The host supplies a
+`FranchiseFinanceSnapshot` buffer with exactly its declared capacity. Success is
+1; `size` selects the used bytes. Failure is 0 and clears the output buffer for
+a correctly sized request. No game patch, guest write callback, model request or
+authorization is involved. Request this on the guest owner thread; it is an
+explicit comparison operation, not something to run on every rendered frame.
+
+`python -m tools.franchise_finance_state SAVEGAME.DAT native-state.dat` compares
+those used bytes with an independently read, payroll-reconciled saved projection.
+The file paths are explicit local diagnostic inputs; the addon does not open
+these paths, return an entire save or accept arbitrary memory addresses.
+
+The little-endian image contains:
+
+| Offset | Content |
+| --- | --- |
+| 0 | Version 1, bank count, table mode, league cap: four uint32 words |
+| 16 | Seven uint32 calendar words, in existing observation order |
+| 44 | Reserved zero uint32 |
+| 48 | 32 payroll/flag/accumulator triples, each three uint32 words |
+| 432 | One 11-byte record per bank slot: byte8 flags, uint16 amount, uint32 packed contract, uint32 owner |
+
+Owner is team index 0–31, free agents 32, or `0xffffffff` for a non-rostered
+record. Raw guest money units are retained; no modern-dollar conversion is
+performed here. Contracts in every bank slot are included. Roster ordering and
+relocated pointer values are excluded. This does not export names or ratings.
+
+The live reader uses the bank at `B72918`, its count/base and 0x54 stride;
+mode/table/calendar globals already used by the signing adapter; 0x1F4 club
+records with count at 0x11C, payroll at 0x124 and accumulator at 0x19C. The
+free-agent vector is bank+0x38: `324060` passes it to `2425C0`, which reads a
+DWORD count and a relocated pointer list at +4. It must not be read as a Team
+object or a serialized relative-pointer table. The saved projection uses the
+existing independent roster, calendar and reconciled-cap readers.
+
+The reader rejects unsupported modes/counts, overflowing/out-of-range pointers,
+misaligned bank members, duplicate membership (including across clubs/free
+agents), aliased club records and header/table changes during capture. It
+rechecks bank, calendar, cap and table metadata at the end.
+
+**This is not an atomic world snapshot or a signing permit.** Contracts and
+roster entries could change while reading. A future application coordinator
+must establish guest quiescence, match the prepared journal's expected financial
+projection, verify all bound identities and active pack/runtime, check current
+remote authority, and consume a one-use permit at the actual transaction.
+Equal financial bytes do not prove those conditions. Existing controlled
+signing remains held, and no current code consumes this snapshot to authorize
+application. Cash and other unsupported opening obligations remain separate
+requirements.
+
+The CI command `python -m tools.check_native_finance_state <fixture executable>`
+runs the actual addon snapshot callback against authored relocated-memory files
+and compares it with saved semantics. It covers expanded banks, benign pointer
+relocation/free-agent ordering, financial and membership changes, malformed
+layouts and truncated memory. It neither boots the game nor verifies save/load.

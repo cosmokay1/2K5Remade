@@ -66,6 +66,12 @@ native offer submission, player response, legal financial commit and save recove
       Game-facing acceptance remains held until native application, save/reload
       and recovery are connected and verified. Actual game execution remains
       required. Do not enable this unfinished mode in the installed user runtime.
+      The addon now exposes a read-only whole-league financial snapshot with
+      an independent saved-state comparison, including free agents and unrostered
+      bank contracts. Local actual-addon comparisons and sanitizer checks pass;
+      Windows CI and live comparison remain to verify. This grants no permit and
+      does not establish guest quiescence, full identity or current authority.
+      See docs/NATIVE_FINANCE_STATE.md for the boundary and remaining conditions.
 - [ ] Reconcile the required opening obligations/rules before permitting financial
       writes, then prove signing and save/reload on the pinned pack.
       Optional explicit legacy-unknown cash scopes now preserve null total cash
