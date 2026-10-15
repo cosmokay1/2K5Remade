@@ -331,7 +331,7 @@ and current authority. Other packs or pending-work scenarios need revalidation;
 no popup was removed or silently skipped by a native patch.
 
 
-### SOFTDRINK signing call graph still needs interpreter validation
+### SOFTDRINK interpreted signing validation
 
 A private comparison of full generated function extents against the legally local
 retail XBE and pinned v0.6 XBE covers all43 functions used by the authored signing
@@ -342,10 +342,28 @@ are native-application-probe/callgraph-code-receipt.json and
 callgraph-instruction-changes.json. No executable bytes or retail generated
 source are published with this evidence.
 
-Consequently, the existing probe's exact expected finance/identity result proves
-the generated retail-body path under authored application grants only. It does
-not establish the patched pack's post-signing behavior or absence of yielding.
-The next application check must execute the dirty-function interpreter routes,
-including these detours, with the production signing hooks and compare the final
-images before any live permit can rely on that path. Active runtime/pack binding,
-complete books and actual signing/save/reload remain required independently.
+The original generated-body probe alone does not cover those detours. A private
+Windows/MSVC probe now links the actual interpreter, unchanged generated bodies,
+the production signing shim/hooks and runtime c867ad3 guest lock. It marks the
+seven changed entries dirty and runs pinned pack bytes from the authored memory
+fixture. All43 full extents and six512-byte detour/helper entry ranges match the
+pinned XBE in the input and outputs. This is a bounded code comparison, not a
+full runtime-image attestation or proof that every changed function executes.
+
+The tested two-year descending,40percent bonus contract completes with exactly
+one judgment, precommit and completion; the29,241-byte finance and645-byte identity
+images exactly match expected_signed_state. Denying either judgment or precommit
+returns held, sends no completion and leaves both projections identical to the
+pending-before images. The two refusal outputs also have identical full-memory
+hashes. The actual guest-lock serial stays unchanged across each tested call;
+a competing thread is unclaimed before leave and successfully acquires afterward.
+No unexpected kernel dispatch is allowed by this private harness.
+
+Evidence is in pack-signing-61c1c81/guest-lock-matrix-comparison.json,
+source-manifest.json and pack-code-comparison.json. The twelve source inputs and
+probe are hash-bound. These are authored grants and authored roster/calendar/
+financial data with actual mod code, not a live MyNFL1 transaction. They establish
+the tested pack path and refusal behavior only. Other offers, rosters, pending
+work and mod configurations still need coverage. Active runtime/franchise binding,
+complete opening books, durable current-control permits and actual signing/
+save/reload remain required; production still grants no application authority.

@@ -105,12 +105,16 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       or release/reacquisition holds and consumes the attempt. This pins the checks,
       not the subsequent original-game writes; production still grants nothing.
       Ownership source1bf1013 passes six local CTests, the actual guest-lock checks,
-      Python regressions and a private MSVC/Proton ownership fixture. Windows CI
-      Franchise38783097191 and Build38783098207 are still running.
+      Python regressions and a private MSVC/Proton ownership fixture. Full Windows/
+      Ubuntu Franchise38783097191 and Build38783098207 now pass.
       A full43-function static comparison finds seven SOFTDRINK-modified ranges,
-      including five entry detours and a redirected signing helper. Execute these
-      interpreter routes with the production hooks before treating the private
-      generated-body target result as pack compatibility evidence.
+      including five entry detours and a redirected signing helper. A private actual
+      Windows interpreter/production-hook/runtime-lock probe now passes acceptance
+      and both refusal cases on pinned pack bytes. Accepted finance/identity match
+      exactly; refusals preserve pending-before images. The same guest-lock serial
+      spans each tested call and the competing thread acquires after leave. This
+      covers one authored deal/roster, not a live MyNFL1 signing or all pack paths.
+      Source61c1c81 passes Windows/Ubuntu Franchise38783661071 and Build38783661101.
       Guard source7a39913 passes Windows/Ubuntu Franchise38781544199 and
       Build38781544176, actual private Windows/Proton queue/DLL checks and
       isolated full-game --validate. The installed runtime remains unchanged.

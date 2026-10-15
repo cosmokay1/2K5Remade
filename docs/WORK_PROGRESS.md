@@ -7602,3 +7602,54 @@ No game runtime/profile or user save was replaced. Ubuntu Franchise38783097191
 passes; Windows remains live in its Python regression step. Build38783098207 has
 passed Linux with Windows still running. Follow those existing handles; neither
 full workflow is yet counted as green.
+
+
+### October 15 — Execute SOFTDRINK's interpreted signing path
+
+Completed the next pack-path validation with private Windows/MSVC19.44 probes,
+without changing the installed game. The probe links the actual interpreter,
+production signing shim and exact source callbacks copied from recomp_manual.c,
+with the seven modified function entries marked dirty. It executes pinned v0.6
+bytes from the authored memory fixture, dispatching unchanged generated bodies
+natively. Unexpected kernel dispatch and retail judgment/UI abort rather than
+silently succeeding. The initial build lacked the interpreter's FPU include;
+adding that existing source dependency fixed the private harness build.
+
+The accepted two-year descending40percent bonus offer returns success with
+judgment/precommit/completion counts1/1/1. Its finance image29,241bytes is exactly
+94bb53a3311849c97e330dd66ef2159e70bf1c7bcbc0668681deefe8eef8ffce and identity645bytes
+b675304ccbfa5171a8ed670c328da5118f7f9837df5fbf2030ba532bcdf98ad1, matching the
+expected accepted target with zero differing bytes. Denied judgment returns
+0 with counts1/0/0; denied precommit returns0 with1/1/0. Both preserve pending-before
+finance d19bfc6170c2739c144b2156d319b92ffebb6162f99654d05272bc0c5220ee9f and identity
+ba900627476da9ed7d01a21d1f6c97c4c9a48481f8fc13284b510842af3e5798. Both refusal
+full-memory outputs also match each other.
+
+Replaced the initial authored lock serial with the actual pinned runtime
+c867ad30cccd3eec50c6ff82d468f48067fc2b8b guest lock and a competing native thread.
+All three cases still pass, with one unchanged nonzero acquisition serial spanning
+the original call, no competing acquisition before leave and successful acquisition
+after leave. Each actual Windows child marks interpreted-signing-passed with launcher
+exit0; twelve transferred source files match their manifest. Probe SHA256
+ d79c9f0846d93f4951e2ebc90b044cbcf4d6938ef1870881ee0b49cf71be871c;
+EXE b4bc05911bca6ea3ffd70397bee08a8c47a1052a076303097578c5090c4c8aa7.
+Private evidence: pack-signing-61c1c81/guest-lock-matrix-comparison.json,
+source-manifest.json and each guest-lock-*/windows-receipt.json.
+
+An independent comparison verifies all43 complete generated function extents and
+six512-byte detour/helper target entry ranges in the actual input and accepted/
+refused outputs against XBE f67e6fc1cb76c9ea1f1ad504e4a6491ff126483d66a9da8ddb92950bbaf740ba.
+Receipt: pack-code-comparison.json. This guards against accidentally testing
+retail bytes, but is not whole-image attestation or coverage of every function.
+No retail generated source, memory image or game executable is committed.
+
+These tests use authored grants, roster/calendar and money data; they do not
+verify live MyNFL1 signing, all contract shapes/rosters or modern opening books.
+Runtime/franchise binding, durable current-control permits and actual signing/
+save/reload remain open. The installed game, user saves and remote control were
+not modified. Production application grants remain unavailable.
+
+The earlier ownership source1bf1013 is now fully green in Windows/Ubuntu
+Franchise38783097191 and Build38783098207. Current61c1c81 also passes full
+Windows/Ubuntu Franchise38783661071 and Build38783661101; these terminal results
+supersede the preceding pending observations.
