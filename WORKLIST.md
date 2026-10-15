@@ -166,9 +166,10 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       count because EBX excludes the final section length returned in EAX.
       Corrected total-count observation passes all17 Windows checks and isolated
       game validation. Sourcef08390c is now installed after normal exit, preserving
-      all205 save files; Windows/Ubuntu CI also passes. Actual
-      successful correlation, selected-container identity and active-load lifetime
-      still need verification.
+      all205 save files; Windows/Ubuntu CI also passes. Actual MyNFL1 read/input/
+      decoded correlation now passes on the running build: phase3, all720044 bytes
+      and the expected source hash/destination. Selected-container identity and
+      active-load lifetime still need verification before namespace binding.
       Service-side durable binding and active franchise identity remain open;
       this metadata does not authorize application or prove code compatibility.
       The actual Windows game/DLL build now passes isolated --validate and the

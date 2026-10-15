@@ -8287,3 +8287,29 @@ Exactf08390c Franchise38808041886 has now passed both Windows and Ubuntu;
 Build38808041932 also passed. The read-only CI watcher finished successfully.
 These checks do not establish actual new-game load correlation, selected-container
 binding or legal signing/save-reload; those gates remain open.
+
+## October 15, 2026 — Actual corrected MyNFL1 load correlation passes
+
+After verifying no game process, launched the existing 2K5 Remade (Test Build)
+Steam shortcut16147863382609887232. The user confirmed MyNFL1 loaded. Actual
+process194180 runs the installed corrected EXE c23dee11e3df74d6d40d18af82652d9b876cc04c3f6202014d69e853bea853a3
+with unchanged DLL4af092de1a4a509d8efc12490997a5fcf94ac793218af91fcbc975b5c705bcc5.
+The selected pack logs SOFTDRINK2K28v0.6. Its real trace now reports:
+
+```
+load_read epoch=1 phase=1 stage=1 buffer=0x81d8f280 size=720044 kind=9 consumed=0 source_sequence=0
+save_read sequence=1 bytes=720044 payload_sha256=4c8c31b4f400e25175223163a948e126cb83d10aa4bb98979a564ef287761ec3 guest_mapped=1 guest_address=0x81d8f280
+load_read epoch=1 phase=3 stage=4 buffer=0x81d8f280 size=720044 kind=9 consumed=720044 source_sequence=1
+```
+
+This verifies native delivery, exact pre-relocation input matching and decoded
+checkpoint correlation on the actual running game, including the corrected
+EBX+EAX count. Evidence and full copied session log are retained privately under
+decoded-load-027e68b/actual-load-receipt.json and actual-load-session.log on Deck.
+Both saves/franchise/MyNFL1/SAVEGAME.DAT and its UDATA copy still have this exact
+hash. Their duplication means hash matching does not identify the selected
+physical container. Selected-container/namespace binding, active-load lifetime,
+production permits, financial signing and save/reload remain open. No game input
+was injected and no saves were edited. AI/controlled signing remain off. The
+optional bounded Spectacle observation produced no screenshot; no screen state
+is inferred from it.
