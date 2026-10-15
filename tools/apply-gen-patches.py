@@ -337,10 +337,10 @@ PATCHES = [
     ("FRANCHISE_SIGN_PENDING_RETURN", "sub_003478A0", "loc_003478B6: ;", "after", """\
     { extern int nfl2k5_franchise_signing_was_held(uint32_t); if(nfl2k5_franchise_signing_was_held(MEM32(0xCB8C34))) goto loc_003478F0; }
 """),
-    # CPU settlement removes the free agent before calling shared signing.
-    # Hold before that removal, and leave its offer record unchanged.
-    ("FRANCHISE_SIGN_CPU_HOLD", "sub_00324060", "loc_00324088: ;", "after", """\
-    { extern int nfl2k5_franchise_hold_signing_at(uint32_t, uint32_t); extern int nfl2k5_franchise_signing_was_held(uint32_t); if(nfl2k5_franchise_hold_signing_at(2u, esi)) { nfl2k5_franchise_signing_was_held(0); goto loc_00324169; } }
+    # CPU dispatch has shared and direct-write signing routes. Defer the whole
+    # pass before either route can mutate offers, free agents or contracts.
+    ("FRANCHISE_SIGN_CPU_HOLD", "sub_00324060", "loc_00324072: ;", "after", """\
+    { extern int nfl2k5_franchise_hold_signing_at(uint32_t, uint32_t); extern int nfl2k5_franchise_signing_was_held(uint32_t); if(nfl2k5_franchise_hold_signing_at(2u, 0)) { nfl2k5_franchise_signing_was_held(0); goto loc_00324173; } }
 """),
     # Shared signing checkpoints: observe original inputs and judgment without
     # replacing roster/cap/history effects. Pass addresses, not unchecked MEM32.
@@ -747,6 +747,22 @@ def main():
         # The function ends at the next top-level closing brace.
         end = next((j for j in range(start + 1, len(lines)) if lines[j].rstrip("\r") == "}"), len(lines))
         marked = next((j for j in range(start,end) if marker(pid) in lines[j]),None)
+        if marked is not None and pid == "FRANCHISE_SIGN_CPU_HOLD":
+            # Older caches guarded only the already-accepted offer branch.
+            # Relocate that exact patch before dispatch, covering direct writes.
+            old="{ extern int nfl2k5_franchise_hold_signing_at(uint32_t, uint32_t); extern int nfl2k5_franchise_signing_was_held(uint32_t); if(nfl2k5_franchise_hold_signing_at(2u, esi)) { nfl2k5_franchise_signing_was_held(0); goto loc_00324169; } }"
+            current=lines[marked+1].strip() if marked+1<end else ""
+            location=lines[marked-1].strip() if marked>start else ""
+            if current!=code.strip() or location!=anchor:
+                if current!=old or location!="loc_00324088: ;":
+                    failed.append("%s: unrecognized CPU signing gate body/location" % pid)
+                    continue
+                if check_only:
+                    failed.append("%s: old CPU signing gate requires relocation" % pid)
+                    continue
+                del lines[marked:marked+2]
+                end-=2
+                marked=None
         if marked is not None and pid in ("FRANCHISE_SIGN_HOLD_JUDGMENT","FRANCHISE_SIGN_HOLD_COMMIT"):
             # Upgrade only the recognized old one-line hold. Existing generated
             # caches otherwise retain v1 forever because their marker is present.

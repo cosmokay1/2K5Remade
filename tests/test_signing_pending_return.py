@@ -105,7 +105,7 @@ class CPUSigningHoldTests(unittest.TestCase):
 #include <string.h>
 #include "src/nfl2k5_sidecar_adapter.h"
 #include "native/franchise_bridge/franchise_addon.h"
-static unsigned held,removed,rejected,submitted,visited,wrong_stage;
+static unsigned held,removed,rejected,submitted,visited,wrong_stage,direct,cleanups;
 int nfl2k5_addon_start(void){return 1;}
 void nfl2k5_addon_stop(void){}
 void nfl2k5_addon_poll(void){}
@@ -121,21 +121,22 @@ int nfl2k5_addon_event(const char*n,const void*d,size_t s){
 }
 void sub_00324060(void)
 {
+loc_00324072: ;
  for(uint32_t esi=1;esi<=100;++esi){
-loc_00324088: ;
-  ++removed; /* Original list removal precedes the shared signing call. */
-  ++rejected; /* Authored ordinary failure changes offer disposition. */
-loc_00324169: ;
+  if(esi&1){++removed;++rejected;} /* Shared-signing route. */
+  else ++direct; /* Automatic route bypasses shared signing entirely. */
   ++visited;
  }
+loc_00324173: ;
+ ++cleanups;
 }
 int main(void){
  held=1;
  for(unsigned pass=0;pass<12;++pass) sub_00324060();
- if(removed || rejected || submitted || wrong_stage || visited!=1200) return 1;
+ if(removed || rejected || direct || submitted || wrong_stage || visited || cleanups!=12) return 1;
  if(nfl2k5_franchise_signing_was_held(100)) return 2;
  held=0;sub_00324060();
- if(removed!=100 || rejected!=100 || visited!=1300 || wrong_stage) return 3;
+ if(removed!=50 || rejected!=50 || direct!=50 || visited!=100 || wrong_stage || cleanups!=13) return 3;
  return 0;
 }
 ''')

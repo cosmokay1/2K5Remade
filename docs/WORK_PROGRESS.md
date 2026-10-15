@@ -7054,3 +7054,30 @@ same. The launch entry returns to its original SHA256
 The capture remains intact, and future launches do not try another capture.
 Private capture-cleanup-receipt.json records the before/after hashes and backup;
 no provider/control settings were enabled or renewed.
+
+
+### CPU hold covers automatic direct signing as well as shared signing
+
+Moved the existing CPU hold from accepted-record branch00324088 to00324072,
+after the dispatcher prologue and before any record lookup/route selection.
+A held pass uses the original00324173 epilogue. This prevents the other branch
+from reaching automatic judgment and direct contract writer00323B30, while
+preserving offers, free agents, contracts and history. No game-facing acceptance
+or write permission is granted; controlled mode remains unfinished/off on Deck.
+The existing per-record marker has a recognized old-body/location migration;
+--check rejects stale caches, application relocates that exact patch only, and
+custom bodies, moved current patches or missing anchors fail without overwrites.
+CRLF caches retain their line endings. Interpreter registration/continuation use
+the same early boundary and the current ABI/event policy.
+
+Ten focused local tests pass: compiled production patch/actual host shim skips
+both authored routes while held and preserves normal dispatch when unheld;
+the actual owned interpreter callback has the expected stage/context/target,
+clears its marker once and leaves the unheld path alone; old cache relocation,
+idempotence, failure preservation and CRLF behavior pass. A private probe also
+executes the actual generated00324060 body with authored memory:12 held passes
+perform no record lookup, while an unheld pass visits100 inactive records. All
+passes preserve EBX/ESI/EDI/EBP and exact ESP; mutation callees abort if reached
+unexpectedly. Generated game code stays private/untracked. This is isolated
+macOS generated-code execution, not actual game/CPU/save verification. Windows
+CI and a private full Windows build remain to verify for the new source.

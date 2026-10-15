@@ -61,14 +61,13 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       offer screen open, using a single-use thread-local context match in both
       compiled and interpreter hooks. Local actual-shim and generated-caller
       checks pass; game execution of this opt-in fix remains unverified.
-      Follow-up audit found CPU automatic negotiation also has a direct-write
-      route via00323B30 outside shared signing. The current per-record accepted
-      guard does not cover that route; move deferral before CPU loop dispatch
-      and validate both paths before enabling controlled signing.
-      CPU settlement now also holds before removing a free agent or marking its
-      offer refused; compiled and interpreter hooks preserve the pending record.
-      Authored-loop and actual generated-caller probes pass locally; actual
-      game CPU settlement/save verification remains open.
+      CPU automatic negotiation has a direct-write route via00323B30 outside
+      shared signing. Its hold now runs before the whole00324060 dispatch pass,
+      covering both routes before offer/free-agent/contract changes. Compiled
+      and interpreter hooks use the original epilogue, and known old generated
+      cache patches are relocated with strict custom-edit/CRLF checks.
+      Authored route tests and actual generated-caller probes pass locally;
+      actual game CPU settlement/save verification remains open.
       Judgment and precommit now use distinct addon events, so bypass/precommit
       callers hold without creating interactive negotiation intents. Existing
       generated v1 hooks have an explicit upgrade check; application permits

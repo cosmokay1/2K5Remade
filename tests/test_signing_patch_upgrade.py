@@ -61,3 +61,49 @@ class SigningPatchUpgradeTests(unittest.TestCase):
         self.source('old','\r\n');self.assertEqual(self.run_patch(),0);self.assert_current()
         data=self.path.read_bytes()
         self.assertNotIn(b'\n',data.replace(b'\r\n',b''))
+
+
+class CPUSigningPatchUpgradeTests(unittest.TestCase):
+    def setUp(self):
+        spec=importlib.util.spec_from_file_location('cpu_upgrade_fixture',Path(__file__).resolve().parents[1]/'tools/apply-gen-patches.py')
+        self.module=importlib.util.module_from_spec(spec);spec.loader.exec_module(self.module)
+        self.module.PATCHES=[row for row in self.module.PATCHES if row[0]=='FRANCHISE_SIGN_CPU_HOLD']
+        self.module.LENIENT=False
+        directory=tempfile.TemporaryDirectory();self.addCleanup(directory.cleanup)
+        self.module.GEN=directory.name;self.path=Path(directory.name)/'recomp_authored.c'
+        self.old='{ extern int nfl2k5_franchise_hold_signing_at(uint32_t, uint32_t); extern int nfl2k5_franchise_signing_was_held(uint32_t); if(nfl2k5_franchise_hold_signing_at(2u, esi)) { nfl2k5_franchise_signing_was_held(0); goto loc_00324169; } }'
+
+    def source(self,body=None,newline='\n',anchor=True):
+        text=['void sub_00324060(void)','{']
+        if anchor:text+=['loc_00324072: ;','    /* dispatch */']
+        text+=['loc_00324088: ;','    '+self.module.marker('FRANCHISE_SIGN_CPU_HOLD'),
+               '    '+(self.old if body is None else body),'    /* original accepted branch */',
+               'loc_00324173: ;','    /* original cleanup */','}','']
+        self.path.write_bytes(newline.join(text).encode())
+
+    def run_patch(self,check=False):
+        with patch.object(self.module.sys,'argv',['apply-gen-patches.py']+(['--check'] if check else [])),redirect_stdout(StringIO()),redirect_stderr(StringIO()):
+            return self.module.main()
+
+    def test_recognized_old_gate_moves_before_dispatch_and_is_idempotent(self):
+        self.source();before=self.path.read_bytes()
+        self.assertEqual(self.run_patch(True),1);self.assertEqual(before,self.path.read_bytes())
+        self.assertEqual(self.run_patch(),0)
+        text=self.path.read_text()
+        self.assertLess(text.index(self.module.marker('FRANCHISE_SIGN_CPU_HOLD')),text.index('loc_00324088: ;'))
+        self.assertIn('hold_signing_at(2u, 0)',text);self.assertIn('goto loc_00324173;',text)
+        self.assertNotIn(self.old,text)
+        self.assertEqual(text.count(self.module.marker('FRANCHISE_SIGN_CPU_HOLD')),1)
+        upgraded=self.path.read_bytes()
+        self.assertEqual(self.run_patch(True),0);self.assertEqual(self.run_patch(),0)
+        self.assertEqual(upgraded,self.path.read_bytes())
+
+    def test_custom_body_wrong_location_or_missing_anchor_never_overwrites(self):
+        for body,anchor in [('/* user gate */',True),(self.module.PATCHES[0][4].strip(),True),(None,False)]:
+            with self.subTest(body=body,anchor=anchor):
+                self.source(body,anchor=anchor);before=self.path.read_bytes()
+                self.assertEqual(self.run_patch(),1);self.assertEqual(before,self.path.read_bytes())
+
+    def test_windows_cache_preserves_crlf_during_relocation(self):
+        self.source(newline='\r\n');self.assertEqual(self.run_patch(),0)
+        self.assertNotIn(b'\n',self.path.read_bytes().replace(b'\r\n',b''))
