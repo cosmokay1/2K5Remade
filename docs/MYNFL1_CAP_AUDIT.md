@@ -102,3 +102,37 @@ Conclusion: the base cap and saved roster arithmetic reconcile. Full real-world
 lossless obligations import covering active/reserve players,
 released-player debt, adjustments and supported contract details. Preserve
 existing fitted deals until an explicit reconciled conversion is ready.
+
+
+## Dated source schedule reconciliation
+
+The pinned [authoring contract audit](https://github.com/cruuz/2k-football-mod-tools/blob/e19384123c23a3601949dda67c9a3ab754d65fd6/fc/data/contract_audit.json)
+is now inspected privately. SHA256 is
+dc34704beaf7219119f377584a753ae03b74973d09625deee061e7780e98e466. Its source
+receipt pins September24,2026 at12:40:52Z, distinct from the current-reference
+comparison above. It contains1696 original roster entries and no complete
+released-player/reserve obligation inventory.
+
+`tools.reconcile_pack_contract_source` requires this exact audit hash and the
+verified opening binding. It matches unique names across both snapshots, all
+five raw fitted contract fields, club ownership and observed source schedules.
+Washington's original game keyRedskins and source nameCommanders identify the
+same club. Combined source-team strings are left for explicit allocation review.
+Every represented source vector must equal the independently decoded game
+vector; integer source liabilities then yield exact signed adjustment records.
+These records use existing OpeningBooks adjustments without overwriting the
+raw fitted contract or asserting cash/guarantees.
+
+MyNFL1 results:1343 source-matched contracts,350 unresolved (66 ownership
+allocations,70 changed fitted terms,206 modeled schedules,8 absent/ambiguous
+identities). Giants41 source-matched contracts and12 unresolved. Corrections
+for those41 alone are -233097 in2026, +57104160 in2027, +18897840 in2028 and
++909250 in2029. These are corrections for a subset, not complete team balances.
+Burns illustrates the future-year problem: saved fitted2027 charge32104000 vs
+source44083333, a11979333 shortfall.
+
+The private dated-contract-source-reconciliation.json retains the per-player
+proposals and reasons. Nothing was applied. Complete dated non-roster debt,
+source ownership and unresolved schedules still need reconciliation, followed
+by guest/ledger enforcement verification. Raising the league cap or trusting
+only the opening-year fit would conceal these later-year liabilities.

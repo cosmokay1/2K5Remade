@@ -99,3 +99,19 @@ still requires runtime verification. Neither a registry nor a matching checkpoin
 authorizes AI, guest writes, cash assumptions, or omitted non-roster liabilities.
 MyNFL1 resolves2070 players and1693 active schedules across32 teams through this
 path; inherited reserve/dead-money reconciliation remains required for live use.
+
+
+A separate source reconciliation command compares that registry to the pinned
+authoring audit without creating a DB or changing a save:
+
+```sh
+python3 -m tools.reconcile_pack_contract_source /path/to/SAVEGAME.DAT /path/to/bindings.json /path/to/contract_audit.json
+```
+
+Its adjustment proposals carry exact year-by-year differences plus pinned source
+provenance. They can be represented by existing OpeningBooks adjustment records
+beside the preserved legacy deals. The report always marks complete_opening_books
+false: this source audit omits a complete non-roster inventory, and estimates,
+transfers, changed terms and ambiguous names require resolution. A matching raw
+guest checkpoint cannot authorize writes against corrected external balances
+until the guest and ledger enforce the same complete obligations.

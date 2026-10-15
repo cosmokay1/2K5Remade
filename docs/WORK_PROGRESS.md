@@ -5659,3 +5659,35 @@ no game/executable bytes are committed.
 Remaining financial import work includes dated non-roster obligations, exact
 contract source semantics, cash/guarantees and minimum/rookie classification.
 Actual runtime selection/negotiation/legal commit/save-load remain unverified.
+
+
+## Dated source liabilities versus fitted curves
+
+Read the pinned public authoring audit fc/data/contract_audit.json at
+e19384123c23a3601949dda67c9a3ab754d65fd6; SHA256
+dc34704beaf7219119f377584a753ae03b74973d09625deee061e7780e98e466. It pins
+September24,2026 source data. Full source stays ignored/private. It is roster
+contract evidence, not a complete opening retained/reserve obligations inventory.
+
+New offline tools.reconcile_pack_contract_source verifies the exact source hash,
+profile, unique source/snapshot names, all five raw fitted fields, source club
+allocation and observed-vs-modeled provenance. Verifies represented annual
+charges against independent decoding, then proposes exact ChargeRecord opening
+adjustments while retaining raw legacy deals and explicit unknown cash. No
+estimated, ambiguous, changed-term or cross-club schedule is silently converted.
+Original Washington game keyRedskins maps to sourceCommanders only; compound
+source teams require allocation review.
+
+Actual MyNFL1:1343 matched,350 unresolved (66 ownership,70 changed terms,206
+modeled schedules,8 absent/ambiguous identities). Giants41 matched/12 unresolved.
+Their corrections are -233097,+57104160,+18897840,+909250 for2026..2029. Burns
+2027 alone requires11979333 above the fitted charge. This establishes that
+correct opening cap scale does not establish future source liability accuracy.
+Private dated-contract-source-reconciliation.json records per-player evidence.
+
+Four authored tests cover exact signed corrections/book round-trip, corrected
+cap enforcement at one-dollar boundary, missing/duplicate/changed/estimated/
+transferred records, duplicate snapshot names, source mismatch and bad schedule
+vectors. Full721 tests passed23.014s. No game, DB, save, cloud, AI request or
+financial balance changed. Complete dated obligations and runtime enforcement
+remain required; the report cannot certify complete opening books.

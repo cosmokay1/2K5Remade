@@ -96,7 +96,10 @@ Do not deploy superseded staged diagnostics blindly or overwrite existing saves.
       policy and no double-counted reserve players or retained debt. Preserved
       legacy schedules now support explicit4:1 cap scaling after guest rounding,
       with durable cap enforcement; actual import/future-calendar/non-roster mapping
-      remains open.
+      remains open. Dated source adapter now proposes exact adjustment records
+      for1343 matched schedules;350 remain unresolved. Giants41 matched deals
+      show +$57.104M next-year source liability versus fitted curves, making
+      future-year source reconciliation a required acceptance gate.
 - [x] Add explicit hash-pinned SOFTDRINK opening snapshot bindings: logical2026,
       preserved4:1 legacy export and scaled read-only checkpoint. MyNFL1 resolves
       2070 stable IDs/profiles and1693 active schedules; no active-game import.
