@@ -1,5 +1,6 @@
 """Explicit unknown legacy cash is never a zero balance or invented guarantee."""
 import hashlib
+from contextlib import closing
 import json
 from pathlib import Path
 import sqlite3
@@ -126,7 +127,7 @@ class LegacyCashScopeTests(unittest.TestCase):
 
     def test_replay_rejects_scope_and_null_total_tampering(self):
         self.initialize()
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db:
             row=db.execute("SELECT id,payload FROM events WHERE kind='cash_open'").fetchone()
         original=json.loads(row[1])
         for change in ('unknown','string','total','known_total'):
@@ -135,11 +136,11 @@ class LegacyCashScopeTests(unittest.TestCase):
             if change=='string': value['unknown_legacy_players']='old'
             if change=='total': value['cash_posting']['nominal_total']=0
             if change=='known_total': value['cash_posting']['known_totals']['nominal_total']=1
-            with sqlite3.connect(self.path) as db:
+            with closing(sqlite3.connect(self.path)) as db,db:
                 db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(value),row[0]))
             with self.subTest(change=change),self.assertRaises((ValueError,Rejected)):
                 FranchiseStore(self.path).load_team('a')
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db,db:
             db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(original),row[0]))
         self.assertIsNone(FranchiseStore(self.path).load_team('a').cash_snapshot()['nominal_total'])
 

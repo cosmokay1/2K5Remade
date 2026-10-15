@@ -6278,3 +6278,13 @@ Money audit retained5050 bonus conservation cases. Compile and diff checks passe
 No live database was initialized, cash history guessed, control enabled or paid
 request made. Next verification is hosted Windows/Linux CI, followed by explicit
 opening scope/source selection and native guest application/recovery work.
+
+dbce8ad CI38691414837 passed Ubuntu but Windows failed only during temporary
+SQLite fixture cleanup: test_replay_rejects_scope_and_null_total_tampering left
+sqlite3 connections open (the transaction context manager does not close them).
+Windows ran787 tests146.249s with this single cleanup error. Changed the fixture
+to explicit contextlib.closing plus transaction contexts for its edits; production
+store connection ownership is unchanged. The targeted eight-test suite is rerun
+before push; fresh hosted Windows verification remains required. The additional
+private Windows Python check could not stage because steamdeck.local did not
+resolve, so it was not run or claimed as passed.
