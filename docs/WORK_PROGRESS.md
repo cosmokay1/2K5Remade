@@ -7440,3 +7440,36 @@ hashes, and reported hashes do not prove fresh guest sampling or uninterrupted
 application. No installed runtime, save, configuration, credentials or control
 changed. Next is the native completion handoff and comparison consumption,
 retaining required saved proof and all unresolved accounting/authority gates.
+
+### October 15 — Native completion handoff and comparison sequencing
+
+Connected the completion event to the franchise owner and existing native saved
+journal. Owner callbacks sample both existing read-only projections within the
+addon read scope, validate framing and copy immutable hashes without transport
+waits. The journal accepts completion only after validated preparation/status.
+Repeating identical hashes is harmless; changed data rejects. An older pending
+status reply cannot bypass comparison. Live mismatch pauses automatic progress;
+a match still needs the saved candidate plus current settlement authorization.
+Captured comparison/status remains available after AI disable.
+
+Foreign, unreadable or unbound completion sets an atomic failure observed by the
+owner, preserving durable prepared work for explicit recovery. Start/stop reset
+it; this is not cancellation of a previously submitted service operation. No
+application issuer, guest-write API or new generic addon ABI was introduced.
+The future permit issuer still must require the transport owner and uninterrupted
+mutation. Production grants remain unavailable; no installed game changed.
+
+The actual native protocol fixture covers immutable/repeated completion, pending
+pre-completion status, mandatory comparison, AI-off reads, saved-candidate gating
+and mismatched completion stop. Adapter forwarding validates context/size; the
+Windows held-host fixture now covers immediate owner sampling, unreadable capture
+and foreign-thread refusal. The real Windows client/sidecar fixture is extended
+to hash authored final snapshots while an older read is pending, compare before
+saving, then independently confirm saved effects and recover disabled. Windows
+execution of these updated cases remains pending.
+
+All836 local Python regressions pass in34.678s; the actual compiled native
+protocol and adapter boundary pass. Full Windows CI/private execution is next.
+Actual application permission, complete books, uninterrupted mutation and real
+game signing/save/reload remain unverified. No user save, runtime, launch
+configuration, credentials or control was changed.

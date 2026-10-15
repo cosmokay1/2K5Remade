@@ -32,7 +32,7 @@ static nlohmann::json submit(FranchiseHostClient* client,const nlohmann::json& r
 }
 int wmain(int argc,wchar_t** argv) {
     try {
-        require(argc==8);
+        require(argc==10);
         FranchiseHostClient* raw=nullptr;
         require(franchise_host_create(argv[1],argv[2],FRANCHISE_HOST_OFFLINE_FIXTURE,&raw)==FRANCHISE_HOST_OK);
         Client client(raw,&franchise_host_destroy);
@@ -65,7 +65,18 @@ int wmain(int argc,wchar_t** argv) {
         const auto prepared=receive(client.get());
         require(prepared.at("error").is_null() && prepared.at("result").at("state")=="prepared");
         require(franchise_host_check_saved(client.get())==FRANCHISE_HOST_OK);
+        std::ifstream final_finance{std::filesystem::path(argv[8]),std::ios::binary};require(final_finance.good());
+        std::ifstream final_identity{std::filesystem::path(argv[9]),std::ios::binary};require(final_identity.good());
+        std::vector<char> completed_finance{std::istreambuf_iterator<char>(final_finance),std::istreambuf_iterator<char>()};
+        std::vector<char> completed_identity{std::istreambuf_iterator<char>(final_identity),std::istreambuf_iterator<char>()};
+        require(franchise_host_observe_completed(client.get(),nullptr,0,nullptr,0)==FRANCHISE_HOST_INVALID_ARGUMENT);
+        // A completion while an older status request is pending must still be compared.
+        require(franchise_host_observe_completed(client.get(),completed_finance.data(),completed_finance.size(),
+                                                completed_identity.data(),completed_identity.size())==FRANCHISE_HOST_OK);
         require(receive(client.get()).at("result").at("save_position")=="before");
+        require(franchise_host_check_saved(client.get())==FRANCHISE_HOST_OK);
+        const auto compared=receive(client.get());
+        require(compared.at("result").at("live_application_matches")==true && compared.at("result").at("save_position")=="before");
         std::filesystem::copy_file(argv[4],argv[5],std::filesystem::copy_options::overwrite_existing);
         require(franchise_host_check_saved(client.get())==FRANCHISE_HOST_OK);
         require(receive(client.get()).at("result").at("save_position")=="candidate_after");

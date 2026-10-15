@@ -46,11 +46,13 @@ def fixture(root):
     assert replay['error'] is None and replay['result']['evidence']==reply['result']['evidence']
     reply=replay # Checkpoint history now includes the already recorded proposal.
     provider.assert_called_once()
-    paths={key:root/name for key,name in (('save','current.dat'),('after','authored after.dat'),('bindings','bindings.json'),('proposal','proposal.json'),('finance','finance.dat'),('identity','identity.dat'))}
+    paths={key:root/name for key,name in (('save','current.dat'),('after','authored after.dat'),('bindings','bindings.json'),('proposal','proposal.json'),('finance','finance.dat'),('identity','identity.dat'),('after_finance','after-finance.dat'),('after_identity','after-identity.dat'))}
     paths['save'].write_bytes(sample.before);paths['after'].write_bytes(sample.after)
     paths['bindings'].write_text(json.dumps(sample.bindings));paths['proposal'].write_text(json.dumps(request))
     paths['finance'].write_bytes(saved_finance_state(sample.before))
     paths['identity'].write_bytes(saved_identity_state(sample.before))
+    paths['after_finance'].write_bytes(saved_finance_state(sample.after))
+    paths['after_identity'].write_bytes(saved_identity_state(sample.after))
     return dict(database=path,store=store,sample=sample,provider=provider,paths=paths,reply=reply)
 
 
@@ -61,18 +63,20 @@ def main():
         environment={key:value for key,value in os.environ.items() if not key.startswith('NFL2K5_FRANCHISE_')}
         environment.update(NFL2K5_FRANCHISE_GUEST_SIGNING='1',NFL2K5_FRANCHISE_GUEST_SAVE=str(paths['save']),
             NFL2K5_FRANCHISE_GUEST_BINDINGS=str(paths['bindings']),GOOGLE_APPLICATION_CREDENTIALS=str(Path(directory)/'missing-adc.json'))
-        result=subprocess.run([str(executable),sys.executable,str(data['database']),str(paths['proposal']),str(paths['after']),str(paths['save']),str(paths['finance']),str(paths['identity'])],
+        result=subprocess.run([str(executable),sys.executable,str(data['database']),str(paths['proposal']),str(paths['after']),str(paths['save']),str(paths['finance']),str(paths['identity']),str(paths['after_finance']),str(paths['after_identity'])],
             env=environment,text=True,capture_output=True,timeout=60)
         assert result.returncode==0,(result.returncode,result.stdout,result.stderr)
         replies=[json.loads(line) for line in result.stdout.splitlines()]
-        assert len(replies)==13,replies
+        assert len(replies)==14,replies
         assert replies[1]==data['reply']
         assert replies[2]['error']=='state_rejected' and replies[3]==data['reply']
         assert replies[4]['error']=='state_rejected' and replies[5]==data['reply']
         assert replies[6]['result']['state']=='prepared' and replies[7]['result']['save_position']=='before'
-        assert replies[8]['result']['save_position']=='candidate_after' and replies[9]['result']['state']=='settled'
-        assert replies[10]['result']['save_position']=='confirmed_after' and replies[11]['error']=='ai_disabled'
-        assert replies[12]['result']['save_position']=='confirmed_after'
+        assert replies[8]['result']['save_position']=='before' and replies[8]['result']['live_application_matches'] is True
+        assert replies[9]['result']['save_position']=='candidate_after' and replies[9]['result']['live_application_matches'] is True
+        assert replies[10]['result']['state']=='settled'
+        assert replies[11]['result']['save_position']=='confirmed_after' and replies[12]['error']=='ai_disabled'
+        assert replies[13]['result']['save_position']=='confirmed_after'
         ledger=FranchiseStore(data['database']).load_team('49ers')
         assert ledger.revision==2 and ledger.cash_snapshot()['nominal_total'] is None
         assert ledger.cash_snapshot()['known_totals']['nominal_total']==sum(data['sample'].offer.salaries)+data['sample'].offer.signing_bonus
@@ -80,7 +84,7 @@ def main():
         assert paths['save'].read_bytes()==data['sample'].after
         assert len(data['store'].negotiation_history('49ers',data['sample'].player))==2
         data['provider'].assert_called_once()
-        assert replies[9]['result']['after_payload_sha256']==hashlib.sha256(data['sample'].after).hexdigest()
+        assert replies[10]['result']['after_payload_sha256']==hashlib.sha256(data['sample'].after).hexdigest()
     print('Native captured acceptance, saved candidate, ledger confirmation and disabled restart recovery passed (authored files only).')
 
 

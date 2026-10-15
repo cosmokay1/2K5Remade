@@ -18,6 +18,7 @@ static int saved_performance;
 static int inspect_guest_offer;
 static int proposal_requested, proposal_sent, proposal_pending;
 static int journal_enabled, journal_pending, journal_locked;
+static volatile LONG completion_failed;
 static unsigned long long journal_next_check;
 static char journal_last_reply[65536];
 /* One bounded submit intent. Foreign callbacks never inspect owner state or
@@ -89,6 +90,7 @@ void nfl2k5_franchise_stop(void)
     ReleaseSRWLockExclusive(&submission_lock);
     proposal_requested=proposal_sent=proposal_pending=0;
     journal_enabled=journal_pending=journal_locked=0;
+    InterlockedExchange(&completion_failed,0);
     journal_next_check=0;journal_last_reply[0]=0;
     context_sequence = context_logged = 0;
     signing_active = context_sent = 0;
@@ -137,6 +139,7 @@ void nfl2k5_franchise_poll(void)
 {
     if ((DWORD)InterlockedCompareExchange(&franchise_owner_thread,0,0) != GetCurrentThreadId() ||
         !franchise_client || hello_failed) return;
+    if(InterlockedCompareExchange(&completion_failed,0,0)) goto failed;
     if (hello_pending || context_pending || journal_pending) {
         int ready = 0;
         static char response[65536];
@@ -225,6 +228,27 @@ failed:
     hello_failed = 1;
     clear_display();
     fprintf(stderr,"[FRANCHISE] Sidecar transport unavailable; signing remains held. Check journal recovery.\n");
+}
+int nfl2k5_franchise_completed(void)
+{
+    /* Foreign callbacks cannot read owner/client state or hand unchecked guest
+     * pointers across threads. Leave the durable journal for explicit recovery. */
+    if((DWORD)InterlockedCompareExchange(&franchise_owner_thread,0,0)!=GetCurrentThreadId()) {
+        InterlockedExchange(&completion_failed,1);return 0;
+    }
+    if(!franchise_client || hello_failed || !journal_enabled || !journal_locked) {
+        InterlockedExchange(&completion_failed,1);return 0;
+    }
+    FranchiseFinanceSnapshot finance;
+    FranchiseIdentitySnapshot *identity=malloc(sizeof(*identity));
+    const int captured=identity && nfl2k5_franchise_read_finance(&finance) &&
+        nfl2k5_franchise_read_identity(&finance,identity);
+    const FranchiseHostStatus status=captured ? franchise_host_observe_completed(franchise_client,
+        finance.bytes,finance.size,identity->bytes,identity->size) : FRANCHISE_HOST_INVALID_ARGUMENT;
+    free(identity);
+    if(status!=FRANCHISE_HOST_OK) {InterlockedExchange(&completion_failed,1);return 0;}
+    journal_next_check=0;
+    return 1;
 }
 int nfl2k5_franchise_context_enabled(void)
 {
@@ -423,6 +447,7 @@ int nfl2k5_franchise_start(void)
     ReleaseSRWLockExclusive(&submission_lock);
     proposal_requested=proposal_sent=proposal_pending=0;
     journal_enabled=prepare_enabled;journal_pending=journal_locked=0;
+    InterlockedExchange(&completion_failed,0);
     journal_next_check=0;journal_last_reply[0]=0;
     context_revision = revision;
     context_sequence = context_logged = 0;

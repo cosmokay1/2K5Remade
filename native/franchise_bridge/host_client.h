@@ -55,6 +55,12 @@ FranchiseHostStatus franchise_host_submit(FranchiseHostClient* client, const cha
  * This is neither an atomic live read nor a guest write grant. */
 FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient* client,
     const void* finance_state, size_t finance_size, const void* identity_state, size_t identity_size);
+/* Owner only; copy/hash completed live snapshots for the existing journal.
+ * No transport wait or guest writes. May record while a status request is busy;
+ * the next idle check must compare these hashes before any saved confirmation.
+ * Repeating identical data is allowed; changing it requires explicit recovery. */
+FranchiseHostStatus franchise_host_observe_completed(FranchiseHostClient* client,
+    const void* finance_state, size_t finance_size, const void* identity_state, size_t identity_size);
 /* Queue a read-only saved-state check for the prepared journal. Only a validated
  * candidate after-save plus the existing hello grant can queue confirmation;
  * the server rechecks current authority and bytes. NOT_READY means no journal or

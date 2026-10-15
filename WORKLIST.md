@@ -92,7 +92,10 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       fixture children and isolated game --validate. No new native pair installed.
       Read-only journal status can now compare reported completed finance/identity
       projections against its exact accepted target without treating a live match
-      as a saved signing. Native completion-request wiring remains open.
+      as a saved signing. Native completion now samples/copies the projections on
+      the owner and requires their comparison before automatic saved confirmation.
+      Wrong-thread/unreadable/unbound results and mismatches keep recovery held;
+      this flow has no application issuer and actual game execution remains open.
       An explicitly requested controlled-signing mode now also holds when the
       addon is unavailable, rather than silently falling through to retail.
       This now includes builds with sidecar support compiled out: both judgment

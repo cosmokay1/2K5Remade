@@ -17,7 +17,8 @@ static unsigned submissions;
 static DWORD owner;
 static bool ready;
 static unsigned preparations;
-static unsigned saved_checks;
+static unsigned saved_checks,completed_observations;
+static bool completion_readable=true;
 static FranchiseHostStatus preparation_status=FRANCHISE_HOST_NOT_READY;
 static void require(bool ok) { if(!ok) throw std::runtime_error("Held signing host invariant failed"); }
 FranchiseHostStatus franchise_host_create(const wchar_t*,const wchar_t*,FranchiseHostMode mode,FranchiseHostClient** out) {
@@ -33,7 +34,7 @@ FranchiseHostStatus franchise_host_submit(FranchiseHostClient* c,const char* byt
 }
 FranchiseHostStatus franchise_host_ready(FranchiseHostClient*,int* out) { require(GetCurrentThreadId()==owner);*out=ready;return FRANCHISE_HOST_OK; }
 int nfl2k5_franchise_read_finance(FranchiseFinanceSnapshot* out) {
-    require(GetCurrentThreadId()==owner);*out={};out->size=FRANCHISE_FINANCE_HEADER+FRANCHISE_FINANCE_RECORD;
+    require(GetCurrentThreadId()==owner);if(!completion_readable) return 0;*out={};out->size=FRANCHISE_FINANCE_HEADER+FRANCHISE_FINANCE_RECORD;
     finance_put32(out->bytes,1);finance_put32(out->bytes+4,1);finance_put32(out->bytes+8,2);finance_put32(out->bytes+24,32);
     return 1;
 }
@@ -48,6 +49,10 @@ FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient* c,const
     if(preparation_status!=FRANCHISE_HOST_OK) return preparation_status;
     const std::string request=R"({"protocol":1,"request_id":"authored-guest","operation":"guest_signing_prepare"})";
     return franchise_host_submit(c,request.data(),request.size());
+}
+FranchiseHostStatus franchise_host_observe_completed(FranchiseHostClient *client,const void *finance,size_t size,const void *identity,size_t identity_size) {
+    require(GetCurrentThreadId()==owner && client && finance && size && identity && identity_size);
+    ++completed_observations;return FRANCHISE_HOST_OK;
 }
 FranchiseHostStatus franchise_host_check_saved(FranchiseHostClient* c) {
     require(GetCurrentThreadId()==owner && !c->pending);++saved_checks;
@@ -68,6 +73,7 @@ static DWORD WINAPI foreign_submit(void* data) {
     const auto* intent=static_cast<SubmitIntent*>(data);
     return nfl2k5_franchise_submit_held(&intent->observation,intent->epoch)==1 ? 0 : 1;
 }
+static DWORD WINAPI foreign_complete(void*) {return nfl2k5_franchise_completed() ? 1 : 0;}
 static void submit_foreign(const FranchiseSigningObservation& observation,unsigned long long epoch) {
     SubmitIntent intent={observation,epoch};
     HANDLE thread=CreateThread(nullptr,0,foreign_submit,&intent,0,nullptr);require(thread!=nullptr);
@@ -169,10 +175,19 @@ int main(int argc,char** argv) {
                 ready=true;nfl2k5_franchise_poll();
                 require(!nfl2k5_franchise_display(&view)); // Stale receipt stays hidden.
                 const auto checked=saved_checks;
-                Sleep(2100);nfl2k5_franchise_poll();
+                require(nfl2k5_franchise_completed()==1 && completed_observations==1);
+                nfl2k5_franchise_poll();
                 require(saved_checks==checked+1 && submitted["operation"]=="guest_signing_status");
                 nfl2k5_franchise_poll(); // Consume while the signing screen is closed.
                 require(!nfl2k5_franchise_display(&view));
+                completion_readable=false;
+                require(!nfl2k5_franchise_completed());
+                completion_readable=true;
+                HANDLE completion=CreateThread(nullptr,0,foreign_complete,nullptr,0,nullptr);require(completion!=nullptr);
+                require(WaitForSingleObject(completion,5000)==WAIT_OBJECT_0);
+                DWORD code=1;require(GetExitCodeThread(completion,&code) && !code);CloseHandle(completion);
+                const auto stopped=submissions;
+                nfl2k5_franchise_poll();require(submissions==stopped && completed_observations==1);
             }
             const auto count=submissions;
             nfl2k5_franchise_on_fsm(0x557B2C,1);

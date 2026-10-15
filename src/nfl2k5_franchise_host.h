@@ -13,6 +13,9 @@ void nfl2k5_franchise_stop(void);
 void nfl2k5_franchise_on_fsm(uint32_t descriptor, int push);
 /* Input callbacks poll only on the transport owner; never wait for a reply. */
 void nfl2k5_franchise_poll(void);
+/* Successful native callback: sample on the owner, queue read-only comparison.
+ * Wrong-thread/unreadable/unbound completion stops automatic coordination. */
+int nfl2k5_franchise_completed(void);
 typedef struct {
     uint32_t slot, team_index, payroll, cap, team_flag, accumulator;
     uint32_t offer_amount, offer_flags;

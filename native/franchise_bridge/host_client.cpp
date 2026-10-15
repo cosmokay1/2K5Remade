@@ -125,24 +125,31 @@ extern "C" FranchiseHostStatus franchise_host_submit(FranchiseHostClient* client
     } catch (...) { client->ai_granted = false; return FRANCHISE_HOST_SERVICE_FAILURE; }
 }
 
+static bool valid_signing_images(const void* finance_state,size_t finance_size,const void* identity_state,size_t identity_size) {
+    const auto* image=static_cast<const unsigned char*>(finance_state);
+    if(!image || finance_size<FRANCHISE_FINANCE_HEADER || finance_size>sizeof(FranchiseFinanceSnapshot::bytes) ||
+       finance_get32(image)!=1 || !finance_get32(image+4) || finance_get32(image+4)>FRANCHISE_FINANCE_MAX_PLAYERS ||
+       finance_size!=FRANCHISE_FINANCE_HEADER+FRANCHISE_FINANCE_RECORD*finance_get32(image+4) ||
+       finance_get32(image+8)!=2 || finance_get32(image+24)!=32 || finance_get32(image+44))
+        return false;
+    const auto* identities=static_cast<const unsigned char*>(identity_state);
+    if(!identities || identity_size<FRANCHISE_IDENTITY_HEADER || identity_size>sizeof(FranchiseIdentitySnapshot::bytes) ||
+       finance_get32(identities)!=1 || finance_get32(identities+4)!=finance_get32(image+4) ||
+       finance_get32(identities+8)>finance_get32(image+4) ||
+       identity_size!=FRANCHISE_IDENTITY_HEADER+FRANCHISE_IDENTITY_RECORD*finance_get32(identities+8))
+        return false;
+    return true;
+}
+
 extern "C" FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient* client,const void* finance_state,size_t finance_size,
                                                               const void* identity_state,size_t identity_size) {
     if(!client) return FRANCHISE_HOST_INVALID_ARGUMENT;
     if(client->pending || client->cached) return FRANCHISE_HOST_BUSY;
     if(client->candidate.preparation.is_null()) return FRANCHISE_HOST_NOT_READY;
     if(!client->ai_granted || !client->journal_capable) return FRANCHISE_HOST_SERVICE_FAILURE;
+    if(!valid_signing_images(finance_state,finance_size,identity_state,identity_size)) return FRANCHISE_HOST_INVALID_ARGUMENT;
     const auto* image=static_cast<const unsigned char*>(finance_state);
-    if(!image || finance_size<FRANCHISE_FINANCE_HEADER || finance_size>sizeof(FranchiseFinanceSnapshot::bytes) ||
-       finance_get32(image)!=1 || !finance_get32(image+4) || finance_get32(image+4)>FRANCHISE_FINANCE_MAX_PLAYERS ||
-       finance_size!=FRANCHISE_FINANCE_HEADER+FRANCHISE_FINANCE_RECORD*finance_get32(image+4) ||
-       finance_get32(image+8)!=2 || finance_get32(image+24)!=32 || finance_get32(image+44))
-        return FRANCHISE_HOST_INVALID_ARGUMENT;
     const auto* identities=static_cast<const unsigned char*>(identity_state);
-    if(!identities || identity_size<FRANCHISE_IDENTITY_HEADER || identity_size>sizeof(FranchiseIdentitySnapshot::bytes) ||
-       finance_get32(identities)!=1 || finance_get32(identities+4)!=finance_get32(image+4) ||
-       finance_get32(identities+8)>finance_get32(image+4) ||
-       identity_size!=FRANCHISE_IDENTITY_HEADER+FRANCHISE_IDENTITY_RECORD*finance_get32(identities+8))
-        return FRANCHISE_HOST_INVALID_ARGUMENT;
     try {
         auto journal=client->candidate;
         journal.preparation["live_finance_sha256"]=signing_state_sha256(image,finance_size);
@@ -151,6 +158,16 @@ extern "C" FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClie
         const auto status=franchise_host_submit(client,request.data(),request.size());
         if(status==FRANCHISE_HOST_OK) client->journal=std::move(journal);
         return status;
+    } catch(...) {client->ai_granted=false;return FRANCHISE_HOST_SERVICE_FAILURE;}
+}
+
+extern "C" FranchiseHostStatus franchise_host_observe_completed(FranchiseHostClient* client,const void* finance_state,size_t finance_size,
+                                                               const void* identity_state,size_t identity_size) {
+    if(!client || !valid_signing_images(finance_state,finance_size,identity_state,identity_size)) return FRANCHISE_HOST_INVALID_ARGUMENT;
+    try {
+        client->journal.observe_completed(signing_state_sha256(static_cast<const unsigned char*>(finance_state),finance_size),
+                                          signing_state_sha256(static_cast<const unsigned char*>(identity_state),identity_size));
+        return FRANCHISE_HOST_OK;
     } catch(...) {client->ai_granted=false;return FRANCHISE_HOST_SERVICE_FAILURE;}
 }
 

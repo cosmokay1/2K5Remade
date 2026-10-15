@@ -21,6 +21,21 @@ inline nlohmann::json saved_signing_prepare(const nlohmann::json& request,const 
 // This coordinates saved effects only. It never grants guest memory/file writes.
 struct SavedSigningJournal {
     nlohmann::json preparation=nullptr, player=nullptr, charges=nullptr, status=nullptr;
+    nlohmann::json live_completion=nullptr;
+    bool prepared=false;
+    void observe_completed(const std::string& finance,const std::string& identity) {
+        if(preparation.is_null() || !prepared ||
+           (!status.is_null() && status.at("state")!="prepared"))
+            throw std::runtime_error("No prepared journal for native completion");
+        auto canonical=[](const std::string& value) {
+            return value.size()==64 && value.find_first_not_of("0123456789abcdef")==std::string::npos;
+        };
+        if(!canonical(finance) || !canonical(identity)) throw std::runtime_error("Invalid completion digests");
+        const nlohmann::json observation={{"live_finance_sha256",finance},{"live_identity_sha256",identity}};
+        if(!live_completion.is_null() && live_completion!=observation)
+            throw std::runtime_error("Native completion changed; recovery required");
+        live_completion=observation;
+    }
     static SavedSigningJournal capture(const nlohmann::json& request,const nlohmann::json& response) {
         SavedSigningJournal journal;
         journal.preparation=saved_signing_prepare(request,response);
@@ -37,7 +52,11 @@ struct SavedSigningJournal {
         const auto id=preparation.at("request_id").get<std::string>();
         nlohmann::json request={{"protocol",1},{"request_id",id+"-status"},{"operation","guest_signing_status"},
             {"journal_request_id",id},{"timeout_ms",10000}};
-        if(ai_granted && !status.is_null() && status.at("state")=="prepared" && status.at("save_position")=="candidate_after") {
+        const bool compared=!live_completion.is_null() && !status.is_null() && status.contains("live_application_matches");
+        if(compared && status.at("live_application_matches")==false) return nullptr;
+        if(!live_completion.is_null()) request.update(live_completion);
+        if(ai_granted && (live_completion.is_null() || compared) && !status.is_null() && status.at("state")=="prepared" && status.at("save_position")=="candidate_after") {
+            request.erase("live_finance_sha256");request.erase("live_identity_sha256");
             request["request_id"]=id+"-confirm";request["operation"]="guest_signing_confirm";
             request["expected_after_sha256"]=status.at("current_payload_sha256");
         }
@@ -56,8 +75,16 @@ struct SavedSigningJournal {
         if(op=="guest_signing_status") {
             if(result.at("before_payload_sha256")!=preparation.at("expected_before_sha256"))
                 throw std::runtime_error("Saved-signing before-save changed");
+            if(request.contains("live_finance_sha256") &&
+               (live_completion.is_null() || request.at("live_finance_sha256")!=live_completion.at("live_finance_sha256") ||
+                request.at("live_identity_sha256")!=live_completion.at("live_identity_sha256")))
+                throw std::runtime_error("Completion status differs from captured native result");
+            prepared=result.at("state")=="prepared";
             status=result;
+        } else if(op=="guest_signing_prepare") {
+            prepared=true;
         } else if(op=="guest_signing_confirm") {
+            prepared=false;
             const auto revision=preparation.at("expected_revision").get<int64_t>();
             if(revision==std::numeric_limits<int64_t>::max()) throw std::runtime_error("Signing revision exceeds native range");
             if(result.at("player_id")!=player || result.at("charges")!=charges ||

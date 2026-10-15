@@ -17,6 +17,9 @@ int nfl2k5_franchise_read_identity(const struct FranchiseFinanceSnapshot *financ
 FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient *client,const void *finance,size_t size,const void *identity,size_t identity_size) {
     (void)client;(void)finance;(void)size;(void)identity;(void)identity_size;assert(0);return FRANCHISE_HOST_SERVICE_FAILURE;
 }
+FranchiseHostStatus franchise_host_observe_completed(FranchiseHostClient *client,const void *finance,size_t size,const void *identity,size_t identity_size) {
+    (void)client;(void)finance;(void)size;(void)identity;(void)identity_size;return FRANCHISE_HOST_SERVICE_FAILURE;
+}
 FranchiseHostStatus franchise_host_check_saved(FranchiseHostClient *client) {
     (void)client;assert(0);return FRANCHISE_HOST_SERVICE_FAILURE;
 }

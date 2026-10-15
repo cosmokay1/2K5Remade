@@ -9,7 +9,7 @@
 #include <string.h>
 extern const NFL2K5AddonAPI* nfl2k5_addon_query(uint32_t abi);
 static int enabled=1;
-static unsigned reads,epochs,submits;
+static unsigned reads,epochs,submits,completions;
 static unsigned long long submitted_epoch;
 static const FranchiseSigningObservation* submitted_observation;
 static int range(uint32_t a,size_t n){(void)a;(void)n;return 0;}
@@ -22,6 +22,7 @@ int nfl2k5_franchise_context_enabled(void){return 0;}
 void nfl2k5_franchise_signing_context(const FranchiseSigningObservation* o){(void)o;}
 int nfl2k5_franchise_display(FranchiseSigningDisplay* out){memset(out,0,sizeof(*out));return 0;}
 unsigned long long nfl2k5_franchise_submission_epoch(void){++epochs;return enabled?7:0;}
+int nfl2k5_franchise_completed(void){++completions;return 1;}
 int nfl2k5_franchise_submit_held(const FranchiseSigningObservation* o,unsigned long long epoch){
     ++submits;submitted_observation=o;submitted_epoch=epoch;return enabled;
 }
@@ -53,6 +54,11 @@ int main(void){
     int invalid=api->snapshot(FRANCHISE_IDENTITY_SNAPSHOT,identity,sizeof(*identity)-1) ||
                 api->snapshot(FRANCHISE_IDENTITY_SNAPSHOT,identity,sizeof(*identity)) || identity->size;
     free(identity);if(invalid) return 8;
+    uint32_t completed=0x1234;
+    if(!api->event(FRANCHISE_SIGN_COMPLETED_EVENT,&completed,sizeof(completed)) || completions!=1) return 9;
+    completed=0;
+    if(api->event(FRANCHISE_SIGN_COMPLETED_EVENT,&completed,sizeof(completed)) ||
+       api->event(FRANCHISE_SIGN_COMPLETED_EVENT,&completed,sizeof(completed)-1) || completions!=1) return 10;
     api->stop();
     puts("Actual adapter distinguishes judgment from precommit without extra sampling or offer intent");return 0;
 }

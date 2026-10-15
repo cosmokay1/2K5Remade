@@ -250,10 +250,9 @@ private event franchise.sign-completed.v1 carries the uint32 context; its reply
 is ignored. Control disable after writes does not suppress this notification,
 which is needed for recovery without authorizing further work.
 
-The production addon still grants no applications and has no completion-event
-consumer. A future coordinator must compare the completed live image against
-the prepared target and obtain actual saved/reloaded proof before ledger
-settlement. This notification alone is not a commit receipt, save proof or
+The production addon still grants no applications. Its completion consumer now
+queues the live target comparison described below. Actual saved/reloaded proof
+and application authority remain required before final delivery. This notification alone is not a commit receipt, save proof or
 evidence that the original routine never yielded. The optional post-contract
 UI path and all existing authority/accounting gates remain unresolved.
 
@@ -273,6 +272,33 @@ save still equals the original. It does not settle a journal, advance finances,
 change cash or grant a write. Recovery remains available with AI disabled and
 without inference. These are client-reported hashes, not independent proof of
 current guest state, lock continuity, active runtime or application authority.
-The production completion event is not yet connected to this status request.
+The completion consumer described below now queues this status request.
 Saved confirmation still requires an exact candidate after-save and current
 settlement authority; actual game signing/save/reload remains unverified.
+
+### Native completion handoff to the prepared journal
+
+A nonzero, correctly sized completion event now enters the franchise transport
+owner. It samples the existing whole-league financial/identity projections in
+that addon invocation, validates snapshot framing and copies their SHA256s into
+the validated prepared journal. The callback never waits for transport. It can
+record while an older status request is pending; the next idle status request
+includes the immutable projection pair. Identical repeats are harmless, changed
+observations reject. No application event handler or write grant was added.
+
+The native journal must compare a captured completion before queuing a saved
+confirmation, even when an older pending reply already identifies a candidate
+after-save. A live mismatch stops automatic coordination. A matching live result
+with an unchanged save continues read-only status checks; confirmation still
+requires the saved candidate and current AI/control grant, rechecked by the
+service. Completion capture and status reads do not require AI to remain enabled.
+Wrong-thread, unreadable or unbound completion sets a failure flag consumed by
+the owner, leaving durable prepared work for recovery. Start/stop reset the flag.
+This does not cancel a server operation already submitted. Future application
+authorization must pin the transaction to that owner; foreign completion is
+refused rather than passing live pointers between threads.
+
+This is source-level integration, not an enabled game signing flow. The installed
+runtime is unchanged. Complete opening accounting, application permits, runtime/
+franchise binding, uninterrupted mutation and actual signing/save/reload remain
+required. Restart recovery still relies on independently verified saved effects.

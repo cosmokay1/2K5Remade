@@ -817,6 +817,12 @@ int main(int argc,char** argv) {
         franchise::validate_result(prepared,preparation);
         auto journal=franchise::SavedSigningJournal::capture(captured_request,captured_reply);
         journal.consume(preparation,prepared);
+        auto completion=journal;
+        completion.observe_completed(std::string(64,'a'),std::string(64,'b'));
+        completion.observe_completed(std::string(64,'a'),std::string(64,'b'));
+        bool changed_completion=false;
+        try{completion.observe_completed(std::string(64,'c'),std::string(64,'b'));}catch(...){changed_completion=true;}
+        if(!changed_completion) throw std::runtime_error("Changed completion was not held");
         const auto status_request=journal.next(false);
         if(status_request.at("operation")!="guest_signing_status") throw std::runtime_error("Recovery read requires AI");
         auto saved_status=nlohmann::json{{"error",nullptr},{"result",{{"request_id",preparation["request_id"]},
@@ -824,6 +830,22 @@ int main(int argc,char** argv) {
             {"current_payload_sha256",checkpoint["saved_payload_sha256"]},
             {"before_payload_sha256",checkpoint["saved_payload_sha256"]},{"after_payload_sha256",nullptr}}}};
         journal.consume(status_request,saved_status);
+        auto pending_candidate=saved_status;
+        pending_candidate["result"]["save_position"]="candidate_after";
+        pending_candidate["result"]["current_payload_sha256"]=std::string(64,'d');
+        completion.consume(status_request,pending_candidate); // A pending pre-completion reply.
+        const auto compare_request=completion.next(true);
+        if(compare_request.at("operation")!="guest_signing_status" || compare_request.at("live_finance_sha256")!=std::string(64,'a'))
+            throw std::runtime_error("Uncompared completion allowed saved settlement");
+        auto compared=pending_candidate;compared["result"]["live_application_matches"]=true;
+        completion.consume(compare_request,compared);
+        if(completion.next(true).at("operation")!="guest_signing_confirm" ||
+           completion.next(false).at("operation")!="guest_signing_status")
+            throw std::runtime_error("Live comparison lost saved proof or control requirement");
+        compared["result"]["live_application_matches"]=false;
+        completion.consume(compare_request,compared);
+        if(!completion.next(true).is_null() || !completion.next(false).is_null())
+            throw std::runtime_error("Mismatched completion continued automatically");
         auto live_request=status_request;
         live_request["live_finance_sha256"]=std::string(64,'a');
         live_request["live_identity_sha256"]=std::string(64,'b');

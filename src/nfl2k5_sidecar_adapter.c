@@ -361,6 +361,10 @@ int nfl2k5_franchise_hold_signing_at(uint32_t stage,uint32_t context) {
 }
 static int addon_event(const char *name,const void *data,size_t size) {
     if(!name || !data) return 0;
+    if(!strcmp(name,FRANCHISE_SIGN_COMPLETED_EVENT) && size==sizeof(uint32_t)) {
+        uint32_t context;memcpy(&context,data,sizeof(context));
+        return context ? nfl2k5_franchise_completed() : 0;
+    }
     if(!strcmp(name,FRANCHISE_SIGN_GATE_EVENT) && size==sizeof(FranchiseSignGateEvent)) {
         FranchiseSignGateEvent event;memcpy(&event,data,sizeof(event));
         if(event.stage!=FRANCHISE_SIGN_JUDGMENT && event.stage!=FRANCHISE_SIGN_PRECOMMIT) return 0;
