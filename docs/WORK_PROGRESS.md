@@ -5914,3 +5914,68 @@ cross-save recovery, current control rechecks, complete modern opening obligatio
 and actual integrated signing/save/load are still required before releasing held
 native offers. Nothing was installed, launched or changed in game saves, cloud
 control or paid inference.
+
+## Core signing: durable prepare/confirm/settle journal
+
+Added franchise.guest_signing with one league-wide pending SQLite journal. It
+retains exact accepted-proposal/input fingerprints, pinned bindings and original
+save bytes. Preparation requires all32 supported team books, known cash inventory,
+exact saved/ledger ownership and annual charges, preserved legacy terms or exactly
+supported active terms, current accepted preview/revision and current access
+before/after insertion. Unresolved first-year adjustments or guest payroll
+projections reject; legacy cash import remains unavailable. No revenue adjustment,
+zero-cash assumption or new guest-write permission is introduced.
+
+Prepared work blocks other cooperative FranchiseStore writes across processes,
+including other clubs, actors, direct settlement and migrations. Constructor
+schema initialization/reopening and reads remain available. Older writers that
+lack this guard are unsupported. The journal has a versioned intent and a unique
+pending-row index; it is separate from immutable generation checkpoint tables.
+
+The existing signing helper can now use the coordinator's SQLite transaction.
+Saved proof/after bytes, resolved journal, cap, cash, ownership, promises and story
+commit together. A failure after inserts rolls all of them back. Same journal and
+payload retry returns the original receipt; changed saved payloads reject. Reads
+verify source proposal/backup/proof fingerprints and identify before,
+candidate_after, confirmed_after or unrecognized state even with AI disabled.
+A settled journal with the old original save is detected without silently
+reversing finances. Cancellation requires the exact original bytes and successful
+stopped-game checks before/after updating state. It never restores files or
+renews/re-enables controls. Native apply/save/reload and actual quiescence checks
+are still absent; these APIs deliberately have no bridge operation or write grant.
+
+Validation:12 authored full-league journal tests passed2.364s. They cover restart,
+known-cash/league gates, same-ID and concurrent settlement retries, changed
+preparation, competing operations/club writes, shutdown after prepare or financial
+inserts, original-save cancellation, game restart during cancellation, disabled
+control recovery, invalid saves and corrupt backup/proof rejection. An actual
+child exits73 after journal/financial updates but before SQL commit; restart
+retains the original backup and prepared state with unchanged finances, then
+settles once without inference. Imported fixture class initially duplicated its
+10 tests; module-qualified fixture import corrected collection. Final full760
+regressions passed29.765s. Money audit passed5050 conservation cases. No game,
+installed runtime/save, cloud authorization or paid inference changed.
+
+Prior167eee8 CI is confirmed green: Build38674199746 and Franchise AI38674199935.
+Prior3b2b6c9 settlement CI is also green: Build38673709294 and Franchise AI38673709155.
+Journal-source CI remains to verify after push.
+
+## Requested upstream Steam Deck contribution: initial scope inspection
+
+User asks whether the original repack creator can receive deployment support.
+Current mod base is SOFTDRINK 2K28 v0.6 (cruuz/softdrink-2k28); repack upstream is
+BeyondTomrrow/2K5Remade. Keep a contribution focused on deployment rather than this
+AI branch. Verified Gaming Mode registration/controls came from a private untimed
+launcher preserving Steam identity, Valve's steamos-add-to-steam helper and local
+Xbox-prompt/mouse-controller defaults; user confirmed both triggers. A portable
+public launcher still needs extraction from those private installation scripts.
+
+Current public tools/package_steamdeck.py is a manifest ZIP packager, not an
+installer or Steam library registration tool; its README's blanket untested-Proton
+statement is stale relative to later private evidence. Candidate runtime fix
+61ad649 in cosmokay1/xboxrecomp joins the kernel timer before RAM teardown and
+corrects Windows mapping paths; parent3a256fd updates that dependency. It must be
+compared with fresh upstream code and separated from prerequisite platform
+changes before a dependency PR. No whole AI-branch PR, maintainer message or
+binary publication was made. User was told a focused Steam Deck PR is feasible;
+upstream publication has not been represented as completed.

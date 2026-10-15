@@ -168,7 +168,7 @@ class FranchiseStore:
         self.path = str(path)
         if self.path == ":memory:":
             raise ValueError("Durable franchise state requires a database file")
-        with self._connection(write=True) as db:
+        with self._connection(write=True, guest_recovery=True) as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
             if version not in (0, 3, 4):
                 raise ValueError("Unsupported franchise database version")
@@ -178,6 +178,8 @@ class FranchiseStore:
             db.execute("CREATE TABLE IF NOT EXISTS draft_orders (id TEXT PRIMARY KEY, league_year INTEGER UNIQUE NOT NULL, config TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS draft_picks (draft_id TEXT NOT NULL REFERENCES draft_orders(id), overall_pick INTEGER NOT NULL, player_id TEXT UNIQUE NOT NULL, team_id TEXT NOT NULL REFERENCES teams(id), PRIMARY KEY(draft_id,overall_pick))")
             db.execute("CREATE TABLE IF NOT EXISTS franchise_metadata (key TEXT PRIMARY KEY,value TEXT NOT NULL)")
+            db.execute("CREATE TABLE IF NOT EXISTS guest_signings (request_id TEXT PRIMARY KEY, team_id TEXT NOT NULL REFERENCES teams(id), state TEXT NOT NULL CHECK(state IN ('prepared','settled','cancelled')), intent TEXT NOT NULL, before_payload BLOB NOT NULL, after_payload BLOB, confirmation TEXT)")
+            db.execute("CREATE UNIQUE INDEX IF NOT EXISTS one_pending_guest_signing ON guest_signings((1)) WHERE state='prepared'")
             if version == 0:
                 db.execute("PRAGMA user_version=3")
 
@@ -356,7 +358,7 @@ class FranchiseStore:
         return backup
 
     @contextmanager
-    def _connection(self, *, write=False, existing=False):
+    def _connection(self, *, write=False, existing=False, guest_recovery=False):
         database = Path(self.path).absolute().as_uri() + '?mode=rw' if existing else self.path
         db = sqlite3.connect(database, timeout=10, uri=existing)
         try:
@@ -364,6 +366,9 @@ class FranchiseStore:
             db.execute("PRAGMA synchronous=FULL")
             db.execute("BEGIN IMMEDIATE" if write else "BEGIN")
             self._validate_generation_checkpoint(db)
+            if write and not guest_recovery and db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='guest_signings'").fetchone():
+                if db.execute("SELECT 1 FROM guest_signings WHERE state='prepared'").fetchone():
+                    raise Rejected('Guest signing awaits confirmation or stopped-game recovery')
             yield db
             db.commit()
         except BaseException:
@@ -1837,66 +1842,72 @@ class FranchiseStore:
                 'proposal_request_id':proposal_request_id,'history_request_ids':history}
 
     def _sign(self, team_id, request_id, offer, expected_revision, *, access_check=None, story=None,
-              proposal_request_id=None):
+              proposal_request_id=None, _db=None):
         if type(request_id) is not str or not request_id.strip():
             raise Rejected("A request ID is required")
         if story is not None and type(story) is not dict:
             raise ValueError("Story must be a JSON object")
         if story is not None and ('proposal_request_id' in story or story.get('decision_mode')=='proposal_settlement'):
             raise Rejected('Proposal settlement requires its dedicated path')
-        with self._connection(write=True) as db:
-            ledger = self._load(db, team_id)
-            prior = db.execute("SELECT id,kind,payload FROM events WHERE team_id=? AND request_key=?", (team_id, "sign:" + request_id)).fetchone()
-            if proposal_request_id is not None:
-                story=self._settlement_story(db,team_id,proposal_request_id,request_id,
-                                            before_event_id=prior[0] if prior else None)
-                offer=Offer.from_dict(story['offer'])
-                if type(expected_revision) is not int or expected_revision!=story['evidence']['financial_revision']:
-                    raise Rejected('Settlement revision differs from accepted proposal')
-            self._validate_story_evidence(story)
-            payload = {"request_id": request_id, "offer": offer.to_dict(),
-                       "expected_revision": expected_revision, "story": story}
-            if proposal_request_id is not None:
-                payload['proposal_request_id']=proposal_request_id
-            serialized=json.dumps(payload,allow_nan=False)
-            if db.execute("SELECT 1 FROM events WHERE team_id=? AND request_key=?", (team_id, "dialogue:" + request_id)).fetchone():
-                raise Rejected("Request already belongs to a recorded negotiation")
-            if prior:
-                if prior[1] != 'sign':
-                    raise Rejected("Request belongs to an explicit return signing")
-                previous = json.loads(prior[2])
-                if "story" not in previous:
-                    raise Rejected("Request belongs to an explicit return signing")
-                normalized = json.loads(serialized)
-                if (previous["offer"] != normalized["offer"] or previous.get("story") != normalized["story"]
-                        or previous.get('proposal_request_id')!=proposal_request_id):
-                    raise Rejected("Request already committed with different terms or story")
-                return ledger.sign(request_id, offer, expected_revision, access_check=access_check)
-            if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (offer.player_id,)).fetchone():
-                raise Rejected("Player already belongs to a team")
-            self._check_draft_right(db, team_id, offer.player_id)
-            if story is not None:
-                self._check_history(db, team_id, offer.player_id, story)
-            if proposal_request_id is not None:
-                preview=ledger.preview_offer(offer,expected_revision)
-                if self._checkpoint_hash(preview)!=self._checkpoint_hash(story['proposal_preview']):
-                    raise Rejected('Accepted proposal preview changed before settlement')
-            receipt = ledger.sign(request_id, offer, expected_revision, access_check=access_check)
-            self._remember_promises(ledger,payload)
-            if ledger._cash is not None:
-                ledger._cash.add_contract(offer, "sign:" + request_id, obligation_id=ledger.contract_cash_id(offer.player_id))
-                payload["cash_components"] = True
-                payload["cash_posting"] = ledger.cash_snapshot()
-            payload["posting"] = ledger.financial_snapshot()
-            payload["contract_charges"] = [json_amount(value) for value in receipt.charges]
-            if ledger._generation_calendar_anchor is not None:
-                payload.update(calendar_format=1,calendar_posting=self._calendar_posting(ledger))
-            serialized = json.dumps(payload, allow_nan=False)
-            db.execute("INSERT INTO ownership VALUES (?, ?)", (offer.player_id, team_id))
-            db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'sign', ?)", (team_id, "sign:" + request_id, serialized))
-            if proposal_request_id is not None:
-                access_check()  # Shutdown here rolls back ownership, cash, story and cap together.
-            return receipt
+        # The guest coordinator supplies its transaction so journal resolution
+        # and all signing effects cannot commit separately.
+        if _db is None:
+            with self._connection(write=True) as db:
+                return self._sign(team_id,request_id,offer,expected_revision,access_check=access_check,
+                                  story=story,proposal_request_id=proposal_request_id,_db=db)
+        db=_db
+        ledger = self._load(db, team_id)
+        prior = db.execute("SELECT id,kind,payload FROM events WHERE team_id=? AND request_key=?", (team_id, "sign:" + request_id)).fetchone()
+        if proposal_request_id is not None:
+            story=self._settlement_story(db,team_id,proposal_request_id,request_id,
+                                        before_event_id=prior[0] if prior else None)
+            offer=Offer.from_dict(story['offer'])
+            if type(expected_revision) is not int or expected_revision!=story['evidence']['financial_revision']:
+                raise Rejected('Settlement revision differs from accepted proposal')
+        self._validate_story_evidence(story)
+        payload = {"request_id": request_id, "offer": offer.to_dict(),
+                   "expected_revision": expected_revision, "story": story}
+        if proposal_request_id is not None:
+            payload['proposal_request_id']=proposal_request_id
+        serialized=json.dumps(payload,allow_nan=False)
+        if db.execute("SELECT 1 FROM events WHERE team_id=? AND request_key=?", (team_id, "dialogue:" + request_id)).fetchone():
+            raise Rejected("Request already belongs to a recorded negotiation")
+        if prior:
+            if prior[1] != 'sign':
+                raise Rejected("Request belongs to an explicit return signing")
+            previous = json.loads(prior[2])
+            if "story" not in previous:
+                raise Rejected("Request belongs to an explicit return signing")
+            normalized = json.loads(serialized)
+            if (previous["offer"] != normalized["offer"] or previous.get("story") != normalized["story"]
+                    or previous.get('proposal_request_id')!=proposal_request_id):
+                raise Rejected("Request already committed with different terms or story")
+            return ledger.sign(request_id, offer, expected_revision, access_check=access_check)
+        if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (offer.player_id,)).fetchone():
+            raise Rejected("Player already belongs to a team")
+        self._check_draft_right(db, team_id, offer.player_id)
+        if story is not None:
+            self._check_history(db, team_id, offer.player_id, story)
+        if proposal_request_id is not None:
+            preview=ledger.preview_offer(offer,expected_revision)
+            if self._checkpoint_hash(preview)!=self._checkpoint_hash(story['proposal_preview']):
+                raise Rejected('Accepted proposal preview changed before settlement')
+        receipt = ledger.sign(request_id, offer, expected_revision, access_check=access_check)
+        self._remember_promises(ledger,payload)
+        if ledger._cash is not None:
+            ledger._cash.add_contract(offer, "sign:" + request_id, obligation_id=ledger.contract_cash_id(offer.player_id))
+            payload["cash_components"] = True
+            payload["cash_posting"] = ledger.cash_snapshot()
+        payload["posting"] = ledger.financial_snapshot()
+        payload["contract_charges"] = [json_amount(value) for value in receipt.charges]
+        if ledger._generation_calendar_anchor is not None:
+            payload.update(calendar_format=1,calendar_posting=self._calendar_posting(ledger))
+        serialized = json.dumps(payload, allow_nan=False)
+        db.execute("INSERT INTO ownership VALUES (?, ?)", (offer.player_id, team_id))
+        db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'sign', ?)", (team_id, "sign:" + request_id, serialized))
+        if proposal_request_id is not None:
+            access_check()  # Shutdown here rolls back ownership, cash, story and cap together.
+        return receipt
 
     @staticmethod
     def _has_amendment_history(ledger):

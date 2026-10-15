@@ -418,3 +418,40 @@ not prove complete modern books, paid cash, live memory, fresh remote access,
 durable intent or coordinated save/ledger settlement. The native addon remains
 held until those pieces are connected. An old real signing pair is confirmation
 regression evidence, not an AI signing or current SOFTDRINK runtime acceptance.
+
+
+### Durable saved-signing journal (engine API only)
+
+`franchise.guest_signing.prepare` binds a source acceptance, exact captured terms,
+franchise bindings, original save/hash and revision in the franchise SQLite DB.
+Preparation requires all32 supported team books, known cash obligations and exact
+saved roster/contract/annual-charge agreement. Retained-charge projections that
+cannot match the guest payroll and unresolved first-year adjustments reject;
+legacy cash is still unavailable until a verified import exists. New preparations
+check current access twice and returns `write_authorized: false`.
+
+One prepared journal freezes other cooperative store writes across processes,
+including other clubs, actor updates, direct settlement and migrations. Reopening
+the store and read-only recovery remain available. Older writers that do not
+implement this guard are unsupported; do not share a pending DB with them.
+
+`settle` confirms the candidate saved payload and records the confirmed bytes,
+proof, consumed acceptance and financial signing within the same SQLite
+transaction. Current access is required again, including the signing's final
+precommit check. Failure/abrupt exit rolls back journal resolution and all ledger
+effects together. Same-ID/same-payload retries return the original signing;
+changed payloads reject. No inference or control renewal occurs.
+
+`inspect` returns verified original/confirmed payload backups and identifies
+`before`, `candidate_after`, `confirmed_after` or `unrecognized` saved state.
+Candidate detection is read-only and works with AI disabled. A settled journal
+paired with the original save reports `before`; it never silently undoes money.
+`cancel` releases only uncommitted work against the exact original saved bytes
+with a caller-supplied stopped-game check before and after the update. It never
+restores game files or re-enables AI. Changed saved effects must be resolved
+explicitly with the game quiescent, rather than discarded as unapplied.
+
+These functions are deliberately absent from bridge operations. The native
+application/save/reload coordinator and actual quiescence checks still need
+implementation and game verification. This journal alone grants no guest writes,
+proves no active-save selection, and does not complete live delivery.

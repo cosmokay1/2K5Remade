@@ -34,8 +34,10 @@ native offer submission, player response, legal financial commit and save recove
       now preserves exact terms, promises and cash with restart/replay checks.
       Read-only saved-signing confirmation now checks pinned identities, exact
       contract terms, unchanged bank contracts/calendar and all32 payrolls.
-      Game-facing acceptance remains held until guest application and durable
-      cross-save recovery are implemented. Actual game execution remains
+      A durable engine journal now preserves before/after saves, freezes competing
+      store writes and commits confirmed effects with the ledger atomically.
+      Game-facing acceptance remains held until native application, save/reload
+      and recovery are connected and verified. Actual game execution remains
       required. Do not enable this unfinished mode in the installed user runtime.
 - [ ] Reconcile the required opening obligations/rules before permitting financial
       writes, then prove signing and save/reload on the pinned pack.
