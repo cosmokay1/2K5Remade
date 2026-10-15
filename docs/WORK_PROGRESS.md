@@ -5444,3 +5444,15 @@ Interpreter source SHA256ddfae28de4f256578b25ff4affbb1a77a8de52bb06247db51691118
 Failed EXE retained privately as NFL2K5.pre-interpreter-fix.exe. Same Steam
 launcher, addon disabled and AI unconfigured. User asked to repeat the same
 matchup and opening snap; real-game retry remains pending.
+
+User reports “Working” after the fixed-build matchup retry. Record this as
+user-confirmed recovery of the match-start failure, not full gameplay/franchise
+acceptance. Independent log check and native manager controller navigation are
+still pending; asked user to inspect the Franchise Sidecar Off row after playing.
+
+Independent retry check: game process101848 remains running; current session log
+83013 bytes has zero [CRASH] markers and zero unknown-opcode reports. A private
+Gamescope screenshot (retry-screen.png) visibly shows players on the field at
+MetLife with the in-game pause menu, independently confirming entry into a match.
+This verifies the specific match-start recovery, not a full quarter, game, franchise
+or save/load round trip. Windows CI38662620516 is still running; Ubuntu passed.

@@ -51,7 +51,9 @@ conversion is not claimed.
       Private Windows candidate built and installed on Deck; DLL/manager fixture
       passed under Proton. SOFTDRINK reached team selection, then crashed when
       starting a match. Shared-epilogue interpreter regression reproduced and fixed;
-      actual match retry remains required.
+      user reports the fixed match-start retry is working; independent on-field
+      screenshot and zero interpreter/crash errors corroborate it. Broader gameplay and
+      manager/controller acceptance remain open.
 
 ## Active base decision — October 14, 2026
 
@@ -80,7 +82,8 @@ not establish v0.6 compatibility or a new completion percentage.
   `38658080834` passed. Manager selection and DLL component checks passed. Windows DLL addon fixture and702 tests on Windows/Ubuntu passed; the private candidate is now installed and executed on Deck with the addon disabled.
   SOFTDRINK reached team selection but crashed at match start; compatibility remains
   unverified. A synthetic regression confirms an interpreter shared-epilogue bug;
-  its fix passes under Proton, with the real match retry pending. CI checks asset-free runtime and bridge components;
+  its fix passes under Proton, and the user reports the match retry is working.
+  Broader gameplay and franchise acceptance remain open. CI checks asset-free runtime and bridge components;
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.
