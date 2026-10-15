@@ -5529,3 +5529,51 @@ exist, corrected by creating it before Proton startup. ABI2 fixture receipt is
 private. Working Deck executable, DLL, selection, saves and running session were
 not replaced. ABI2 requires a newly pinned matching host/DLL pair; the existing
 ABI1 host hash must never be used to authorize installing ABI2. Cloud unchanged.
+
+
+## October 14, 2026 — MyNFL1 Giants cap audit corrects legacy-cap assumption
+
+User requested validation of approximately $89M room for Giants/current roster,
+expected2026. Retrieved MyNFL1 read-only,720044 bytes, SHA256
+4c8c31b4f400e25175223163a948e126cb83d10aa4bb98979a564ef287761ec3.
+The strict retail reader correctly refused its first settings word1 and enlarged
+player bank. Private structural audit validated declared2619 records against
+base/stride/next-table boundary and all team pointers/names, then reconstructed
+all32 payroll totals exactly. Giants53 charges sum52,996 game thousands; zero
+first-year accumulator with flag1. Original scheduler index0, scheduled-game year26.
+No save bytes were changed. Earlier assumption that reported89M was an outdated
+league ceiling was wrong; user was reporting available room.
+
+Pinned official authoring source e19384123c23a3601949dda67c9a3ab754d65fd6 defines
+REAL_CAP_DOLLARS301200000, DOLLAR_SCALE4 and GAME_CAP75300. Safely parsed constant
+replacement bytes (no external source module execution); all six economy windows
+match the installed XBE exactly, including31E580's multiply-by-four formatter.
+13EF17 initialization matches75300. Therefore displayed ceiling301.2M, roster
+charge211.984M, room89.216M. Official NFL 2026 ceiling independently confirmed.
+
+OTC current-year comparison shows the roster charges are approximations and
+real-world non-roster liabilities are material. Do not substitute its9.86M room
+or blindly add all IR charges: roster dates/memberships differ and some injured
+players are already charged in the game. Full per-obligation conversion remains
+unverified. Public audit docs/MYNFL1_CAP_AUDIT.md records sources, sample differences,
+limitations and next steps. Proprietary payload, screenshots, detailed53-player
+report and patch-byte verification receipt remain ignored/private.
+
+
+MyNFL1 intake verified again after analysis: source hash unchanged, TYPE FXG,
+runtime zero-key HMAC-SHA1 valid. Matched all53 Giants identities against the
+current public2026 reference,45 within$20k of their current charge. Some larger
+differences involve changed roster/status/date; McCarthy5.956M vs0.895833M,
+Golston6.920M vs5.201103M and practice-squad Tupou1M vs0.275250M. Do not label
+these all encoding bugs or silently change the frozen source.
+
+Private same-player-comparison.json and reference-waterfall.json reconcile:
+same53 current-reference charges204251252 +27 additional current active/IR/PS
+identities42392016 +dead money43691218 =total liabilities290334486. Published
+room9860848 implies adjusted cap300195334, or -1004666 from base301200000.
+This adjustment is derived, not a sourced carryover classification. Some IR
+players are already in the game roster, so blindly adding full IR would double
+count them. The report distinguishes exact saved arithmetic from real-world
+liability coverage and preserves raw payload/source records privately. No game
+financial writes or model calls occurred. Next code work is schema-checked mod
+save parsing and dated obligation mapping, preserving the already-correct scale.

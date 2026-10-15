@@ -49,3 +49,18 @@ commit supported terms and prove guest/ledger/save agreement and recovery.
 Preserve BeyondTomrrow/Remade and SOFTDRINK/cruuz/contributor notices. Do not infer
 endorsement or rights to redistribute game assets. Do not renew disabled controls,
 make paid inference or replace the running game during compatibility inspection.
+
+## Verified money-scale correction
+
+MyNFL1's Giants audit confirms the installed pack already includes the experimental
+2026 economy, including four-to-one real-dollar display. The saved league cap is
+$75.3M internal = $301.2M displayed, not an outdated $75.3M league ceiling. The
+Giants'53 saved charges total $52.996M internal = $211.984M displayed, leaving
+$89.216M room. All32 roster totals reconcile. Raising the ceiling or multiplying
+values a second time would be wrong. See [Mynfl1 audit](MYNFL1_CAP_AUDIT.md).
+
+The pack's encoded contract total represents fitted remaining cap liability, not
+necessarily original headline value, cash or guarantees. Existing real-world
+released-player debt/reserve obligations and exact schedules remain to reconcile.
+The retail-only strict reader currently rejects valid changed settings/expanded
+record counts; fix that schema support before automated pack import.

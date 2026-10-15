@@ -80,6 +80,15 @@ Do not deploy superseded staged diagnostics blindly or overwrite existing saves.
       installation/reconstruction and applicable attribution/distribution terms.
 - [ ] Verify the interpreter pack path on Windows/Deck: boot, fresh franchise,
       played/simulated transitions and clean shutdown, including known freeze cases.
+- [x] Audit MyNFL1 Giants opening cap scale and roster payroll read-only: all53
+      contracts and all32 team totals reconcile; verified pack economy displays
+      four real dollars per game dollar. $89.216M room follows $301.2M cap less
+      $211.984M roster charges. Matched all53 names to the2026 reference, isolated
+      $42.392M of additional current-reference roster/reserve/PS charges and
+      $43.691M dead money; dated obligations import remains unverified. See
+      [Mynfl1 audit](docs/MYNFL1_CAP_AUDIT.md).
+- [ ] Support declared modded player-bank bounds/settings in the strict save reader
+      before importing MyNFL1; compare dated cap obligations and fitted contracts.
 - [ ] Capture controlled pack signing/save/reload evidence; verify player identity,
       history, experience, calendar, salaries/payroll/cap and effective money scale.
 - [ ] Revalidate existing Xbox observer and bridge against pack code and saves;
