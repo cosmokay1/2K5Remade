@@ -53564,7 +53564,7 @@ loc_0016E815: ;
 
 loc_0016E81A: ;
     /* NFL2K5-GENPATCH:FRANCHISE_LOAD_DECODED_sub_0016E1D0 */
-    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(4u,esi,ebx,ebp,esp); }
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(4u,esi,eax<=UINT32_MAX-ebx?ebx+eax:UINT32_MAX,ebp,esp); }
     PUSH32(esp, 0x0016E81Fu); RECOMP_ABI_CALL(0x000C4B80u, sub_000C4B80); /* call 0x000C4B80 */
 
 loc_0016E81F: ;
@@ -55552,7 +55552,7 @@ loc_0016E815: ;
 
 loc_0016E81A: ;
     /* NFL2K5-GENPATCH:FRANCHISE_LOAD_DECODED_sub_0016E290 */
-    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(4u,esi,ebx,ebp,esp); }
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(4u,esi,eax<=UINT32_MAX-ebx?ebx+eax:UINT32_MAX,ebp,esp); }
     PUSH32(esp, 0x0016E81Fu); RECOMP_ABI_CALL(0x000C4B80u, sub_000C4B80); /* call 0x000C4B80 */
 
 loc_0016E81F: ;
@@ -57438,7 +57438,7 @@ loc_0016E815: ;
 
 loc_0016E81A: ;
     /* NFL2K5-GENPATCH:FRANCHISE_LOAD_DECODED_sub_0016E350 */
-    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(4u,esi,ebx,ebp,esp); }
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(4u,esi,eax<=UINT32_MAX-ebx?ebx+eax:UINT32_MAX,ebp,esp); }
     PUSH32(esp, 0x0016E81Fu); RECOMP_ABI_CALL(0x000C4B80u, sub_000C4B80); /* call 0x000C4B80 */
 
 loc_0016E81F: ;
@@ -59237,7 +59237,7 @@ loc_0016E815: ;
 
 loc_0016E81A: ;
     /* NFL2K5-GENPATCH:FRANCHISE_LOAD_DECODED_sub_0016E3F0 */
-    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(4u,esi,ebx,ebp,esp); }
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(4u,esi,eax<=UINT32_MAX-ebx?ebx+eax:UINT32_MAX,ebp,esp); }
     PUSH32(esp, 0x0016E81Fu); RECOMP_ABI_CALL(0x000C4B80u, sub_000C4B80); /* call 0x000C4B80 */
 
 loc_0016E81F: ;
@@ -60806,7 +60806,7 @@ loc_0016E815: ;
 
 loc_0016E81A: ;
     /* NFL2K5-GENPATCH:FRANCHISE_LOAD_DECODED_sub_0016E540 */
-    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(4u,esi,ebx,ebp,esp); }
+    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(4u,esi,eax<=UINT32_MAX-ebx?ebx+eax:UINT32_MAX,ebp,esp); }
     PUSH32(esp, 0x0016E81Fu); RECOMP_ABI_CALL(0x000C4B80u, sub_000C4B80); /* call 0x000C4B80 */
 
 loc_0016E81F: ;

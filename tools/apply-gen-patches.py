@@ -729,7 +729,7 @@ PATCHES = [
 for _load_func in ("sub_0016E1D0","sub_0016E290","sub_0016E350","sub_0016E3F0","sub_0016E540"):
     for _load_name,_load_anchor,_load_stage in (("BEGIN","loc_0016E6CA: ;",1),("FAILED","loc_0016E6DC: ;",2),("INPUT","loc_0016E70B: ;",3),("DECODED","loc_0016E81A: ;",4)):
         PATCHES.append(("FRANCHISE_LOAD_"+_load_name+"_"+_load_func,_load_func,_load_anchor,"after",
-            "    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(%du,esi,ebx,ebp,esp); }\n" % _load_stage))
+            "    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(%du,esi,%s,ebp,esp); }\n" % (_load_stage,"eax<=UINT32_MAX-ebx?ebx+eax:UINT32_MAX" if _load_stage==4 else "ebx")))
 
 
 def marker(pid):
@@ -800,8 +800,24 @@ def main():
                     applied.append("%s upgraded -> %s" % (pid,os.path.basename(path)))
                 continue
         if marked is not None and pid.startswith("FRANCHISE_LOAD_"):
-            if marked<=start or lines[marked-1].strip()!=anchor or marked+1>=end or lines[marked+1].strip()!=code.strip():
+            if marked<=start or lines[marked-1].strip()!=anchor or marked+1>=end:
                 failed.append("%s: unrecognized load checkpoint location/body" % pid)
+                continue
+            current=lines[marked+1].strip()
+            if current!=code.strip():
+                # The old decoded checkpoint omitted the final section's EAX
+                # length. Upgrade only that exact owned body at its anchor.
+                old=code.strip().replace("eax<=UINT32_MAX-ebx?ebx+eax:UINT32_MAX","ebx")
+                if not pid.startswith("FRANCHISE_LOAD_DECODED_") or current!=old:
+                    failed.append("%s: unrecognized load checkpoint location/body" % pid)
+                elif check_only:
+                    failed.append("%s: old decoded count requires upgrade" % pid)
+                else:
+                    eol="\r" if lines[marked+1].endswith("\r") else ""
+                    lines[marked+1]="    "+code.strip()+eol
+                    with open(path,"w",encoding="utf-8",newline="") as f:
+                        f.write("\n".join(lines))
+                    applied.append("%s upgraded -> %s" % (pid,os.path.basename(path)))
                 continue
         if marked is not None:
             present.append(pid)

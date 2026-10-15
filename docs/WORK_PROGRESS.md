@@ -8210,3 +8210,41 @@ off. Installation receipt is retained on Deck; actual new game boot and MyNFL1
 read/input/decoded checkpoint delivery are pending the requested normal launch.
 Exact09fcc07 Build38807043193 and Franchise38807043294 were still running at
 this installation check; do not describe them as passing yet.
+
+## October 15, 2026 — Actual MyNFL1 checkpoints exposed a count-observation bug
+
+The user launched the installed build and confirmed MyNFL1 open. Process188574
+delivered the same720044-byte save SHA256
+4c8c31b4f400e25175223163a948e126cb83d10aa4bb98979a564ef287761ec3
+to mapped destination0x81d8f280. Load epoch1 reports kind9 and source sequence1,
+then rejects the decoded checkpoint with consumed628476, phase4. The exact
+installed EXE/DLL hashes still match the installation receipt. Private actual
+trace/artifact evidence is retained under load-read-8d4f3cd/actual-load-receipt.json
+and actual-load-session.log on Deck. This is actual callback/read correlation
+evidence, not successful completed binding or an application permit.
+
+Inspection of the router shows that at0x16E81A EBX excludes the final franchise
+section: helper0x2D0780 returns its0x165B0 length in EAX, without adding it to EBX.
+628476+91568=720044. The original checkpoint observed EBX alone. The correction
+reports a checked EBX+EAX sum for this checkpoint in generated and interpreted
+execution, rejecting overflow; it changes no game register, branch or save data.
+The patcher upgrades only the exact previous owned body at the expected anchor.
+Four targeted tests pass, including compilation/execution of all five generated
+checkpoint bodies and interpreter callbacks with these observed prefix values,
+register preservation, upgrade/check behavior and overflow rejection. Corrected
+private Windows build is running under decoded-load-027e68b; actual new load
+verification remains pending. User session is not interrupted; AI remains off.
+Exact09fcc07 Build38807043193 has now passed; Franchise38807043294 was still
+running at this check.
+
+The corrected count build now passes all17 actual Windows standalone checks and
+isolated full-game --validate, child marker validated and launcher0. All380
+declared private build-source hashes were verified. One subsequent test-only
+change skips C compilation when cc is unavailable after still checking patch
+upgrades; all four targeted tests execute and pass locally with cc. Native build
+inputs are unchanged by that portability adjustment. Receipts are under
+decoded-load-027e68b. Corrected EXE SHA256
+c23dee11e3df74d6d40d18af82652d9b876cc04c3f6202014d69e853bea853a3;
+DLL is byte-identical to the installed
+4af092de1a4a509d8efc12490997a5fcf94ac793218af91fcbc975b5c705bcc5.
+The corrected executable is staged, not installed; normal exit is required.

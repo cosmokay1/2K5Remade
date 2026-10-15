@@ -50,11 +50,14 @@ int main(void){
  if(hooks[0].callback() || events!=1 || object!=g_esi || descriptor!=g_edi || pushed!=1) return 2;
  if(hooks[1].callback() || events!=2 || object!=g_esi || descriptor || pushed) return 3;
  if(g_esi!=0x12345678 || g_edi!=0x557B2C) return 4;
- g_ebx=13;g_ebp=24;g_esp=0x2000;
+ g_ebx=628476;g_eax=91568;g_ebp=24;g_esp=0x2000;
  for(unsigned i=2;i<6;++i){
   static const uint32_t addresses[]={0x16E6CA,0x16E6DC,0x16E70B,0x16E81A};
-  if(hooks[i].va!=addresses[i-2] || hooks[i].callback() || load_stage!=i-1 || load_buffer!=g_esi || load_offset!=g_ebx || load_table!=g_ebp || load_stack!=g_esp)return 13;
+  if(hooks[i].va!=addresses[i-2] || hooks[i].callback() || load_stage!=i-1 || load_buffer!=g_esi || load_offset!=(i==5?720044:g_ebx) || load_table!=g_ebp || load_stack!=g_esp)return 13;
  }
+ if(g_ebx!=628476 || g_eax!=91568)return 14;
+ g_ebx=UINT32_MAX;g_eax=1;
+ if(hooks[5].callback() || load_offset!=UINT32_MAX || g_ebx!=UINT32_MAX || g_eax!=1)return 15;
 #ifdef _WIN32
  if(_putenv_s("NFL2K5_FRANCHISE_NEGOTIATION","1")) return 5;
 #else

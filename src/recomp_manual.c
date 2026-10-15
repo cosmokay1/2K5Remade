@@ -2748,7 +2748,7 @@ extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,u
 static uint32_t ih_franchise_load_begin(void){nfl2k5_franchise_load_boundary(1u,g_esi,g_ebx,g_ebp,g_esp);return 0;}
 static uint32_t ih_franchise_load_failed(void){nfl2k5_franchise_load_boundary(2u,g_esi,g_ebx,g_ebp,g_esp);return 0;}
 static uint32_t ih_franchise_load_input(void){nfl2k5_franchise_load_boundary(3u,g_esi,g_ebx,g_ebp,g_esp);return 0;}
-static uint32_t ih_franchise_load_decoded(void){nfl2k5_franchise_load_boundary(4u,g_esi,g_ebx,g_ebp,g_esp);return 0;}
+static uint32_t ih_franchise_load_decoded(void){nfl2k5_franchise_load_boundary(4u,g_esi,g_eax<=UINT32_MAX-g_ebx?g_ebx+g_eax:UINT32_MAX,g_ebp,g_esp);return 0;}
 void nfl2k5_franchise_interp_hooks(void) {
 #ifdef NFL2K5_FRANCHISE_CLIENT
     /* Pack detours can interpret FSM code even with AI/negotiation disabled.

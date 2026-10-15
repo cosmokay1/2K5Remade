@@ -4,6 +4,8 @@ import importlib.util
 import io
 from pathlib import Path
 import sys
+import shutil
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -42,3 +44,26 @@ class LoadPatchesTests(unittest.TestCase):
             module.GEN=directory;source=Path(directory)/'recomp_fixture.c'
             source.write_text('void '+row[1]+'(void)\n{\n'+row[2]+'\n'+module.marker(row[0])+'\n/* tampered */\n}\n')
             with patch.object(sys,'argv',['patch-load','--check']),contextlib.redirect_stdout(io.StringIO()),contextlib.redirect_stderr(io.StringIO()):self.assertEqual(module.main(),1)
+
+    def test_decoded_upgrade_and_actual_owned_body_counts_tail(self):
+        spec=importlib.util.spec_from_file_location('load_patches',ROOT/'tools/apply-gen-patches.py')
+        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);module.LENIENT=False
+        rows=[row for row in module.PATCHES if row[0].startswith('FRANCHISE_LOAD_DECODED_')];module.PATCHES=rows
+        compiler=shutil.which('cc')
+        with tempfile.TemporaryDirectory() as directory:
+            module.GEN=directory;source=Path(directory)/'recomp_fixture.c'
+            old=lambda row:row[4].replace('eax<=UINT32_MAX-ebx?ebx+eax:UINT32_MAX','ebx')
+            source.write_text('\n'.join('void '+row[1]+'(void)\n{\n'+row[2]+'\n'+module.marker(row[0])+'\n'+old(row)+'}\n' for row in rows))
+            with patch.object(sys,'argv',['patch-load','--check']),contextlib.redirect_stdout(io.StringIO()),contextlib.redirect_stderr(io.StringIO()):self.assertEqual(module.main(),1)
+            with patch.object(sys,'argv',['patch-load']),contextlib.redirect_stdout(io.StringIO()):self.assertEqual(module.main(),0)
+            with patch.object(sys,'argv',['patch-load','--check']),contextlib.redirect_stdout(io.StringIO()):self.assertEqual(module.main(),0)
+            if not compiler:self.skipTest('C compiler unavailable; patch upgrade checks passed')
+            code='#include <stdint.h>\nstatic uint32_t esi,ebx,ebp,esp,eax,total;\nvoid nfl2k5_franchise_load_boundary(uint32_t s,uint32_t b,uint32_t o,uint32_t t,uint32_t sp){total=o;}\n'+source.read_text()
+            code+='int main(void){ebx=628476;eax=91568;'
+            for row in rows:code+=row[1]+'();if(total!=720044 || ebx!=628476 || eax!=91568)return 1;'
+            code+='ebx=UINT32_MAX;eax=1;'
+            for row in rows:code+=row[1]+'();if(total!=UINT32_MAX || ebx!=UINT32_MAX || eax!=1)return 2;'
+            code+='return 0;}\n';source.write_text(code)
+            executable=Path(directory)/'decoded-check'
+            subprocess.run([compiler,'-std=c11',str(source),'-o',str(executable)],check=True,capture_output=True)
+            subprocess.run([str(executable)],check=True,capture_output=True,timeout=10)

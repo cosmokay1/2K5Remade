@@ -161,8 +161,13 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       and interpreted paths share the checkpoints across compatible packs.
       All17 Windows standalone tests and isolated game --validate pass; the
       combined source09fcc07 is privately installed after normal exit, with all205
-      save files unchanged and AI off. Actual MyNFL1 checkpoint delivery,
-      selected-container identity and active-load lifetime still need verification.
+      save files unchanged and AI off. Actual MyNFL1 read/destination and decoded
+      checkpoint delivery are verified, but the initial checkpoint rejected the
+      count because EBX excludes the final section length returned in EAX.
+      Corrected total-count observation passes all17 Windows checks and isolated
+      game validation and is staged for installation after normal exit; actual
+      successful correlation, selected-container identity and active-load lifetime
+      still need verification.
       Service-side durable binding and active franchise identity remain open;
       this metadata does not authorize application or prove code compatibility.
       The actual Windows game/DLL build now passes isolated --validate and the
