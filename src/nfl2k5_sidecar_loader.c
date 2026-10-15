@@ -9,6 +9,8 @@
 #include "addon_selection.h"
 #include "../native/game_addon/read_scope.h"
 #include "../native/game_addon/runtime_identity.h"
+#include "../native/game_addon/file_read.h"
+#include "../external/xboxrecomp/src/kernel/file_read_observer.h"
 extern uint64_t xbox_ggl_current_serial(void);
 #if defined(_MSC_VER)
 static __declspec(thread) NFL2K5AddonReadScope read_scope;
@@ -113,6 +115,11 @@ int nfl2k5_addon_event(const char *name,const void *data,size_t size) {
     }
     ReleaseSRWLockShared(&module_lock);
     return handled;
+}
+void nfl2k5_addon_file_read(const XboxFileReadEvent *read) {
+    if(!read) return;
+    const NFL2K5AddonFileRead event={read->native_handle,read->bytes,read->requested,read->completed,read->status};
+    nfl2k5_addon_event(NFL2K5_ADDON_FILE_READ,&event,sizeof(event));
 }
 int nfl2k5_addon_snapshot(const char *name,void *out,size_t capacity) {
     AcquireSRWLockShared(&module_lock);

@@ -39,6 +39,14 @@ jobs:
           cmake -S addons/engine-sidecar -B build-engine-sidecar
           cmake --build build-engine-sidecar --config Release
           ctest --test-dir build-engine-sidecar -C Release --output-on-failure
+      - name: Check runtime file-read notifications
+        shell: bash
+        run: |
+          io=OFF
+          if [ "$RUNNER_OS" = "Linux" ]; then io=ON; fi
+          cmake -S external/xboxrecomp/tests/file_read_observer -B build-file-read -DFILE_READ_OBSERVER_IO_TEST=$io
+          cmake --build build-file-read --config Release
+          ctest --test-dir build-file-read -C Release --output-on-failure
       - name: Check actual guest lock and addon read ownership
         run: |
           cmake -S native/guest_execution -B build-guest-execution

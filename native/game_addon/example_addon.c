@@ -2,13 +2,15 @@
 #include "api.h"
 #include <string.h>
 #include "runtime_identity.h"
+#include "file_read.h"
 static uint32_t counter;
+static uint64_t read_bytes;
 static NFL2K5AddonImageIdentity loaded_image;
 static int start(const NFL2K5AddonHost *host) {
     if(!host || host->size!=sizeof(*host) || !host->memory_range || !host->read_memory) return 0;
-    memset(&loaded_image,0,sizeof(loaded_image));counter=0;return 1;
+    memset(&loaded_image,0,sizeof(loaded_image));counter=0;read_bytes=0;return 1;
 }
-static void stop(void) { counter=0;memset(&loaded_image,0,sizeof(loaded_image)); }
+static void stop(void) { counter=0;read_bytes=0;memset(&loaded_image,0,sizeof(loaded_image)); }
 static void poll(void) { ++counter; }
 static int event(const char *name,const void *data,size_t size) {
     if(name && data && !strcmp(name,NFL2K5_ADDON_LOADED_IMAGE) && size==sizeof(NFL2K5AddonImageIdentity)) {
@@ -17,6 +19,12 @@ static int event(const char *name,const void *data,size_t size) {
         if(loaded_image.sha256[0]) return !memcmp(&loaded_image,&next,sizeof(next));
         loaded_image=next;return 1;
     }
+    if(name && data && !strcmp(name,NFL2K5_ADDON_FILE_READ) && size==sizeof(NFL2K5AddonFileRead)) {
+        const NFL2K5AddonFileRead *read=data;
+        if(read->status || !read->bytes || !read->completed || read->completed>read->requested ||
+           read->completed>UINT64_MAX-read_bytes) return 0;
+        read_bytes+=read->completed;return 1;
+    }
     if(!name || !data || strcmp(name,"example.counter.v1") || size!=sizeof(counter)) return 0;
     memcpy(&counter,data,sizeof(counter));return 1;
 }
@@ -24,6 +32,9 @@ static int snapshot(const char *name,void *out,size_t capacity) {
     if(name && out && !strcmp(name,NFL2K5_ADDON_LOADED_IMAGE) && capacity==sizeof(loaded_image)) {
         if(!loaded_image.sha256[0]) return 0;
         memcpy(out,&loaded_image,sizeof(loaded_image));return 1;
+    }
+    if(name && out && !strcmp(name,"example.read-bytes.v1") && capacity==sizeof(read_bytes)) {
+        memcpy(out,&read_bytes,sizeof(read_bytes));return 1;
     }
     if(!name || !out || strcmp(name,"example.counter.v1") || capacity!=sizeof(counter)) return 0;
     memcpy(out,&counter,sizeof(counter));return 1;

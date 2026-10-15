@@ -7916,3 +7916,61 @@ not treat reaching one interior as complete successful load proof. No new load
 hook, active-franchise claim, application permit or playable-game delivery was
 introduced. Actual load selection, native signing/accounting/save-reload and final
 acceptance remain open.
+
+## October 15, 2026 — File-read observer source; Windows integration gate remains
+
+Active-save tracing needs the native file handle and bytes actually delivered,
+not a configured path or a roster-only match. Runtime fork branch
+codex/file-read-observer adds an optional synchronous xbox_NtReadFile observer.
+It reports the original native handle, status, requested/completed lengths and
+borrowed bytes; failed/empty/out-of-bounds deliveries expose no bytes. Nested
+reads execute normally without recursively notifying. Success completion events
+are signaled after observation, before returning to completion waiters. Setup
+requires quiescent I/O, normally before guest startup; no result can be overridden.
+The Windows and POSIX read paths share that behavior without game/mod policy.
+
+Root source registers a forwarding callback before guest execution and sends
+optional ABI2 engine.file-read.v1 through the existing loader. The domain-neutral
+example counts observed bytes. A new authored kernel-to-host-to-DLL delivery
+fixture also checks the source handle's native file identity. The read-scope DLL
+fixture checks that file notification does not grant unrelated guest-memory
+access. No franchise handler consumes the new channel yet; raw pointers/handles
+must never cross the process wire or outlive their synchronous callback.
+The observer does not establish offsets, stable file contents, deserialization
+success, selected franchise identity or permission to apply a transaction.
+
+A real Linux I/O regression exposed an existing POSIX bug: w32_handle_fd/path
+would dereference INVALID_HANDLE_VALUE or pseudo handles. The independently
+isolated guard fix reproduces the segfault before the change and passes afterward
+on macOS, including untouched failed-read buffers and valid reads/writes.
+It is submitted separately as https://github.com/BeyondTomrrow/xboxrecomp/pull/2,
+only39 added lines across three files against upstream main. The earlier Windows
+string-header PR#1 is now merged into upstream nfl2k5-port. No other maintainer
+message was sent. Attribution/licenses are preserved; no assets/binaries published.
+
+Runtime source393fe75 initially passed Windows dispatch but failed real Linux I/O
+because of that pre-existing handle crash. Source4bf498c3d94c1faf6b1956fba9f77f58f52bac5f
+includes the guard and passes both jobs in runtime CI38799506013. Default observer
+dispatch also passes locally. All866 root Python regressions pass in36.703s and
+all six local native CTests pass. These checks do not substitute for the Windows
+kernel/DLL delivery fixture or actual game boot.
+
+The private Linux setup first lacked host CMake; using the existing offline Linux
+compiler image resolved that setup issue. The initial focused harness then lacked
+POSIX temporary-file/event helpers; the corrected version links in CI and exposes
+the real invalid-handle bug above. A private Windows standalone observer/bridge
+build returned0 before the final read-scope test additions. The private full-game
+build returned1; its log has not been inspected because the Deck went offline.
+Do not restart that job or overwrite its source blindly: inspect its existing
+container/build log after reconnection. Source overlay367 files was guarded by
+previous full-game/runtime hashes and backed up before modification; only private
+build-source/artifact directories changed. No installed runtime or user save changed.
+
+The Deck is unreachable over SSH; an awake/same-Wi-Fi request is pending. The final
+POSIX harness fixes and runtime guard have not yet been copied into that private
+full-game build source. After reconnection, inspect the old build, compare hashes,
+apply only the declared final source delta and resume the existing build. Validate
+actual Windows read/EOF/error/completion order, kernel-to-loader-to-DLL identity/
+byte delivery and full-game --validate before any installation. Live load/container
+binding, one-use application permits and actual signing/accounting/save-reload
+remain open. AI/control remains disabled; no paid inference or control renewal.

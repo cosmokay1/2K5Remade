@@ -5,6 +5,8 @@
 #include "game_addon.h"
 #include "../game_addon/loader.h"
 #include "../game_addon/runtime_identity.h"
+#include "../game_addon/file_read.h"
+#include "../../external/xboxrecomp/src/kernel/file_read_observer.h"
 #include "franchise_addon.h"
 #include "addon_selection.h"
 #include "../../src/nfl2k5_sidecar_adapter.h"
@@ -132,6 +134,15 @@ int wmain(int argc,wchar_t **argv) {
        nfl2k5_addon_snapshot("example.counter.v1",&observed,1) ||
        nfl2k5_addon_event(NULL,&counter,sizeof(counter)) ||
        nfl2k5_addon_snapshot("example.counter.v1",NULL,sizeof(observed))) return 34;
+    const char bytes[]="abc";
+    XboxFileReadEvent read={123,bytes,3,3,0};uint64_t byte_count=0;
+    nfl2k5_addon_file_read(&read);
+    if(!nfl2k5_addon_snapshot("example.read-bytes.v1",&byte_count,sizeof(byte_count)) || byte_count!=3 ||
+       nfl2k5_addon_snapshot("example.read-bytes.v1",&byte_count,1)) return 63;
+    read.status=(int32_t)0xC0000008u;read.bytes=NULL;read.completed=0;
+    nfl2k5_addon_file_read(&read);
+    if(!nfl2k5_addon_snapshot("example.read-bytes.v1",&byte_count,sizeof(byte_count)) || byte_count!=3) return 64;
+    nfl2k5_addon_file_read(NULL);
     nfl2k5_addon_stop();
     if(nfl2k5_addon_snapshot("example.counter.v1",&observed,sizeof(observed))) return 35;
     if(nfl2k5_addon_bind_image(NULL) || !nfl2k5_addon_start() ||
@@ -142,6 +153,8 @@ int wmain(int argc,wchar_t **argv) {
     nfl2k5_addon_stop();
     SetEnvironmentVariableW(L"NFL2K5_SIDECAR_ADDON",argv[5]);
     if(!nfl2k5_addon_start() || nfl2k5_addon_guest_read_allowed()) return 53;
+    nfl2k5_addon_file_read(&read);
+    if(!nfl2k5_addon_snapshot("scope.file-read-permission",&observed,sizeof(observed)) || observed) return 65;
     if(nfl2k5_addon_event("scope.read-twice",&counter,4)) return 54; /* no lock owner */
     execution_serial=10;
     if(nfl2k5_addon_event("scope.read-twice",&counter,4)!=3 || nfl2k5_addon_guest_read_allowed()) return 55;

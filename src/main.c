@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include "kernel.h"
+#include "file_read_observer.h"
 #include "xbox_memory_layout.h"
 #include "platform/guest_memory.h"
 #include "apu.h"
@@ -917,6 +918,7 @@ int main(int argc, char **argv)
         xbox_WatchdogStart();
 #ifdef NFL2K5_FRANCHISE_CLIENT
         if (!nfl2k5_addon_bind_image(digest_hex) || !nfl2k5_franchise_start()) return 5;
+        xbox_SetFileReadObserver(nfl2k5_addon_file_read);
 #endif
         printf("[BOOT] Entering recompiled NFL 2K5 code.\n");
         xbox_ggl_enter();

@@ -4,6 +4,9 @@
 /* Set the validated XBE load-input digest before starting an addon.
  * A loaded addon cannot be rebound to a different image. No write authority. */
 int nfl2k5_addon_bind_image(const char *sha256);
+struct XboxFileReadEvent;
+/* Runtime callback installed once before guest startup; source data is borrowed. */
+void nfl2k5_addon_file_read(const struct XboxFileReadEvent *event);
 int nfl2k5_addon_start(void);
 void nfl2k5_addon_stop(void);
 int nfl2k5_sidecar_loaded(void);

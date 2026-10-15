@@ -1,4 +1,4 @@
 [submodule "external/xboxrecomp"]
 	path = external/xboxrecomp
 	url = https://github.com/cosmokay1/xboxrecomp.git
-	branch = codex/platform-build-fixes
+	branch = codex/file-read-observer

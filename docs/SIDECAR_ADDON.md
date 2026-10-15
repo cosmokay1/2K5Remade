@@ -122,3 +122,21 @@ Franchise interpreter hooks are now registered independently of an executable
 name/hash. The dispatcher compatibility path follows whether the interpreter
 is active, rather than a SOFTDRINK-specific digest. Actual signing/save/reload
 acceptance on each supported runtime remains required.
+
+
+## Native file-read observation
+
+The runtime fork supplies a synchronous read-only file observer. Before guest
+startup, an addon-enabled host registers one forwarding callback; it publishes
+engine.file-read.v1 through ABI2 without choosing behavior by pack/image name.
+The native handle and delivered bytes are borrowed during event delivery, before
+a successful read signals its completion event. Unknown events may be ignored.
+The generic counter addon exposes the observed byte total as an example.
+
+The handler runs on the reading thread, which may not own the process transport
+or guest lock. It must copy bounded data and hand off application work. This
+metadata grants no extra memory access, writes or inference. It exposes no file
+offset and does not prove source stability, deserialization success or active
+franchise identity. Binding a verified container/read to its completed load and
+current franchise projections remains application work. No real game load or
+signing/save-reload acceptance is established by notification fixtures.

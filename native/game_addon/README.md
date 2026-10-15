@@ -22,7 +22,9 @@ the host does not acquire or pin the guest lock for the addon. Range queries
 remain available without reading memory. Start/stop must tolerate unavailable
 guest state. The callback table and ABI2 number are unchanged.
 
-The owner thread controls lifecycle and poll/event delivery. Snapshot calls may
+The owner thread controls lifecycle and polling. File-read events arrive on the
+reading thread; other native hooks may also run on a foreign thread. Handlers
+must not move a single-owner process client onto that thread. Snapshot calls may
 come from the renderer; render-facing channels must return an already-owned
 snapshot without I/O. Explicit world-reading channels return unavailable unless
 invoked in a guest-owned read scope and must never wait for I/O.
@@ -30,7 +32,7 @@ The loader serializes unload against callbacks; callbacks must not reenter loade
 lifecycle operations. Application synchronization remains the addon's responsibility.
 There is no gameplay hot reload, queue, discovery registry or arbitrary hook API.
 
-example_addon.c only includes api.h and standard headers. It accepts/returns a
+example_addon.c only includes domain-neutral public addon headers. It accepts/returns a
 uint32 counter through example.counter.v1; polling increments it. The existing
 Windows fixture loads it through the same loader as the franchise DLL and checks
 message delivery, snapshot size, unknown channels and unload. legacy_addon.c is
@@ -39,6 +41,22 @@ an ABI1-only refusal fixture. Build/run the fixtures without game assets:
     cmake -S native/franchise_bridge -B build-franchise-bridge
     cmake --build build-franchise-bridge --config Release
     ctest --test-dir build-franchise-bridge -C Release --output-on-failure
+
+The optional engine.file-read.v1 channel is defined in file_read.h. The runtime
+observer forwards the original native handle, status, requested/completed lengths
+and borrowed bytes through the existing ABI2 event function. Failed/empty reads
+expose no bytes. A successful read signals its completion event after observation;
+nested reads execute without recursive observation. Configuration occurs before
+guest startup, while file I/O is quiescent.
+
+The handle and bytes are usable only during the callback. Copy bounded needed
+data before returning; never close or retain the handle, modify the buffer, or
+block on a sidecar/network request. Guest-memory read scope still requires its
+own uninterrupted guest-lock ownership. This metadata does not establish a file
+offset, stable file contents, deserialization success or selected save identity.
+The example counts successfully delivered bytes through example.read-bytes.v1;
+unknown events remain optional. The external runtime supplies the read hook;
+franchise/AI rules do not belong in that hook or the generic process transport.
 
 Franchise-specific payloads live in ../franchise_bridge/franchise_addon.h. The
 host wrapper game_addon_adapter.c translates the existing call sites; the DLL
