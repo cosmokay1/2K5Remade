@@ -61,6 +61,8 @@ native offer submission, player response, legal financial commit and save recove
       and the retail judgment-result replacement remain unfinished.
       An explicitly requested controlled-signing mode now also holds when the
       addon is unavailable, rather than silently falling through to retail.
+      Stage/guard sourcec388051 passed Franchise38715022063 and
+      Build38715022192 on Windows/Ubuntu, including real DLL boundary checks.
       Game-facing acceptance remains held until native application, save/reload
       and recovery are connected and verified. Actual game execution remains
       required. Do not enable this unfinished mode in the installed user runtime.

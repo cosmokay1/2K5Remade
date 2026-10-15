@@ -6426,3 +6426,13 @@ settings, and the Windows loader fixture exercises the hold after module stop.
 The fixture uses CRT environment setters to match the shim's getenv semantics.
 All three local native checks passed0.65s. Fresh Windows CI is required for this
 follow-up; the installed runtime remains untouched.
+
+Final stage/guard follow-upc388051 passed Franchise38715022063 on Windows2022
+and Ubuntu, including all792 regressions, the actual portable shim/adapter stage
+checks, Windows DLL stop/unavailable-addon guard, native pipe/interpreter checks
+and saved-signing confirmation/recovery process fixture. Build38715022192 also
+passed Windows/Linux. This verifies stage discrimination and held-mode fallback;
+it does not verify a full new game build, live judgment replacement, an apply
+permit or game execution/save/reload. Those remain required before enabling the
+unfinished negotiation mode in the installed runtime. No private assets were
+published, user save changed, control renewed or paid model request made.
