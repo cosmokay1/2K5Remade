@@ -78,6 +78,11 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       application-event branch, exercised with authored grants through actual
       generated signing code. Current production DLL grants nothing; remote/
       durable permits, uninterrupted application and game verification remain open.
+      Source48c3c55 passes Windows/Ubuntu Franchise38774595042 and
+      Build38774595079. Its private full Windows game --validate and actual
+      signing/addon fixture children also pass under Deck Proton. This remains
+      isolated validation; no new native build is installed, no production
+      application grants exist and actual signing/save/reload is unverified.
       An explicitly requested controlled-signing mode now also holds when the
       addon is unavailable, rather than silently falling through to retail.
       This now includes builds with sidecar support compiled out: both judgment

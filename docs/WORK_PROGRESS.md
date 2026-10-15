@@ -7317,3 +7317,41 @@ This is not actual game execution, control authorization, saved signing, modern
 book completion or final delivery. No user save, installed binary or control
 changed. Next: production authorization/coordinator and actual application/save
 verification after the required accounting/runtime conditions are established.
+
+### October 15 — Windows/Proton validation of the native application boundary
+
+Source48c3c55 now passes full Windows/Ubuntu Franchise CI38774595042 and
+Build38774595079. This includes the new authored two-stage signing fixture,
+production DLL refusal, native pipe/restart and saved-signing recovery checks.
+The earlier780e717 Franchise run38772466954 failed downloading the pinned public
+JSON header (HTTP error22), before native compilation; its Build38772466790
+passed. The superseding48c3c55 full run passed that dependency step and all
+checks, including the unchanged one-snapshot context regressions.
+
+The Deck is reachable again. An initial detached compiler launch exited before
+creating a container or writing build output; process/container checks confirmed
+that state before starting an attached build. The existing offline licensed
+compiler container then completed the full Windows game and fixture build at
+parallel2. An exact nine-file owned-source hash manifest binds the48c3c55 overlay
+over the existing private05ac4e9/menu/CPU stage; the runtime pin remainsc867ad3.
+No retail generated source or assets were committed or distributed.
+
+Actual Windows fixture children under the separate Proton fixture profile pass:
+application judgments/commits with authored grants, and production addon ABI/
+forwarding/disabled-service/refusal/reload checks. Both require launcher exit0
+and child marker addon-passed. The full isolated game --validate child also
+returns0, writes validated and logs [TEST] Validation passed with the pinned
+SOFTDRINK v0.6 executable. Game EXE SHA256
+d8adeac4afb1c32b4ca7d872d1c0d4ff78528b587de223c68ab5ad93372eb63a; DLL
+aef85952323ef1989a185a712db2519c701d392042a8704e24a544873f5262a0.
+Private receipts: native-05ac4e9/validate-application-receipt.json,
+addon-boundary-application-receipt.json and signing-application-receipt.json.
+
+This validation initializes the pack/runtime; it does not execute gameplay,
+signing or save/reload. It retains the earlier isolated-validation mirror/tiled-
+aperture mapping warnings and does not prove rendering. The installed Steam
+runtime was not replaced; its existing game process was observed still running.
+The read-only context launch configuration remains staged, awaiting normal exit
+before its guarded installation. No application grants, control renewal or paid
+inference were enabled. Native application policy, complete opening obligations,
+actual automatic menu context and legal signing/save/recovery remain unfinished.
