@@ -8494,3 +8494,29 @@ for actual read-only source/namespace reply consumption. This remains unverified
 startup metadata alone does not establish a live franchise binding or gameplay
 acceptance. Build38817632722 passed at5698281. Franchise38817632849's Ubuntu job
 passed; its Windows job remains in progress at the native handshake fixture.
+
+### Repeated boot failure blocks live namespace verification
+
+The single retry also exited before franchise loading with exception0xC0000094
+at the identical host0x1423CD9CF and matching logged guest registers. No game
+process remained on inspection. Its complete trace is preserved on Deck and
+locally as second-installed-boot-crash.log; no further launch was attempted.
+Disassembly of the exact privately built executable shows the faulting host
+instruction is div rcx after loading the guest divisor at object+0x48. The
+nearby pushed return address0x003CAD6A and surrounding instructions match
+generated sub_003CAD50 in src/recomp/gen/recomp_0026.c. This is the same guest
+routine and failure class already documented as a SOFTDRINK startup issue in
+docs/WORKLOG-2026-10-09.md. This establishes the failing code, not the reason
+its divisor became zero or proof that current configuration cannot affect it.
+No fabricated divisor, exception suppression, save edit or rollback was applied.
+
+Exact source5698281 Franchise38817632849 has now completed successfully on
+Windows and Ubuntu, alongside Build38817632722. Those CI/isolated checks do not
+exercise this full asset-bearing startup path. The actual game has emitted the
+configured image digest, but no loaded-franchise binding/context consumption was
+reached in either launch. The pending request to open an offer is superseded by
+this startup blocker; a user offer-screen test is not currently required. The
+installed batch and205 unchanged-save installation receipt remain preserved.
+AI/control/application grants remain off, and no inference or guest financial
+write was performed. Resolve or capture the zero-divisor initialization path
+before repeating the live namespace/signing acceptance test.

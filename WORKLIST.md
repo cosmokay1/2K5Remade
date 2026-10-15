@@ -191,8 +191,12 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       attempts and unchanged source/database hashes. Source5698281 and its
       read-only configuration are installed with all205 saves unchanged. The
       first boot emitted the expected loaded-image digest but then crashed with
-      integer divide-by-zero; its log is preserved and the single retry is running.
-      Live game callback binding is not yet
+      integer divide-by-zero; the single retry also exited at the same address.
+      Exact executable disassembly maps the fault to sub_003CAD50's division
+      by MEM32(ecx+0x48), matching the pre-existing startup issue in the
+      October9 worklog. Both traces are preserved; the underlying zero-input
+      cause is unresolved. Source5698281 Build38817632722 and
+      Franchise38817632849 pass Windows/Ubuntu. Live game callback binding is not yet
       verified, and full active-franchise lifetime/write authority remain open.
       Service-side durable binding and active franchise identity remain open;
       this metadata does not authorize application or prove code compatibility.
