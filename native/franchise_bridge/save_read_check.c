@@ -28,19 +28,28 @@ int wmain(int argc,wchar_t **argv) {
         DWORD count;require(WriteFile(file,bytes,FRANCHISE_SAVE_BYTES,&count,NULL) && count==FRANCHISE_SAVE_BYTES);
         LARGE_INTEGER offset;offset.QuadPart=0;require(SetFilePointerEx(file,offset,NULL,FILE_BEGIN));
         require(ReadFile(file,bytes,FRANCHISE_SAVE_BYTES,&count,NULL) && count==FRANCHISE_SAVE_BYTES);
-        NFL2K5AddonFileRead event={(uintptr_t)file,bytes,FRANCHISE_SAVE_BYTES,FRANCHISE_SAVE_BYTES,0};
-        require(api->event(NFL2K5_ADDON_FILE_READ,&event,sizeof(event)));
+        NFL2K5AddonFileReadV2 located={0};
+        located.read=(NFL2K5AddonFileRead){(uintptr_t)file,bytes,FRANCHISE_SAVE_BYTES,FRANCHISE_SAVE_BYTES,0};
+        located.guest_mapped=1;located.guest_address=0x100000;
+        NFL2K5AddonFileRead *event=&located.read;
+        require(api->event(NFL2K5_ADDON_FILE_READ_V2,&located,sizeof(located)));
         require(api->snapshot(FRANCHISE_SAVE_READ_SNAPSHOT,&snapshot,sizeof(snapshot)) && snapshot.sequence==i+1 && snapshot.file_size==FRANCHISE_SAVE_BYTES);
         require(!strcmp(snapshot.payload_sha256,"029c7da24320dc1eb2422141a2b6fa777c1f3d276c7fbb709510ecb45b531450"));
         BY_HANDLE_FILE_INFORMATION info;require(GetFileInformationByHandle(file,&info));
         require(snapshot.volume==info.dwVolumeSerialNumber && snapshot.file_index_high==info.nFileIndexHigh && snapshot.file_index_low==info.nFileIndexLow);
         if(i) require(snapshot.volume!=previous.volume || snapshot.file_index_high!=previous.file_index_high || snapshot.file_index_low!=previous.file_index_low);
+        require(snapshot.guest_mapped==1 && snapshot.guest_address==0x100000);
         previous=snapshot;
+        located.guest_mapped=2;require(api->event(NFL2K5_ADDON_FILE_READ_V2,&located,sizeof(located)));
+        located.guest_mapped=0;require(api->event(NFL2K5_ADDON_FILE_READ_V2,&located,sizeof(located)));
+        located.guest_mapped=1;located.guest_address=UINT32_MAX;
+        require(api->event(NFL2K5_ADDON_FILE_READ_V2,&located,sizeof(located)));
+        located.guest_address=0x100000;
         /* Rejected deliveries do not relabel the last observed candidate. */
-        event.completed--;require(api->event(NFL2K5_ADDON_FILE_READ,&event,sizeof(event)));
-        event.completed++;event.status=(int32_t)0xC0000008u;require(api->event(NFL2K5_ADDON_FILE_READ,&event,sizeof(event)));
-        event.status=0;event.requested--;require(api->event(NFL2K5_ADDON_FILE_READ,&event,sizeof(event)));
-        event.requested++;event.native_handle=(uintptr_t)INVALID_HANDLE_VALUE;require(api->event(NFL2K5_ADDON_FILE_READ,&event,sizeof(event)));
+        event->completed--;require(api->event(NFL2K5_ADDON_FILE_READ_V2,&located,sizeof(located)));
+        event->completed++;event->status=(int32_t)0xC0000008u;require(api->event(NFL2K5_ADDON_FILE_READ_V2,&located,sizeof(located)));
+        event->status=0;event->requested--;require(api->event(NFL2K5_ADDON_FILE_READ_V2,&located,sizeof(located)));
+        event->requested++;event->native_handle=(uintptr_t)INVALID_HANDLE_VALUE;require(api->event(NFL2K5_ADDON_FILE_READ_V2,&located,sizeof(located)));
         require(CloseHandle(file));
         require(api->snapshot(FRANCHISE_SAVE_READ_SNAPSHOT,&snapshot,sizeof(snapshot)) && !memcmp(&snapshot,&previous,sizeof(snapshot)));
     }

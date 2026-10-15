@@ -82,3 +82,10 @@ DMA/host writers or survive a guest yield during a later transaction.
 
 Preserve upstream and addon provenance. Original public reuse licensing remains
 undecided; this file does not grant a new license.
+
+The optional engine.file-read.v2 channel preserves the borrowed v1 read fields
+and adds guest_mapped/guest_address. The host reports a guest locator only when
+the successful delivered span maps completely inside its current bounded guest
+memory. Unknown/nonmapped locations remain zero. No bytes are dereferenced to
+calculate the locator, and this metadata grants no memory access or save/load
+authority. v1 events remain unchanged for existing addons.

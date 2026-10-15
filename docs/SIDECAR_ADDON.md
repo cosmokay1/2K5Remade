@@ -157,3 +157,11 @@ is of delivered bytes. Split reads have no candidate until a supported complete
 delivery can be established. Causal load completion, selected container, current
 projections and durable registry/database association remain required before any
 application permit. The same checks apply without image/mod-name branches.
+
+Destination correlation uses optional engine.file-read.v2: bounded host-to-guest
+translation supplies an owned guest locator without granting memory access.
+Legacy engine.file-read.v1 delivery remains unchanged. The current source
+franchise.save-read.v2 snapshot consumes the richer event once per delivery and
+records the locator or explicit unknown; the earlier installed v1 snapshot
+remains historical read evidence. Guest locators can be reused and do not prove
+load completion. Causal load-boundary checks are still required.

@@ -5,7 +5,11 @@
 #include <bcrypt.h>
 #include "save_read.h"
 #include "../game_addon/file_read.h"
-static inline int franchise_save_read_capture(const NFL2K5AddonFileRead *event,FranchiseSaveRead *out) {
+static inline int franchise_save_read_capture(const NFL2K5AddonFileReadV2 *located,FranchiseSaveRead *out) {
+    if(!located || located->guest_mapped>1 || (!located->guest_mapped && located->guest_address) ||
+       (located->guest_mapped && (!located->guest_address ||
+        located->read.completed>UINT64_C(0x100000000)-located->guest_address))) return 0;
+    const NFL2K5AddonFileRead *event=&located->read;
     if(!event || !out || event->status!=0 || event->completed>event->requested ||
        !franchise_save_read_shape(event->bytes,event->completed)) return 0;
     HANDLE file=(HANDLE)event->native_handle;
@@ -24,6 +28,7 @@ static inline int franchise_save_read_capture(const NFL2K5AddonFileRead *event,F
        memcmp(&before.ftLastWriteTime,&after.ftLastWriteTime,sizeof(FILETIME))) return 0;
     FranchiseSaveRead result={0};
     result.file_size=before.nFileSizeLow;
+    result.guest_mapped=located->guest_mapped;result.guest_address=located->guest_address;
     result.last_write=((uint64_t)before.ftLastWriteTime.dwHighDateTime<<32)|before.ftLastWriteTime.dwLowDateTime;
     result.volume=before.dwVolumeSerialNumber;result.file_index_high=before.nFileIndexHigh;result.file_index_low=before.nFileIndexLow;
     static const char hex[]="0123456789abcdef";

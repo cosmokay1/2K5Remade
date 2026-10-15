@@ -540,6 +540,11 @@ int nfl2k5_addon_guest_range(uint32_t address,size_t size)
     return (((size_t)address<g_xbox_total_ram && end<=g_xbox_total_ram) ||
          (address>=XBOX_CONTIG_BASE && end<=(uint64_t)XBOX_CONTIG_BASE+XBOX_CONTIG_SIZE));
 }
+#include "../native/game_addon/read_location.h"
+int nfl2k5_addon_guest_location(const void *bytes,size_t size,uint32_t *out)
+{
+    return addon_read_location((uintptr_t)xbox_GetMemoryOffset(),bytes,size,nfl2k5_addon_guest_range,out);
+}
 int nfl2k5_addon_guest_read(uint32_t address, void *out, size_t size)
 {
     extern int nfl2k5_addon_guest_read_allowed(void);

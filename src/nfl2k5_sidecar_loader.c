@@ -21,6 +21,7 @@ int nfl2k5_addon_guest_read_allowed(void) {
     return addon_read_allowed(&read_scope,xbox_ggl_current_serial());
 }
 extern int nfl2k5_addon_guest_range(uint32_t,size_t);
+extern int nfl2k5_addon_guest_location(const void *,size_t,uint32_t *);
 extern int nfl2k5_addon_guest_read(uint32_t,void *,size_t);
 static SRWLOCK module_lock=SRWLOCK_INIT;
 static HMODULE module;
@@ -119,6 +120,10 @@ int nfl2k5_addon_event(const char *name,const void *data,size_t size) {
 void nfl2k5_addon_file_read(const XboxFileReadEvent *read) {
     if(!read) return;
     const NFL2K5AddonFileRead event={read->native_handle,read->bytes,read->requested,read->completed,read->status};
+    NFL2K5AddonFileReadV2 located={0};located.read=event;
+    if(read->status==0 && read->bytes && read->completed && read->completed<=read->requested)
+        located.guest_mapped=nfl2k5_addon_guest_location(read->bytes,read->completed,&located.guest_address)!=0;
+    nfl2k5_addon_event(NFL2K5_ADDON_FILE_READ_V2,&located,sizeof(located));
     nfl2k5_addon_event(NFL2K5_ADDON_FILE_READ,&event,sizeof(event));
 }
 int nfl2k5_addon_snapshot(const char *name,void *out,size_t capacity) {

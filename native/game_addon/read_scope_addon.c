@@ -3,15 +3,19 @@
 #include "file_read.h"
 #include <string.h>
 static NFL2K5AddonHost host;
-static uint32_t file_read_permission;
+static uint32_t file_read_permission,location[2];
 static int start(const NFL2K5AddonHost *value){
     if(!value || value->size!=sizeof(*value) || !value->read_memory) return 0;
-    host=*value;file_read_permission=0;return 1;
+    host=*value;file_read_permission=0;memset(location,0,sizeof(location));return 1;
 }
-static void stop(void){memset(&host,0,sizeof(host));file_read_permission=0;}
+static void stop(void){memset(&host,0,sizeof(host));file_read_permission=0;memset(location,0,sizeof(location));}
 static void poll(void){}
 static int event(const char *name,const void *data,size_t size){
     (void)data;(void)size;uint32_t value;
+    if(name && data && !strcmp(name,NFL2K5_ADDON_FILE_READ_V2) && size==sizeof(NFL2K5AddonFileReadV2)) {
+        const NFL2K5AddonFileReadV2 *read=data;location[0]=read->guest_mapped;location[1]=read->guest_address;
+        file_read_permission=host.read_memory(0x1000,&value,sizeof(value))?1:0;return 1;
+    }
     if(name && !strcmp(name,NFL2K5_ADDON_FILE_READ)) {
         file_read_permission=host.read_memory(0x1000,&value,sizeof(value))?1:0;return 1;
     }
@@ -21,6 +25,7 @@ static int event(const char *name,const void *data,size_t size){
     return (first?1:0)|(second?2:0);
 }
 static int snapshot(const char *name,void *out,size_t capacity){
+    if(name && out && !strcmp(name,"scope.file-read-location") && capacity==sizeof(location)){memcpy(out,location,sizeof(location));return 1;}
     if(name && out && !strcmp(name,"scope.file-read-permission") && capacity==sizeof(file_read_permission)) {
         memcpy(out,&file_read_permission,sizeof(file_read_permission));return 1;
     }

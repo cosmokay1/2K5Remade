@@ -4,12 +4,13 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
-#define FRANCHISE_SAVE_READ_SNAPSHOT "franchise.save-read.v1"
+#define FRANCHISE_SAVE_READ_SNAPSHOT "franchise.save-read.v2"
 #define FRANCHISE_SAVE_BYTES 720044u
-/* Owned values only: no borrowed buffer, native handle or guest pointer. */
+/* Owned scalars only; guest_address is a locator, never a retained host pointer. */
 typedef struct FranchiseSaveRead {
     uint64_t sequence, file_size, last_write;
     uint32_t volume, file_index_high, file_index_low;
+    uint32_t guest_mapped, guest_address;
     char payload_sha256[65];
 } FranchiseSaveRead;
 /* Same observed FXG roster envelope as inspect_franchise_save.py. This is a

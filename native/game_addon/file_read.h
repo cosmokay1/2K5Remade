@@ -10,6 +10,14 @@ typedef struct NFL2K5AddonFileRead {
     size_t requested, completed;
     int32_t status;
 } NFL2K5AddonFileRead;
+/* v2 adds a guest destination when the delivered host span belongs to the
+ * current bounded guest mapping. It is a locator, not memory authority. v1 is
+ * still delivered unchanged for addons that only understand that channel. */
+#define NFL2K5_ADDON_FILE_READ_V2 "engine.file-read.v2"
+typedef struct NFL2K5AddonFileReadV2 {
+    NFL2K5AddonFileRead read;
+    uint32_t guest_mapped, guest_address;
+} NFL2K5AddonFileReadV2;
 /* The handle and bytes are borrowed only during event(). Copy bounded needed
  * data before returning; do not modify bytes, close/retain the handle or block
  * on a process/network request. bytes is NULL for empty/failed/oversized reads.

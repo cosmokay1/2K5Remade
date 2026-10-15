@@ -8101,3 +8101,65 @@ with complete selected-container/load binding.
 Exact source2bab3a4 CI is still running: Build38803210462 and Franchise38803210766.
 Prior b937df0 Build38801913988 and Franchise38801913914 both pass. Keep the new
 handles; do not restart them merely because a status observation times out.
+
+## October 15, 2026 — Actual MyNFL1 save-byte delivery verified
+
+The user launched the installed source2bab3a4 build and confirmed MyNFL1 open.
+An actual running Windows game child (PID176538 at observation) produced
+franchise save_read sequence1,720044 bytes, SHA256
+4c8c31b4f400e25175223163a948e126cb83d10aa4bb98979a564ef287761ec3.
+Both runtime saves/franchise/MyNFL1/SAVEGAME.DAT and its UDATA copy have that
+exact hash. The selected pack logged SOFTDRINK2K28v0.6 with1287 interpreted
+functions. Parent steam-launch.log contains mainly Gamescope output; the actual
+pack-dispatched child redirects diagnostics to the prefix's per-user
+AppData/Local/NFL2K5-PC/logs/session.log. A bounded copied log and process/artifact/
+save-hash receipt are private under save-read-b937df0/actual-read-receipt.json.
+Installed EXE/DLL/wrapper hashes still match the recorded installation.
+
+This proves actual kernel-to-loader-to-production-DLL delivery of those save
+bytes while the real game runs, beyond the authored fixtures. It does not prove
+which duplicate file/container was selected, causal load completion, namespace
+binding, transaction authority or signing/save-reload. The user session remains
+running and was not interrupted. AI/provider/controlled application remain off.
+
+## October 15, 2026 — Destination-aware read evidence; complete Windows suite
+
+To correlate a native read with the actual load destination, the host now emits
+optional engine.file-read.v2 alongside unchanged v1 delivery. A small bounded
+translation uses the current guest mapping base and existing memory-range checks
+to report guest_mapped/guest_address only for a complete successful delivered
+span. It dereferences no bytes and grants no memory access. Null/zero/unmapped/
+overflow/out-of-range spans remain unknown. This is generic engine metadata; no
+pack/image name selects behavior. The franchise.save-read.v2 owned snapshot
+consumes the richer event once per delivery and retains the locator alongside
+the delivered hash/native file identity. Locators can be reused and still do not
+prove a selected container, causal load completion or transaction authority.
+
+Eight local native CTests pass. A separate offline MSVC build compiles the full
+Windows game and every standalone bridge target, then all15 generated Windows
+CTest commands execute successfully under the isolated Proton fixture prefix.
+This includes actual kernel-to-DLL delivery, legacy v1 compatibility, a mapped
+locator without guest-lock memory authority, malformed locator rejection, the
+production save-read DLL, bounded host protocols, ownership/lifecycle and stalled
+peer shutdown. All375 declared source hashes are verified; child marker passed
+and launcher0 are recorded under read-location-a6b3263/checks-receipt.json.
+
+The full game/new-DLL pair also passes isolated --validate, marker validated,
+launcher0. EXE SHA256184f81fec072ac4b06ecd36c743e5243c1eca8284df6d644bdf9ec23b9c20883;
+DLL SHA256354ae9bc7f9fdd14038e600065dd6deaacbce0b1828ba43d300f2748aac82868.
+These staged artifacts are not installed; source2bab3a4 remains running with its
+verified v1 MyNFL1 read. No user game interruption, save edits, inference, control
+renewal or application grant occurred. Combine the next load-boundary integration
+with this metadata before requesting another user restart.
+
+Exact2bab3a4 CI38803210766 passes Ubuntu but failed Windows linking the standalone
+signing-adapter-stage test, which also compiles the real adapter and lacked its
+new bcrypt dependency. The production DLL/game and the initially selected private
+targets compiled, but that target was omitted from the earlier private build.
+The missing target-specific bcrypt link is now added. Building/executing the
+complete standalone suite above verifies this correction without relaxing tests.
+Build38803210462 passes. Current changed source still requires its own CI run.
+The earlier transient C-host expected-rejection failure remains a separate issue
+with reply diagnostics and six passing direct Windows reproductions; no deadline
+was changed. Actual selected-load binding and financial signing/save-reload remain
+open; these read observations grant nothing.

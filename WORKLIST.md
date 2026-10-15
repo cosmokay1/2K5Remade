@@ -143,16 +143,20 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       the root loader forwards engine.file-read.v1 with borrowed native handle,
       status and delivered bytes. Runtime CI38800594758 covers actual Windows and Linux reads. The private
       Windows kernel-to-DLL/native-file-identity fixture and rebuilt game
-      --validate now pass on Deck at source8909ede/runtime ea4a0ee. Live game
-      boot/load selection remains unverified. This is read evidence, not active-save/load proof or an
+      --validate pass on Deck at source8909ede/runtime ea4a0ee. Actual MyNFL1
+      read delivery is verified below; selected-container/load binding remains open. This is read evidence, not active-save/load proof or an
       application grant. The existing POSIX sentinel-handle crash exposed by this
       test has a separate small upstream PR#2.
       The franchise addon now records a full supported save-read candidate's
       delivered-byte hash and owned native file identity, with no guest access or
       retained handle/buffer. Windows production-DLL fixtures pass on Deck. Source2bab3a4 is privately
-      installed read-only with all205 save files unchanged; user MyNFL1 load
-      verification is pending. Real read delivery and causal load completion
-      remain unverified.
+      installed read-only with all205 save files unchanged; actual game delivery of MyNFL1's720044-byte hash is now verified, and the
+      user confirms it open. Duplicate-container selection and causal load
+      completion remain unverified.
+      A staged v2 event now adds bounded guest destination locators without
+      memory authority, preserving v1 delivery. All15 actual Windows standalone
+      tests and the rebuilt game --validate pass under Proton; not installed.
+      Combine with causal load-boundary checks before another user restart.
       Service-side durable binding and active franchise identity remain open;
       this metadata does not authorize application or prove code compatibility.
       The actual Windows game/DLL build now passes isolated --validate and the

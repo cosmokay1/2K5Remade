@@ -403,7 +403,7 @@ static int addon_event(const char *name,const void *data,size_t size) {
     }
     if(!name || !data) return 0;
 #ifdef _WIN32
-    if(!strcmp(name,NFL2K5_ADDON_FILE_READ) && size==sizeof(NFL2K5AddonFileRead)) {
+    if(!strcmp(name,NFL2K5_ADDON_FILE_READ_V2) && size==sizeof(NFL2K5AddonFileReadV2)) {
         FranchiseSaveRead candidate;
         if(franchise_save_read_capture(data,&candidate)) {
             AcquireSRWLockExclusive(&save_read_lock);
@@ -475,8 +475,8 @@ static void addon_poll(void) {
     const char *trace=getenv("NFL2K5_TRACE_FRANCHISE");
     if(trace && !strcmp(trace,"1") && save_read_copy(&candidate) && candidate.sequence!=reported_save_read) {
         reported_save_read=candidate.sequence;
-        fprintf(stderr,"[FRANCHISE-TRACE] save_read sequence=%llu bytes=%llu payload_sha256=%s source_scope=read_candidate active_franchise=unverified\n",
-            (unsigned long long)candidate.sequence,(unsigned long long)candidate.file_size,candidate.payload_sha256);
+        fprintf(stderr,"[FRANCHISE-TRACE] save_read sequence=%llu bytes=%llu payload_sha256=%s guest_mapped=%u guest_address=0x%08x source_scope=read_candidate active_franchise=unverified\n",
+            (unsigned long long)candidate.sequence,(unsigned long long)candidate.file_size,candidate.payload_sha256,candidate.guest_mapped,candidate.guest_address);
     }
     nfl2k5_franchise_guest_poll();
 }

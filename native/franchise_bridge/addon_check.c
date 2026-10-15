@@ -17,6 +17,11 @@ extern int nfl2k5_modpacks_get(int row);
 extern int nfl2k5_modpacks_toggle(int row);
 extern void nfl2k5_modpacks_set(int row,int on);
 extern void nfl2k5_modpacks_value(int row,int value,char *out,size_t capacity);
+static const void *mapped_read_buffer;
+int nfl2k5_addon_guest_location(const void *p,size_t n,uint32_t *out){
+    if(p!=mapped_read_buffer || n!=3 || !out)return 0;
+    *out=0x1000;return 1;
+}
 static unsigned toasts;
 void xbox_PresentToast(const char *header,const char *line1,const char *line2,unsigned ms) {
     (void)header;(void)line1;(void)line2;(void)ms;++toasts;
@@ -153,7 +158,10 @@ int wmain(int argc,wchar_t **argv) {
     nfl2k5_addon_stop();
     SetEnvironmentVariableW(L"NFL2K5_SIDECAR_ADDON",argv[5]);
     if(!nfl2k5_addon_start() || nfl2k5_addon_guest_read_allowed()) return 53;
+    read.bytes=bytes;read.completed=3;read.status=0;mapped_read_buffer=bytes;
     nfl2k5_addon_file_read(&read);
+    uint32_t location[2]={0};
+    if(!nfl2k5_addon_snapshot("scope.file-read-location",location,sizeof(location)) || location[0]!=1 || location[1]!=0x1000)return 66;
     if(!nfl2k5_addon_snapshot("scope.file-read-permission",&observed,sizeof(observed)) || observed) return 65;
     if(nfl2k5_addon_event("scope.read-twice",&counter,4)) return 54; /* no lock owner */
     execution_serial=10;

@@ -14,6 +14,7 @@ void *recomp_lookup(ULONG a){(void)a;abort();}
 void *recomp_lookup_manual(ULONG a){(void)a;abort();}
 int nfl2k5_addon_guest_range(uint32_t a,size_t n){(void)a;(void)n;return 0;}
 int nfl2k5_addon_guest_read(uint32_t a,void *p,size_t n){(void)a;(void)p;(void)n;return 0;}
+int nfl2k5_addon_guest_location(const void *p,size_t n,uint32_t *out){(void)p;(void)n;(void)out;return 0;}
 static BY_HANDLE_FILE_INFORMATION source;
 static unsigned reads;
 static void require(int ok){if(!ok)abort();}
