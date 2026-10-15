@@ -16,6 +16,30 @@ from tools.inspect_franchise_save import inspect_save, PLAYER_START, PLAYER_STRI
 from tools.inspect_franchise_calendar import inspect_calendar
 
 VERSION = 'original-save-bindings-v1'
+SOFTDRINK_PROFILE = 'softdrink-2k28-v0.6-opening'
+SOFTDRINK_XBE_SHA256 = 'f67e6fc1cb76c9ea1f1ad504e4a6491ff126483d66a9da8ddb92950bbaf740ba'
+
+
+def binding_money_scale(bindings):
+    profile = bindings.get('game_profile')
+    if profile is None and 'game_profile' not in bindings:
+        return 1
+    if (type(profile) is not dict or
+            profile != {'id': SOFTDRINK_PROFILE, 'xbe_sha256': SOFTDRINK_XBE_SHA256}):
+        raise ValueError('Unsupported pinned game profile')
+    return 4
+
+
+def _snapshot_year(bindings, payload):
+    calendar = inspect_calendar(payload)
+    if binding_money_scale(bindings) == 1:
+        return calendar['display_year']
+    # Only the verified opening season is supported. Do not infer future pack
+    # aging, phase mapping or a calendar migration from a scheduled-game byte.
+    from tools.inspect_franchise_cap import inspect_cap
+    if calendar['season_index'] != 0 or inspect_cap(payload)['league_cap_dollars'] != 75300000:
+        raise ValueError('Verified SOFTDRINK opening calendar and cap required')
+    return 2026
 
 
 def _identity_guard(first_name, last_name, pbp_photo_raw, dob_region_raw):
@@ -40,13 +64,18 @@ def _members(payload, roster):
     return result
 
 
-def create_bindings(payload: bytes, *, seed=None) -> dict:
+def create_bindings(payload: bytes, *, seed=None, game_xbe=None) -> dict:
     roster = inspect_save(payload)
-    if inspect_calendar(payload)['display_year'] != roster['year']:
+    profile = {}
+    if game_xbe is not None:
+        if type(game_xbe) is not bytes or hashlib.sha256(game_xbe).hexdigest() != SOFTDRINK_XBE_SHA256:
+            raise ValueError('Exact verified SOFTDRINK v0.6 XBE required')
+        profile = {'game_profile': {'id': SOFTDRINK_PROFILE, 'xbe_sha256': SOFTDRINK_XBE_SHA256}}
+    if _snapshot_year(profile, payload) != roster['year']:
         raise ValueError('Schedule year differs from saved season; verified calendar migration required')
     seed = secrets.token_hex(32) if seed is None else seed
     validate_seed(seed)
-    return {'version': VERSION, 'franchise_id': uuid.uuid4().hex,
+    return {**profile, 'version': VERSION, 'franchise_id': uuid.uuid4().hex,
             'baseline_payload_sha256': roster['payload_sha256'],
             'baseline_year': roster['year'], 'personality_seed': seed,
             'players': [{'source_slot': slot, 'player_id': uuid.uuid4().hex,
@@ -60,15 +89,16 @@ def _hex(value, size):
 
 def resolve_bindings(bindings: dict, payload: bytes) -> dict:
     roster = inspect_save(payload)
-    if type(bindings) is not dict or set(bindings) != {'version', 'franchise_id', 'baseline_payload_sha256',
-                                                    'baseline_year', 'personality_seed', 'players'}:
+    fields = {'version', 'franchise_id', 'baseline_payload_sha256',
+              'baseline_year', 'personality_seed', 'players'}
+    if type(bindings) is not dict or set(bindings) not in (fields, fields | {'game_profile'}):
         raise ValueError('Complete original-save bindings required')
     if bindings['version'] != VERSION or not _hex(bindings['franchise_id'], 32) or not _hex(bindings['baseline_payload_sha256'], 64):
         raise ValueError('Unsupported binding origin')
     validate_seed(bindings['personality_seed'])
     if type(bindings['baseline_year']) is not int or bindings['baseline_year'] != roster['year']:
         raise ValueError('Year change requires verified identity migration; refusing automatic remapping')
-    if inspect_calendar(payload)['display_year'] != bindings['baseline_year']:
+    if _snapshot_year(bindings, payload) != bindings['baseline_year']:
         raise ValueError('Saved season changed; verified identity migration required')
     members = _members(payload, roster)
     if type(bindings['players']) is not list or len(bindings['players']) != len(members):
@@ -121,12 +151,15 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('save', type=Path)
     parser.add_argument('bindings', type=Path)
+    parser.add_argument('--game-xbe', type=Path, help='Pin verified SOFTDRINK opening profile at creation')
     parser.add_argument('--create', action='store_true', help='Explicitly create once; never overwrite/reroll')
     args = parser.parse_args(argv)
     try:
+        if args.game_xbe and not args.create:
+            raise ValueError('--game-xbe is only supported with explicit creation')
         payload = args.save.read_bytes()
         if args.create:
-            bindings = create_bindings(payload)
+            bindings = create_bindings(payload, game_xbe=args.game_xbe.read_bytes() if args.game_xbe else None)
             with args.bindings.open('x', encoding='utf-8') as writer:
                 json.dump(bindings, writer, indent=2)
                 writer.write('\n')

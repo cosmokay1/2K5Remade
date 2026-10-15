@@ -49,8 +49,9 @@ base and adjoining-table boundary instead. It reads2070 memberships including377
 free agents (highest free-agent slot2463), checks every referenced record/name,
 and reproduces all32 payroll totals using the supported schedule math for codes0..7.
 Authored expanded-bank and corrupt-boundary regressions pass. No header was changed
-in the audited payload. Calendar/identity import still requires explicit pack
-policy; the retail2004 label is not silently replaced by a scheduled-game byte.
+in the audited payload. An explicit hash-pinned opening profile now binds the intended2026 season
+and4:1 export scale; the retail2004 observation is preserved. Future calendar
+migration, active franchise selection and complete obligations import remain open.
 
 ## Accuracy beyond arithmetic
 

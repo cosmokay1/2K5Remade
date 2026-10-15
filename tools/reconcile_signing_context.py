@@ -10,7 +10,7 @@ from pathlib import Path
 
 from franchise.store import FranchiseStore
 from tools.export_legacy_contracts import legacy_contracts
-from tools.franchise_snapshot_bindings import resolve_signing_candidate
+from tools.franchise_snapshot_bindings import resolve_signing_candidate, binding_money_scale
 from tools.inspect_franchise_calendar import inspect_calendar
 from tools.inspect_franchise_cap import inspect_cap
 from tools.inspect_franchise_save import TEAMS
@@ -22,6 +22,7 @@ def reconcile_signing_context(bindings, payload, observation, store, *, expected
     if type(observation) is not dict or set(observation) != {'biography', 'team', 'calendar'}:
         raise ValueError('Complete live signing checkpoint required')
     candidate = resolve_signing_candidate(bindings, payload, observation['biography'])
+    scale = binding_money_scale(bindings)
     team = observation['team']
     fields = {'table_index', 'table_mode', 'payroll_raw', 'league_cap_raw',
               'team_flag_raw', 'first_year_accumulator_raw'}
@@ -54,7 +55,7 @@ def reconcile_signing_context(bindings, payload, observation, store, *, expected
     expected_charges = [sum(row[index] if index < len(row) else 0 for row in schedules)
                         for index in range(max(map(len, schedules), default=0))]
     if (financial['revision'] != expected_revision or inventory['financial_revision'] != expected_revision
-            or financial['cap'] != cap['league_cap_dollars']
+            or financial['cap'] != cap['league_cap_dollars'] * scale
             or financial['signed_players'] != sorted(record.player_id for record in contracts)
             or financial['charges'] != expected_charges):
         raise ValueError('Ledger revision, ownership or current cap differs from checkpoint')

@@ -95,8 +95,11 @@ Do not deploy superseded staged diagnostics blindly or overwrite existing saves.
       creation, preserving the verified4:1 scale, with explicit pack calendar
       policy and no double-counted reserve players or retained debt. Preserved
       legacy schedules now support explicit4:1 cap scaling after guest rounding,
-      with durable cap enforcement; actual import/calendar/non-roster mapping
+      with durable cap enforcement; actual import/future-calendar/non-roster mapping
       remains open.
+- [x] Add explicit hash-pinned SOFTDRINK opening snapshot bindings: logical2026,
+      preserved4:1 legacy export and scaled read-only checkpoint. MyNFL1 resolves
+      2070 stable IDs/profiles and1693 active schedules; no active-game import.
 - [ ] Capture controlled pack signing/save/reload evidence; verify player identity,
       history, experience, calendar, salaries/payroll/cap and effective money scale.
 - [ ] Revalidate existing Xbox observer and bridge against pack code and saves;

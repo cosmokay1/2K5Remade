@@ -5629,3 +5629,33 @@ actual imported database, guest writes or runtime deployment were created.
 Explicit pack calendar/identity bindings and dated non-roster obligation mapping
 remain required before modern franchise import or signing authorization. This
 is persisted schedule support, not completion of pack negotiation integration.
+
+
+## Hash-pinned SOFTDRINK opening identity and scaled context
+
+Snapshot creation accepts optional --game-xbe only with --create. Exact verified
+v0.6 XBE SHAf67e6fc1cb76c9ea1f1ad504e4a6491ff126483d66a9da8ddb92950bbaf740ba
+selects an explicit persisted opening profile. This requires index0, internal
+cap75300000, reconciled team payrolls and scheduled-game year2026. Logical year
+2026 is pack policy; native retail scheduler coordinates remain unchanged.
+Unknown executable/profile, changed season/cap/payroll and biography drift reject.
+No future-year migration, raw save edits or active-pack verification is implied.
+
+Legacy export now carries the validated scale into typed preserved contracts and
+compares scaled payrolls. Existing read-only signing checkpoint still compares
+raw live observations to raw save fields, then checks scaled cap and liabilities
+against durable ledger state. Synthetic restart/context regression confirms the
+player is initialized with AI/write authorization false, rejecting a mistakenly
+scaled native observation. Default retail registry shape/behavior remains intact.
+
+Actual MyNFL1 read-only intake with actual pinned XBE created a private no-overwrite
+registry at .local-runtime/softdrink-v0.6/mynfl1/bindings-softdrink-opening.json.
+All2070 IDs/profiles resolve identically after JSON reload;1693 active contracts
+export across32 teams; Giants53 charges211984000. Save bytes remain unchanged.
+No actual franchise DB/game/cloud state was changed. Full717 Python regressions
+passed22.818s. Source fixtures are authored and patch only the expected test hash;
+no game/executable bytes are committed.
+
+Remaining financial import work includes dated non-roster obligations, exact
+contract source semantics, cash/guarantees and minimum/rookie classification.
+Actual runtime selection/negotiation/legal commit/save-load remain unverified.

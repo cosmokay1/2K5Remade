@@ -70,3 +70,32 @@ then atomically publishes without replacement. Concurrent winners are preserved.
 Failure removes only its own temporary artifacts. The receipt reports engine
 creation counts and explicitly says game runtime verification is false. Existing
 franchises are never rerolled by retrying creation.
+
+
+## Pinned SOFTDRINK opening snapshot
+
+The snapshot binding command can explicitly pin the verified SOFTDRINK 2K28
+v0.6 executable when creating a new registry:
+
+```sh
+python3 -m tools.franchise_snapshot_bindings /path/to/SAVEGAME.DAT /path/to/new-bindings.json --create --game-xbe /path/to/pack/default.xbe
+```
+
+Only XBE SHA256f67e6fc1cb76c9ea1f1ad504e4a6491ff126483d66a9da8ddb92950bbaf740ba
+is supported. The registry records that provenance; existing registries are never
+overwritten. Resolution still requires unchanged biography guards, membership
+coverage and same-year identities. This opening profile requires scheduler index0,
+reconciled payrolls, internal cap75300000 and scheduled-game year2026. It uses
+logical season2026 and four-to-one cap liabilities; it does not infer calendar
+advancement from the scheduled-game year or support a future season yet. Retail
+bindings retain their existing shape and calendar checks.
+
+The legacy exporter consumes the validated registry scale, retaining raw fitted
+terms and their snapshot source. The read-only signing checkpoint compares live
+raw values against the save, then compares scaled obligations and cap against
+the ledger. Native scheduler evidence remains in its original coordinates.
+The pin records offline executable provenance; active pack/franchise selection
+still requires runtime verification. Neither a registry nor a matching checkpoint
+authorizes AI, guest writes, cash assumptions, or omitted non-roster liabilities.
+MyNFL1 resolves2070 players and1693 active schedules across32 teams through this
+path; inherited reserve/dead-money reconciliation remains required for live use.
