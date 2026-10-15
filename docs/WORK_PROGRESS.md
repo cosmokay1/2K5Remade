@@ -6780,3 +6780,66 @@ Build38754170971 on Windows/Linux and its Ubuntu Franchise38754170960 job.
 The same run's Windows job remains active in Python regressions; native Windows
 capture execution is not yet verified. Do not deploy the new capture DLL based
 on the older source05ac4e9 component/game evidence.
+
+## One focused upstream fix PR and installed read-only capture pair
+
+The user explicitly authorized sending genuine original-runtime fixes upstream
+as small PRs without overwhelming the maintainer. Checked both upstream repos:
+no open overlapping PRs. Runtime nfl2k5-port8fcec41 still included POSIX strings.h
+unconditionally. In an isolated branch based on that exact upstream revision,
+cherry-picked only the existing two-line !_WIN32 include guard with attribution.
+Actual private MSVC19.44/SDK10.0.26100 compilation reproduced baseline fatal
+C1083 for strings.h; the same file compiled successfully with the guard. Opened
+https://github.com/BeyondTomrrow/xboxrecomp/pull/1 targeting nfl2k5-port, one file,
+two additions, no deletions. Attached the PR to this task. No other PR, maintainer
+message, AI/franchise code or assets were submitted. Keep future genuine fixes
+similarly focused; check merged work and avoid overlapping submissions.
+
+Source6291411 passed hosted Windows/Ubuntu Franchise38754170960 and
+Build38754170971. The private Deck Windows toolchain rebuilt the actual capture
+DLL and financial C fixture from verified source overlayd1ce378. Windows Python
+3.13.16 under Proton executed31 financial/capture and25 identity cases, including
+exclusive creation/no overwrite and malformed-memory refusal, with exit0 plus
+the explicit child capture-passed marker. No model/provider was configured.
+DLL SHA2561c3d51ecb8eeb7a1fbef281effa9d647654c4ef1b6115be981abf045008445f9.
+
+Confirmed the game was stopped, then backed up the installed EXE/DLL/private
+launch entry before replacing only that pair and adding the temporary read-only
+capture environment setting to the existing private test entry. No new launcher
+was introduced; final packaging remains normal Steam EXE/Proton. Installed host
+source05ac4e9 SHA256222d0b123b064111a62c47d95157ba3e54b065bc1bfd8618133b2ea0e5fe42a7,
+and addon source6291411 uses the DLL hash above. Installed entry SHA256
+09e60e9eeea2d1a527031e067ea96e9044a2b9e68d790f81c7f1154022bd47b1.
+All16 SAVEGAME.DAT hashes are unchanged, including MyNFL1 and its UDATA copy:
+4c8c31b4f400e25175223163a948e126cb83d10aa4bb98979a564ef287761ec3.
+Rollback files are under native-05ac4e9/installed-backup-6291411; private receipts
+are installed-capture-receipt.json and capture-windows-receipt.json, copied locally.
+
+The existing Steam test entry is configured to capture once to the new absolute
+private path native-05ac4e9/live-mynfl1.dat. The user was asked to load MyNFL1 and
+open any player's offer without submitting, reporting any picture problem.
+Actual installed module loading, visual correctness and live/save equality are
+pending. Once captured, remove only the owned temporary capture setting from the
+private entry; do not overwrite unrelated edits or renew AI controls. Negotiation
+mode/provider remain off. Actual legal signing, full opening obligations and
+save/reload integration remain unfinished.
+
+### Installed game retry and actual module loading
+
+The user reported a startup crash after installation, then explicitly reported
+that the second launch worked. Read-only inspection confirms running game
+PID137707 through the original Steam test entry and the new franchise-addon.dll
+mapped from the installed addon folder. The capture environment contains the
+intended new private filename; the AI provider is absent. Current session logs
+show ongoing D3D11 rendering, controller input, franchise/player-table activity,
+60FPS samples and zero reported audio drops/underruns. This proves actual module
+mapping and continued guest execution, not complete rendering/gameplay acceptance.
+
+The current Wine/Steam launcher log has no exception record explaining the first
+failure. The per-user session log belongs to the successful retry; the earlier
+failure remains unresolved and is not dismissed because retry worked. No rollback
+or further runtime changes were made after the user's successful-retry report.
+The live capture is still absent; the user was asked to load MyNFL1 and open an
+offer without submitting. Do not infer successful capture from merely loading a
+franchise/player table. Preserve the running game and wait for the actual file or
+the user's screen confirmation before diagnosing missing offer-screen capture.

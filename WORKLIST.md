@@ -95,8 +95,15 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       does not pin the original commit or grant application authority.
       An opt-in single-file capture at the existing offer-screen event now makes
       live financial/identity comparison possible without starting AI or signing.
-      Local macOS/Linux native capture/overwrite-refusal checks and807 Python
-      regressions pass; Windows execution and actual in-game capture are pending.
+      Source6291411 passed Windows/Ubuntu Franchise38754170960 and
+      Build38754170971. Actual Deck Windows/Python/Proton checks also pass31
+      financial/capture and25 identity cases. The matching host/DLL pair is now
+      installed in the existing private Steam entry with backups and all save
+      hashes preserved. AI and controlled signing remain off. The user has been
+      asked to load MyNFL1's offer screen for actual live/save comparison.
+      Actual installed addon mapping and continued guest execution are verified;
+      the user reports one startup failure followed by a successful retry.
+      The first failure remains unexplained; no live capture has arrived yet.
 - [ ] Reconcile the required opening obligations/rules before permitting financial
       writes, then prove signing and save/reload on the pinned pack.
       Optional explicit legacy-unknown cash scopes now preserve null total cash
@@ -125,7 +132,9 @@ it from the franchise application. Keep domain rules out of the reusable core.
       named events and snapshots; private franchise payloads stay in its adapter.
       Actual Windows/Proton fixture loads a separate counter addon using only
       the generic header; unknown messages, size checks and ABI1 refusal pass.
-      Installed Deck game remains the verified ABI1 pair.
+      The private Deck entry now has the ABI2 host05ac4e9 and addon6291411 pair;
+      actual module mapping and continued guest execution are verified. The new
+      read-only live capture remains to verify.
 - [ ] Generalize the manager's explicit single-addon selection before proposing
       general addon support upstream; verify a matching host/DLL pair in-game.
 
