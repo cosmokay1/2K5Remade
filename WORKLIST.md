@@ -45,6 +45,8 @@ native offer submission, player response, legal financial commit and save recove
       across screen changes and uncertain replies. No guest write is granted.
       Verified at2abc9a6: Franchise38682855612 and Build38682855623 passed
       Windows/Ubuntu and native fixtures.
+      Final pending-offer freshness fix1a9654f passed Franchise38686150816
+      and Build38686150717; changed terms still invalidate the held display.
       Native application and save/reload remain unconnected.
       Game-facing acceptance remains held until native application, save/reload
       and recovery are connected and verified. Actual game execution remains

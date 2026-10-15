@@ -6221,3 +6221,17 @@ independent Deck process inspection found no remaining private build/fixture
 process, and no fresh completion receipt was produced. Closed only the stale
 local SSH client. That run is unverified, not passed; the installed game process
 was left running and untouched. Hosted Windows must verify the final follow-up.
+
+Final freshness follow-up1a9654f passed Franchise38686150816 Windows2022/Ubuntu
+and Build38686150717 Windows/Linux. The hosted actual held-host fixture proves
+changed terms clear the pending display without another request, and navigation
+before reply does not release signing. Separately, a focused current-version
+plain-C client/service fixture passed under isolated Deck Windows Python/Proton:
+cache/consumption gates, uncaptured rejection and durable restart checks succeeded
+with a fresh native-smoke.passed child receipt. Its private output is
+guest-journal-windows/native-smoke.log. The earlier broad private checker used an
+obsolete expected reply count (four rather than current five), so its assertion
+failure is not claimed as a passed run. Hosted CI covers the complete current
+checker. No installed binaries, user saves, game session or remote control was
+changed. The full native Linux game port, verified opening legacy import and
+actual application/save/reload/recovery remain open.
