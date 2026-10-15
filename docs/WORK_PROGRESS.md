@@ -7991,3 +7991,45 @@ registry decoding is retained solely for durable recovery; it does not select
 new-franchise policy. Unsupported layouts must reject explicitly. No new mod-name
 branch, application grant, live installation or save modification was introduced.
 The Deck connection and actual full-game/save-load verification remain pending.
+
+## October 15, 2026 — Deck reconnected; rebuilt Windows observer pair validated
+
+The user restored Deck connectivity. Inspection confirmed the previous build was
+terminal: its full-runtime test harness linked unrelated title dispatcher/video
+references and failed with28 unresolved symbols. No live container or game was
+running. A declared369-file source delta for root8909ede/runtime ea4a0ee was
+verified against the prior effective manifest, backed up and applied only inside
+the private build source. The validation-only top-level CMake suffix was retained
+and separately hashed. The corrected build uses the focused real-kernel delivery
+target instead of the unrelated full-runtime harness; the game still links its
+normal complete runtime. The offline MSVC game build and subsequent addon/observer
+build both returned0. No source changes were needed beyond8909ede.
+
+Actual Windows binaries under Proton passed dispatch, native read/short-read/EOF/
+invalid-handle/missing-status checks, nonrecursive notification, completion-event
+ordering, source-handle native-file identity through the loader/example DLL, and
+ABI/disabled-service/reload checks. Logging alone is stubbed in the focused I/O
+harness; the real kernel path/I/O/guest-lock sources are linked. Child marker
+passed and launcher0 are recorded in
+.local-runtime/file-observer-56ed62d/final-checks-receipt.json. The expected missing-
+DLL refusal in the ABI fixture is exercised successfully. No file event grants
+guest-memory authority.
+
+The rebuilt game and production DLL also pass isolated --validate under Proton:
+launcher0, child marker validated and [TEST] Validation passed.
+EXE SHA256 daab780e0058ba9553ef12fa0c9eead1161d3d53c6ccf26aa65265f8a088ad3d;
+DLL SHA256 cf0dce7f252bd21098913dcfff8fafdd8bad1f229b8f943d74df136a882951a1.
+Receipts and effective manifest are copied locally alongside the source manifest.
+This invocation does not execute game-boot metadata or prove a loaded franchise.
+Only the isolated native-05ac4e9 validation runtime was updated; the installed
+Steam game, wrapper, user saves and controls were not changed. No AI inference,
+cloud changes or control renewal occurred.
+
+Root8909ede Build38801025861 passes; Franchise38801026470 has passed Ubuntu
+and is still running Windows financial tests at this checkpoint. Previous
+root4aefd29 Build38799924278 and Franchise38799924192 both pass. Standalone
+engine-sidecar CI38677485314 at2a2110d also passes. Seven local explicit-context
+regressions pass, including arbitrary image provenance with either supported unit
+factor and copy-only legacy recovery. Active-save binding, one-use application
+permits, complete modern opening books, actual signing/accounting/save-reload and
+final playable delivery remain open.
