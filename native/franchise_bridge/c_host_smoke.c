@@ -23,6 +23,7 @@ static int receive(FranchiseHostClient* client) {
     }
     if (!require_status(franchise_host_take(client,NULL,0,&required),FRANCHISE_HOST_BUFFER_TOO_SMALL) || !required) return 0;
     if (!require_status(franchise_host_prepare_accepted(client),FRANCHISE_HOST_BUSY)) return 0;
+    if (!require_status(franchise_host_check_saved(client),FRANCHISE_HOST_BUSY)) return 0;
     {
         char sentinel = 'x';
         size_t repeated = 0;
@@ -38,6 +39,7 @@ static int receive(FranchiseHostClient* client) {
         puts(response); free(response);
     }
     return require_status(franchise_host_prepare_accepted(client),FRANCHISE_HOST_NOT_READY) &&
+        require_status(franchise_host_check_saved(client),FRANCHISE_HOST_NOT_READY) &&
         require_status(franchise_host_take(client,NULL,0,&required),FRANCHISE_HOST_NOT_READY) &&
         require_status(franchise_host_ready(client,&ready),FRANCHISE_HOST_OK) && !ready;
 }

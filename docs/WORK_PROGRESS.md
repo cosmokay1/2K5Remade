@@ -6317,3 +6317,46 @@ Companion Build38692925575 also completed successfully on Windows/Linux. The
 extra private Windows/Proton cash-scope suite remains unrun because the Deck's
 hostname did not resolve during staging; hosted Windows results are authoritative
 for that component scope, not proof of game playability.
+
+## Native pending-save status and confirmation
+
+Connected the native addon-owned journal to asynchronous checks of the service's
+startup-pinned save path. While pending, the owner thread queues one check every
+two seconds; unchanged before-saves never queue financial writes. A validated
+prepared/candidate_after status plus the existing hello grant can queue confirm
+with that exact after-save hash. The service still checks current remote control,
+connection, deadline and file bytes inside atomic journal settlement. No new
+model request, directory discovery, game-kernel file hook, control renewal or
+native guest write permission is introduced.
+
+The native client retains accepted identity, exact charges, revision and journal
+binding independently of temporary reply buffers. It validates recovery states/
+hashes and matches confirmation to that acceptance; contradictions abort the
+owned transport. Confirmation is followed by a status read; confirmed-after and
+cancelled states stop polling. Errors force fresh reads. AI-disabled confirmation
+clears the local grant, leaving read-only recovery without another hello. The
+owner thread continues collecting after navigation, hides stale panels and logs
+only changed journal responses. It never unlocks retail signing, including after
+settlement: game application/reload and continued-session rebinding remain open.
+
+Added actual Windows C-client/service fixture target and CI invocation. Authored
+full32 legacy/explicit-unknown-cash inputs contain one recorded captured proposal;
+its provider is a Mock called once during fixture setup. The real native test
+replays it with the offline service, prepares, reads before-state, copies an
+authored candidate save, confirms, rereads settled status and opens a new client
+whose Vertex hello is disabled by absent runtime policy/credentials. Explicit-ID
+recovery must still read confirmed-after. The driver verifies one financial
+revision, one new exact cash obligation and two history events. No retail/game
+file is used, and copying a test save is not native game application evidence.
+A local fixture check initially compared the original checkpoint with replay;
+checkpoint history legitimately gains the recorded proposal. Corrected that
+fixture comparison to preserve source evidence and use the warmed replay.
+
+Validation:788 local regressions passed28.196s; portable native protocol checks
+passed0.59s, including AI-off reads, no confirmation before a verified candidate,
+foreign IDs, hashes, charges/revision substitution, invalid state combinations,
+refusal recovery and terminal stop. Actual fixture frames also passed the native
+C++ validators via a temporary local executable. Money audit retained5050 bonus
+conservation cases. Windows compilation/process execution for the new fixture is
+pending CI; the Deck was unavailable in the prior turn, so none is assumed here.
+Installed runtime, saves and remote controls are unchanged.

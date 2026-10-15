@@ -54,3 +54,6 @@ jobs:
       - name: Execute native pipe handshake and durable restart fixture
         if: runner.os == 'Windows'
         run: python -m tools.check_native_bridge build-franchise-bridge/Release/franchise_bridge_check.exe build-franchise-bridge/Release/franchise_c_host_check.exe
+      - name: Execute native saved-signing coordination without inference
+        if: runner.os == 'Windows'
+        run: python -m tools.check_native_saved_signing build-franchise-bridge/Release/franchise_saved_signing_check.exe

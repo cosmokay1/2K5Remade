@@ -15,6 +15,7 @@ static unsigned submissions;
 static DWORD owner;
 static bool ready;
 static unsigned preparations;
+static unsigned saved_checks;
 static FranchiseHostStatus preparation_status=FRANCHISE_HOST_NOT_READY;
 static void require(bool ok) { if(!ok) throw std::runtime_error("Held signing host invariant failed"); }
 FranchiseHostStatus franchise_host_create(const wchar_t*,const wchar_t*,FranchiseHostMode mode,FranchiseHostClient** out) {
@@ -33,6 +34,11 @@ FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient* c) {
     require(GetCurrentThreadId()==owner && !c->pending);++preparations;
     if(preparation_status!=FRANCHISE_HOST_OK) return preparation_status;
     const std::string request=R"({"protocol":1,"request_id":"authored-guest","operation":"guest_signing_prepare"})";
+    return franchise_host_submit(c,request.data(),request.size());
+}
+FranchiseHostStatus franchise_host_check_saved(FranchiseHostClient* c) {
+    require(GetCurrentThreadId()==owner && !c->pending);++saved_checks;
+    const std::string request=R"({"protocol":1,"request_id":"authored-status","operation":"guest_signing_status"})";
     return franchise_host_submit(c,request.data(),request.size());
 }
 FranchiseHostStatus franchise_host_take(FranchiseHostClient* c,char* buffer,size_t capacity,size_t* required) {
@@ -149,6 +155,11 @@ int main(int argc,char** argv) {
                 nfl2k5_franchise_on_fsm(0,0);
                 ready=true;nfl2k5_franchise_poll();
                 require(!nfl2k5_franchise_display(&view)); // Stale receipt stays hidden.
+                const auto checked=saved_checks;
+                Sleep(2100);nfl2k5_franchise_poll();
+                require(saved_checks==checked+1 && submitted["operation"]=="guest_signing_status");
+                nfl2k5_franchise_poll(); // Consume while the signing screen is closed.
+                require(!nfl2k5_franchise_display(&view));
             }
             const auto count=submissions;
             nfl2k5_franchise_on_fsm(0x557B2C,1);

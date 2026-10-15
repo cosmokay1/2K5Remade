@@ -11,6 +11,16 @@ struct SigningDisplayText { std::string priorities,offer,history; };
 inline SigningDisplayText signing_display(const nlohmann::json& response) {
     if(!response.at("error").is_null()) throw std::runtime_error("No valid signing context");
     const auto& result=response.at("result");
+    if(result.contains("save_position") && result.at("write_authorized")==false) {
+        if(result.at("state")=="cancelled") return {"","Journal signing was cancelled.","Original signing remains held."};
+        const auto position=result.at("save_position").get<std::string>();
+        if(position=="before") return {"","Waiting for the accepted contract to be saved.","Original signing remains held."};
+        if(position=="candidate_after") return {"","Saved contract matches the proposal; settlement pending.","Original signing remains held."};
+        if(position=="confirmed_after") return {"","Saved contract and ledger agree.","Game reload remains unverified. Signing remains held."};
+        return {"","Save differs from the accepted signing. Recovery required.","Original signing remains held."};
+    }
+    if(result.contains("state") && result.at("state")=="settled" && result.at("write_authorized")==false)
+        return {"","Saved contract reconciled with the ledger.","Game reload remains unverified. Signing remains held."};
     if(result.contains("state") && result.at("state")=="prepared" && result.at("write_authorized")==false)
         return {"","Accepted terms reserved. Signing remains held.","Game application and recovery are pending."};
     if(result.contains("signing_checkpoint")) {

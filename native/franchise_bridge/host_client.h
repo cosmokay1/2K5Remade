@@ -52,6 +52,11 @@ FranchiseHostStatus franchise_host_submit(FranchiseHostClient* client, const cha
  * Requires hello AI grant and advertised journal support. NOT_READY means no
  * accepted proposal. No caller overrides and no guest write grant. */
 FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient* client);
+/* Queue a read-only saved-state check for the prepared journal. Only a validated
+ * candidate after-save plus the existing hello grant can queue confirmation;
+ * the server rechecks current authority and bytes. NOT_READY means no journal or
+ * terminal confirmed/cancelled state. Never authorizes guest writes or inference. */
+FranchiseHostStatus franchise_host_check_saved(FranchiseHostClient* client);
 /* Nonblocking; reports 1 for an unread cached reply or completed transport task. */
 FranchiseHostStatus franchise_host_ready(FranchiseHostClient* client, int* ready_out);
 /* required_size includes the NUL terminator. NULL+0 queries a ready reply's

@@ -13,7 +13,8 @@ struct FranchiseHostClient {
     bool cached = false;
     bool ai_granted = false;
     bool journal_capable = false;
-    std::string request, preparation;
+    std::string request;
+    franchise::SavedSigningJournal candidate, journal;
     std::string operation;
 };
 extern "C" FranchiseHostStatus franchise_host_signing_display(const char* response,FranchiseSigningDisplay* out) {
@@ -103,7 +104,7 @@ extern "C" FranchiseHostStatus franchise_host_submit(FranchiseHostClient* client
     try {
         client->transport->submit(std::move(frame));
         client->request.assign(bytes,length);
-        client->preparation.clear();
+        client->candidate={};
         client->operation = std::move(operation);
         client->pending = true;
         return FRANCHISE_HOST_OK;
@@ -113,10 +114,24 @@ extern "C" FranchiseHostStatus franchise_host_submit(FranchiseHostClient* client
 extern "C" FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient* client) {
     if(!client) return FRANCHISE_HOST_INVALID_ARGUMENT;
     if(client->pending || client->cached) return FRANCHISE_HOST_BUSY;
-    if(client->preparation.empty()) return FRANCHISE_HOST_NOT_READY;
+    if(client->candidate.preparation.is_null()) return FRANCHISE_HOST_NOT_READY;
     if(!client->ai_granted || !client->journal_capable) return FRANCHISE_HOST_SERVICE_FAILURE;
     try {
-        const auto request=client->preparation;
+        auto journal=client->candidate;
+        const auto request=journal.preparation.dump();
+        const auto status=franchise_host_submit(client,request.data(),request.size());
+        if(status==FRANCHISE_HOST_OK) client->journal=std::move(journal);
+        return status;
+    } catch(...) {client->ai_granted=false;return FRANCHISE_HOST_SERVICE_FAILURE;}
+}
+
+extern "C" FranchiseHostStatus franchise_host_check_saved(FranchiseHostClient* client) {
+    if(!client) return FRANCHISE_HOST_INVALID_ARGUMENT;
+    if(client->pending || client->cached) return FRANCHISE_HOST_BUSY;
+    try {
+        const auto next=client->journal.next(client->ai_granted);
+        if(next.is_null()) return FRANCHISE_HOST_NOT_READY;
+        const auto request=next.dump();
         return franchise_host_submit(client,request.data(),request.size());
     } catch(...) {client->ai_granted=false;return FRANCHISE_HOST_SERVICE_FAILURE;}
 }
@@ -154,8 +169,9 @@ extern "C" FranchiseHostStatus franchise_host_take(FranchiseHostClient* client, 
                 }
             }
             if (response.at("error") == "ai_disabled") client->ai_granted = false;
-            const auto prepare=franchise::saved_signing_prepare(franchise::parse_frame(client->request),response);
-            if(!prepare.is_null()) client->preparation=prepare.dump();
+            const auto request=franchise::parse_frame(client->request);
+            client->journal.consume(request,response);
+            client->candidate=franchise::SavedSigningJournal::capture(request,response);
             client->cached = true;
         }
         *required_size = client->reply.size()+1;
@@ -164,7 +180,7 @@ extern "C" FranchiseHostStatus franchise_host_take(FranchiseHostClient* client, 
         client->reply.clear();
         client->cached = false;
         return FRANCHISE_HOST_OK;
-    } catch (...) { client->ai_granted = false; return FRANCHISE_HOST_SERVICE_FAILURE; }
+    } catch (...) { client->ai_granted = false;client->transport->abort();return FRANCHISE_HOST_SERVICE_FAILURE; }
 }
 
 extern "C" void franchise_host_destroy(FranchiseHostClient* client) {

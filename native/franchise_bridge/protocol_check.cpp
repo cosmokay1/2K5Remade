@@ -815,6 +815,63 @@ int main(int argc,char** argv) {
         nlohmann::json prepared={{"error",nullptr},{"result",{{"request_id",preparation["request_id"]},
             {"state","prepared"},{"before_payload_sha256",checkpoint["saved_payload_sha256"]},{"write_authorized",false}}}};
         franchise::validate_result(prepared,preparation);
+        auto journal=franchise::SavedSigningJournal::capture(captured_request,captured_reply);
+        journal.consume(preparation,prepared);
+        const auto status_request=journal.next(false);
+        if(status_request.at("operation")!="guest_signing_status") throw std::runtime_error("Recovery read requires AI");
+        auto saved_status=nlohmann::json{{"error",nullptr},{"result",{{"request_id",preparation["request_id"]},
+            {"state","prepared"},{"save_position","before"},{"write_authorized",false},
+            {"current_payload_sha256",checkpoint["saved_payload_sha256"]},
+            {"before_payload_sha256",checkpoint["saved_payload_sha256"]},{"after_payload_sha256",nullptr}}}};
+        journal.consume(status_request,saved_status);
+        if(journal.next(true).at("operation")!="guest_signing_status") throw std::runtime_error("Unchanged save queued settlement");
+        saved_status["result"]["save_position"]="candidate_after";
+        saved_status["result"]["current_payload_sha256"]=std::string(64,'d');
+        journal.consume(status_request,saved_status);
+        if(journal.next(false).at("operation")!="guest_signing_status") throw std::runtime_error("AI-off recovery queued settlement");
+        const auto confirm_request=journal.next(true);
+        if(confirm_request.at("operation")!="guest_signing_confirm" || confirm_request.at("expected_after_sha256")!=std::string(64,'d'))
+            throw std::runtime_error("Confirmation lost verified candidate hash");
+        auto confirmed=nlohmann::json{{"error",nullptr},{"result",{{"request_id",preparation["request_id"]},
+            {"state","settled"},{"player_id",checkpoint["player_id"]},{"financial_revision",1},
+            {"charges",captured_event["proposal_preview"]["contract_charges"]},
+            {"after_payload_sha256",std::string(64,'d')},{"write_authorized",false}}}};
+        for(int scenario=0;scenario<7;++scenario) {
+            auto bad=confirmed;auto copy=journal;
+            if(scenario==0) bad["result"]["player_id"]=std::string(32,'f');
+            if(scenario==1) bad["result"]["financial_revision"]=2;
+            if(scenario==2) bad["result"]["charges"][0]=1;
+            if(scenario==3) bad["result"]["after_payload_sha256"]=std::string(64,'e');
+            if(scenario==4) bad["result"]["write_authorized"]=true;
+            if(scenario==5) bad["result"]["extra"]=false;
+            if(scenario==6) copy.preparation["expected_revision"]=std::numeric_limits<int64_t>::max();
+            bool rejected=false;
+            try{copy.consume(confirm_request,bad);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Contradictory native journal settlement accepted");
+        }
+        auto refused=journal;refused.consume(confirm_request,nlohmann::json{{"error","ai_disabled"}});
+        if(refused.next(false).at("operation")!="guest_signing_status") throw std::runtime_error("Refusal skipped fresh recovery read");
+        journal.consume(confirm_request,confirmed);
+        if(journal.next(false).at("operation")!="guest_signing_status") throw std::runtime_error("Confirmation skipped saved-state read");
+        auto settled_status=saved_status;
+        settled_status["result"]["state"]="settled";settled_status["result"]["save_position"]="confirmed_after";
+        settled_status["result"]["after_payload_sha256"]=std::string(64,'d');
+        journal.consume(status_request,settled_status);
+        if(!journal.next(true).is_null()) throw std::runtime_error("Confirmed journal kept polling or settling");
+        for(int scenario=0;scenario<8;++scenario) {
+            auto bad=saved_status;
+            if(scenario==0) bad["result"]["state"]="other";
+            if(scenario==1) bad["result"]["save_position"]="confirmed_after";
+            if(scenario==2) bad["result"]["save_position"]="before";
+            if(scenario==3) bad["result"]["before_payload_sha256"]=std::string(64,'e');
+            if(scenario==4) bad["result"]["current_payload_sha256"]=std::string(64,'D');
+            if(scenario==5) bad["result"]["after_payload_sha256"]=std::string(64,'d');
+            if(scenario==6) bad["result"]["request_id"]="another";
+            if(scenario==7) bad["result"]["state"]="cancelled";
+            bool rejected=false;
+            try{auto copy=journal;copy.consume(status_request,bad);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Invalid recovery state/hash accepted");
+        }
         if(franchise::signing_display(prepared).offer.find("Signing remains held.")==std::string::npos)
             throw std::runtime_error("Preparation display implied a signing");
         for(int scenario=0;scenario<5;++scenario) {

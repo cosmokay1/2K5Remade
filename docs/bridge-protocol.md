@@ -541,3 +541,30 @@ summary includes only the count of unknown legacy contracts, not their IDs.
 Lifecycle bridge receipts currently require complete cash coverage and refuse a
 partial scope before release/trade/restructure writes. See the explicit-scope
 contract in docs/franchise-integration.md; guest application remains unconnected.
+
+### Native saved-state confirmation loop
+
+The opt-in native journal coordinator now checks the service's startup-pinned
+save path every two seconds while a prepared journal is pending. This is an
+asynchronous local read, not an inference, directory discovery or game-file hook.
+An unchanged before-save queues no financial write. Only a validated
+`prepared/candidate_after` status and the existing hello grant can queue
+confirmation with that exact after-save hash. The service still checks current
+remote control, connection, deadline, bytes and journal proof inside settlement.
+The native client additionally matches the confirmation's player, exact charges
+and next financial revision to the consumed captured acceptance.
+
+A confirmation is followed by a status read. `settled/confirmed_after` or cancelled
+journals stop automatic checks. Errors force another status read; AI-disabled
+responses clear the grant and leave read-only status available, without another
+hello, renewal or inference. Unknown states/hashes, substituted journals and
+contradictory confirmations are rejected. Unchanged replies are not repeatedly
+logged. Navigation does not stop pending receipt collection, and stale offer
+panels remain hidden.
+
+The host never releases retail signing here, even after successful settlement.
+The configured path must eventually be verified as the actual active game's
+save; this loop does not prove that selection, guest application or game reload.
+A new process does not guess its old journal: explicit-ID recovery remains
+available through `guest_signing_status`, including with failed AI initialization.
+Unreadable-startup recovery and safe guest application remain unfinished.

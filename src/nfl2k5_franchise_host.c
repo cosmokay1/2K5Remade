@@ -16,6 +16,8 @@ static int saved_performance;
 static int inspect_guest_offer;
 static int proposal_requested, proposal_sent, proposal_pending;
 static int journal_enabled, journal_pending, journal_locked;
+static unsigned long long journal_next_check;
+static char journal_last_reply[65536];
 /* One bounded submit intent. Foreign callbacks never inspect owner state or
  * touch the transport. Screen transitions/stop invalidate the copied intent. */
 static SRWLOCK submission_lock=SRWLOCK_INIT;
@@ -85,6 +87,7 @@ void nfl2k5_franchise_stop(void)
     ReleaseSRWLockExclusive(&submission_lock);
     proposal_requested=proposal_sent=proposal_pending=0;
     journal_enabled=journal_pending=journal_locked=0;
+    journal_next_check=0;journal_last_reply[0]=0;
     context_sequence = context_logged = 0;
     signing_active = context_sent = 0;
     observation_valid = observation_fresh = 0;
@@ -143,9 +146,13 @@ void nfl2k5_franchise_poll(void)
             goto failed;
         if(journal_pending) {
             journal_pending=0;
+            journal_next_check=GetTickCount64()+2000;
             /* A lost/error receipt may still follow a committed preparation.
              * Never unlock or submit another offer without journal recovery. */
-            fprintf(stderr,"[FRANCHISE] Held signing preparation reply: %s\n",response);
+            if(strcmp(journal_last_reply,response)) {
+                snprintf(journal_last_reply,sizeof(journal_last_reply),"%s",response);
+                fprintf(stderr,"[FRANCHISE] Held signing saved-state reply: %s\n",response);
+            }
             if(signing_active && observation_valid && observation_fresh &&
                screen_epoch==requested_epoch && same_observation(&observed,&requested)) {
                 FranchiseSigningDisplay next={0};
@@ -196,11 +203,17 @@ void nfl2k5_franchise_poll(void)
             fprintf(stderr, "[FRANCHISE] Control handshake reply consumed.\n");
         }
     }
+    if(journal_enabled && journal_locked && !journal_pending && GetTickCount64()>=journal_next_check) {
+        const FranchiseHostStatus status=franchise_host_check_saved(franchise_client);
+        if(status==FRANCHISE_HOST_OK) journal_pending=1;
+        else if(status==FRANCHISE_HOST_NOT_READY) journal_next_check=~0ULL;
+        else goto failed;
+    }
     return;
 failed:
     hello_failed = 1;
     clear_display();
-    fprintf(stderr,"[FRANCHISE] Control handshake transport unavailable; no AI request submitted.\n");
+    fprintf(stderr,"[FRANCHISE] Sidecar transport unavailable; signing remains held. Check journal recovery.\n");
 }
 int nfl2k5_franchise_context_enabled(void)
 {
@@ -399,6 +412,7 @@ int nfl2k5_franchise_start(void)
     ReleaseSRWLockExclusive(&submission_lock);
     proposal_requested=proposal_sent=proposal_pending=0;
     journal_enabled=prepare_enabled;journal_pending=journal_locked=0;
+    journal_next_check=0;journal_last_reply[0]=0;
     context_revision = revision;
     context_sequence = context_logged = 0;
     request_session=GetTickCount64();

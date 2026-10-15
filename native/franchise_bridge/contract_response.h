@@ -936,6 +936,40 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
     if (!response["error"].is_null()) return;
     const auto& result = response["result"];
     auto operation = request.at("operation").get<std::string>();
+    if(operation=="guest_signing_status" || operation=="guest_signing_confirm") {
+        auto hex=[](const nlohmann::json& value,size_t size) {
+            if(!value.is_string()) return false;
+            const auto text=value.get<std::string>();
+            return text.size()==size && text.find_first_not_of("0123456789abcdef")==std::string::npos;
+        };
+        if(!result.is_object() || result.size()!=7 || result.at("request_id")!=request.at("journal_request_id") ||
+           result.at("write_authorized")!=false) throw std::runtime_error("Invalid saved-signing identity or authority");
+        if(operation=="guest_signing_confirm") {
+            if(result.at("state")!="settled" || !hex(result.at("player_id"),32) ||
+               !hex(result.at("after_payload_sha256"),64) || result.at("after_payload_sha256")!=request.at("expected_after_sha256") ||
+               !result.at("charges").is_array() || result.at("charges").empty() || result.at("charges").size()>15)
+                throw std::runtime_error("Invalid saved-signing confirmation");
+            integer_money(result.at("financial_revision"));
+            if(result.at("financial_revision")==0) throw std::runtime_error("Missing signing revision");
+            for(const auto& charge:result.at("charges")) exact_money(charge);
+            return;
+        }
+        const auto state=result.at("state").get<std::string>();
+        const auto position=result.at("save_position").get<std::string>();
+        const auto& current=result.at("current_payload_sha256");
+        const auto& before=result.at("before_payload_sha256");
+        const auto& after=result.at("after_payload_sha256");
+        if(!hex(current,64) || !hex(before,64) ||
+           (state!="prepared" && state!="settled" && state!="cancelled") ||
+           (state=="settled" ? !hex(after,64) || after==before : !after.is_null()) ||
+           (position!="before" && position!="candidate_after" && position!="confirmed_after" && position!="unrecognized") ||
+           ((position=="before")!=(current==before)) ||
+           (position=="candidate_after" && state!="prepared") ||
+           (position=="confirmed_after" && (state!="settled" || current!=after)) ||
+           (state=="settled" && current==after && position!="confirmed_after"))
+            throw std::runtime_error("Invalid saved-signing recovery state or hashes");
+        return;
+    }
     if(operation=="guest_signing_prepare") {
         if(!result.is_object() || result.size()!=4 || result.at("request_id")!=request.at("request_id") ||
            result.at("state")!="prepared" || result.at("write_authorized")!=false ||

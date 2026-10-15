@@ -15,6 +15,9 @@ static FranchiseHostStatus take_status = FRANCHISE_HOST_OK;
 FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient *client) {
     (void)client;assert(0);return FRANCHISE_HOST_SERVICE_FAILURE;
 }
+FranchiseHostStatus franchise_host_check_saved(FranchiseHostClient *client) {
+    (void)client;assert(0);return FRANCHISE_HOST_SERVICE_FAILURE;
+}
 FranchiseHostStatus franchise_host_signing_display(const char *response,FranchiseSigningDisplay *out) {
     assert(response && out); memset(out,0,sizeof(*out));
     strcpy(out->priorities,"Authored priorities");return FRANCHISE_HOST_OK;
