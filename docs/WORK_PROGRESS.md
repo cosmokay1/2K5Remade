@@ -5979,3 +5979,40 @@ compared with fresh upstream code and separated from prerequisite platform
 changes before a dependency PR. No whole AI-branch PR, maintainer message or
 binary publication was made. User was told a focused Steam Deck PR is feasible;
 upstream publication has not been represented as completed.
+
+## Native Linux sidecar transport, separate from the full-game port
+
+User requested removing Proton, then clarified that presentation replacement must
+retain the nice scoreboard styles, replacing WebView rather than simplifying the
+scoreboard. FOX/CBS presentation.json already uses native Direct2D; NBC_SNF uses
+HTML/CSS/JS and WebView2. No feature removal or simplified-scoreboard change was
+made. Native renderer/style parity and full-game Linux deployment remain open.
+
+Added a Linux PipeClient behind the existing platform header: exact absolute
+execve argv, bounded JSON framing/envelope validation, nonblocking socketpair I/O
+with a five-second write-and-reply deadline, one pending request and bounded abort.
+Unrelated descriptors are closed at exec; MSG_NOSIGNAL preserves the host's
+SIGPIPE handling. Default SIGCHLD ownership is required. Normal teardown kills the
+owned process group before reaping its leader; Linux parent-death signalling kills
+the direct peer after abrupt parent exit. This is not a cgroup sandbox or Windows
+job equivalence: arbitrary descendants need cooperative cleanup after abrupt
+parent death and must not escape their owned group during normal teardown. The
+Windows implementation is retained behind its existing platform guard.
+
+Deck build initially could not find a native C++ compiler. Added g++ only to a
+local derived Ubuntu24.04 build container (247MB;42GB host free), leaving SteamOS
+and the installed game untouched. Native GCC13.3 Release build completed. CTest
+protocol/echo/linux_process all passed in7.60s, including exact argv, repeated
+requests, concurrent-submit refusal, malformed/mismatched/oversized replies, dead
+peer, stalled timeout/abort, descriptor inheritance, process-group descendant
+cleanup and abrupt-parent death with child reaping. The same three ELF x86-64
+binaries then ran directly on SteamOS glibc2.41, outside containers and without
+Wine/Proton; all passed. This is component evidence only. No game boot, contract
+write, save modification, paid inference or remote-control renewal occurred.
+
+Previous journal commit3bd6525 CI is confirmed successful: Franchise38675583760
+and Build38675583704. New transport consumer/standalone CI remains to verify.
+
+Consumer validation: all760 Python regressions passed22.348s outside the sandbox.
+The initial sandbox run failed only four loopback-server binds with EPERM; those
+passed when rerun with local networking allowed.

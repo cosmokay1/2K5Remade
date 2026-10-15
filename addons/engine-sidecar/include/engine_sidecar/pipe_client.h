@@ -1,4 +1,7 @@
 #pragma once
+#if defined(__linux__)
+#include "pipe_client_linux.h"
+#elif defined(_WIN32)
 #include <windows.h>
 #include "protocol.h"
 #include "launch.h"
@@ -148,3 +151,7 @@ public:
     }
 };
 }
+
+#else
+#error "Process transport is supported on Windows and Linux only"
+#endif

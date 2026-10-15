@@ -1,6 +1,10 @@
 #include <engine_sidecar/pipe_client.h>
 #include <iostream>
+#ifdef _WIN32
 int wmain(int argc,wchar_t** argv) {
+#else
+int main(int argc,char** argv) {
+#endif
     if(argc!=3) return 1;
     try {
         engine_sidecar::PipeClient client(argv[1],{argv[2]});

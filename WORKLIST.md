@@ -65,6 +65,25 @@ it from the franchise application. Keep domain rules out of the reusable core.
       general addon support upstream; verify a matching host/DLL pair in-game.
 
 
+## Native Steam Deck port — user requested
+
+Preserve the current broadcast styles while replacing WebView2; the user did not
+request a simplified scoreboard. Keep the working Windows/Proton installation
+until a native full-game build is verified.
+
+- [x] Add and execute native Linux engine-sidecar process transport checks on the
+      Deck without Proton: protocol, echo and process ownership checks passed.
+      This does not port the franchise adapter or the game.
+- [ ] Verify Windows/Linux standalone CI and consumer regressions for this change,
+      then update the independent addon export.
+- [ ] Replace HTML/WebView presentation rendering while retaining package layout,
+      colors, logos, typography and animations; compare rendered output. Existing
+      FOX/CBS JSON packages already use the native Windows renderer. The NBC HTML
+      package needs a supported native equivalent, not a plain scoreboard.
+- [ ] Port the Windows game/addon loader, remaining UI/files/audio dependencies
+      and presentation renderer; prove full native Linux boot, match transitions,
+      franchise signing and save/reload. SDL3 input alone does not provide this.
+
 ## Mod-manager extension — current scope
 
 The user clarified that this fork updates the existing mod manager to support
