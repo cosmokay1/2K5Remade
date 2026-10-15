@@ -8248,3 +8248,25 @@ c23dee11e3df74d6d40d18af82652d9b876cc04c3f6202014d69e853bea853a3;
 DLL is byte-identical to the installed
 4af092de1a4a509d8efc12490997a5fcf94ac793218af91fcbc975b5c705bcc5.
 The corrected executable is staged, not installed; normal exit is required.
+
+### Resume gate — corrected count installation
+
+Across three subsequent checks, the previous game process188574 remains running.
+Do not replace or terminate it. The prepared guarded installer is
+decoded-load-027e68b/install-readonly.py on the Deck, pinned to sourcef08390c;
+it replaces only the EXE, checks the unchanged DLL/wrapper, backs up the old EXE
+and verifies every save hash. After normal game exit, execute that installer,
+then request one MyNFL1 load and inspect the actual session.log for epoch/phase,
+720044 consumed bytes and the expected source hash/destination. Successful
+checkpoint correlation still does not establish selected-container identity,
+active-load lifetime, a production permit or financial signing/save-reload.
+
+Exact09fcc07 Franchise38807043294 is now successful on Windows/Ubuntu.
+Corrected sourcef08390c Build38808041932 and Ubuntu checks pass; Windows
+Franchise38808041886 is still executing Financial, negotiation and shutdown tests.
+An existing read-only gh watcher is exec session24462, with output retained in
+.local-runtime/decoded-load-027e68b/ci-watch.log. Poll that run/handle for terminal
+evidence; do not restart it or label it passing. Independent native build,
+17-test Proton execution and isolated game validation are already complete.
+The next runtime acceptance step requires the user's normal game exit and load;
+no game interruption, save edits, inference or control renewal is authorized.
