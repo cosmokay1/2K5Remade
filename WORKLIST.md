@@ -76,7 +76,9 @@ native offer submission, player response, legal financial commit and save recove
       Native preparation now supplies a fresh financial projection SHA256; the
       service requires it to match the server-owned before-save before reserving
       a journal. Missing/changed captures stay held. This is a consistency guard,
-      not quiescence or permission to apply; new Windows CNG execution is pending.
+      not quiescence or permission to apply. Source6df0c0f passed Windows/Ubuntu
+      Franchise38730370139 (including CNG mismatch/replay/prepare/settlement) and
+      Build38730370102. Actual game application/save/reload remains unverified.
 - [ ] Reconcile the required opening obligations/rules before permitting financial
       writes, then prove signing and save/reload on the pinned pack.
       Optional explicit legacy-unknown cash scopes now preserve null total cash

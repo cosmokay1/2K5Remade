@@ -6517,3 +6517,12 @@ CTests pass1.06s, the actual addon28-case financial comparison passes and the
 5050-case money conservation audit passes. The installed runtime and user saves
 are unchanged; this source is not a new playable delivery. Windows SHA256/client
 execution and new CI remain to verify after push.
+
+Source6df0c0f passed Franchise38730370139 on Windows2022/Ubuntu, including all799
+regressions and the Windows CNG/native-client fixture's changed unrostered
+contract rejection, captured proposal replay, matching financial preparation,
+saved-candidate confirmation, exactly-once settlement and AI-disabled restart
+status. Both actual-addon28-case comparisons and native boundary/interpreter
+checks passed. Build38730370102 also passed Windows/Linux runtime/tool and native
+presentation checks. No game binary was installed, guest write permitted or
+actual application/save/reload verified; those final requirements remain open.
