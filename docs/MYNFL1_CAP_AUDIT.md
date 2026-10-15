@@ -117,16 +117,21 @@ released-player/reserve obligation inventory.
 verified opening binding. It matches unique names across both snapshots, all
 five raw fitted contract fields, club ownership and observed source schedules.
 Washington's original game keyRedskins and source nameCommanders identify the
-same club. Combined source-team strings are left for explicit allocation review.
+same club. The [nflreadr dictionary](https://nflreadr.nflverse.com/articles/dictionary_contracts.html)
+defines the contract-level team string as potentially spanning multiple clubs;
+the nested season rows identify each year's club and cap number. The adapter
+therefore requires exactly one row per modeled year, matching the current club
+and exact source dollar amount. A compound historical label alone neither
+proves nor disproves future-year allocation.
 Every represented source vector must equal the independently decoded game
 vector; integer source liabilities then yield exact signed adjustment records.
 These records use existing OpeningBooks adjustments without overwriting the
 raw fitted contract or asserting cash/guarantees.
 
-MyNFL1 results:1343 source-matched contracts,350 unresolved (66 ownership
-allocations,70 changed fitted terms,206 modeled schedules,8 absent/ambiguous
-identities). Giants41 source-matched contracts and12 unresolved. Corrections
-for those41 alone are -233097 in2026, +57104160 in2027, +18897840 in2028 and
+MyNFL1 results:1406 source-matched contracts,287 unresolved (1 ownership
+allocation,70 changed fitted terms,208 modeled schedules,8 absent/ambiguous
+identities). Giants42 source-matched contracts and11 unresolved. Corrections
+for those42 alone are -228097 in2026, +57104160 in2027, +18897840 in2028 and
 +909250 in2029. These are corrections for a subset, not complete team balances.
 Burns illustrates the future-year problem: saved fitted2027 charge32104000 vs
 source44083333, a11979333 shortfall.

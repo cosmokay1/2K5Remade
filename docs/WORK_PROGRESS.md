@@ -5691,3 +5691,31 @@ transferred records, duplicate snapshot names, source mismatch and bad schedule
 vectors. Full721 tests passed23.014s. No game, DB, save, cloud, AI request or
 financial balance changed. Complete dated obligations and runtime enforcement
 remain required; the report cannot certify complete opening books.
+
+
+## Per-season source club allocation
+
+Verified the nflreadr primary contracts dictionary: contract-level team may list
+multiple clubs separated by slash; season_history.team and cap_number identify
+the specific year/club liability. Source:
+https://nflreadr.nflverse.com/articles/dictionary_contracts.html . Replaced the
+overly conservative compound-header rejection with exact per-season validation
+for every source year: exactly one annual row, current club (including verified
+Washington label mapping) and exact Decimal million-to-dollar cap equality.
+Still require identical fitted fields, unique identities and observed schedules.
+No splitting totals, guessing former-team debt or transferring signing bonuses.
+
+Actual MyNFL1 now matches1406 source schedules;287 remain unresolved:1 ownership
+allocation (McCarthy),70 changed fitted terms,208 modeled schedules and8 absent/
+ambiguous identities. This resolves63 additional records using dated annual
+evidence. All previously1343 matched schedules pass the stronger annual check.
+Giants now42 matched/11 unresolved; first-year subset correction -228097, later
+years unchanged at +57104160,+18897840,+909250. The private report was refreshed;
+no game/save/DB writes occurred.
+
+Tests cover compound historical header with proven annual club, wrong annual
+club, missing/duplicate year, dollar disagreement and unknown cap values.
+Full722 Python regressions passed22.535s. Read-only SSH confirms existing game
+PID102235 remains running through Proton; no installation or restart attempted.
+Future raw contract edits, estimated rookies and full non-roster obligations
+remain separate reconciliation requirements before live financial integration.

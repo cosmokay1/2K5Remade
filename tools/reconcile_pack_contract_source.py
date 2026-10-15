@@ -5,6 +5,7 @@ The pinned audit only covers its original roster, not all retained/reserve debt.
 """
 import argparse
 from collections import Counter, defaultdict
+from decimal import Decimal, InvalidOperation
 import hashlib
 import json
 from pathlib import Path
@@ -17,6 +18,24 @@ from tools.inspect_franchise_save import PLAYER_START, PLAYER_STRIDE, TEAMS
 
 AUDIT_SHA256 = 'dc34704beaf7219119f377584a753ae03b74973d09625deee061e7780e98e466'
 AUDIT_COMMIT = 'e19384123c23a3601949dda67c9a3ab754d65fd6'
+
+
+def _annual_allocation_matches(row, team, start_year):
+    # nflreadr's contract-level team field may span multiple clubs. The nested
+    # season rows identify the club liable for each specific league year.
+    names = {team, {'Redskins': 'Commanders'}.get(team, team)}
+    for offset, charge in enumerate(row['fit']['source_cap_dollars']):
+        seasons = [season for season in row['season_history_2026_and_later']
+                   if season['year'] == str(start_year + offset)]
+        if len(seasons) != 1 or seasons[0]['team'] not in names:
+            return False
+        try:
+            amount = Decimal(str(seasons[0]['cap_number'])) * 1000000
+        except InvalidOperation:
+            return False
+        if not amount.is_finite() or amount != charge:
+            return False
+    return True
 
 
 def reconcile_source(bindings, payload, source_bytes):
@@ -52,11 +71,12 @@ def reconcile_source(bindings, payload, source_bytes):
                           'contract_length': (packed >> 24) & 15, 'contract_remaining': packed & 15}
                 if row['fit']['fields'] != fields:
                     reason = 'saved terms differ from pinned fitted terms'
-                elif (row['team_name'] != team or row['source_team'] not in
-                      {team, {'Redskins': 'Commanders'}.get(team, team)}):
+                elif row['team_name'] != team:
                     reason = 'source ownership differs; retained debt allocation requires review'
                 elif row['schedule_kind'] != 'observed' or row['fallback'] is not None:
                     reason = 'source schedule is modeled; exact liabilities are unknown'
+                elif not _annual_allocation_matches(row, team, bindings['baseline_year']):
+                    reason = 'source ownership differs; retained debt allocation requires review'
             if reason:
                 unresolved.append({**entry, 'reason': reason})
                 continue
@@ -85,6 +105,7 @@ def reconcile_source(bindings, payload, source_bytes):
             'payload_sha256': hashlib.sha256(payload).hexdigest(),
             'audit_sha256': AUDIT_SHA256, 'audit_commit': AUDIT_COMMIT,
             'as_of': audit['source_receipt']['asset_updated_at'],
+            'start_year': bindings['baseline_year'],
             'matched_contracts': sum(len(t['matched']) for t in teams.values()),
             'unresolved_contracts': sum(len(t['unresolved']) for t in teams.values()),
             'complete_opening_books': False, 'write_authorized': False, 'teams': teams}

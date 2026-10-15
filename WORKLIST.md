@@ -97,7 +97,7 @@ Do not deploy superseded staged diagnostics blindly or overwrite existing saves.
       legacy schedules now support explicit4:1 cap scaling after guest rounding,
       with durable cap enforcement; actual import/future-calendar/non-roster mapping
       remains open. Dated source adapter now proposes exact adjustment records
-      for1343 matched schedules;350 remain unresolved. Giants41 matched deals
+      for1406 matched schedules;287 remain unresolved. Giants42 matched deals
       show +$57.104M next-year source liability versus fitted curves, making
       future-year source reconciliation a required acceptance gate.
 - [x] Add explicit hash-pinned SOFTDRINK opening snapshot bindings: logical2026,

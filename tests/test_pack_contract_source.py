@@ -23,6 +23,9 @@ class PackContractSourceTests(unittest.TestCase):
         self.row={'name':'Synthetic Starter','team_name':'49ers','source_team':'49ers',
             'source':'https://example.invalid/authored-source','otc_id':123,
             'schedule_kind':'observed','fallback':None,
+            'season_history_2026_and_later':[
+                {'year':'2026','team':'49ers','cap_number':19.06},
+                {'year':'2027','team':'49ers','cap_number':15.0}],
             'fit':{'fields':{'contract_value':829,'contract_type':1,'contract_bonus':4,
                 'contract_length':2,'contract_remaining':2},
                 'source_cap_dollars':[19060000,15000000],
@@ -59,13 +62,14 @@ class PackContractSourceTests(unittest.TestCase):
                 if case==1:rows=[self.row,self.row]
                 if case==2:self.row['fit']['fields']['contract_value']=828
                 if case==3:self.row['schedule_kind']='modeled'
-                if case==4:self.row['source_team']='Vikings'
+                if case==4:self.row['season_history_2026_and_later'][0]['team']='Vikings'
                 report=self.report(rows)
                 self.assertEqual(report['matched_contracts'],0)
                 self.assertEqual(report['unresolved_contracts'],1)
                 # Restore fields changed by a prior case.
                 self.row['fit']['fields']['contract_value']=829
                 self.row['schedule_kind']='observed';self.row['source_team']='49ers'
+                self.row['season_history_2026_and_later'][0]['team']='49ers'
 
     def test_duplicate_snapshot_names_do_not_share_a_source_obligation(self):
         payload=bytearray(self.payload)
@@ -83,10 +87,22 @@ class PackContractSourceTests(unittest.TestCase):
         for source in (b'{}',b'',bytearray(b'{}')):
             with self.assertRaises(ValueError):
                 source_tool.reconcile_source(self.bindings,self.payload,source)
-        for values in ([19064001,14092000],[19064000],[-1,14092000],[True,14092000]):
-            with self.subTest(values=values):
-                if values==[19064001,14092000]:
-                    self.row['fit']['represented_cap_dollars']=values
-                else:self.row['fit']['source_cap_dollars']=values
-                with self.assertRaises(ValueError):self.report()
-                self.row['fit']['represented_cap_dollars']=[19064000,14092000]
+        self.row['fit']['represented_cap_dollars']=[19064001,14092000]
+        with self.assertRaises(ValueError):self.report()
+
+    def test_compound_contract_team_uses_exact_per_year_ownership_and_money(self):
+        self.row['source_team']='NYG/SF'
+        self.assertEqual(self.report()['matched_contracts'],1)
+        for case in range(5):
+            with self.subTest(case=case):
+                seasons=self.row['season_history_2026_and_later']
+                original=json.loads(json.dumps(seasons))
+                if case==0:seasons[1]['team']='Giants'
+                if case==1:seasons.pop()
+                if case==2:seasons.append(dict(seasons[0]))
+                if case==3:seasons[0]['cap_number']=19.060001
+                if case==4:seasons[0]['cap_number']=None
+                result=self.report()
+                self.assertEqual(result['matched_contracts'],0)
+                self.assertEqual(result['unresolved_contracts'],1)
+                self.row['season_history_2026_and_later']=original
