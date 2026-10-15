@@ -6906,3 +6906,21 @@ fixture to fail loader startup with0xC0000135. The test now preserves the inheri
 environment and only overrides negotiation mode; local regression checks pass.
 Windows/Ubuntu rerun remains required. The Deck currently does not resolve over
 SSH, so no runtime installation, capture or save change was attempted.
+
+
+### Windows fixture loader repaired; isolate an existing deadline-sensitive check
+
+Atbb339a8 the new CPU/interactive compiled fixtures both pass on the actual
+Windows runner, confirming the inherited-environment fix. Ubuntu's full engine
+job passed. Windows Franchise38761382737 reached809 tests with808 passing;
+its one failure was an existing unrepresentable-offer test returning timeout
+instead of invalid_request after its one-second real-clock budget expired.
+That test now fixes monotonic time while testing format rejection; separate
+bridge deadline tests retain an advancing clock. Production timeouts are
+unchanged. Local proposal, bridge and signing-patch regressions pass. Full
+Windows native checks still require a successful rerun; no green claim is made.
+
+The user reported the Deck ready; SSH now connects and confirms the same running
+PID137707. Its capture path remains configured and the capture file is absent.
+The user was asked to confirm a MyNFL1 offer screen without submitting. No game,
+addon, save or launcher replacement was made while the session was running.

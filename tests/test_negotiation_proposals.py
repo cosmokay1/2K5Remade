@@ -5,6 +5,7 @@ from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from franchise.books import OpeningBooks
 from franchise.bridge import Bridge
@@ -143,7 +144,10 @@ class NegotiationProposalTests(unittest.TestCase):
         self.assertEqual(reopened.handle(changed)['error'], 'state_rejected')
         self.assertEqual(self.store.load_team('game').financial_snapshot(), before)
 
-    def test_game_proposal_refuses_unrepresentable_input_before_inference(self):
+    # Test format rejection independently of Windows runner scheduling; deadline
+    # expiration has separate bridge tests with an advancing clock.
+    @patch('franchise.bridge.time.monotonic', return_value=0)
+    def test_game_proposal_refuses_unrepresentable_input_before_inference(self, _clock):
         request = self.game_request()
         request['offer']['salaries'][0] += 1
         self.assertEqual(self.bridge.handle(request)['error'], 'invalid_request')
