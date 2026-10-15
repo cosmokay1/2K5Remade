@@ -333,6 +333,9 @@ PATCHES = [
     ("FRANCHISE_SIGN_HOLD_COMMIT", "sub_00323D80", "loc_00323F17: ;", "after", """\
     { extern int nfl2k5_franchise_hold_signing_at(uint32_t, uint32_t); if(nfl2k5_franchise_hold_signing_at(2u, esi)) goto loc_00323E99; }
 """),
+    ("FRANCHISE_SIGN_COMPLETED", "sub_00323D80", "loc_0032404E: ;", "after", """\
+    { extern void nfl2k5_franchise_signing_completed(uint32_t); nfl2k5_franchise_signing_completed(esi); }
+"""),
     # Held offers leave the interactive screen open without spending a retail
     # rejection attempt. Preserve its dirty flag and common stack cleanup.
     ("FRANCHISE_SIGN_PENDING_RETURN", "sub_003478A0", "loc_003478B6: ;", "after", """\
@@ -764,7 +767,7 @@ def main():
                 del lines[marked:marked+2]
                 end-=2
                 marked=None
-        if marked is not None and pid in ("FRANCHISE_SIGN_HOLD_JUDGMENT","FRANCHISE_SIGN_HOLD_COMMIT"):
+        if marked is not None and pid in ("FRANCHISE_SIGN_HOLD_JUDGMENT","FRANCHISE_SIGN_HOLD_COMMIT","FRANCHISE_SIGN_COMPLETED"):
             location=next((lines[j].strip() for j in range(marked-1,start,-1)
                            if lines[j].strip().startswith('loc_') and lines[j].strip().endswith(': ;')),None)
             if location!=anchor:
@@ -777,7 +780,7 @@ def main():
             expected=code.strip()
             current=lines[marked+1].strip() if marked+1<end else ""
             if current!=expected:
-                if current!=old and not (pid=="FRANCHISE_SIGN_HOLD_JUDGMENT" and current==previous):
+                if pid=="FRANCHISE_SIGN_COMPLETED" or (current!=old and not (pid=="FRANCHISE_SIGN_HOLD_JUDGMENT" and current==previous)):
                     failed.append("%s: unrecognized signing gate body" % pid)
                 elif check_only:
                     failed.append("%s: old signing gate requires upgrade" % pid)

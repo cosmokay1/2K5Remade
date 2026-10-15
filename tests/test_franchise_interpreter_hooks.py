@@ -26,7 +26,7 @@ class FranchiseInterpreterHooksTests(unittest.TestCase):
 #include <string.h>
 static uint32_t g_esi,g_edi,g_ebp,g_eax,context;
 #define MEM32(address) context
-static unsigned count,events,object,descriptor,pushed,stage,held_context,consumed;
+static unsigned count,events,object,descriptor,pushed,stage,held_context,consumed,completed;
 static int hold_reply=1;
 static int judgment_reply=1;
 static struct {uint32_t va;uint32_t (*callback)(void);} hooks[16];
@@ -39,6 +39,7 @@ void nfl2k5_diag_fsm(uint32_t obj,uint32_t desc,int push){
 int nfl2k5_franchise_hold_signing_at(uint32_t s,uint32_t c){stage=s;held_context=c;return hold_reply;}
 int nfl2k5_franchise_judge_signing(uint32_t c){held_context=c;return judgment_reply;}
 int nfl2k5_franchise_signing_was_held(uint32_t c){++consumed;return 0;}
+void nfl2k5_franchise_signing_completed(uint32_t c){completed=c;}
 ''' + block + r'''
 int main(void){
  nfl2k5_franchise_interp_hooks();
@@ -53,8 +54,8 @@ int main(void){
  if(setenv("NFL2K5_FRANCHISE_NEGOTIATION","1",1)) return 5;
 #endif
  count=0;nfl2k5_franchise_interp_hooks();
- if(count!=7 || hooks[2].va!=0x324072 || hooks[3].va!=0x323D80 ||
-    hooks[4].va!=0x3478B6 || hooks[5].va!=0x323F0A || hooks[6].va!=0x323F17) return 6;
+ if(count!=8 || hooks[2].va!=0x324072 || hooks[3].va!=0x323D80 ||
+    hooks[4].va!=0x3478B6 || hooks[5].va!=0x323F0A || hooks[6].va!=0x323F17 || hooks[7].va!=0x32404E) return 6;
  if(hooks[2].callback()!=0x324173 || stage!=2 || held_context || consumed!=1) return 7;
  hold_reply=0;
  if(hooks[2].callback() || consumed!=1) return 8;
@@ -64,6 +65,7 @@ int main(void){
  if(hooks[5].callback() || g_eax!=0x87654321 || g_edi!=0x11223344) return 10;
  judgment_reply=2;
  if(hooks[5].callback()!=0x323F13 || g_eax!=1 || g_edi!=g_ebp || g_esi!=0x12345678) return 11;
+ if(hooks[7].callback() || completed!=g_esi || g_eax!=1 || g_edi!=g_ebp) return 12;
  return 0;
 }
 ''')

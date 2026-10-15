@@ -11,6 +11,9 @@
  * Both require exact context, current control and an uninterrupted commit plan. */
 #define FRANCHISE_SIGN_APPLICATION_EVENT "franchise.sign-application.v1"
 #define FRANCHISE_SIGN_APPLICATION_AUTHORIZED 2
+/* One-use notification after an authorized native success; payload uint32_t
+ * context. Reply is ignored. This is neither saved proof nor a grant. */
+#define FRANCHISE_SIGN_COMPLETED_EVENT "franchise.sign-completed.v1"
 #define FRANCHISE_SIGN_JUDGMENT 1u
 #define FRANCHISE_SIGN_PRECOMMIT 2u
 #define FRANCHISE_SIGNING_EVENT "franchise.signing.v1"

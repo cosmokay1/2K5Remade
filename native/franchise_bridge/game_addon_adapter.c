@@ -8,14 +8,17 @@
 #ifdef _MSC_VER
 __declspec(thread) static uint32_t held_signing_context;
 __declspec(thread) static uint32_t accepted_signing_context;
+__declspec(thread) static uint32_t applying_signing_context;
 #else
 static _Thread_local uint32_t held_signing_context;
 static _Thread_local uint32_t accepted_signing_context;
+static _Thread_local uint32_t applying_signing_context;
 #endif
 int nfl2k5_franchise_signing_was_held(uint32_t context) {
     int held=context && held_signing_context==context;
     held_signing_context=0;
     accepted_signing_context=0;
+    applying_signing_context=0;
     return held;
 }
 static int signing_hold_result(uint32_t context,int held) {
@@ -33,8 +36,8 @@ static int application_requested(void) {
 #ifdef NFL2K5_FRANCHISE_CLIENT
 #include "../game_addon/loader.h"
 #include "franchise_addon.h"
-int nfl2k5_franchise_start(void) { held_signing_context=accepted_signing_context=0; return nfl2k5_addon_start(); }
-void nfl2k5_franchise_stop(void) { held_signing_context=accepted_signing_context=0; nfl2k5_addon_stop(); }
+int nfl2k5_franchise_start(void) { held_signing_context=accepted_signing_context=applying_signing_context=0; return nfl2k5_addon_start(); }
+void nfl2k5_franchise_stop(void) { held_signing_context=accepted_signing_context=applying_signing_context=0; nfl2k5_addon_stop(); }
 void nfl2k5_franchise_guest_poll(void) { nfl2k5_addon_poll(); }
 int nfl2k5_franchise_display(FranchiseSigningDisplay *out) {
     return nfl2k5_addon_snapshot(FRANCHISE_DISPLAY_SNAPSHOT,out,sizeof(*out));
@@ -49,7 +52,7 @@ void nfl2k5_diag_fsm(uint32_t object,uint32_t descriptor,int push) {
 #endif
 }
 void nfl2k5_diag_signing(uint32_t stage,uint32_t context,uint32_t result,uint32_t code,uint32_t stack) {
-    if(stage==0) held_signing_context=accepted_signing_context=0;
+    if(stage==0) held_signing_context=accepted_signing_context=applying_signing_context=0;
 #ifdef NFL2K5_FRANCHISE_CLIENT
     const FranchiseSigningEvent event={stage,context,result,code,stack};
     nfl2k5_addon_event(FRANCHISE_SIGNING_EVENT,&event,sizeof(event));
@@ -60,6 +63,7 @@ void nfl2k5_diag_signing(uint32_t stage,uint32_t context,uint32_t result,uint32_
 
 int nfl2k5_franchise_hold_signing(uint32_t context) {
     accepted_signing_context=0;
+    applying_signing_context=0;
 #ifdef NFL2K5_FRANCHISE_CLIENT
     return signing_hold_result(context,nfl2k5_addon_event(FRANCHISE_SIGN_SUBMIT_EVENT,&context,sizeof(context))!=0 || controlled_signing_requested());
 #else
@@ -70,14 +74,18 @@ int nfl2k5_franchise_hold_signing(uint32_t context) {
 int nfl2k5_franchise_hold_signing_at(uint32_t stage,uint32_t context) {
     const uint32_t accepted=accepted_signing_context;
     accepted_signing_context=0; /* Consume before invoking possibly reentrant addon code. */
+    applying_signing_context=0;
     if(accepted) {
         if(stage!=2u || context!=accepted || !application_requested()) return signing_hold_result(context,1);
 #ifdef NFL2K5_FRANCHISE_CLIENT
         const FranchiseSignGateEvent event={stage,context};
         const int decision=nfl2k5_addon_event(FRANCHISE_SIGN_APPLICATION_EVENT,&event,sizeof(event));
         accepted_signing_context=0;
-        if(application_requested() && decision==FRANCHISE_SIGN_APPLICATION_AUTHORIZED)
+        applying_signing_context=0;
+        if(application_requested() && decision==FRANCHISE_SIGN_APPLICATION_AUTHORIZED) {
+            applying_signing_context=context;
             return signing_hold_result(context,0);
+        }
 #endif
         return signing_hold_result(context,1);
     }
@@ -95,11 +103,13 @@ int nfl2k5_franchise_hold_signing_at(uint32_t stage,uint32_t context) {
 
 int nfl2k5_franchise_judge_signing(uint32_t context) {
     accepted_signing_context=0;
+    applying_signing_context=0;
 #ifdef NFL2K5_FRANCHISE_CLIENT
     if(context && application_requested()) {
         const FranchiseSignGateEvent event={1u,context};
         const int decision=nfl2k5_addon_event(FRANCHISE_SIGN_APPLICATION_EVENT,&event,sizeof(event));
         accepted_signing_context=0;
+        applying_signing_context=0;
         if(application_requested() && decision==FRANCHISE_SIGN_APPLICATION_AUTHORIZED) {
             accepted_signing_context=context;
             signing_hold_result(context,0);
@@ -109,4 +119,18 @@ int nfl2k5_franchise_judge_signing(uint32_t context) {
     }
 #endif
     return nfl2k5_franchise_hold_signing_at(1u,context) ? 1 : 0;
+}
+
+/* Called only at the original success epilogue, after roster/payroll/history.
+ * Notification is recovery evidence, not a further authorization or save proof.
+ * Record completion even if AI was disabled after the committed writes. */
+void nfl2k5_franchise_signing_completed(uint32_t context) {
+    const uint32_t applying=applying_signing_context;
+    applying_signing_context=0;
+#ifdef NFL2K5_FRANCHISE_CLIENT
+    if(context && context==applying)
+        nfl2k5_addon_event(FRANCHISE_SIGN_COMPLETED_EVENT,&context,sizeof(context));
+#else
+    (void)context;(void)applying;
+#endif
 }

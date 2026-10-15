@@ -16,6 +16,9 @@ int nfl2k5_franchise_hold_signing_at(uint32_t stage, uint32_t context);
 /* 0 retains retail judgment, 1 defers, 2 skips retail judgment as accepted.
  * Acceptance still requires a separate same-context precommit authorization. */
 int nfl2k5_franchise_judge_signing(uint32_t context);
+/* Observe original successful completion once after an authorized precommit.
+ * No guest writes, permission or saved-game confirmation is supplied. */
+void nfl2k5_franchise_signing_completed(uint32_t context);
 /* Consume the synchronous hold result once, matching the interactive context.
  * Context zero clears stale state. This never authorizes a transaction. */
 int nfl2k5_franchise_signing_was_held(uint32_t context);

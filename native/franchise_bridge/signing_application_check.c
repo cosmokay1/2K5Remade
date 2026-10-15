@@ -6,7 +6,8 @@
 #include <string.h>
 extern void nfl2k5_franchise_stop(void);
 static int judgment,commit;
-static unsigned applications;
+static unsigned applications,completions;
+static uint32_t completed_context;
 static int mode(const char *key,const char *value) {
 #ifdef _WIN32
     return _putenv_s(key,value);
@@ -19,6 +20,12 @@ void nfl2k5_addon_stop(void){}
 void nfl2k5_addon_poll(void){}
 int nfl2k5_addon_snapshot(const char *n,void *o,size_t c){(void)n;(void)o;(void)c;return 0;}
 int nfl2k5_addon_event(const char *name,const void *data,size_t size) {
+    if(!strcmp(name,FRANCHISE_SIGN_COMPLETED_EVENT)) {
+        if(size!=sizeof(uint32_t)) abort();
+        completed_context=*(const uint32_t *)data;++completions;
+        nfl2k5_franchise_signing_completed(completed_context); /* Reentrant retry is consumed. */
+        return 2;
+    }
     if(strcmp(name,FRANCHISE_SIGN_APPLICATION_EVENT) || size!=sizeof(FranchiseSignGateEvent)) return 0;
     const FranchiseSignGateEvent *event=data;
     ++applications;
@@ -26,10 +33,15 @@ int nfl2k5_addon_event(const char *name,const void *data,size_t size) {
 }
 int main(void) {
     if(mode("NFL2K5_FRANCHISE_NEGOTIATION","1") || mode("NFL2K5_FRANCHISE_GUEST_SIGNING","1")) return 1;
+    nfl2k5_franchise_signing_completed(0x1234);
+    if(completions) return 27;
     judgment=commit=FRANCHISE_SIGN_APPLICATION_AUTHORIZED;
     if(nfl2k5_franchise_judge_signing(0x1234)!=2 ||
        nfl2k5_franchise_hold_signing_at(2,0x1234) || applications!=2 ||
-       nfl2k5_franchise_signing_was_held(0x1234)) return 2;
+       completions) return 2;
+    nfl2k5_franchise_signing_completed(0x1234);
+    nfl2k5_franchise_signing_completed(0x1234);
+    if(completions!=1 || completed_context!=0x1234 || nfl2k5_franchise_signing_was_held(0x1234)) return 19;
     /* Repeating precommit, bypassing judgment, CPU or other contexts cannot use it. */
     if(!nfl2k5_franchise_hold_signing_at(2,0x1234) || applications!=2) return 3;
     if(nfl2k5_franchise_judge_signing(0x1234)!=2 ||
@@ -43,6 +55,8 @@ int main(void) {
         judgment=2;commit=rejected;
         if(nfl2k5_franchise_judge_signing(0x1234)!=2 || !nfl2k5_franchise_hold_signing_at(2,0x1234) ||
            !nfl2k5_franchise_signing_was_held(0x1234)) return 7;
+        nfl2k5_franchise_signing_completed(0x1234);
+        if(completions!=1) return 28;
     }
     judgment=commit=2;
     if(nfl2k5_franchise_judge_signing(0x1234)!=2) return 8;
@@ -64,6 +78,26 @@ int main(void) {
     if(nfl2k5_franchise_judge_signing(0x1234) || applications) return 16; /* Retail unchanged. */
     if(mode("NFL2K5_FRANCHISE_NEGOTIATION","1") || mode("NFL2K5_FRANCHISE_GUEST_SIGNING","0") ||
        nfl2k5_franchise_judge_signing(0x1234)!=1 || applications) return 17;
+    /* Completion persists through control disable, but never grants another commit. */
+    mode("NFL2K5_FRANCHISE_GUEST_SIGNING","1");
+    if(nfl2k5_franchise_judge_signing(0x1234)!=2 || nfl2k5_franchise_hold_signing_at(2,0x1234)) return 20;
+    mode("NFL2K5_FRANCHISE_NEGOTIATION","0");
+    nfl2k5_franchise_signing_completed(0x1234);
+    if(completions!=2) return 21;
+    mode("NFL2K5_FRANCHISE_NEGOTIATION","1");
+    if(!nfl2k5_franchise_hold_signing_at(2,0x1234)) return 22;
+    if(nfl2k5_franchise_judge_signing(0x1234)!=2 || nfl2k5_franchise_hold_signing_at(2,0x1234)) return 23;
+    nfl2k5_franchise_signing_completed(0x5678);
+    nfl2k5_franchise_signing_completed(0x1234);
+    if(completions!=2) return 24;
+    if(nfl2k5_franchise_judge_signing(0x1234)!=2 || nfl2k5_franchise_hold_signing_at(2,0x1234)) return 25;
+    nfl2k5_diag_signing(0,0,0,0,0);
+    nfl2k5_franchise_signing_completed(0x1234);
+    if(completions!=2) return 26;
+    if(nfl2k5_franchise_judge_signing(0x1234)!=2 || nfl2k5_franchise_hold_signing_at(2,0x1234)) return 29;
+    nfl2k5_franchise_stop();
+    nfl2k5_franchise_signing_completed(0x1234);
+    if(completions!=2) return 30;
     puts("Two-stage same-context application boundary passed with authored grants only");
     return 0;
 }

@@ -83,6 +83,10 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       signing/addon fixture children also pass under Deck Proton. This remains
       isolated validation; no new native build is installed, no production
       application grants exist and actual signing/save/reload is unverified.
+      The original success epilogue now also provides a same-context one-use
+      completion notification after roster/payroll/history, in generated and
+      interpreter paths. Production consumption, exact live-target comparison
+      and actual saved/reloaded confirmation remain to connect.
       An explicitly requested controlled-signing mode now also holds when the
       addon is unavailable, rather than silently falling through to retail.
       This now includes builds with sidecar support compiled out: both judgment

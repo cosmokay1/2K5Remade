@@ -2719,6 +2719,7 @@ static uint32_t ih_franchise_fsm_pop(void) {
 }
 extern int nfl2k5_franchise_hold_signing_at(uint32_t stage,uint32_t context);
 extern int nfl2k5_franchise_judge_signing(uint32_t context);
+extern void nfl2k5_franchise_signing_completed(uint32_t context);
 extern int nfl2k5_franchise_signing_was_held(uint32_t context);
 static uint32_t ih_franchise_sign_enter(void) {
     nfl2k5_franchise_signing_was_held(0); return 0;
@@ -2740,6 +2741,9 @@ static uint32_t ih_franchise_hold_judgment(void) {
 static uint32_t ih_franchise_hold_precommit(void) {
     return nfl2k5_franchise_hold_signing_at(2u,g_esi) ? 0x00323E99u : 0;
 }
+static uint32_t ih_franchise_sign_completed(void) {
+    nfl2k5_franchise_signing_completed(g_esi); return 0;
+}
 void nfl2k5_franchise_interp_hooks(void) {
 #ifdef NFL2K5_FRANCHISE_CLIENT
     /* Pack detours can interpret FSM code even with AI/negotiation disabled.
@@ -2753,5 +2757,6 @@ void nfl2k5_franchise_interp_hooks(void) {
     recomp_interp_add_hook(0x003478B6u,0,ih_franchise_sign_return);
     recomp_interp_add_hook(0x00323F0Au,0,ih_franchise_hold_judgment);
     recomp_interp_add_hook(0x00323F17u,0,ih_franchise_hold_precommit);
+    recomp_interp_add_hook(0x0032404Eu,0,ih_franchise_sign_completed);
 #endif
 }

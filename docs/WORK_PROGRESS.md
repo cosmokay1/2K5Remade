@@ -7355,3 +7355,40 @@ The read-only context launch configuration remains staged, awaiting normal exit
 before its guarded installation. No application grants, control renewal or paid
 inference were enabled. Native application policy, complete opening obligations,
 actual automatic menu context and legal signing/save/recovery remain unfinished.
+
+### October 15 — Notify the addon after original signing completes
+
+Added the missing success-side callback at0032404E, after the original contract,
+roster/payroll and history operations and before its register-restoring epilogue.
+The generated patch and interpreter hook share the thin shim. An authorized
+precommit arms a same-context thread-local notification, consumed before addon
+invocation. Duplicate, reentrant, mismatched, failed and retail commits do not
+produce another completion. Call/judgment/hold/lifecycle resets discard stale
+state. Disabling control after the committed writes still permits reporting
+completion for recovery; ignored callback replies cannot authorize further work.
+No generic addon ABI change, new toggle, guest-write API or cloud work was added.
+
+The private event franchise.sign-completed.v1 currently has no production
+consumer; the production addon still grants no applications. Its future consumer
+must compare live final state to the prepared target and separately verify
+save/reload before ledger settlement. The optional post-contract UI yielding
+path is still unresolved. Reporting original success does not prove an
+uninterrupted transaction, financial legality or saved signing.
+
+Focused authored generated-code tests execute the actual patches/shim, require
+completion after history and reject moved/customized completion markers without
+overwriting them. Actual interpreter callback tests preserve registers and the
+original continuation. The native boundary fixture covers single-use/reentrant
+reporting, failed/wrong/stale grants, lifecycle reset and disable-after-write.
+No-client fallback remains held. The pinned legal local v0.6 XBE has exactly the
+expected15-byte success epilogue at0032404E.
+
+The isolated actual-generated43-function probe also emits exactly one completion
+with authored judgment/precommit grants, returns1 and retains the exact expected
+finance/identity target hashes94bb53a3...8ffce and b675304c...ad1. Retail
+judgment/UI abort stubs remain unreached. Private evidence stays in
+native-application-probe/target-receipt.json; temporary tracked generated-cache
+edits were restored byte-for-byte. This is not actual game/save execution.
+All831 final local regressions pass in62.227s; four loopback tests required
+running outside the network-restricted sandbox. New Windows CI and full private
+Windows game validation remain to run. No installed game, user save, launch configuration or remote control was changed.

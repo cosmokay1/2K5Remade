@@ -233,3 +233,26 @@ also executes actual generated signing/callees and the actual shim with authored
 grants and retail judgment/UI abort stubs. Its final financial and identity
 images match the expected signing target. This is isolated generated-code
 execution, not production authorization, live gameplay or saved-game proof.
+
+### Native successful-completion notification
+
+The original shared signing success epilogue now calls a thin completion hook
+after its contract, roster/payroll and history calls, before register restoration.
+Both generated and interpreter paths use0032404E. The pinned v0.6 bytes at that
+address match the expected15-byte pop/result/return epilogue. Generated caches
+with a moved or customized completion hook are refused rather than trusted.
+
+Only an authorized same-context precommit arms the thread-local notification.
+The hook consumes it before invoking the addon, so duplicate/reentrant/wrong-
+context callbacks cannot repeat it. A new judgment/call, hold/hold-result reset
+or lifecycle reset clears it. Failed or retail commits do not emit it. The
+private event franchise.sign-completed.v1 carries the uint32 context; its reply
+is ignored. Control disable after writes does not suppress this notification,
+which is needed for recovery without authorizing further work.
+
+The production addon still grants no applications and has no completion-event
+consumer. A future coordinator must compare the completed live image against
+the prepared target and obtain actual saved/reloaded proof before ledger
+settlement. This notification alone is not a commit receipt, save proof or
+evidence that the original routine never yielded. The optional post-contract
+UI path and all existing authority/accounting gates remain unresolved.
