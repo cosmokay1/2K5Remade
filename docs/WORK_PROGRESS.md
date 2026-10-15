@@ -5502,3 +5502,30 @@ was refused without host mutation. DLLd4d1020eee8732aa3b60ba08a8a932379226195483
 Private installer-check-receipt.json records this. Active game/runtime was never
 modified by this check. Synthetic upgrade tests do not prove cross-version live
 upgrade compatibility. Windows/Linux CI for the new installer remains pending.
+
+
+## October 14, 2026 — public addon ABI separated from franchise payloads
+
+Added native/game_addon/api.h ABI2: lifecycle, poll, named synchronous events
+and snapshot reads plus the existing checked memory-read capability. No franchise,
+AI, money or renderer types appear in the public interface. Existing include path
+forwards to it. Private franchise_addon.h owns FSM/signing payloads and display
+type; game_addon_adapter.c translates existing native call sites. Loader module
+locking covers all callbacks versus unload; callbacks cannot reenter lifecycle.
+No write capability, registry, queue or hot reload added.
+
+A small counter DLL includes only the generic header and standard C headers.
+Extended the real Windows fixture to load it through the same loader, exercise
+event/poll/snapshot, reject unknown names, wrong capacities and null buffers, then
+unload. Franchise dispatch and lifecycle remain covered. ABI1-only module refusal
+and rejection of requests for ABI1 by ABI2 modules are explicit. No silent table
+reinterpretation. The single manager slot/selection and existing guest hook/render
+call sites remain application-specific; this is not a completed upstream PR.
+
+All707 local regressions passed in20.493s. Full private Windows game, DLL and
+fixtures compiled with MSVC. New fixture passed under Proton, exit0, in a separate
+abi2-fixture-prefix; initial invocation failed because the prefix parent did not
+exist, corrected by creating it before Proton startup. ABI2 fixture receipt is
+private. Working Deck executable, DLL, selection, saves and running session were
+not replaced. ABI2 requires a newly pinned matching host/DLL pair; the existing
+ABI1 host hash must never be used to authorize installing ABI2. Cloud unchanged.

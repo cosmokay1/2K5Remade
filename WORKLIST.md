@@ -34,6 +34,14 @@ it from the franchise application. Keep domain rules out of the reusable core.
 - [x] Publish private standalone source with provenance: https://github.com/cosmokay1/engine-sidecar (export bdaa2df). Standalone Windows/Linux CI 38655732233 passed.
 - [ ] Select a public reuse license before public distribution.
 - [x] Build and validate separately loadable franchise addon and thin shim: 6f75219 Windows DLL ABI/load/forward/unload/reload fixture passed in CI38656804337; authored RAM observation remained read-only. Actual game execution remains below.
+- [x] Remove franchise types from the public DLL ABI: ABI2 exposes lifecycle,
+      named events and snapshots; private franchise payloads stay in its adapter.
+      Actual Windows/Proton fixture loads a separate counter addon using only
+      the generic header; unknown messages, size checks and ABI1 refusal pass.
+      Installed Deck game remains the verified ABI1 pair.
+- [ ] Generalize the manager's explicit single-addon selection before proposing
+      general addon support upstream; verify a matching host/DLL pair in-game.
+
 
 ## Mod-manager extension — current scope
 
@@ -45,7 +53,7 @@ conversion is not claimed.
 - [x] Validate independent addon selection, disabled default, restart status and
       missing-addon handling through existing manager callbacks and real Windows DLL:
       d3ca4aa CI38658080834 passed. User now confirms the installed manager
-      displays Franchise Sidecar Off; toggle/restart/controller acceptance remains open.
+      displays Franchise Sidecar Off; subsequent On/restart/module loading is verified below.
 - [ ] Verify addon installation/upgrade for pinned repacks; preserve user saves
       and reject unsupported native executable versions. The guarded DLL installer
       now passes install/reinstall with copied actual private binaries and rejects

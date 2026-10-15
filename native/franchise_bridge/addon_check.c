@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "game_addon.h"
+#include "../game_addon/loader.h"
+#include "franchise_addon.h"
 #include "addon_selection.h"
 #include "../../src/nfl2k5_sidecar_adapter.h"
 #include "../../src/nfl2k5_franchise_host.h"
@@ -21,7 +23,7 @@ int nfl2k5_addon_guest_read(uint32_t address,void *out,size_t size) {
     (void)address;(void)out;(void)size;return 0;
 }
 int wmain(int argc,wchar_t **argv) {
-    if(argc!=3) return 1;
+    if(argc!=5) return 1;
     _wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER",L"");
     SetEnvironmentVariableW(L"NFL2K5_TRACE_FRANCHISE",NULL);
     wchar_t installed[32768],selection[32768],folder[32768];
@@ -66,14 +68,21 @@ int wmain(int argc,wchar_t **argv) {
     if(nfl2k5_franchise_start()) return 10;
     SetEnvironmentVariableW(L"NFL2K5_SIDECAR_ADDON",argv[2]);
     if(nfl2k5_franchise_start()) return 11;
+    SetEnvironmentVariableW(L"NFL2K5_SIDECAR_ADDON",argv[4]);
+    if(nfl2k5_franchise_start()) return 36;
     if(!SetEnvironmentVariableW(L"NFL2K5_SIDECAR_ADDON",argv[1])) return 3;
     HMODULE dll=LoadLibraryW(argv[1]);
     if(!dll) return 4;
     NFL2K5AddonQuery query=(NFL2K5AddonQuery)GetProcAddress(dll,"nfl2k5_addon_query");
-    if(!query || query(0) || !query(NFL2K5_ADDON_ABI)) return 5;
+    if(!query || query(0) || query(1) || !query(NFL2K5_ADDON_ABI)) return 5;
     const NFL2K5AddonAPI *api=query(NFL2K5_ADDON_ABI);
     NFL2K5AddonHost bad={0,nfl2k5_addon_guest_range,nfl2k5_addon_guest_read};
     if(api->start(&bad) || api->start(NULL)) return 6;
+    uint32_t sentinel=0xAABBCCDD;
+    if(api->event("unknown",&sentinel,sizeof(sentinel)) ||
+       api->event(FRANCHISE_FSM_EVENT,&sentinel,sizeof(sentinel)) ||
+       api->snapshot(FRANCHISE_DISPLAY_SNAPSHOT,&sentinel,sizeof(sentinel)) ||
+       api->snapshot("unknown",&sentinel,sizeof(sentinel)) || sentinel!=0xAABBCCDD) return 30;
     FreeLibrary(dll);
     for(int cycle=0;cycle<2;++cycle) {
         if(!nfl2k5_franchise_start() || nfl2k5_franchise_start()) return 7;
@@ -85,6 +94,19 @@ int wmain(int argc,wchar_t **argv) {
         nfl2k5_franchise_stop();nfl2k5_franchise_stop();
         if(nfl2k5_franchise_display(&display)) return 9;
     }
+    /* Load a DLL that only includes the domain-neutral public API. */
+    SetEnvironmentVariableW(L"NFL2K5_SIDECAR_ADDON",argv[3]);
+    if(!nfl2k5_addon_start()) return 31;
+    uint32_t counter=41,observed=0;
+    if(!nfl2k5_addon_event("example.counter.v1",&counter,sizeof(counter))) return 32;
+    nfl2k5_addon_poll();
+    if(!nfl2k5_addon_snapshot("example.counter.v1",&observed,sizeof(observed)) || observed!=42) return 33;
+    if(nfl2k5_addon_event("unknown",&counter,sizeof(counter)) ||
+       nfl2k5_addon_snapshot("example.counter.v1",&observed,1) ||
+       nfl2k5_addon_event(NULL,&counter,sizeof(counter)) ||
+       nfl2k5_addon_snapshot("example.counter.v1",NULL,sizeof(observed))) return 34;
+    nfl2k5_addon_stop();
+    if(nfl2k5_addon_snapshot("example.counter.v1",&observed,sizeof(observed))) return 35;
     nfl2k5_modpacks_set(0,0);
     if(sidecar_selected() || !nfl2k5_franchise_start() || !nfl2k5_modpacks_get(1)) return 17;
     nfl2k5_franchise_stop();

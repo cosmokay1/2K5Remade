@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "game_addon.h"
+#include "franchise_addon.h"
 #include "nfl2k5_sidecar_adapter.h"
 #ifdef NFL2K5_FRANCHISE_CLIENT
 #include "nfl2k5_franchise_host.h"
@@ -288,8 +289,26 @@ static void addon_stop(void) {
     nfl2k5_franchise_stop();
     memset(&adapter_host,0,sizeof(adapter_host));
 }
+static int addon_event(const char *name,const void *data,size_t size) {
+    if(!name || !data) return 0;
+    if(!strcmp(name,FRANCHISE_FSM_EVENT) && size==sizeof(FranchiseFSMEvent)) {
+        FranchiseFSMEvent event;memcpy(&event,data,sizeof(event));
+        nfl2k5_diag_fsm(event.object,event.descriptor,event.push!=0);return 1;
+    }
+    if(!strcmp(name,FRANCHISE_SIGNING_EVENT) && size==sizeof(FranchiseSigningEvent)) {
+        FranchiseSigningEvent event;memcpy(&event,data,sizeof(event));
+        nfl2k5_diag_signing(event.stage,event.context,event.result,event.code,event.stack);return 1;
+    }
+    return 0;
+}
+static int addon_snapshot(const char *name,void *out,size_t capacity) {
+    if(!name || !out || strcmp(name,FRANCHISE_DISPLAY_SNAPSHOT) || capacity!=sizeof(FranchiseSigningDisplay)) return 0;
+    FranchiseSigningDisplay display;
+    if(!nfl2k5_franchise_display(&display)) return 0;
+    memcpy(out,&display,sizeof(display));return 1;
+}
 static const NFL2K5AddonAPI addon_api={sizeof(NFL2K5AddonAPI),addon_start,addon_stop,
-    nfl2k5_diag_fsm,nfl2k5_franchise_guest_poll,nfl2k5_diag_signing,nfl2k5_franchise_display};
+    nfl2k5_franchise_guest_poll,addon_event,addon_snapshot};
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
