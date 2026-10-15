@@ -7081,3 +7081,23 @@ passes preserve EBX/ESI/EDI/EBP and exact ESP; mutation callees abort if reached
 unexpectedly. Generated game code stays private/untracked. This is isolated
 macOS generated-code execution, not actual game/CPU/save verification. Windows
 CI and a private full Windows build remain to verify for the new source.
+
+
+The CPU-pass source160c53d also compiled the actual private Windows game in the
+existing offline licensed toolchain. Its isolated Proton --validate child exited0
+with the validated marker and[TEST] Validation passed. Private receipt is
+native-05ac4e9/validate-cpu-pass-receipt.json. This is staged validation only; the
+installed game remains268e8d8, with AI/controlled signing off. Full source160c53d
+CI remains in progress (Ubuntu engine and Build checks passed at observation).
+The previous transient-free-agent reconciliation sourcefd5758c passed both
+complete Windows/Ubuntu workflows38765718208 and38765718212.
+
+The user's requested parallel SOFTDRINK scope audit is complete. The agent
+inspected installed recipe flags and pinned creator source; it made no file or
+Deck changes. Added the attributed feature inventory and primary links to
+docs/SOFTDRINK_AI_BASE.md. Creator source independently confirms logical2026,
+4:1 money and301.2M cap; draft/FA decisions still consume ratings. Accelerated
+clock and decided-game cutoff are separate enabled features. MyNFL is a naming
+change; functional changes are broader gameplay/franchise patches. Full modern
+roster/IR enforcement is not delivered. The inventory separates intended source/
+recipe features from actual runtime evidence and preserves Remade attribution.

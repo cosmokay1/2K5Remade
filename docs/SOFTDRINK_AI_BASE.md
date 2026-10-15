@@ -65,3 +65,42 @@ released-player debt/reserve obligations and exact schedules remain to reconcile
 The strict reader now supports the declared expanded bank and variable settings.
 An explicit hash-pinned opening binding supplies logical2026 and4:1 legacy export.
 Complete obligations and actual guest/ledger commit verification remain open.
+
+## Creator-source scope inventory (October 15)
+
+The requested parallel audit inspected the installed v0.6 pack/patch recipe and
+creator beta-77 source at commit
+[e193841](https://github.com/cruuz/2k-football-mod-tools/tree/e19384123c23a3601949dda67c9a3ab754d65fd6).
+These identify intended/enabled behavior; they do not establish complete Deck
+execution, financial correctness or multi-season/save compatibility.
+
+| Area | Installed/configured or documented scope | Evidence |
+|---|---|---|
+| Accelerated clock | Enabled with20 seconds as the minimum play clock after huddled calls. Only the actual reduction runs off a running game clock; no-huddle and the final two minutes of halves/OT bypass it. User observed it working. | [Clock report](https://github.com/cruuz/2k-football-mod-tools/blob/e19384123c23a3601949dda67c9a3ab754d65fd6/ASTRA_B65_CLOCK_REPORT.md) |
+| Decided-game clock | Separately enabled: at a dead-ball/huddle in Q4, a possessing leader up17+ with60 seconds or less ends the remaining clock. Excludes live plays, trailing possession and OT. | [Implementation](https://github.com/cruuz/2k-football-mod-tools/blob/e19384123c23a3601949dda67c9a3ab754d65fd6/mod_editor/core/nfl2k5_decided_clock.py) |
+| Gameplay/CPU | Modern fourth-down/two-point/OT decisions, scrambling, contact/momentum, abilities, coverage/screens, holders, kickoff behavior and all32 modern offense/defense playbooks. These playbooks are not financial books. | [v0.6 gameplay notes](https://github.com/cruuz/softdrink-2k28/releases/tag/v0.6) |
+| Franchise | Selected Experimental preset includes2026/calendar support, progression, player editing, autosave, practice and depth-lock changes; overrides include remembered weekly/CPU preparation. Autosave needs its in-game switch and an existing manual-save destination. | [Preset source](https://github.com/cruuz/2k-football-mod-tools/blob/e19384123c23a3601949dda67c9a3ab754d65fd6/mod_editor/core/mod_build.py) |
+| Economy | Creator explicitly intends2026,301.2M real cap and4 real dollars per internal dollar. Demand, renewal, offer, cap and rookie-economy paths change; annual schedules remain fitted approximations and do not encode exact cash/guarantees. | [Economy implementation](https://github.com/cruuz/2k-football-mod-tools/blob/e19384123c23a3601949dda67c9a3ab754d65fd6/mod_editor/core/nfl2k5_franchise_economy.py) |
+| Draft/free agents | CPU selection combines relative class quality, needs, positional values and randomness; free-agent preferences and prospect ranking change. It still consumes numeric ratings. | [Draft-AI implementation](https://github.com/cruuz/2k-football-mod-tools/blob/e19384123c23a3601949dda67c9a3ab754d65fd6/mod_editor/core/nfl2k5_draft_ai.py) |
+| Naming/cards/history | MyNFL is the Franchise label replacement, not a distinct engine. MyCareer is a separate documented mode. Experience/history fixes, letter grades and honors do not eliminate numerical ratings. Some historical honors are seeded; a full records system is absent. | [Naming/history changelog](https://github.com/cruuz/2k-football-mod-tools/blob/e19384123c23a3601949dda67c9a3ab754d65fd6/docs/mod_editor/2k5_mod_studio_changelog.md) |
+| Content/presentation |2026 roster snapshot, coaches/likenesses, uniforms, stadiums, ESPN presentation, music/intro and historic/moment content. New embedded roster/history data requires a fresh franchise. Creator documents approximations and incomplete live testing. | [Creator overview](https://github.com/cruuz/softdrink-2k28#softdrink-2k28), [release](https://github.com/cruuz/softdrink-2k28/releases/tag/v0.6) |
+
+Full modern53/47/48, elevations and IR runtime enforcement is explicitly not a
+finished feature; Senior Bowl is not a delivered playable event. The installed
+recipe disables read-option runtime, extra created teams and16 reserves. Practice
+Squad screen flags conflict with the earlier release note about removing its
+incomplete screen, so actual screen coverage remains unverified. See the
+[2026 runtime report](https://github.com/cruuz/2k-football-mod-tools/blob/e19384123c23a3601949dda67c9a3ab754d65fd6/ASTRA_FRANCHISE_2026_RUNTIME_REPORT.md).
+
+The retail executable already contains the Thrown To/TT label; it is not evidence
+of a new SOFTDRINK counter. Counter semantics and extraction remain unverified,
+as recorded in [pressure investigation](pressure-investigation.md). Do not
+restart that deferred investigation merely because the label is visible.
+
+Keep credit boundaries clear: Remade supplies native PC/runtime, controller/video,
+mod-pack/save management and broadcast-package infrastructure; SOFTDRINK supplies
+the pack changes above. Our addon must coordinate with existing draft/free-agent,
+progression and preparation hooks, rather than letting two decision systems run.
+Retain the verified4:1 opening scale, replace rating-based decision inputs with
+our performance/personality model, and keep complete financial obligations and
+real signing/save recovery as separate acceptance gates.
