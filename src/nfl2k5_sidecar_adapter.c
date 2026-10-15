@@ -17,6 +17,26 @@
 #ifdef NFL2K5_FRANCHISE_CLIENT
 #include "nfl2k5_franchise_host.h"
 #endif
+#include "save_read.h"
+static uint64_t reported_save_read;
+#ifdef _WIN32
+#include "save_read_win.h"
+static SRWLOCK save_read_lock=SRWLOCK_INIT;
+static FranchiseSaveRead save_read;
+static void save_read_reset(void) {
+    AcquireSRWLockExclusive(&save_read_lock);
+    memset(&save_read,0,sizeof(save_read));reported_save_read=0;
+    ReleaseSRWLockExclusive(&save_read_lock);
+}
+static int save_read_copy(FranchiseSaveRead *out) {
+    AcquireSRWLockShared(&save_read_lock);*out=save_read;ReleaseSRWLockShared(&save_read_lock);
+    return out->sequence!=0;
+}
+#else
+static void save_read_reset(void) {reported_save_read=0;}
+static int save_read_copy(FranchiseSaveRead *out) {memset(out,0,sizeof(*out));return 0;}
+
+#endif
 
 static NFL2K5AddonImageIdentity loaded_image;
 #ifdef NFL2K5_FRANCHISE_CLIENT
@@ -352,11 +372,13 @@ static int addon_start(const NFL2K5AddonHost *host) {
     memset(&loaded_image,0,sizeof(loaded_image));
     adapter_host=*host;
     capture_attempted=0;
+    save_read_reset();
     if(!nfl2k5_franchise_start()) { memset(&adapter_host,0,sizeof(adapter_host));return 0; }
     return 1;
 }
 static void addon_stop(void) {
     nfl2k5_franchise_stop();
+    save_read_reset();
     memset(&loaded_image,0,sizeof(loaded_image));
     memset(&adapter_host,0,sizeof(adapter_host));
 }
@@ -380,6 +402,17 @@ static int addon_event(const char *name,const void *data,size_t size) {
         loaded_image=next;return 1;
     }
     if(!name || !data) return 0;
+#ifdef _WIN32
+    if(!strcmp(name,NFL2K5_ADDON_FILE_READ) && size==sizeof(NFL2K5AddonFileRead)) {
+        FranchiseSaveRead candidate;
+        if(franchise_save_read_capture(data,&candidate)) {
+            AcquireSRWLockExclusive(&save_read_lock);
+            if(save_read.sequence!=UINT64_MAX) {candidate.sequence=save_read.sequence+1;save_read=candidate;}
+            ReleaseSRWLockExclusive(&save_read_lock);
+        }
+        return 1; /* Observation only, never an application response. */
+    }
+#endif
     if(!strcmp(name,FRANCHISE_SIGN_APPLICATION_EVENT) && size==sizeof(FranchiseSignGateEvent)) {
         FranchiseSignGateEvent event;memcpy(&event,data,sizeof(event));
         if((event.stage!=FRANCHISE_SIGN_JUDGMENT && event.stage!=FRANCHISE_SIGN_PRECOMMIT) ||
@@ -410,6 +443,9 @@ static int addon_event(const char *name,const void *data,size_t size) {
     return 0;
 }
 static int addon_snapshot(const char *name,void *out,size_t capacity) {
+    if(name && out && !strcmp(name,FRANCHISE_SAVE_READ_SNAPSHOT) && capacity==sizeof(FranchiseSaveRead)) {
+        FranchiseSaveRead candidate;int present=save_read_copy(&candidate);memcpy(out,&candidate,sizeof(candidate));return present;
+    }
     if(name && out && !strcmp(name,NFL2K5_ADDON_LOADED_IMAGE) && capacity==sizeof(loaded_image)) {
         if(!loaded_image.sha256[0]) return 0;
         memcpy(out,&loaded_image,sizeof(loaded_image));return 1;
@@ -434,8 +470,18 @@ static int addon_snapshot(const char *name,void *out,size_t capacity) {
     if(!nfl2k5_franchise_display(&display)) return 0;
     memcpy(out,&display,sizeof(display));return 1;
 }
+static void addon_poll(void) {
+    FranchiseSaveRead candidate;
+    const char *trace=getenv("NFL2K5_TRACE_FRANCHISE");
+    if(trace && !strcmp(trace,"1") && save_read_copy(&candidate) && candidate.sequence!=reported_save_read) {
+        reported_save_read=candidate.sequence;
+        fprintf(stderr,"[FRANCHISE-TRACE] save_read sequence=%llu bytes=%llu payload_sha256=%s source_scope=read_candidate active_franchise=unverified\n",
+            (unsigned long long)candidate.sequence,(unsigned long long)candidate.file_size,candidate.payload_sha256);
+    }
+    nfl2k5_franchise_guest_poll();
+}
 static const NFL2K5AddonAPI addon_api={sizeof(NFL2K5AddonAPI),addon_start,addon_stop,
-    nfl2k5_franchise_guest_poll,addon_event,addon_snapshot};
+    addon_poll,addon_event,addon_snapshot};
 #ifdef _WIN32
 __declspec(dllexport)
 #endif

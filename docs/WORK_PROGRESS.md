@@ -8033,3 +8033,45 @@ regressions pass, including arbitrary image provenance with either supported uni
 factor and copy-only legacy recovery. Active-save binding, one-use application
 permits, complete modern opening books, actual signing/accounting/save-reload and
 final playable delivery remain open.
+
+## October 15, 2026 — Franchise save-read candidate capture
+
+The franchise DLL now consumes the generic file-read channel. A shared observed
+FXG envelope filter accepts only full720044-byte deliveries with the declared
+roster markers, length and bounded player-bank pointers. Windows captures the
+delivered-byte SHA256 plus native volume/file index, size and write time while
+the borrowed handle is valid, checking identity/size/write time again afterward.
+It stores only owned scalars/digest under a lock. A snapshot exposes the most
+recent candidate and restart clears it; no guest read or process/model/store call
+occurs in the callback. Trace output is deferred to owner polling. No engine or
+transport policy, pack-name branch, extra memory grant or application issuer was
+added. Partial reads remain unsupported. Native metadata stability does not prove
+immutable source bytes or successful deserialization; an overlay can affect bytes.
+The record explicitly does not claim an active franchise.
+
+Seven local native CTests pass. The866-test Python run had only four sandbox
+loopback-bind permission errors; the complete five-test web module passes outside
+the sandbox. Actual private MSVC production DLL/read fixture passes under Proton:
+two distinct native files containing the same authored payload yield the expected
+SHA256 and different file identities; short/failed/oversized/invalid-handle reads
+do not replace the candidate; closing/freeing borrowed inputs preserves the owned
+snapshot and restart clears it. Source overlay373 files is hash-verified and
+backed up before application. The game/updated-DLL pair passes isolated --validate
+with child marker validated and launcher0. EXE remains
+daab780e0058ba9553ef12fa0c9eead1161d3d53c6ccf26aa65265f8a088ad3d; new DLL
+983dcf429d56d0f658458357c83a2175c35ef2e4fded2df0ed4a1eeade7e253a.
+Receipts are private under .local-runtime/save-read-b937df0.
+
+Root8909ede CI38801026470 passed the new native observer/delivery checks but
+later failed an existing C-host expected-player-rejection assertion without
+printing the actual reply. An assertion diagnostic now preserves that reply.
+Six direct actual Windows C-host runs on Deck (three databases, each restarted)
+pass unchanged one-second request deadlines. The already-running documentation
+checkpoint b937df0 CI38801913914 also passes Windows and Ubuntu on the same code;
+its Build38801913988 passes. The original transient failure cause is unproven;
+no timeout was relaxed and no assertion was bypassed.
+
+At this checkpoint no installed game, wrapper, saves or AI controls changed.
+Actual game read delivery, selected-container/load completion, current franchise
+identity, full modern opening obligations and real signing/save-reload remain
+open. This evidence does not establish playable integrated negotiations.

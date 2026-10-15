@@ -746,7 +746,7 @@ def main():
                 else:
                     assert replies[1]['error']=='state_rejected'
                     assert replies[3]==agreement and replies[4]==context
-                assert replies[2]['error'] is None and replies[2]['result']['outcome']=='player_rejected'
+                assert replies[2]['error'] is None and replies[2]['result']['outcome']=='player_rejected', replies[2]
                 assert replies[2]['result']['decision_mode']=='proposal' and 'charges' not in replies[2]['result']
                 assert replies[3]['error'] is None and replies[3]['result']['outcome']=='signed'
                 assert replies[4]['error'] is None

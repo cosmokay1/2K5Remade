@@ -140,3 +140,20 @@ offset and does not prove source stability, deserialization success or active
 franchise identity. Binding a verified container/read to its completed load and
 current franchise projections remains application work. No real game load or
 signing/save-reload acceptance is established by notification fixtures.
+
+The Windows franchise application now consumes full720044-byte deliveries that
+match the supported FXG roster envelope. Its optional franchise.save-read.v1
+snapshot owns a sequence, delivered-payload SHA256 and native file identity/size/
+write-time values sampled during that callback. Failed, partial, malformed and
+wrong-sized native-file deliveries do not replace the last candidate. Restart
+clears it. No handle or buffer is retained; no guest memory, process transport,
+ledger or model is accessed from this callback. Opt-in franchise trace emits the
+last new candidate from the owner poll, outside the file callback.
+
+This is the most recent matching read, not the selected/active franchise. The
+filter is not the full roster/calendar validator, and unchanged native metadata
+does not prove immutable disk contents or absence of a runtime overlay. Its hash
+is of delivered bytes. Split reads have no candidate until a supported complete
+delivery can be established. Causal load completion, selected container, current
+projections and durable registry/database association remain required before any
+application permit. The same checks apply without image/mod-name branches.

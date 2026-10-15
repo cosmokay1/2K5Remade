@@ -147,6 +147,10 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       boot/load selection remains unverified. This is read evidence, not active-save/load proof or an
       application grant. The existing POSIX sentinel-handle crash exposed by this
       test has a separate small upstream PR#2.
+      The franchise addon now records a full supported save-read candidate's
+      delivered-byte hash and owned native file identity, with no guest access or
+      retained handle/buffer. Windows production-DLL fixtures pass on Deck; this
+      still needs real game read delivery and causal load completion.
       Service-side durable binding and active franchise identity remain open;
       this metadata does not authorize application or prove code compatibility.
       The actual Windows game/DLL build now passes isolated --validate and the
