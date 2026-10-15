@@ -38,7 +38,7 @@ class Bridge:
     def handle(self, request):
         request_id = request.get("request_id") if type(request) is dict else None
         try:
-            if type(request) is dict and request.get('operation') == 'hello':
+            if type(request) is dict and request.get('operation') in ('hello','bind_runtime'):
                 self.runtime_verified = False
             if type(request) is not dict or type(request_id) is not str or not request_id.strip():
                 raise ValueError("Request object and stable request ID required")
@@ -64,12 +64,15 @@ class Bridge:
                     cash=self.store.load_team(team).cash_snapshot()
                     if cash is not None and cash.get('unknown_legacy_players'):
                         raise Rejected('Lifecycle bridge receipts require complete cash coverage; legacy cash remains unknown')
-            if operation == "hello":
+            if operation in ("hello","bind_runtime"):
                 fields = {"protocol", "request_id", "operation"}
                 if self.runtime_image is not None:
                     fields.add('loaded_image_sha256')
                 if set(request) != fields:
                     raise ValueError("Unexpected handshake fields")
+                if operation=="bind_runtime" and self.runtime_image is None:
+                    raise Rejected("Explicit runtime image and franchise association required")
+                if operation=="bind_runtime":self.connection_check()
                 binding = None
                 if self.runtime_image is not None:
                     if request['loaded_image_sha256'] != self.runtime_image:
@@ -82,6 +85,11 @@ class Bridge:
                         franchise_id=registry['franchise_id'],
                         bindings_sha256=hashlib.sha256(json.dumps(registry,sort_keys=True,separators=(',', ':')).encode()).hexdigest(),
                         snapshot_payload_sha256=hashlib.sha256(payload).hexdigest())
+                if operation=="bind_runtime":
+                    # Identity observation does not request, refresh or grant AI.
+                    self.connection_check()
+                    return self._reply(request_id,result=dict(ai_enabled=False,
+                        operations=['signing_context'],runtime_binding=binding))
                 if self.access_check() is False:
                     raise AccessDisabled('AI control denied handshake')
                 operations = ["preview", "negotiate", "negotiate_proposal", "manual_sign", "manual_release", "manual_trade", "manual_restructure", "player_context", "contract_context"]

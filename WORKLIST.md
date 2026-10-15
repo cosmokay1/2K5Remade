@@ -182,6 +182,15 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       32-team registry/database association in a copied preflight. Live configured
       source/namespace handshake, full lifecycle invalidation and production
       financial authority remain open.
+      A new read-only bind_runtime handshake now verifies/echoes the same
+      namespace while explicitly denying AI and journal grants. Native observation
+      mode uses it; AI negotiation still requires hello and fresh remote access.
+      All871 Python tests, nine local native checks,17 Windows addon checks and
+      both native client/service fixtures pass. An isolated Windows preflight on
+      the actual UDATA source returns the preserved player context with zero model
+      attempts and unchanged source/database hashes. This next batch and its
+      read-only configuration are staged; live game callback binding is not yet
+      verified, and full active-franchise lifetime/write authority remain open.
       Service-side durable binding and active franchise identity remain open;
       this metadata does not authorize application or prove code compatibility.
       The actual Windows game/DLL build now passes isolated --validate and the

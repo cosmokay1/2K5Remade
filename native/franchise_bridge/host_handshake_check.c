@@ -57,7 +57,7 @@ FranchiseHostStatus franchise_host_create_with_token_budget(const wchar_t *pytho
 FranchiseHostStatus franchise_host_submit(FranchiseHostClient *client, const char *bytes, size_t size)
 {
     assert(client == (FranchiseHostClient *)&owned && GetCurrentThreadId() == owner);
-    assert(size == strlen(bytes) && (strstr(bytes, "\"operation\":\"hello\"") ||
+    assert(size == strlen(bytes) && (strstr(bytes, "\"operation\":\"hello\"") || strstr(bytes,"\"operation\":\"bind_runtime\"") ||
         strstr(bytes, "\"operation\":\"signing_context\"")));
     assert(!memchr(bytes, '\n', size) && !memchr(bytes, '\r', size));
     ++submissions;
@@ -142,6 +142,7 @@ int main(void)
     _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_OFFER", L"unknown");
     assert(!nfl2k5_franchise_start());
     _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_OFFER", L"1");
+    image_present=1;memset(image_digest,'a',64);image_digest[64]=0;
     assert(nfl2k5_franchise_start());
     FranchiseSigningObservation observation={0};
     strcpy(observation.first_name,"Authored"); strcpy(observation.last_name,"Player");
@@ -150,6 +151,7 @@ int main(void)
     observation.offer_amount=1949; observation.offer_flags=0x4D060004;
     nfl2k5_franchise_signing_context(&observation); assert(submissions==3);
     nfl2k5_franchise_on_fsm(0x557B2C,1); assert(submissions==4);
+    assert(strstr(last_request,"\"operation\":\"bind_runtime\""));
     nfl2k5_franchise_signing_context(&observation); assert(submissions==4);
     ready_value=1;
     unsigned before_takes=takes;

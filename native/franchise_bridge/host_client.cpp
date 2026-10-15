@@ -117,14 +117,14 @@ extern "C" FranchiseHostStatus franchise_host_submit(FranchiseHostClient* client
     if(journal_write && !client->journal_capable)
         return FRANCHISE_HOST_SERVICE_FAILURE;
     try {
-        if(operation=="hello"){client->loaded_payload.clear();client->ai_granted=false;}
+        if(operation=="hello" || operation=="bind_runtime"){client->loaded_payload.clear();client->ai_granted=false;}
         client->transport->submit(std::move(frame));
         client->request.assign(bytes,length);
         client->candidate={};
         client->operation = std::move(operation);
         client->pending = true;
         return FRANCHISE_HOST_OK;
-    } catch (...) { client->ai_granted = false; return FRANCHISE_HOST_SERVICE_FAILURE; }
+    } catch (...) { client->ai_granted = false;client->loaded_payload.clear(); return FRANCHISE_HOST_SERVICE_FAILURE; }
 }
 
 static bool valid_signing_images(const void* finance_state,size_t finance_size,const void* identity_state,size_t identity_size) {
@@ -160,7 +160,7 @@ extern "C" FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClie
         const auto status=franchise_host_submit(client,request.data(),request.size());
         if(status==FRANCHISE_HOST_OK) client->journal=std::move(journal);
         return status;
-    } catch(...) {client->ai_granted=false;return FRANCHISE_HOST_SERVICE_FAILURE;}
+    } catch(...) {client->ai_granted=false;client->loaded_payload.clear();return FRANCHISE_HOST_SERVICE_FAILURE;}
 }
 
 extern "C" FranchiseHostStatus franchise_host_observe_completed(FranchiseHostClient* client,const void* finance_state,size_t finance_size,
@@ -170,7 +170,7 @@ extern "C" FranchiseHostStatus franchise_host_observe_completed(FranchiseHostCli
         client->journal.observe_completed(signing_state_sha256(static_cast<const unsigned char*>(finance_state),finance_size),
                                           signing_state_sha256(static_cast<const unsigned char*>(identity_state),identity_size));
         return FRANCHISE_HOST_OK;
-    } catch(...) {client->ai_granted=false;return FRANCHISE_HOST_SERVICE_FAILURE;}
+    } catch(...) {client->ai_granted=false;client->loaded_payload.clear();return FRANCHISE_HOST_SERVICE_FAILURE;}
 }
 
 extern "C" FranchiseHostStatus franchise_host_check_saved(FranchiseHostClient* client) {
@@ -181,7 +181,7 @@ extern "C" FranchiseHostStatus franchise_host_check_saved(FranchiseHostClient* c
         if(next.is_null()) return FRANCHISE_HOST_NOT_READY;
         const auto request=next.dump();
         return franchise_host_submit(client,request.data(),request.size());
-    } catch(...) {client->ai_granted=false;return FRANCHISE_HOST_SERVICE_FAILURE;}
+    } catch(...) {client->ai_granted=false;client->loaded_payload.clear();return FRANCHISE_HOST_SERVICE_FAILURE;}
 }
 
 extern "C" FranchiseHostStatus franchise_host_ready(FranchiseHostClient* client, int* ready_out) {
@@ -205,14 +205,14 @@ extern "C" FranchiseHostStatus franchise_host_take(FranchiseHostClient* client, 
             client->pending = false;
             client->reply = client->transport->take();
             const auto response = franchise::parse_frame(client->reply); // Already transport-validated.
-            if (client->operation == "hello") {
-                client->ai_granted = response.at("error").is_null() &&
+            if (client->operation == "hello" || client->operation == "bind_runtime") {
+                client->ai_granted = client->operation=="hello" && response.at("error").is_null() &&
                     response.at("result").at("ai_enabled").is_boolean() && response.at("result").at("ai_enabled") == true;
                 client->journal_capable=false;client->loaded_payload.clear();
+                if(response.at("error").is_null() && response.at("result").contains("runtime_binding"))
+                    client->loaded_payload=response.at("result").at("runtime_binding").at("snapshot_payload_sha256").get<std::string>();
                 if(client->ai_granted) {
-                    const auto& result=response.at("result");
-                    if(result.contains("runtime_binding"))client->loaded_payload=result.at("runtime_binding").at("snapshot_payload_sha256").get<std::string>();
-                    const auto& ops=result.at("operations");
+                    const auto& ops=response.at("result").at("operations");
                     client->journal_capable=true;
                     for(const auto* name:{"guest_signing_prepare","guest_signing_confirm","guest_signing_status"})
                         client->journal_capable=client->journal_capable && std::find(ops.begin(),ops.end(),name)!=ops.end();
@@ -230,7 +230,7 @@ extern "C" FranchiseHostStatus franchise_host_take(FranchiseHostClient* client, 
         client->reply.clear();
         client->cached = false;
         return FRANCHISE_HOST_OK;
-    } catch (...) { client->ai_granted = false;client->transport->abort();return FRANCHISE_HOST_SERVICE_FAILURE; }
+    } catch (...) { client->ai_granted = false;client->loaded_payload.clear();client->transport->abort();return FRANCHISE_HOST_SERVICE_FAILURE; }
 }
 
 extern "C" void franchise_host_destroy(FranchiseHostClient* client) {
@@ -239,7 +239,7 @@ extern "C" void franchise_host_destroy(FranchiseHostClient* client) {
 
 extern "C" FranchiseHostStatus franchise_host_loaded_payload_matches(FranchiseHostClient* client,const char* sha256) {
     if(!client || !sha256 || GetCurrentThreadId()!=client->owner)return FRANCHISE_HOST_INVALID_ARGUMENT;
-    if(!client->ai_granted || client->loaded_payload.size()!=64)return FRANCHISE_HOST_NOT_READY;
+    if(client->loaded_payload.size()!=64)return FRANCHISE_HOST_NOT_READY;
     for(size_t i=0;i<64;++i)if(!sha256[i] || client->loaded_payload[i]!=sha256[i])return FRANCHISE_HOST_INVALID_ARGUMENT;
     return sha256[64]==0 ? FRANCHISE_HOST_OK : FRANCHISE_HOST_INVALID_ARGUMENT;
 }

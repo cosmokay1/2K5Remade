@@ -8412,3 +8412,59 @@ Build38811766079. Native physical origin and copied namespace preflight do not
 prove a live configured source/namespace handshake, full active-franchise lifetime,
 modern opening books, a production permit or actual signing/save-reload. Provider
 and controlled signing remain off; no AI request or real-save write occurred.
+
+## October 15, 2026 — Read-only namespace handshake without an AI grant
+
+Previously native payload matching required the AI hello grant, preventing the
+live namespace connection from being verified while AI stayed disabled. The new
+bind_runtime operation verifies the explicit expected image and existing
+registry/database association and returns exactly ai_enabled=false, the sole
+signing_context capability and the existing four-field runtime binding. It does
+not consult/refresh AI control or call a provider. It resets prior AI-handshake
+state and never marks the service AI handshake verified. Wrong/missing expected
+images or association data reject; no image whitelist or mod-name rules are added.
+
+The native client accepts this narrow observation result, records its validated
+payload hash, and retains AI/journal grants false. A new hello/bind attempt clears
+old grants and hashes before submission; fatal transport failures clear the
+binding. AI operations still require the separate hello grant and existing fresh
+control checks. The game host selects bind_runtime only for configured observation
+mode; enabled negotiation retains hello. Observation mode now requires actual
+loaded-image metadata rather than falling back to an unbound legacy hello. A
+once-per-start diagnostic records that metadata for actual callback auditing.
+
+All871 Python regressions and nine local native CTests pass. The full offline
+Windows build verifies382 source hashes; all17 standalone Windows checks and
+both actual C-client/sidecar journal fixtures pass under isolated Proton. The
+runtime-bound fixture first consumes an observation binding, verifies its payload
+hash, and proves that a negotiation submission remains denied until an AI hello.
+Native protocol tests reject observation replies claiming AI/extra capabilities.
+The rebuilt game/DLL passes isolated --validate, child marker validated, launcher0.
+Private receipts are under readonly-binding-0fda623. EXE SHA256
+f07c38347db765b8c355e977fbc5647e558bbc7771c99184eb5e966ba007a74a;
+DLL SHA25629ffb27c669dec8957fc7246fe2b5e6dd39934fd9ceb3c99580b6498966d7e92.
+
+A separate immutable135-file service source bundle and copied existing database/
+registry are staged. Expected imagef67e6fc1cb76c9ea1f1ad504e4a6491ff126483d66a9da8ddb92950bbaf740ba
+is explicitly pinned from the active pack input and the current loader's digest
+calculation; actual new callback echo remains to verify. Existing franchise/player
+IDs, seed, calendar and4:1 units are preserved; no identities are regenerated.
+The configured save is the now-verified physical UDATA path, not its equal-byte
+franchise copy. Staged launcher keeps negotiation and guest signing0 and uses
+forced missing ADC, with the existing explicit one-request/20000-token ceiling;
+read-only binding never grants or spends that budget.
+
+The isolated Windows service preflight uses that actual UDATA file, copied DB and
+registry, bind_runtime, existing Giants/Will Hernandez context and a forbidden AI
+request. It completes in2.322s, returns the preserved namespace/player personality
+and financial revision1, reports no AI/write authority, rejects the AI operation
+and records zero model attempts. Input save/registry/database hashes are unchanged.
+The offer remains accounting_rejected for unresolved classification/opening scope.
+AI initialization is deliberately unavailable through missing ADC; the read-only
+path works without enabling it. context/context-receipt.json and driver-receipt.json
+retain marker passed/launcher0 and135 verified service files on Deck.
+
+No installed executable, launcher, database, save or controls have changed in this
+milestone. Actual in-game source/namespace reply consumption, complete lifecycle
+invalidation, modern opening books, permits and financial signing/save-reload still
+need verification. This staged observation connection is not an application grant.

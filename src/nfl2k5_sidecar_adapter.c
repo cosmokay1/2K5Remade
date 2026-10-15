@@ -20,6 +20,7 @@
 #include "save_read.h"
 static uint64_t reported_save_read,reported_load_epoch;
 static uint32_t reported_load_phase;
+static int reported_image;
 #ifdef _WIN32
 #include "source_binding_win.h"
 static SRWLOCK save_read_lock=SRWLOCK_INIT;
@@ -28,7 +29,7 @@ static FranchiseLoadRead load_read;
 static void save_read_reset(void) {
     AcquireSRWLockExclusive(&save_read_lock);
     memset(&save_read,0,sizeof(save_read));memset(&load_read,0,sizeof(load_read));
-    reported_save_read=reported_load_epoch=0;reported_load_phase=0;
+    reported_save_read=reported_load_epoch=0;reported_load_phase=0;reported_image=0;
     ReleaseSRWLockExclusive(&save_read_lock);
 }
 static int save_read_copy(FranchiseSaveRead *out) {
@@ -36,7 +37,7 @@ static int save_read_copy(FranchiseSaveRead *out) {
     return out->sequence!=0;
 }
 #else
-static void save_read_reset(void) {reported_save_read=reported_load_epoch=0;reported_load_phase=0;}
+static void save_read_reset(void) {reported_save_read=reported_load_epoch=0;reported_load_phase=0;reported_image=0;}
 static int save_read_copy(FranchiseSaveRead *out) {memset(out,0,sizeof(*out));return 0;}
 
 #endif
@@ -563,6 +564,9 @@ static int addon_snapshot(const char *name,void *out,size_t capacity) {
 static void addon_poll(void) {
     FranchiseSaveRead candidate;
     const char *trace=getenv("NFL2K5_TRACE_FRANCHISE");
+    if(trace && !strcmp(trace,"1") && !reported_image && loaded_image.sha256[0]){
+        reported_image=1;fprintf(stderr,"[FRANCHISE-TRACE] loaded_image sha256=%s source_scope=load_image namespace_bound=0\n",loaded_image.sha256);
+    }
     if(trace && !strcmp(trace,"1") && save_read_copy(&candidate) && candidate.sequence!=reported_save_read) {
         reported_save_read=candidate.sequence;
         fprintf(stderr,"[FRANCHISE-TRACE] save_read sequence=%llu bytes=%llu payload_sha256=%s guest_mapped=%u guest_address=0x%08x source_scope=read_candidate active_franchise=unverified\n",

@@ -5,6 +5,7 @@ import hashlib
 import json
 import tempfile
 import unittest
+from unittest.mock import Mock
 from pathlib import Path
 
 from franchise.books import OpeningBooks
@@ -139,3 +140,31 @@ class RuntimeHandshakeTests(unittest.TestCase):
         self.assertEqual(bridge.handle(self.hello())['error'],'invalid_request')
         request=self.hello();request.pop('loaded_image_sha256')
         self.assertIsNone(bridge.handle(request)['error'])  # Existing engine-only fixture compatibility.
+
+    def test_read_only_binding_does_not_touch_control_provider_or_grant_ai(self):
+        self.bridge.access_check=Mock(side_effect=AssertionError('Read binding must not consult or renew AI control'))
+        guard=Mock();self.bridge.connection_check=guard
+        reply=self.bridge.handle({**self.hello(),'operation':'bind_runtime'})
+        self.assertIsNone(reply['error'])
+        self.assertIs(reply['result']['ai_enabled'],False)
+        self.assertEqual(reply['result']['operations'],['signing_context'])
+        self.assertEqual(reply['result']['runtime_binding']['franchise_id'],self.bindings['franchise_id'])
+        self.assertEqual(guard.call_count,2)
+        self.bridge.access_check.assert_not_called()
+        self.assertFalse(self.bridge.runtime_verified)
+        self.assertEqual(self.bridge.handle(self.proposal())['error'],'ai_disabled')
+        self.assertEqual(self.calls,0)
+        self.assertEqual(self.store.load_team('49ers').revision,0)
+
+    def test_binding_attempt_revokes_old_ai_handshake_and_rejects_wrong_context(self):
+        self.assertIsNone(self.bridge.handle(self.hello())['error'])
+        request={**self.hello(),'operation':'bind_runtime','loaded_image_sha256':'b'*64}
+        self.assertEqual(self.bridge.handle(request)['error'],'state_rejected')
+        self.assertEqual(self.bridge.handle(self.proposal())['error'],'ai_disabled')
+        request['loaded_image_sha256']='a'*64
+        self.assertIsNone(self.bridge.handle(request)['error'])
+        self.assertEqual(self.bridge.handle(self.proposal())['error'],'ai_disabled')
+        self.assertEqual(self.calls,0)
+        self.bindings['game_context'].pop('loaded_image_sha256')
+        unbound=self.restart();request.pop('loaded_image_sha256')
+        self.assertEqual(unbound.handle(request)['error'],'state_rejected')

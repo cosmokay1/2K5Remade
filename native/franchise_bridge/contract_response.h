@@ -1595,8 +1595,11 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         }
         return;
     }
-    if (operation == "hello") {
-        if (!result.contains("ai_enabled") || !result["ai_enabled"].is_boolean() || result["ai_enabled"] != true ||
+    if (operation == "hello" || operation == "bind_runtime") {
+        const bool observation=operation=="bind_runtime";
+        if(observation && (result.size()!=3 || result.at("operations")!=nlohmann::json::array({"signing_context"}) || !request.contains("loaded_image_sha256")))
+            throw std::runtime_error("Invalid observation binding capabilities");
+        if (!result.contains("ai_enabled") || !result["ai_enabled"].is_boolean() || result["ai_enabled"] != !observation ||
             !result.contains("operations") || !result["operations"].is_array()) throw std::runtime_error("Invalid handshake result");
         for (const auto& item : result["operations"]) if (!item.is_string()) throw std::runtime_error("Invalid operation list");
         if(request.contains("loaded_image_sha256")) {

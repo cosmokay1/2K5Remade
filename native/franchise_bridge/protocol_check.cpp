@@ -43,6 +43,20 @@ int main(int argc,char** argv) {
             bool rejected=false;try{franchise::validate_result(bad,req);}catch(const std::exception&){rejected=true;}
             if(!rejected) throw std::runtime_error("Unbound runtime hello accepted");
         }
+        auto binding_request=hello_request;binding_request["operation"]="bind_runtime";
+        auto binding_reply=hello_reply;binding_reply["result"]["ai_enabled"]=false;
+        binding_reply["result"]["operations"]=nlohmann::json::array({"signing_context"});
+        franchise::validate_result(binding_reply,binding_request);
+        for(int scenario=0;scenario<5;++scenario){
+            auto bad=binding_reply;auto request=binding_request;
+            if(scenario==0)bad["result"]["ai_enabled"]=true;
+            if(scenario==1)bad["result"]["operations"].push_back("negotiate_proposal");
+            if(scenario==2)bad["result"].erase("runtime_binding");
+            if(scenario==3)bad["result"]["write_authorized"]=true;
+            if(scenario==4)request.erase("loaded_image_sha256");
+            bool rejected=false;try{franchise::validate_result(bad,request);}catch(const std::exception&){rejected=true;}
+            if(!rejected)throw std::runtime_error("Observation binding granted excess authority");
+        }
         const franchise::BudgetLaunch launch_budget{LR"(C:\budget path\ledger.sqlite)",L"scope \"quoted\" --provider offline-fixture",17};
         const auto budget_command=franchise::launch_command(L"python path",L"database path",franchise::ServiceMode::VertexRuntime,launch_budget);
         const auto expected_budget=franchise::quote(L"python path")+L" \"-m\" \"franchise.sidecar\" \"--database\" "+franchise::quote(L"database path")+

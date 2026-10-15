@@ -39,12 +39,20 @@ int wmain(int argc,wchar_t** argv) {
         require(franchise_host_check_saved(client.get())==FRANCHISE_HOST_NOT_READY);
         auto hello=nlohmann::json{{"protocol",1},{"request_id","native-hello"},{"operation","hello"}};
         if(argc==11) {
+            const std::wstring digest(argv[10]);require(digest.size()==64);
+            auto observation=hello;observation["operation"]="bind_runtime";
+            observation["loaded_image_sha256"]=std::string(digest.begin(),digest.end());
+            const auto bound=submit(client.get(),observation);
+            require(bound.at("error").is_null() && bound.at("result").at("ai_enabled")==false);
+            const auto payload=bound.at("result").at("runtime_binding").at("snapshot_payload_sha256").get<std::string>();
+            require(franchise_host_loaded_payload_matches(client.get(),payload.c_str())==FRANCHISE_HOST_OK);
+            const std::string ungranted="{\"protocol\":1,\"request_id\":\"observation-only\",\"operation\":\"negotiate_proposal\"}";
+            require(franchise_host_submit(client.get(),ungranted.data(),ungranted.size())==FRANCHISE_HOST_SERVICE_FAILURE);
             require(submit(client.get(),hello).at("error")=="invalid_request");
             const std::string denied="{\"protocol\":1,\"request_id\":\"denied\",\"operation\":\"negotiate_proposal\"}";
             require(franchise_host_submit(client.get(),denied.data(),denied.size())==FRANCHISE_HOST_SERVICE_FAILURE);
             hello["loaded_image_sha256"]=std::string(64,'b');
             require(submit(client.get(),hello).at("error")=="state_rejected");
-            const std::wstring digest(argv[10]);require(digest.size()==64);
             hello["loaded_image_sha256"]=std::string(digest.begin(),digest.end());
         }
         require(franchise_host_loaded_payload_matches(client.get(),std::string(64,'a').c_str())==FRANCHISE_HOST_NOT_READY);

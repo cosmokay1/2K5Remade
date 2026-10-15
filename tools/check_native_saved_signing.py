@@ -78,7 +78,11 @@ def main():
         assert result.returncode==0,(result.returncode,result.stdout,result.stderr)
         replies=[json.loads(line) for line in result.stdout.splitlines()]
         if runtime_image is not None:
-            assert len(replies)==17,replies
+            assert len(replies)==18,replies
+            observed=replies.pop(0)
+            assert observed['error'] is None and observed['result']['ai_enabled'] is False
+            assert observed['result']['operations']==['signing_context']
+            assert observed['result']['runtime_binding']['franchise_id']==data['sample'].bindings['franchise_id']
             assert replies[0]['error']=='invalid_request' and replies[1]['error']=='state_rejected'
             assert replies.pop(-3)['error']=='state_rejected'  # Failed re-handshake revokes native grant.
             replies=replies[2:]

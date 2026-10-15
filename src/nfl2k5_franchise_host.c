@@ -141,9 +141,10 @@ void nfl2k5_franchise_on_fsm(uint32_t descriptor, int push)
         AcquireSRWLockShared(&submission_lock);
         const int image_required=submission_enabled;
         ReleaseSRWLockShared(&submission_lock);
-        if((!present && image_required) || (present && !addon_image_identity(&image,digest))) goto failed;
+        const int observation_only=context_enabled && !image_required;
+        if((!present && (image_required || observation_only)) || (present && !addon_image_identity(&image,digest))) goto failed;
         const int length=present ? snprintf(request,sizeof(request),
-            "{\"protocol\":1,\"request_id\":\"game-sign-hello\",\"operation\":\"hello\",\"loaded_image_sha256\":\"%s\"}",image.sha256) :
+            "{\"protocol\":1,\"request_id\":\"game-sign-hello\",\"operation\":\"%s\",\"loaded_image_sha256\":\"%s\"}",observation_only?"bind_runtime":"hello",image.sha256) :
             snprintf(request,sizeof(request),"{\"protocol\":1,\"request_id\":\"game-sign-hello\",\"operation\":\"hello\"}");
         if(length<=0 || (size_t)length>=sizeof(request) ||
             franchise_host_submit(franchise_client, request, (size_t)length) != FRANCHISE_HOST_OK)
@@ -235,7 +236,7 @@ void nfl2k5_franchise_poll(void)
             hello_consumed = 1;
             /* Receipt is not authorization. Native submit still rejects AI without
              * a validated hello grant; the service rechecks remote control per call. */
-            fprintf(stderr, "[FRANCHISE] Control handshake reply consumed.\n");
+            fprintf(stderr, "[FRANCHISE] Franchise handshake reply consumed.\n");
         }
     }
     if(journal_enabled && journal_locked && !journal_pending && GetTickCount64()>=journal_next_check) {
