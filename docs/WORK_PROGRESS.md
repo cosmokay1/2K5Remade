@@ -6016,3 +6016,17 @@ and Build38675583704. New transport consumer/standalone CI remains to verify.
 Consumer validation: all760 Python regressions passed22.348s outside the sandbox.
 The initial sandbox run failed only four loopback-server binds with EPERM; those
 passed when rerun with local networking allowed.
+
+### Presentation reference: Timkay Nicotine
+
+User suggested https://github.com/timkay/nicotine. GitHub API inspection of main
+81f0dbe88f7ff730f8dba1adff5011b9e1ae4962 found a QuickJS native-call host with
+app-owned drawing adapters (Cairo on Linux, GDI+ on Windows, Core Graphics on
+macOS). README and docs/DECISIONS.md make the separation useful as an architectural
+reference: readable scripted behavior and native drawing need no browser. It is
+not a DOM/CSS engine or a drop-in NBC_SNF page renderer. Existing HTML/CSS geometry,
+fonts, assets, clipping and animation need deliberate translation and visual
+comparison. The game needs an off-screen alpha surface rather than a separate
+GUI window. README describes its Windows drawing adapter as unexecuted; GitHub
+reports no recognized repository license. No Nicotine code/dependency was copied
+or integrated; source reuse terms and embedding validation remain unresolved.
