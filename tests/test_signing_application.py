@@ -32,6 +32,7 @@ class SigningApplicationTests(unittest.TestCase):
 static uint32_t esi=0x1234,edi,ebp=0x5678,eax;
 static unsigned retail_calls,writes,history,completions;
 static int judgment,commit,retail_accept;
+uint64_t xbox_ggl_current_serial(void){return 1;}
 int nfl2k5_addon_start(void){return 1;}
 void nfl2k5_addon_stop(void){}
 void nfl2k5_addon_poll(void){}

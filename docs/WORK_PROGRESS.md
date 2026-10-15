@@ -7553,3 +7553,31 @@ No installed pair, launch configuration, user save or remote control changed.
 
 Build38781544176 and full Windows/Ubuntu Franchise38781544199 now pass.
 The terminal GitHub result supersedes the earlier pending observation.
+
+
+### October 15 — Pin the two signing checks to guest-lock ownership
+
+The private application shim previously bound judgment/precommit to a thread-local
+context pointer without checking whether guest-lock ownership had been released
+between callbacks. It now captures the runtime's nonzero acquisition serial and
+requires the same serial before/after judgment, before precommit and after its
+addon callback. Missing ownership or release/reacquisition holds the attempt;
+the captured context is consumed before callbacks and a retry needs a fresh
+judgment. Disabled/retail paths and the public addon ABI remain unchanged.
+
+The actual shim fixture covers no owner, changed ownership inside judgment,
+release/reacquisition between stages, changed ownership inside precommit,
+consumed retries and a fresh successful authored attempt. Six protocol/native
+CTests, two actual guest-lock CTests and24 signing patch regressions pass. The
+full836-test Python run passed832 with four loopback-binding sandbox errors;
+all five web tests then passed outside that restriction. There are no remaining
+local test failures. The private actual-generated signing probe still matches
+finance94bb53a3311849c97e330dd66ef2159e70bf1c7bcbc0668681deefe8eef8ffce
+and identityb675304ccbfa5171a8ed670c328da5118f7f9837df5fbf2030ba532bcdf98ad1,
+with one completion; its lock ownership and grants are authored fixtures.
+
+This pins the two permission checks only: it does not retain ownership through
+the original-game writes after precommit, issue a durable permit or prove live
+game signing/save/reload. Production grants remain unavailable. The Deck game
+was still running at observation; no installed binaries/configuration, saves,
+AI control or credentials changed. Windows CI for this source is pending.

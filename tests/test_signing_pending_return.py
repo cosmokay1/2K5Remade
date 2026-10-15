@@ -35,6 +35,7 @@ class SigningPendingReturnTests(unittest.TestCase):
 static unsigned char memory[64];
 #define MEM32(address) (*(uint32_t *)(memory+(address)-0xCB8C34u))
 static unsigned attempts, closes, restored, retail_result, held;
+uint64_t xbox_ggl_current_serial(void){return 1;}
 int nfl2k5_addon_start(void){return 1;}
 void nfl2k5_addon_stop(void){}
 void nfl2k5_addon_poll(void){}
@@ -106,6 +107,7 @@ class CPUSigningHoldTests(unittest.TestCase):
 #include "src/nfl2k5_sidecar_adapter.h"
 #include "native/franchise_bridge/franchise_addon.h"
 static unsigned held,removed,rejected,submitted,visited,wrong_stage,direct,cleanups;
+uint64_t xbox_ggl_current_serial(void){return 1;}
 int nfl2k5_addon_start(void){return 1;}
 void nfl2k5_addon_stop(void){}
 void nfl2k5_addon_poll(void){}

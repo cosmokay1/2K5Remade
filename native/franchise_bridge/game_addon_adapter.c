@@ -36,6 +36,15 @@ static int application_requested(void) {
 #ifdef NFL2K5_FRANCHISE_CLIENT
 #include "../game_addon/loader.h"
 #include "franchise_addon.h"
+/* A runtime serial is never reused after releasing the global guest lock.
+ * Pin both application checks to one ownership span; this does not extend
+ * ownership across subsequent original-game writes. */
+extern uint64_t xbox_ggl_current_serial(void);
+#ifdef _MSC_VER
+__declspec(thread) static uint64_t accepted_guest_serial;
+#else
+static _Thread_local uint64_t accepted_guest_serial;
+#endif
 int nfl2k5_franchise_start(void) { held_signing_context=accepted_signing_context=applying_signing_context=0; return nfl2k5_addon_start(); }
 void nfl2k5_franchise_stop(void) { held_signing_context=accepted_signing_context=applying_signing_context=0; nfl2k5_addon_stop(); }
 void nfl2k5_franchise_guest_poll(void) { nfl2k5_addon_poll(); }
@@ -78,11 +87,15 @@ int nfl2k5_franchise_hold_signing_at(uint32_t stage,uint32_t context) {
     if(accepted) {
         if(stage!=2u || context!=accepted || !application_requested()) return signing_hold_result(context,1);
 #ifdef NFL2K5_FRANCHISE_CLIENT
+        const uint64_t serial=accepted_guest_serial;
+        accepted_guest_serial=0;
+        if(!serial || xbox_ggl_current_serial()!=serial) return signing_hold_result(context,1);
         const FranchiseSignGateEvent event={stage,context};
         const int decision=nfl2k5_addon_event(FRANCHISE_SIGN_APPLICATION_EVENT,&event,sizeof(event));
         accepted_signing_context=0;
         applying_signing_context=0;
-        if(application_requested() && decision==FRANCHISE_SIGN_APPLICATION_AUTHORIZED) {
+        if(application_requested() && decision==FRANCHISE_SIGN_APPLICATION_AUTHORIZED &&
+           xbox_ggl_current_serial()==serial) {
             applying_signing_context=context;
             return signing_hold_result(context,0);
         }
@@ -106,11 +119,16 @@ int nfl2k5_franchise_judge_signing(uint32_t context) {
     applying_signing_context=0;
 #ifdef NFL2K5_FRANCHISE_CLIENT
     if(context && application_requested()) {
+        const uint64_t serial=xbox_ggl_current_serial();
+        accepted_guest_serial=0;
+        if(!serial) return signing_hold_result(context,1);
         const FranchiseSignGateEvent event={1u,context};
         const int decision=nfl2k5_addon_event(FRANCHISE_SIGN_APPLICATION_EVENT,&event,sizeof(event));
         accepted_signing_context=0;
         applying_signing_context=0;
-        if(application_requested() && decision==FRANCHISE_SIGN_APPLICATION_AUTHORIZED) {
+        if(application_requested() && decision==FRANCHISE_SIGN_APPLICATION_AUTHORIZED &&
+           xbox_ggl_current_serial()==serial) {
+            accepted_guest_serial=serial;
             accepted_signing_context=context;
             signing_hold_result(context,0);
             return 2;

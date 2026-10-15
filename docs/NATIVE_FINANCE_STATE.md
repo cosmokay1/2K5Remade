@@ -213,6 +213,13 @@ at precommit. That context is consumed before calling the addon. Missing,
 invalid, repeated, bypass/CPU or mismatched grants hold; beginning another call,
 consuming/resetting hold state, lifecycle reset and intervening legacy holds
 invalidate it. Turning either requested mode off after judgment holds that call.
+The two application callbacks now also require the same nonzero runtime guest-lock
+acquisition serial before/after each callback and between judgment/precommit.
+Missing ownership or release/reacquisition consumes the attempt and holds it;
+retry requires a fresh judgment. The serial is thread-local runtime evidence,
+not a saved journal permit, and this does not keep the lock through original-game
+writes after precommit. Completion evidence is still collected even if control
+changes after application. Production grants remain unavailable.
 The compiled and interpreter hooks follow the same continuations. Known v1/v2
 cached patches upgrade explicitly; custom bodies or moved gates reject.
 

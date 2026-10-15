@@ -100,6 +100,10 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       native trades/offers or the queue sample is unreadable/changing. Clear
       queues still grant nothing. The known cleanup/popup path has a verified
       queue prerequisite; full exclusive-application proof remains open.
+      Both application checks now require one unchanged nonzero guest-lock
+      acquisition serial, including across each addon callback. Missing ownership
+      or release/reacquisition holds and consumes the attempt. This pins the checks,
+      not the subsequent original-game writes; production still grants nothing.
       Guard source7a39913 passes Windows/Ubuntu Franchise38781544199 and
       Build38781544176, actual private Windows/Proton queue/DLL checks and
       isolated full-game --validate. The installed runtime remains unchanged.

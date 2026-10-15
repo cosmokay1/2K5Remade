@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 extern void nfl2k5_franchise_stop(void);
+uint64_t xbox_ggl_current_serial(void){return 0;}
 static int gate_reply,legacy_reply;
 static unsigned gates,legacy;
 static uint32_t last_stage,last_context;

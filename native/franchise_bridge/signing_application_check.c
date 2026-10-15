@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 extern void nfl2k5_franchise_stop(void);
+static uint64_t execution_serial=1;
+static unsigned change_serial_at;
+uint64_t xbox_ggl_current_serial(void){return execution_serial;}
 static int judgment,commit;
 static unsigned applications,completions;
 static uint32_t completed_context;
@@ -29,6 +32,7 @@ int nfl2k5_addon_event(const char *name,const void *data,size_t size) {
     if(strcmp(name,FRANCHISE_SIGN_APPLICATION_EVENT) || size!=sizeof(FranchiseSignGateEvent)) return 0;
     const FranchiseSignGateEvent *event=data;
     ++applications;
+    if(change_serial_at==event->stage) ++execution_serial;
     return event->stage==1 ? judgment : commit;
 }
 int main(void) {
@@ -98,6 +102,36 @@ int main(void) {
     nfl2k5_franchise_stop();
     nfl2k5_franchise_signing_completed(0x1234);
     if(completions!=2) return 30;
-    puts("Two-stage same-context application boundary passed with authored grants only");
+    /* An exact addon reply cannot cross a missing/released guest lock. */
+    const unsigned prior_applications=applications,prior_completions=completions;
+    execution_serial=0;
+    if(nfl2k5_franchise_judge_signing(0x1234)!=1 || applications!=prior_applications ||
+       !nfl2k5_franchise_hold_signing_at(2,0x1234)) return 31;
+    execution_serial=10;change_serial_at=1;
+    if(nfl2k5_franchise_judge_signing(0x1234)!=1 ||
+       !nfl2k5_franchise_hold_signing_at(2,0x1234)) return 32;
+    change_serial_at=0;
+    for(unsigned lost=0;lost<2;++lost) {
+        execution_serial=20+lost*10;
+        if(nfl2k5_franchise_judge_signing(0x1234)!=2) return 33;
+        execution_serial=lost ? execution_serial+1 : 0;
+        const unsigned before=applications;
+        if(!nfl2k5_franchise_hold_signing_at(2,0x1234) || applications!=before) return 34;
+        nfl2k5_franchise_signing_completed(0x1234);
+        if(completions!=prior_completions) return 35;
+    }
+    execution_serial=40;
+    if(nfl2k5_franchise_judge_signing(0x1234)!=2) return 36;
+    change_serial_at=2;
+    if(!nfl2k5_franchise_hold_signing_at(2,0x1234)) return 37;
+    change_serial_at=0;
+    if(!nfl2k5_franchise_hold_signing_at(2,0x1234)) return 38; /* Consumed despite failure. */
+    nfl2k5_franchise_signing_completed(0x1234);
+    if(completions!=prior_completions) return 39;
+    /* A fresh judgment under the new acquisition can complete once. */
+    if(nfl2k5_franchise_judge_signing(0x1234)!=2 || nfl2k5_franchise_hold_signing_at(2,0x1234)) return 40;
+    nfl2k5_franchise_signing_completed(0x1234);
+    if(completions!=prior_completions+1) return 41;
+    puts("Two-stage same-context, same guest-lock application boundary passed with authored grants only");
     return 0;
 }
