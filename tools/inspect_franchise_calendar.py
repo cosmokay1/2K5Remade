@@ -13,7 +13,7 @@ from tools.inspect_franchise_save import SIZE
 
 
 def inspect_calendar(payload: bytes) -> dict:
-    if type(payload) is not bytes or len(payload) != SIZE or payload[:4] != b'\x04\0\0\0':
+    if type(payload) is not bytes or len(payload) != SIZE:
         raise ValueError('Unsupported observed Xbox FXG layout')
     # E2E00 supplies the prefix size. C1F90 stores bank allocation+0x20
     # at prefix+4, while BFE50/16A0F0 advance allocation+0x40 (even).

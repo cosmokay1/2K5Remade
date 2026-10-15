@@ -87,8 +87,13 @@ Do not deploy superseded staged diagnostics blindly or overwrite existing saves.
       $42.392M of additional current-reference roster/reserve/PS charges and
       $43.691M dead money; dated obligations import remains unverified. See
       [Mynfl1 audit](docs/MYNFL1_CAP_AUDIT.md).
-- [ ] Support declared modded player-bank bounds/settings in the strict save reader
-      before importing MyNFL1; compare dated cap obligations and fitted contracts.
+- [x] Support declared modded player-bank bounds/settings in the strict save reader:
+      MyNFL1 reads2619 records/2070 memberships including377 free agents; all32
+      payrolls reconcile unchanged. Synthetic corrupt-boundary checks and710
+      regressions pass. This does not authorize modern ledger import.
+- [ ] Reconcile dated inherited cap obligations and fitted contracts at franchise
+      creation, preserving the verified4:1 scale, with explicit pack calendar
+      policy and no double-counted reserve players or retained debt.
 - [ ] Capture controlled pack signing/save/reload evidence; verify player identity,
       history, experience, calendar, salaries/payroll/cap and effective money scale.
 - [ ] Revalidate existing Xbox observer and bridge against pack code and saves;

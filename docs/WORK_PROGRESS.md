@@ -5585,3 +5585,25 @@ passed, including the generic counter addon through the shared loader, franchise
 message/snapshot checks, legacy ABI refusal and interpreter shared epilogue.
 Installer be9239a also passed Build38663889260 and Franchise38663889318.
 Installed game remains the working ABI1 pair; no ABI2 runtime replacement occurred.
+
+
+## MyNFL1 strict reader compatibility
+
+Replaced the false first-settings-word format check and fixed2317-slot roster
+limit with observed serialized ROST headers, fixed section size, declared player
+count and exact base/adjoining-table boundaries. Bounds, alignment, duplicate
+membership and UTF-16 guards remain. Calendar accepts variable saved settings
+while retaining scheduler section/mode checks and its explicit retail-year scope.
+No automatic2026 rebasing, money multiplication or ledger writes were added.
+
+Read-only MyNFL1 SHA4c8c31b4f400e25175223163a948e126cb83d10aa4bb98979a564ef287761ec3
+now parses2619 declared records,2070 memberships,377 free agents (maxslot2463),
+Giants53. Public reconcile_payroll independently matches all32 stored totals;
+Giants52996000 internal dollars. Input bytes remained unchanged. Retail calendar
+index0 still yields2004, so existing identity guards correctly continue blocking
+unverified modern import. Next integration work owns the explicit pack calendar,
+4:1 money semantics and dated inherited/non-roster obligations reconciliation.
+
+Validation:710 Python regressions passed in24.109s including three new tests
+for expanded bank/settings compatibility and corrupt bank/header rejection.
+No running game, cloud control, paid inference or save was modified.

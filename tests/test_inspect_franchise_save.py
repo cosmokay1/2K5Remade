@@ -12,6 +12,10 @@ class InspectFranchiseSaveTests(unittest.TestCase):
     def fixture(self):
         data=bytearray(SIZE);data[:4]=b'\x04\0\0\0';data[0x917EF]=26
         def pointer(location,target):struct.pack_into('<i',data,location,target-location+1)
+        data[0x2E0:0x2E4]=b'ROST';data[0x30C:0x310]=b'ROST'
+        struct.pack_into('<I',data,0x2E4,0x91020)
+        struct.pack_into('<I',data,0x320,2479)
+        pointer(0x324,PLAYER_START);pointer(0x32C,PLAYER_START+2479*PLAYER_STRIDE)
         pointer(0x35C,0x1000);struct.pack_into('<H',data,0x358,1)
         data[0x45C4]=1;pointer(0x44A8,PLAYER_START);pointer(0x1000,PLAYER_START+PLAYER_STRIDE)
         cursor=STRING_START
@@ -29,6 +33,36 @@ class InspectFranchiseSaveTests(unittest.TestCase):
         self.assertEqual(result['free_agents'][0]['source_slot'],1)
         self.assertEqual(bytes(data),before)
         self.assertNotIn('salary',str(result));self.assertNotIn('ratings',str(result))
+
+    def test_saved_settings_and_expanded_player_bank_are_supported(self):
+        data=self.fixture();data[:4]=b'\x01\0\0\0'
+        struct.pack_into('<I',data,0x320,2619)
+        struct.pack_into('<i',data,0x32C,PLAYER_START+2619*PLAYER_STRIDE-0x32C+1)
+        old=PLAYER_START+PLAYER_STRIDE;new=PLAYER_START+2463*PLAYER_STRIDE
+        data[new:new+PLAYER_STRIDE]=data[old:old+PLAYER_STRIDE]
+        for field in (0x10,0x14):
+            target=old+field+struct.unpack_from('<i',data,old+field)[0]-1
+            struct.pack_into('<i',data,new+field,target-new-field+1)
+        struct.pack_into('<i',data,0x1000,new-0x1000+1)
+        before=bytes(data);result=inspect_save(before)
+        self.assertEqual(result['player_record_count'],2619)
+        self.assertEqual(result['free_agents'][0],
+                         {'source_slot':2463,'first_name':'Authored','last_name':'Freeagent'})
+        self.assertEqual(bytes(data),before)
+
+    def test_invalid_serialized_bank_boundaries_reject(self):
+        for scenario in range(8):
+            with self.subTest(scenario=scenario):
+                data=self.fixture()
+                if scenario==0:data[0x2E0]=0
+                if scenario==1:data[0x30C]=0
+                if scenario==2:struct.pack_into('<I',data,0x2E4,0x91021)
+                if scenario==3:struct.pack_into('<I',data,0x320,0)
+                if scenario==4:struct.pack_into('<I',data,0x320,0xffffffff)
+                if scenario==5:struct.pack_into('<i',data,0x324,PLAYER_START-0x324+5)
+                if scenario==6:struct.pack_into('<i',data,0x32C,PLAYER_START+2478*PLAYER_STRIDE-0x32C+1)
+                if scenario==7:struct.pack_into('<i',data,0x1000,PLAYER_START+2479*PLAYER_STRIDE-0x1000+1)
+                with self.assertRaises(ValueError):inspect_save(bytes(data))
 
     def test_controlled_roster_transfer_changes_membership_without_financial_inference(self):
         data=self.fixture();before=inspect_save(bytes(data))

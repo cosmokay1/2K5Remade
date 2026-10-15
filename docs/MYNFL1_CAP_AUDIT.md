@@ -42,13 +42,15 @@ All32 teams' reconstructed roster payrolls also match. The Giants' first-year
 adjustment flag is1, with a zero accumulator, so that branch adds no first-year
 charge. Display truncation can show approximately $89.21M for $89.216M.
 
-The save declares2619 player records. The original reader's fixed2317-slot bound
-rejects the enlarged free-agent list; its required first settings word4 also
-rejects this valid save's value1. The private audit used the declared player count,
-base and adjoining-table boundary, checked every team pointer/record/name, and
-reused the original supported schedule math for codes0..7. The public strict
-reader still rejects this save: it must be updated and tested before automated
-import or financial writes. No header was changed in the audited payload.
+The save declares2619 player records. The former reader's fixed2317-slot bound
+and required first settings word4 rejected this valid save. The strict reader
+now checks the serialized ROST headers, section size, declared player count,
+base and adjoining-table boundary instead. It reads2070 memberships including377
+free agents (highest free-agent slot2463), checks every referenced record/name,
+and reproduces all32 payroll totals using the supported schedule math for codes0..7.
+Authored expanded-bank and corrupt-boundary regressions pass. No header was changed
+in the audited payload. Calendar/identity import still requires explicit pack
+policy; the retail2004 label is not silently replaced by a scheduled-game byte.
 
 ## Accuracy beyond arithmetic
 
@@ -89,7 +91,7 @@ Golston and Dart are already charged in-game. The implied cap adjustment needs
 its own provenance before import.
 
 Conclusion: the base cap and saved roster arithmetic reconcile. Full real-world
-2026 cap accuracy is not established. Next work is a schema-checked modded save
-reader and a dated, lossless obligations import covering active/reserve players,
+2026 cap accuracy is not established. The schema-checked modded save reader is verified. Next work is a dated,
+lossless obligations import covering active/reserve players,
 released-player debt, adjustments and supported contract details. Preserve
 existing fitted deals until an explicit reconciled conversion is ready.

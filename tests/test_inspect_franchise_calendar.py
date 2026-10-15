@@ -29,10 +29,17 @@ class CalendarTests(unittest.TestCase):
         self.assertEqual(inspect_calendar(bytes(data))['display_year'], 2007)
         self.assertEqual(before, bytes(self.fixture()))
 
+    def test_saved_settings_are_not_format_magic(self):
+        data=self.fixture();expected=inspect_calendar(bytes(data))
+        data[:8]=struct.pack('<II',1,4)
+        result=inspect_calendar(bytes(data))
+        self.assertEqual(result['display_year'],expected['display_year'])
+        self.assertEqual(result['scheduler_offset'],expected['scheduler_offset'])
+
     def test_wrong_section_boundaries_or_mode_reject(self):
         for case in range(7):
             data = self.fixture()
-            if case == 0: data[0] = 3
+            if case == 0: data[0x2E3] = 0
             if case == 1: data[0x2E0] = 0
             if case == 2: data[0x30C] = 0
             if case == 3: struct.pack_into('<I', data, 0x2E4, 0x91021)

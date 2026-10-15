@@ -14,7 +14,6 @@ import struct
 SIZE = 720044
 PLAYER_START = 0xB288
 PLAYER_STRIDE = 0x54
-PLAYER_LIMIT = 2317
 STRING_START, STRING_END = 0x75C40, 0x94D10
 TEAMS = ('49ers','Bears','Bengals','Bills','Broncos','Browns','Buccaneers','Cardinals',
          'Chargers','Chiefs','Colts','Cowboys','Dolphins','Eagles','Falcons','Giants',
@@ -23,8 +22,8 @@ TEAMS = ('49ers','Bears','Bengals','Bills','Broncos','Browns','Buccaneers','Card
 
 
 def inspect_save(payload: bytes) -> dict:
-    if type(payload) is not bytes or len(payload) != SIZE or payload[:4] != b'\x04\0\0\0':
-        raise ValueError('Unsupported raw Xbox FXG layout; expected observed 720044-byte header')
+    if type(payload) is not bytes or len(payload) != SIZE:
+        raise ValueError('Unsupported raw Xbox FXG layout; expected observed 720044-byte payload')
 
     def pointer(location):
         if type(location) is not int or location < 0 or location + 4 > len(payload) or location % 4:
@@ -33,6 +32,19 @@ def inspect_save(payload: bytes) -> dict:
         if not 0 <= target < len(payload):
             raise ValueError('Relative pointer target is outside the payload')
         return target
+
+    # The prefix contains saved settings, not a format magic. Validate the
+    # serialized roster section and its declared record bank instead. SOFTDRINK
+    # expands this bank; a fixed retail membership limit loses valid players.
+    if (payload[0x2E0:0x2E4] != b'ROST' or
+            payload[0x30C:0x310] != b'ROST' or
+            struct.unpack_from('<I', payload, 0x2E4)[0] != 0x91020):
+        raise ValueError('Unsupported serialized roster section')
+    player_count = struct.unpack_from('<I', payload, 0x320)[0]
+    if (not 0 < player_count <= (STRING_START - PLAYER_START) // PLAYER_STRIDE or
+            pointer(0x324) != PLAYER_START or
+            pointer(0x32C) != PLAYER_START + player_count * PLAYER_STRIDE):
+        raise ValueError('Invalid declared player bank boundaries')
 
     def player_name(location):
         start = pointer(location)
@@ -59,7 +71,7 @@ def inspect_save(payload: bytes) -> dict:
         for location in range(start, start + count * 4, 4):
             record = pointer(location)
             delta = record - PLAYER_START
-            if delta < 0 or delta % PLAYER_STRIDE or delta // PLAYER_STRIDE >= PLAYER_LIMIT:
+            if delta < 0 or delta % PLAYER_STRIDE or delta // PLAYER_STRIDE >= player_count:
                 raise ValueError('Roster pointer does not reference an aligned player record')
             if record in seen:
                 raise ValueError('Duplicate player record across roster memberships')
@@ -77,12 +89,14 @@ def inspect_save(payload: bytes) -> dict:
             raise ValueError('Team count exceeds the supported pointer table')
         teams[team] = members(0x44A8 + index * 0x1F4, count)
     free_count = struct.unpack_from('<H', payload, 0x358)[0]
-    if free_count > PLAYER_LIMIT:
+    if free_count > player_count:
         raise ValueError('Free-agent count exceeds the player record capacity')
     free_agents = members(pointer(0x35C), free_count)
     return {'format':1,'scope':'observed retail Xbox FXG roster inspection',
             'source_slot_semantics':'snapshot record locator; not a persistent player identity',
             'payload_sha256':hashlib.sha256(payload).hexdigest(),'size_bytes':len(payload),
+            'player_record_count':player_count,
+            'year_scope':'scheduled-game year byte; not authoritative franchise season',
             'year':2000 + payload[0x917EF],'teams':teams,'free_agents':free_agents,
             'membership_count':len(seen)}
 
