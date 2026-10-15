@@ -175,7 +175,8 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       must match the consumed sidecar runtime handshake, and pending replies are
       pinned to the same load epoch. Duplicate-file and stale-acceptance tests,
       both actual Windows client/journal fixtures and game validation pass.
-      This batch is staged, not installed; actual selected-container matching,
+      Source23946c9 is now privately installed after normal exit, with all205
+      save hashes unchanged; the existing Steam entry is running. Actual selected-container matching,
       full lifecycle invalidation and production financial authority remain open.
       Service-side durable binding and active franchise identity remain open;
       this metadata does not authorize application or prove code compatibility.

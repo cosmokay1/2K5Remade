@@ -8358,3 +8358,29 @@ franchise lifetime invalidation, complete opening books, production application
 permits and actual signing/save-reload remain open. A decoded origin is historical
 evidence, not a complete active-session proof or write grant. The running user
 game, saves and AI controls are unchanged; AI remains off.
+
+## October 15, 2026 — Combined source-binding batch installed
+
+After the user confirmed normal exit, the guarded installer verified no game or
+service process, exact installed artifacts/wrapper, the382-file tested source
+overlay and all three fixture/validation receipts. It installed source23946c9's
+EXE/DLL above, backed up the previous pair under
+source-binding-763c714-final/installed-before-source-binding, and verified all205
+save-file hashes unchanged. The launcher/wrapper and AI controls are unchanged.
+The existing Steam shortcut was relaunched and process205319 is running. The
+user was asked to load MyNFL1 for the combined build's actual container audit.
+
+A private read-only Windows ctypes inspector reads metadata and content through
+the same native handle, checking identity/version before and after hashing.
+It confirms that the observed copies have equal720044-byte hashes but distinct
+file identities on volume4061331925: saves/franchise/MyNFL1/SAVEGAME.DAT has
+index00000000:00945223; saves/UDATA/53450030/12051C2F122B/SAVEGAME.DAT has
+index00000000:00945220. Both retain payload SHA256
+4c8c31b4f400e25175223163a948e126cb83d10aa4bb98979a564ef287761ec3.
+This maps candidate files only; compare the actual game load trace before
+identifying its source. Native inspection marker passed, launcher0, receipt
+native-save-identities-receipt.json is private in the same stage. No save writes,
+paid inference, control renewal or production application occurred.
+
+Exact23946c9 Build38811766079 and Ubuntu Franchise checks pass; Windows
+Franchise38811766065 was still running at this installation check.
