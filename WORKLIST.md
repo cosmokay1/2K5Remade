@@ -32,6 +32,8 @@ native offer submission, player response, legal financial commit and save recove
       queues one captured proposal (including a bounded cross-thread submit handoff)
       and presents the response. Atomic engine settlement of recorded acceptance
       now preserves exact terms, promises and cash with restart/replay checks.
+      Read-only saved-signing confirmation now checks pinned identities, exact
+      contract terms, unchanged bank contracts/calendar and all32 payrolls.
       Game-facing acceptance remains held until guest application and durable
       cross-save recovery are implemented. Actual game execution remains
       required. Do not enable this unfinished mode in the installed user runtime.

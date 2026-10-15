@@ -399,3 +399,22 @@ the bridge operations and never grants guest memory writes or confirms a save.
 A durable guest application/reconciliation coordinator is still required before
 native accepted offers can use it. Do not substitute it for that coordinator or
 call it at the native judgment boundary before game effects are verified.
+
+
+### Saved-effect confirmation foundation
+
+`tools.confirm_saved_signing.confirm_saved_signing` compares immutable before/after
+FXG payloads against a pinned before hash, existing player bindings, typed accepted
+offer, captured guest offer and target team. It checks one bound free agent moved
+to that team, exact new contract fields (including initial remaining term), no
+other bank contract or bound membership changes, unchanged calendar/cap/adjustment
+fields, reconstructed payroll for all32 teams, and the exact target payroll delta.
+The validated binding profile determines the dollar scale. Unrelated nonfinancial
+settings bytes may change; this does not assert complete byte equality of saves.
+
+The result fingerprints both payloads and bindings and explicitly grants no
+write authority. It confirms saved roster/contract/payroll effects only. It does
+not prove complete modern books, paid cash, live memory, fresh remote access,
+durable intent or coordinated save/ledger settlement. The native addon remains
+held until those pieces are connected. An old real signing pair is confirmation
+regression evidence, not an AI signing or current SOFTDRINK runtime acceptance.

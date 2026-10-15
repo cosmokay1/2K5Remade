@@ -5875,3 +5875,42 @@ installed runtime/save, cloud control or paid provider was changed or invoked.
 
 Prior native handoff05fc86d is verified green in fork CI: Build38673028105 and
 Franchise AI38673028333. Settlement-source CI remains to verify after push.
+
+## Core signing: exact saved-effect confirmation
+
+Added tools.confirm_saved_signing.confirm_saved_signing for the guest coordinator's
+confirmation boundary. It checks immutable before/after payloads against a pinned
+before hash, existing durable player bindings, typed accepted offer, captured raw
+terms and target team. Requires exactly the bound free agent to join that team,
+exact initial contract amount/bonus/shape/terms, unchanged contract fields across
+the entire declared player bank (including unbound records), unchanged other
+memberships/calendar/cap/first-year adjustments, reconciled all32 payrolls and an
+exact first-year target charge delta. The validated profile determines1x/4x scale;
+no arbitrary caller multiplier. Returns JSON-safe source fingerprints and exact
+charges with write_authorized=false. It permits unrelated settings-byte changes
+and does not claim complete byte equality or financial coverage beyond scope.
+
+Real private AIBASELIN -> AIGILDON regression passed: bound slot1792 Jason Gildon
+moves free_agents -> Giants,829/4/1/2 saved terms, charges4766000/3523000, payroll
+72272000 ->77038000. Before SHA256
+2f82cfd9c608411c40b006db10f1e6dc6dfe46b187dd50c1ae94dd6341fd3dd2;
+afterac16245c5fcd743f3cc9e6aa37d76de72424238782de353765c758d242c6bc7d.
+Receipt .local-runtime/saved-signing-confirmation-gildon.json. These are the earlier
+user signing saves, not AI effects or a new pack/game execution. No retail assets
+or bindings are added to Git. Existing attribution remains in the independent
+FXG reader modules used here.
+
+Validation:10 authored confirmation tests passed0.114s, covering original/4x
+charges, wrong actor/team/terms, noninitial elapsed term, other bound/unbound
+contracts/memberships, calendar/cap/flags/accumulator changes, payroll mismatch,
+bank/biography changes, wrong hash and unchanged payload. Full748-test suite
+passed23.216s with authorized loopback access. The first targeted invocation used
+module loading without the fixture directory on sys.path; the repository's
+standard unittest discover invocation passed. Initial real receipt serialization
+exposed Fraction values; projection now uses the existing exact json_amount codec.
+
+This remains a read-only component. Live guest application, durable intent and
+cross-save recovery, current control rechecks, complete modern opening obligations
+and actual integrated signing/save/load are still required before releasing held
+native offers. Nothing was installed, launched or changed in game saves, cloud
+control or paid inference.
