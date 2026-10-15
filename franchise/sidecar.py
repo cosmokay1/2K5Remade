@@ -13,6 +13,24 @@ from franchise.store import FranchiseStore
 MAX_LINE = 65536
 
 
+def read_guest_save(path):
+    """Bound one regular-file read; paths are selected at service startup only."""
+    import stat
+    from tools.inspect_franchise_save import SIZE
+    before=path.stat()
+    if not stat.S_ISREG(before.st_mode):
+        raise ValueError('Pinned guest save must be a regular file')
+    with path.open('rb') as source:
+        opened=os.fstat(source.fileno())
+        payload=source.read(SIZE+1)
+        after=os.fstat(source.fileno())
+    def identity(value):
+        return value.st_dev,value.st_ino,value.st_size,value.st_mtime_ns,value.st_ctime_ns
+    if len(payload)>SIZE or identity(before)!=identity(opened) or identity(opened)!=identity(after) or identity(after)!=identity(path.stat()):
+        raise ValueError('Pinned guest save changed during read or exceeds the supported layout')
+    return payload
+
+
 def serve(bridge, reader, writer):
     disconnected, busy = Event(), Event()
     output_lock = Lock()
@@ -21,12 +39,14 @@ def serve(bridge, reader, writer):
     def connection_check():
         if disconnected.is_set():
             raise AccessDisabled("Client disconnected")
-        original_connection()
+        if original_connection() is False:
+            raise AccessDisabled("Client connection check denied")
     bridge.connection_check = connection_check
     def check():
         if disconnected.is_set():
             raise AccessDisabled("Client disconnected")
-        original_check()
+        if original_check() is False:
+            raise AccessDisabled("AI control denied")
         if disconnected.is_set():
             raise AccessDisabled("Client disconnected")
     bridge.access_check = check
@@ -61,7 +81,7 @@ def serve(bridge, reader, writer):
                     emit(Bridge._reply(None, error="invalid_request"))
                     continue
                 request_id = request.get("request_id") if type(request) is dict else None
-                if type(request) is dict and request.get("operation") in ("negotiate", "negotiate_proposal"):
+                if type(request) is dict and request.get("operation") in ("negotiate", "negotiate_proposal", "guest_signing_prepare", "guest_signing_confirm"):
                     if busy.is_set():
                         emit(Bridge._reply(request_id, error="busy"))
                     else:
@@ -89,19 +109,27 @@ def main():
                         help='Pinned original saved payload for read-only signing reconciliation')
     parser.add_argument('--guest-bindings', default=os.environ.get('NFL2K5_FRANCHISE_GUEST_BINDINGS'),
                         help='Existing pinned player bindings; requires --guest-save')
+    parser.add_argument('--guest-signing', action='store_true',
+                        help='Experimental saved-signing journal coordination; requires pinned save/bindings, never writes game files')
     args = parser.parse_args()
     if args.impersonate_runtime and args.provider != "vertex":
         parser.error("Runtime impersonation applies only to Vertex mode")
     if not Path(args.database).is_file():
         parser.error("An existing verified franchise database is required")
     guest_snapshot = None
+    guest_signing_reader = None
+    if args.guest_signing and (not args.guest_save or not args.guest_bindings):
+        parser.error('Saved-signing coordination requires pinned guest save and bindings')
     if args.guest_save is not None or args.guest_bindings is not None:
         if not args.guest_save or not args.guest_bindings:
             parser.error('Both pinned guest save and bindings are required')
         try:
             from tools.franchise_snapshot_bindings import resolve_bindings
-            guest_snapshot = (json.loads(Path(args.guest_bindings).read_text()), Path(args.guest_save).read_bytes())
+            guest_path=Path(args.guest_save).resolve()
+            guest_snapshot = (json.loads(Path(args.guest_bindings).read_text()), read_guest_save(guest_path))
             resolve_bindings(*guest_snapshot)
+            if args.guest_signing:
+                guest_signing_reader=lambda:read_guest_save(guest_path)
         except (OSError, ValueError):
             parser.error('Pinned guest snapshot could not be validated')
     sdk_provider = None
@@ -134,7 +162,7 @@ def main():
             print("AI unavailable: check persistent budget configuration, runtime authentication and optional dependencies.", file=sys.stderr)
     try:
         serve(Bridge(FranchiseStore(args.database), provider=provider, access_check=access_check,
-                     guest_snapshot=guest_snapshot), sys.stdin, sys.stdout)
+                     guest_snapshot=guest_snapshot, guest_signing_reader=guest_signing_reader), sys.stdin, sys.stdout)
     finally:
         if sdk_provider is not None:
             try:

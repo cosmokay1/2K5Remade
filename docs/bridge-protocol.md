@@ -420,7 +420,7 @@ held until those pieces are connected. An old real signing pair is confirmation
 regression evidence, not an AI signing or current SOFTDRINK runtime acceptance.
 
 
-### Durable saved-signing journal (engine API only)
+### Durable saved-signing journal (engine API and opt-in service)
 
 `franchise.guest_signing.prepare` binds a source acceptance, exact captured terms,
 franchise bindings, original save/hash and revision in the franchise SQLite DB.
@@ -451,7 +451,56 @@ with a caller-supplied stopped-game check before and after the update. It never
 restores game files or re-enables AI. Changed saved effects must be resolved
 explicitly with the game quiescent, rather than discarded as unapplied.
 
-These functions are deliberately absent from bridge operations. The native
-application/save/reload coordinator and actual quiescence checks still need
-implementation and game verification. This journal alone grants no guest writes,
-proves no active-save selection, and does not complete live delivery.
+The service can expose preparation, confirmation and bounded status through the
+explicit opt-in described below. The native application/save/reload coordinator
+and actual quiescence checks still need implementation and game verification.
+This journal alone grants no guest writes, proves no active-save selection, and
+does not complete live delivery.
+
+
+### Opt-in saved-signing service coordination
+
+`--guest-signing --guest-save PATH --guest-bindings PATH` enables three bridge
+operations. It defaults off and is not enabled in the installed game. Both paths
+are fixed at service startup; input frames cannot supply paths, bindings, save
+bytes, outcomes or write authority. Initial save/bindings validation is still
+required at startup. The service reads the current regular save file with a
+bounded read and file-identity/size/time checks, rather than confirming against
+its frozen startup snapshot. All operations require a 1–60000ms `timeout_ms`.
+
+- `guest_signing_prepare`: protocol/request_id/operation/timeout_ms plus
+  `team_id`, `proposal_request_id`, `guest_offer`, `expected_before_sha256` and
+  `expected_revision`. SHA256 is canonical lowercase hex. The request ID becomes
+  the journal ID. Preparation verifies the existing accepted proposal and complete
+  supported books, retains original bytes and freezes competing writes; its
+  response remains `write_authorized: false`. Response capacity is checked before
+  reserving anything. Same-ID unchanged preparation can be retried.
+- `guest_signing_confirm`: protocol/request_id/operation/timeout_ms plus
+  `journal_request_id` and `expected_after_sha256`. Current saved effects must
+  match the journal's exact accepted terms. The service atomically resolves the
+  journal and commits ledger effects, returning the journal ID, `state: settled`,
+  player ID, financial revision, exact annual charges, after-save hash and
+  `write_authorized: false`. This confirms saved effects/ledger settlement; it
+  does not assert live guest memory or verified game reload. Same journal/hash
+  retries return the original financial result without another inference.
+- `guest_signing_status`: protocol/request_id/operation/timeout_ms plus
+  `journal_request_id`. Returns journal state, save position, current/before/after
+  hashes and `write_authorized: false`. Backups remain in SQLite rather than
+  overflowing pipe frames. Status is read-only and requires no AI grant.
+
+Preparation and confirmation require current remote authorization, connection and
+deadline checks inside the journal transaction. Each check also rereads the
+server-selected file and rejects a changed payload. Confirmation checks response
+capacity inside that transaction and rechecks authority afterward; any refusal
+rolls back proof, journal resolution, cap, ownership, cash and stories together.
+Neither operation requests inference or renews control. They share the existing
+single worker/no-queue policy with negotiations. Keep stdin open until the reply;
+the reader must detect EOF while a write request is in progress, so a disconnected
+client cannot commit after the last gate. Competing worker requests receive busy.
+
+There is no cancellation RPC: it still requires a real stopped-game check supplied
+to the engine API. No game-file restore, guest write, native acceptance release or
+automatic shutdown renewal is introduced. Startup recovery from an unreadable or
+invalid-layout save still needs a dedicated recovery launcher; it is not silently
+accepted as a valid opening snapshot. Actual native application/save/reload,
+legacy cash import and real-game acceptance remain open.

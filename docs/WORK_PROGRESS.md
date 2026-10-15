@@ -6077,3 +6077,49 @@ pass. New presentation-source CI remains to verify after push.
 The independent native Linux transport milestone is now CI-verified: consumer
 8503615 Franchise38677356141 passed Windows/Ubuntu, Build38677356207 passed;
 standalone fast-forward export2a2110d CI38677485314 passed Windows/Ubuntu.
+
+## Core signing: opt-in service journal coordination
+
+Connected the existing engine journal to explicit guest_signing_prepare,
+guest_signing_confirm and guest_signing_status bridge operations, enabled only
+with --guest-signing and startup-pinned save/bindings. Clients cannot provide
+paths, bindings, save bytes, outcomes or write grants. Current save reads are
+bounded regular-file reads with identity/size/time checks, not the original
+startup snapshot. Preparation retains the all32 supported books/known-cash gates
+and accepted proposal/terms/revision checks. No actual opening liabilities were
+invented, imported or relaxed. Preparation/confirmation still grant no guest writes.
+
+Writes require current remote access, connection and deadline checks inside the
+journal transaction, including rereading the same current save bytes on each
+check. Preparation preflights reply capacity before inserting. Confirmation checks
+capacity inside the existing transaction after financial work and rechecks access
+afterward; failure rolls back journal, saved proof and every financial/story
+effect. It reuses the accepted proposal without another provider request. Status
+returns bounded hashes/state/save-position instead of raw backups and remains
+readable with AI disabled. Cancellation stays engine-only until a genuine
+stopped-game verifier exists. CLI startup still requires a valid snapshot;
+corrupt/unreadable-startup recovery needs a dedicated launcher, as documented.
+
+Preparation/confirmation share the existing single asynchronous worker so the
+stdin reader can detect EOF during a write. Competing requests receive busy.
+Disconnect after preparation or financial SQL inserts prevents commit. Explicit
+false authority/connection callbacks now reject through transport wrappers. No
+new inference, remote control renewal, automatic guest application or file
+restore was added. The installed runtime and its configuration/saves are unchanged.
+
+Validation:15 new authored tests passed2.530s; final full775 regressions passed
+24.680s. They cover disabled/default capability, strict fields and hashes, stale
+saves, file change after inserts, shutdown before/after financial updates and
+after reply validation, timeout, oversized replies, replay/restart, busy/EOF
+rollback and disabled read-only recovery. An actual sidecar child prepared against
+a server-selected authored file, exited, then a fresh child read the authored
+after-save and settled exactly once; another child with unavailable Vertex/ADC
+returned recovery status without inference. Callback-only tests do not stand in
+for game execution. Money audit passed5050 conservation cases. Python compile/help
+and diff checks passed. New source CI remains to verify after push.
+
+Prior2468fb1 presentation source is now CI-verified: Build38678553596 passed
+Windows (including the actual native FOX/CBS pixel comparison) and Linux runtime;
+Franchise38678553423 passed Windows/Ubuntu. Full Linux game rendering, NBC native
+style parity, real financial opening import, native apply/save/reload and delivery
+acceptance remain open.

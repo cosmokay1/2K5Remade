@@ -15,7 +15,8 @@ class ResponseTooLarge(ValueError):
 
 
 class Bridge:
-    def __init__(self, store, *, provider, access_check, connection_check=lambda: None, guest_snapshot=None):
+    def __init__(self, store, *, provider, access_check, connection_check=lambda: None, guest_snapshot=None,
+                 guest_signing_reader=None):
         if not callable(provider) or not callable(access_check):
             raise ValueError("Provider and remote access check required")
         self.store, self.provider, self.access_check = store, provider, access_check
@@ -24,6 +25,9 @@ class Bridge:
                 or type(guest_snapshot[0]) is not dict or type(guest_snapshot[1]) is not bytes):
             raise ValueError('Pinned bindings and saved payload required')
         self.guest_snapshot = guest_snapshot
+        if guest_signing_reader is not None and (guest_snapshot is None or not callable(guest_signing_reader)):
+            raise ValueError('Journal coordination requires pinned bindings and a server-owned save reader')
+        self.guest_signing_reader = guest_signing_reader
 
     def handle(self, request):
         request_id = request.get("request_id") if type(request) is dict else None
@@ -51,7 +55,74 @@ class Bridge:
                 operations = ["preview", "negotiate", "negotiate_proposal", "manual_sign", "manual_release", "manual_trade", "manual_restructure", "player_context", "contract_context"]
                 if self.guest_snapshot is not None:
                     operations.append('signing_context')
+                if self.guest_signing_reader is not None:
+                    operations.extend(('guest_signing_prepare','guest_signing_confirm','guest_signing_status'))
                 return self._reply(request_id, result={"ai_enabled": True, "operations": operations})
+            if operation in ('guest_signing_prepare','guest_signing_confirm','guest_signing_status'):
+                from franchise import guest_signing
+                import hashlib
+                if self.guest_signing_reader is None:
+                    raise Rejected('Saved-signing coordination is not configured')
+                fields={'protocol','request_id','operation','timeout_ms'}
+                if operation=='guest_signing_prepare':
+                    fields|={'team_id','proposal_request_id','guest_offer','expected_before_sha256','expected_revision'}
+                else:
+                    fields|={'journal_request_id'}
+                    if operation=='guest_signing_confirm': fields|={'expected_after_sha256'}
+                if set(request)!=fields:
+                    raise ValueError('Complete saved-signing request required; paths and save bytes are server-owned')
+                timeout=request['timeout_ms']
+                if type(timeout) is not int or not 1<=timeout<=60000:
+                    raise ValueError('Bounded saved-signing timeout required')
+                for key in ('expected_before_sha256','expected_after_sha256'):
+                    if key in request and (type(request[key]) is not str or len(request[key])!=64
+                            or any(c not in '0123456789abcdef' for c in request[key])):
+                        raise ValueError('Canonical saved payload SHA256 required')
+                if 'journal_request_id' in request and (type(request['journal_request_id']) is not str or not request['journal_request_id'].strip()):
+                    raise ValueError('Stable journal identity required')
+                deadline=time.monotonic()+timeout/1000
+                def local():
+                    if self.connection_check() is False: raise AccessDisabled('Client connection denied')
+                    if time.monotonic()>=deadline: raise TimeoutError('Saved-signing request expired')
+                local()
+                payload=self.guest_signing_reader()
+                if type(payload) is not bytes: raise ValueError('Server save reader must return bytes')
+                digest=hashlib.sha256(payload).hexdigest()
+                local()
+                def guarded():
+                    local()
+                    if self.access_check() is False: raise AccessDisabled('AI control denied settlement')
+                    local()
+                    if self.guest_signing_reader()!=payload:
+                        raise Rejected('Saved payload changed during journal coordination')
+                    local()
+                if operation=='guest_signing_status':
+                    status=guest_signing.inspect(self.store,request['journal_request_id'],payload)
+                    result={key:status[key] for key in ('request_id','state','save_position','write_authorized')}
+                    result.update(current_payload_sha256=digest,
+                        before_payload_sha256=hashlib.sha256(status['before_payload']).hexdigest(),
+                        after_payload_sha256=(hashlib.sha256(status['after_payload']).hexdigest()
+                                              if status['after_payload'] is not None else None))
+                    local();self._require_frame(request_id,result)
+                elif operation=='guest_signing_prepare':
+                    if digest!=request['expected_before_sha256']:
+                        raise Rejected('Current save differs from the captured before-save')
+                    result=dict(request_id=request_id,state='prepared',before_payload_sha256=digest,write_authorized=False)
+                    self._require_frame(request_id,result) # Before reserving the league journal.
+                    result=guest_signing.prepare(self.store,request['team_id'],request['proposal_request_id'],request_id,
+                        bindings=self.guest_snapshot[0],before_payload=payload,guest_offer=request['guest_offer'],
+                        expected_before_sha256=digest,expected_revision=request['expected_revision'],access_check=guarded)
+                else:
+                    if digest!=request['expected_after_sha256']:
+                        raise Rejected('Current save differs from the submitted after-save')
+                    def result_for(receipt):
+                        return dict(request_id=receipt.request_id,state='settled',player_id=receipt.offer.player_id,
+                            financial_revision=receipt.revision,charges=[json_amount(v) for v in receipt.charges],
+                            after_payload_sha256=digest,write_authorized=False)
+                    receipt=guest_signing.settle(self.store,request['journal_request_id'],payload,access_check=guarded,
+                        receipt_check=lambda receipt:self._require_frame(request_id,result_for(receipt)))
+                    result=result_for(receipt)
+                return self._reply(request_id,result=result)
             if operation == 'signing_context':
                 fields = {'protocol', 'request_id', 'operation', 'observation', 'expected_revision', 'timeout_ms'}
                 optional = {'performance_format', 'guest_offer'}

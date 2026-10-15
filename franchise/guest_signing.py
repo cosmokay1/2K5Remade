@@ -1,6 +1,6 @@
 """Durable saved-signing coordination for cooperative franchise clients.
 
-No guest memory/file writes and no bridge operation. Prepared work freezes this
+No guest memory/file writes. Prepared work freezes this
 store's other writes. A native coordinator still must apply/save/reload safely.
 Old writers that do not implement the pending-work guard are unsupported.
 """
@@ -161,8 +161,10 @@ def prepare(store,team_id,proposal_request_id,request_id,*,bindings,before_paylo
         return {'request_id':request_id,'state':'prepared','before_payload_sha256':expected_before_sha256,'write_authorized':False}
 
 
-def settle(store,request_id,after_payload,*,access_check):
+def settle(store,request_id,after_payload,*,access_check,receipt_check=None):
     """Confirm saved effects and atomically commit ledger plus journal outcome."""
+    if receipt_check is not None and not callable(receipt_check):
+        raise ValueError('Callable receipt check required')
     with store._connection(write=True,guest_recovery=True) as db:
         _access(access_check)
         intent,state,before,after,proof=_read(store,db,request_id)
@@ -175,8 +177,12 @@ def settle(store,request_id,after_payload,*,access_check):
                 guest_offer=intent['guest_offer'],team_id=intent['team_id'])
             db.execute("UPDATE guest_signings SET state='settled',after_payload=?,confirmation=? WHERE request_id=?",
                        (after_payload,_json(proof),request_id))
-        return store._sign(intent['team_id'],request_id,None,intent['expected_revision'],
+        receipt=store._sign(intent['team_id'],request_id,None,intent['expected_revision'],
             access_check=access_check,proposal_request_id=intent['proposal_request_id'],_db=db)
+        if receipt_check is not None:
+            receipt_check(receipt) # Unsendable replies roll back journal and finances together.
+            _access(access_check)
+        return receipt
 
 
 def cancel(store,request_id,current_payload,*,game_stopped_check):

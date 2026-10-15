@@ -36,6 +36,9 @@ native offer submission, player response, legal financial commit and save recove
       contract terms, unchanged bank contracts/calendar and all32 payrolls.
       A durable engine journal now preserves before/after saves, freezes competing
       store writes and commits confirmed effects with the ledger atomically.
+      Explicit opt-in service operations now prepare/confirm against server-owned
+      current save reads and expose bounded recovery status without AI access.
+      Native application and save/reload remain unconnected.
       Game-facing acceptance remains held until native application, save/reload
       and recovery are connected and verified. Actual game execution remains
       required. Do not enable this unfinished mode in the installed user runtime.
