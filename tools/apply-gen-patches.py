@@ -337,6 +337,11 @@ PATCHES = [
     ("FRANCHISE_SIGN_PENDING_RETURN", "sub_003478A0", "loc_003478B6: ;", "after", """\
     { extern int nfl2k5_franchise_signing_was_held(uint32_t); if(nfl2k5_franchise_signing_was_held(MEM32(0xCB8C34))) goto loc_003478F0; }
 """),
+    # CPU settlement removes the free agent before calling shared signing.
+    # Hold before that removal, and leave its offer record unchanged.
+    ("FRANCHISE_SIGN_CPU_HOLD", "sub_00324060", "loc_00324088: ;", "after", """\
+    { extern int nfl2k5_franchise_hold_signing_at(uint32_t, uint32_t); extern int nfl2k5_franchise_signing_was_held(uint32_t); if(nfl2k5_franchise_hold_signing_at(2u, esi)) { nfl2k5_franchise_signing_was_held(0); goto loc_00324169; } }
+"""),
     # Shared signing checkpoints: observe original inputs and judgment without
     # replacing roster/cap/history effects. Pass addresses, not unchecked MEM32.
     ("FRANCHISE_SIGN_ENTER", "sub_00323D80", "loc_00323D80: ;", "after", """\

@@ -6871,3 +6871,38 @@ and sets the UI dirty flag. The probe uses authored memory, runs on macOS, and
 is not actual game execution. Its generated code stays private/untracked.
 Windows CI and actual opt-in game execution remain to verify. The running Deck
 was not interrupted or replaced; the initial startup failure remains unexplained.
+
+
+### CPU settlement holds before free-agent removal
+
+Inspection of the actual retail CPU caller00324060 shows that00324088 removes
+the selected free agent (via002425C0) before invoking shared signing00323D80.
+An EAX0 return then changes the offer status and clears its pending record.
+Holding only in shared signing therefore was too late for this caller. The new
+compiled patch and interpreter hook use the existing PRECOMMIT policy at00324088
+and skip to the next offer at00324169 when held, before either change. They clear
+the synchronous interactive hold marker since this path does not return to the
+interactive caller. No interactive intent, model request or acceptance is created.
+The original path remains intact when controlled policy does not hold.
+
+The private pinned SOFTDRINK v0.6 executable disassembles00324088 as the expected
+player lookup followed by the original removal call;00324169 is its original
+loop continuation and stack cleanup. This checks the hook addresses against the
+actual pack, without distributing executable bytes or changing installed files.
+The same check confirms both interactive return/cleanup addresses from1fdf388.
+
+Validation: six focused patch tests pass, including the actual host shim plus
+production CPU patch over1200 authored pending records and ordinary no-hold
+fallback. All68 signing-focused Python tests pass locally. A private probe runs
+the actual generated00324060 body with authored bank/offer data and aborting
+stubs for list removal/shared signing:12 complete100-record passes preserve the
+pending offer, EBX/ESI/EDI/EBP and ESP, never reach those mutation callees, and
+leave no interactive hold token. This is isolated generated-code execution on
+macOS, not actual game/CPU/save acceptance; generated code stays untracked.
+
+The earlier1fdf388 Ubuntu engine job passed; Windows Franchise38760686708 failed
+one new test because its child environment omitted PATH, causing the MinGW-built
+fixture to fail loader startup with0xC0000135. The test now preserves the inherited
+environment and only overrides negotiation mode; local regression checks pass.
+Windows/Ubuntu rerun remains required. The Deck currently does not resolve over
+SSH, so no runtime installation, capture or save change was attempted.

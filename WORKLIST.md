@@ -61,6 +61,10 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       offer screen open, using a single-use thread-local context match in both
       compiled and interpreter hooks. Local actual-shim and generated-caller
       checks pass; game execution of this opt-in fix remains unverified.
+      CPU settlement now also holds before removing a free agent or marking its
+      offer refused; compiled and interpreter hooks preserve the pending record.
+      Authored-loop and actual generated-caller probes pass locally; actual
+      game CPU settlement/save verification remains open.
       Judgment and precommit now use distinct addon events, so bypass/precommit
       callers hold without creating interactive negotiation intents. Existing
       generated v1 hooks have an explicit upgrade check; application permits
