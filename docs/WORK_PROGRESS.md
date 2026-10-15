@@ -7192,3 +7192,45 @@ Private receipt native-commit-probe/target-receipt.json and generated probe/asse
 stay untracked. This is isolated generated execution, not live gameplay, modern
 opening-book verification, a permit or game save/reload. The installed game,
 saves and controls remain unchanged. Positive live application remains open.
+
+### October 15 — Real SOFTDRINK personality context passes Windows service boundary
+
+Prepared a separate read-only MyNFL1 context DB through the atomic creation
+command, this time using exactly the personality seed from the pinned bindings
+rather than an offline test seed. It contains32 teams,2070 stable IDs and the
+explicit unknown cash inventory. This is not a reroll of an active franchise:
+no earlier preflight database was connected to this game. Modern opening books
+remain incomplete; this known-roster projection cannot authorize signing.
+
+The real saved Will Hernandez checkpoint (slot2371, Giants) passes the service
+boundary with expected revision1. Local process preflight completed in5.396s.
+The same owned Python source and DB passed actual Windows Python under Proton
+on Deck in11.609s total process/check time; the context request itself met its
+10000ms service deadline. Required child marker context-passed, not merely Proton
+launcher success, was verified. Hello reports ai_disabled, context returns the
+persisted personality matching the bindings' seed, offer preview rejects missing
+classification, and durable model-attempt count remains0. Deliberately unavailable
+ADC prevents provider initialization; no control was renewed or enabled. DB,
+save and bindings SHA256s remain exact across the Windows check:
+- DB b08a836f26ce65d4d5429d99134cb6610d1f53509b950b14bf5798684a279662
+- Save4c8c31b4f400e25175223163a948e126cb83d10aa4bb98979a564ef287761ec3
+- Bindings9955880d3fb6a02eaebc4c1662cfac075afb59443a1191e709bf2dd51c9ee442
+
+Private Deck stage: mynfl-context-0639549 under the existing build root. Local
+receipts/checks are softdrink-v0.6/mynfl1/context-stage-0639549. The staged launch
+configuration points the existing game/addon at this read-only service with
+negotiation/journal disabled, no credential source and a bounded unused budget.
+It does not replace any executable. Staged wrapper SHA
+bd97cbeecfdedb09e332366c0a60c88d27fef492043434ea91091017eb27b07c;
+current wrapper remains94f7dccc0a2e74fb693782fe925f6435d22928fcd02040e6d854339769c1c718.
+Installer checks clean game/service exit, input/binary/config hashes and all save
+hashes before atomic wrapper replacement, retaining an exact rollback copy.
+The user was asked to save/exit normally; installation and automatic game-context
+verification are pending. Game PID139951 was running at observation and was not
+interrupted. Original game signing remains available while negotiation mode is0;
+the planned verification must leave offers unsubmitted. No claim of integrated
+AI signing, cap correction, game save/reload or native creation is made.
+
+Full CI is now verified successful for de62233 (Franchise38768823911,
+Build38768823319),2cc8b55 (Franchise38769190714,Build38769190659) and0639549
+(Franchise38769967998,Build38769967912), including Windows and Ubuntu.
