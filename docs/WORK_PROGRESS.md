@@ -7234,3 +7234,42 @@ AI signing, cap correction, game save/reload or native creation is made.
 Full CI is now verified successful for de62233 (Franchise38768823911,
 Build38768823319),2cc8b55 (Franchise38769190714,Build38769190659) and0639549
 (Franchise38769967998,Build38769967912), including Windows and Ubuntu.
+
+### October 15 — Reduce real signing-context replay cost without caching
+
+The saved signing checkpoint now reconstructs its team once instead of four
+times, deriving inventory, financial posting and actor/history from one SQLite
+read snapshot. Extracted the existing player-context derivation for reuse; its
+public API and context formats retain their behavior. No persistent cache or
+replay-validation shortcut was introduced. After releasing the read snapshot,
+SQLite data_version on the same connection plus the main database file identity/
+metadata detect concurrent commits or replacement before returning the context.
+This retains freshness rejection rather than returning a coherent but obsolete
+snapshot after an intervening write. It still grants no later application lock.
+
+Four new tests verify exactly one validated replay with an identical context and
+unchanged database bytes; concurrent WAL budget commits; existing actor edits
+without additional events; and replacement by another valid database during the
+read. The replacement test runs where the platform permits replacing an open
+SQLite file; platforms that prevent it report that case skipped. Existing actor
+corruption still fails replay on subsequent inspection. All828 local Python
+regressions pass in29.393s, including8 checkpoint tests. Native source was unchanged.
+
+The same real MyNFL1/2070-player read-only service preflight improved from5.396s
+to2.324s on Mac. Actual Windows Python under the existing isolated Proton fixture
+prefix improved from11.609s to5.853s, with the final file-replacement guard passing
+again in5.822s. These measure full process/check time, not an in-game UI latency
+benchmark. Both final platform checks return the same stable player/personality,
+revision1 and deliberate accounting rejection for missing classification. Source
+DB/save/bindings retain their recorded hashes, model attempts remain0, and the
+required Windows child marker is context-passed.
+
+Private evidence is softdrink-v0.6/mynfl1/context-stage-0639549 locally and
+mynfl-context-0639549 on Deck, including windows-fileguard-driver-receipt.json and
+context-receipt-windows-before-fileguard.json. The staged installer now also binds
+exact owned service Python/config hashes and refuses if either actual MyNFL1 save
+mirror differs from the pinned snapshot. No executable, launcher, active game,
+save, control or inference setting was changed. Its pending normal-exit request
+is unchanged; do not run old preparation scripts over the updated source manifest.
+Actual automatic menu context, native application and game save/reload remain open.
+Windows/Ubuntu CI must run for this new source.

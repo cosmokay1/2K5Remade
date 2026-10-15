@@ -1,8 +1,14 @@
 import copy
+from contextlib import closing
 from dataclasses import replace
+import json
+import os
 from pathlib import Path
+import shutil
+import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from franchise.books import OpeningBooks
 from franchise.cap import Ledger
@@ -88,6 +94,60 @@ class SigningContextTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'inventory'):
             reconcile_signing_context(self.bindings, self.payload, self.observation,
                                       other, expected_revision=0)
+
+    def test_one_validated_replay_supplies_inventory_finances_and_player_context(self):
+        expected=self.store.player_context('49ers',self.bindings['players'][1]['player_id'])
+        before=Path(self.store.path).read_bytes()
+        with patch.object(self.store,'_load',wraps=self.store._load) as load:
+            result=self.inspect()
+        self.assertEqual(load.call_count,1)
+        self.assertEqual(result['player_context'],expected)
+        self.assertEqual(Path(self.store.path).read_bytes(),before)
+
+    def test_concurrent_budget_commit_is_not_hidden_by_the_read_snapshot(self):
+        with closing(sqlite3.connect(self.store.path)) as db:
+            self.assertEqual(db.execute('PRAGMA journal_mode=WAL').fetchone()[0],'wal')
+        writer=FranchiseStore(self.store.path)
+        original=self.store._player_context_from_ledger
+        def commit_after_read(*args,**kwargs):
+            context=original(*args,**kwargs)
+            writer.update_budget('49ers',cap=80501000,roster_reserve=0,expected_revision=0)
+            return context
+        with patch.object(self.store,'_player_context_from_ledger',side_effect=commit_after_read):
+            with self.assertRaisesRegex(ValueError,'changed during inspection'):self.inspect()
+        self.assertEqual(writer.load_team('49ers').revision,1)
+
+    def test_concurrent_existing_actor_edit_is_detected_without_new_events(self):
+        with closing(sqlite3.connect(self.store.path)) as db:
+            db.execute('PRAGMA journal_mode=WAL')
+            count=db.execute('SELECT count(*) FROM events').fetchone()[0]
+        original=self.store._player_context_from_ledger
+        def edit_after_read(*args,**kwargs):
+            context=original(*args,**kwargs)
+            with closing(sqlite3.connect(self.store.path)) as db:
+                event_id,raw=db.execute("SELECT id,payload FROM events WHERE kind='actor' LIMIT 1").fetchone()
+                event=json.loads(raw);event['actor']['relationships']['trust']=0.6
+                db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(event),event_id));db.commit()
+                self.assertEqual(db.execute('SELECT count(*) FROM events').fetchone()[0],count)
+            return context
+        with patch.object(self.store,'_player_context_from_ledger',side_effect=edit_after_read):
+            with self.assertRaisesRegex(ValueError,'changed during inspection'):self.inspect()
+        with self.assertRaisesRegex(ValueError,'franchise origin'):self.inspect()
+
+    def test_database_file_replacement_during_read_is_rejected(self):
+        replacement=Path(self.temporary.name)/'replacement.sqlite'
+        shutil.copyfile(self.store.path,replacement)
+        writer=FranchiseStore(replacement)
+        writer.update_budget('49ers',cap=80501000,roster_reserve=0,expected_revision=0)
+        original=self.store._player_context_from_ledger
+        def replace_after_read(*args,**kwargs):
+            context=original(*args,**kwargs)
+            try:os.replace(replacement,self.store.path)
+            except PermissionError:self.skipTest('Platform prevents replacing an open SQLite file')
+            return context
+        with patch.object(self.store,'_player_context_from_ledger',side_effect=replace_after_read):
+            with self.assertRaisesRegex(ValueError,'changed during inspection'):self.inspect()
+        self.assertEqual(self.store.load_team('49ers').revision,1)
 
 
 if __name__ == '__main__':

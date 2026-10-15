@@ -46,24 +46,35 @@ def reconcile_signing_context(bindings, payload, observation, store, *, expected
             or team['first_year_accumulator_raw'] * 1000 != saved['original_first_year_accumulator_dollars']):
         raise ValueError('Live cap inputs differ from pinned snapshot')
     contracts = legacy_contracts(bindings, payload)[name]
-    inventory = store.contract_generations(name)
-    expected = [record.to_dict() for record in sorted(contracts, key=lambda record: record.player_id)]
-    if inventory.get('preserved_legacy_contracts', []) != expected or inventory['generations']:
-        raise ValueError('Ledger contract inventory differs from pinned legacy snapshot')
-    financial = store.load_team(name).financial_snapshot()
-    schedules = [record.charges() for record in contracts]
-    expected_charges = [sum(row[index] if index < len(row) else 0 for row in schedules)
-                        for index in range(max(map(len, schedules), default=0))]
-    if (financial['revision'] != expected_revision or inventory['financial_revision'] != expected_revision
-            or financial['cap'] != cap['league_cap_dollars'] * scale
-            or financial['signed_players'] != sorted(record.player_id for record in contracts)
-            or financial['charges'] != expected_charges):
-        raise ValueError('Ledger revision, ownership or current cap differs from checkpoint')
-    context = store.player_context(name, candidate['candidate_player_id'])
-    if context['financial_revision'] != expected_revision or not context['initialized']:
-        raise ValueError('Persisted player context unavailable or changed during inspection')
-    if store.load_team(name).financial_snapshot() != financial:
-        raise ValueError('Financial state changed during inspection')
+    def file_version():
+        metadata = Path(store.path).stat()
+        return metadata.st_dev,metadata.st_ino,metadata.st_size,metadata.st_mtime_ns,metadata.st_ctime_ns
+    original_file = file_version()
+    # Reconstruct once inside one SQLite read snapshot. Keep freshness checking
+    # after releasing that snapshot: data_version changes for other connections'
+    # commits, including edits to existing rows that do not advance an event ID.
+    with store._connection() as db:
+        version = db.execute('PRAGMA data_version').fetchone()[0]
+        ledger = store._load(db,name)
+        inventory = store._contract_generations_from_ledger(name,ledger)
+        expected = [record.to_dict() for record in sorted(contracts, key=lambda record: record.player_id)]
+        if inventory.get('preserved_legacy_contracts', []) != expected or inventory['generations']:
+            raise ValueError('Ledger contract inventory differs from pinned legacy snapshot')
+        financial = ledger.financial_snapshot()
+        schedules = [record.charges() for record in contracts]
+        expected_charges = [sum(row[index] if index < len(row) else 0 for row in schedules)
+                            for index in range(max(map(len, schedules), default=0))]
+        if (financial['revision'] != expected_revision or inventory['financial_revision'] != expected_revision
+                or financial['cap'] != cap['league_cap_dollars'] * scale
+                or financial['signed_players'] != sorted(record.player_id for record in contracts)
+                or financial['charges'] != expected_charges):
+            raise ValueError('Ledger revision, ownership or current cap differs from checkpoint')
+        context = store._player_context_from_ledger(db,name,candidate['candidate_player_id'],ledger)
+        if context['financial_revision'] != expected_revision or not context['initialized']:
+            raise ValueError('Persisted player context unavailable or changed during inspection')
+        db.commit()
+        if db.execute('PRAGMA data_version').fetchone()[0] != version or file_version() != original_file:
+            raise ValueError('Financial state changed during inspection')
     return {'player_id': candidate['candidate_player_id'], 'team_id': name,
             'financial_revision': expected_revision, 'saved_payload_sha256': cap['payload_sha256'],
             'source_slot': candidate['source_slot'], 'player_context': context,

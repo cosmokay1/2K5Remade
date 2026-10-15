@@ -874,3 +874,17 @@ its native receipt formats do not represent partial totals; it refuses this mode
 before writing. This limitation does not block new contract journal settlement.
 Actual source selection/import, native guest application and game save/reload
 verification remain necessary before enabling live signing.
+
+### Signing-context read cost
+
+The saved signing checkpoint now reconstructs its team once, using one SQLite
+read snapshot for the original contract inventory, financial posting and persisted
+player context. The public player-context API shares the same derivation. There
+is no persistent cache or skipped replay validation.
+
+After releasing the snapshot, the checkpoint compares SQLite `data_version` on
+the same connection and the database file's identity/metadata. A concurrent commit
+or file replacement rejects the response. This includes edits to existing actor
+rows without a new event ID; comparing only the last event number would miss
+those. It remains a read-only checkpoint, not a lock or permit for later native
+application. Final transaction/revision/control checks still apply separately.

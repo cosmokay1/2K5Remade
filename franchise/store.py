@@ -943,35 +943,38 @@ class FranchiseStore:
             raise ValueError('Unsupported player context format')
         with self._connection() as db:
             ledger = self._load(db,team_id)
-            context = ledger.negotiation_context(player_id)  # Require declared identity; floors may remain unknown.
-            actor = ledger._actors.get(player_id)
-            history=self._negotiation_history(db,team_id,player_id)
-            accounting = None
-            calendar_accounting = None
-            if player_id in ledger._contracts:
-                agreement=ledger.generation_accounting(ledger.contract_identity(player_id).generation_id)
-                if context_format in ('calendar_v1','calendar_v2','calendar_v3','calendar_v4'):
-                    calendar_accounting=self._calendar_contract_context_from_ledger(team_id,ledger,agreement,context_format=context_format)
-                else:
-                    accounting=self._generation_accounting_view(ledger,agreement)
-            result = {'player_id':player_id,'financial_revision':ledger.revision,'initialized':actor is not None,
-                    **({'classification_pending':True,'observed_player_source':context['observed_player_source']}
-                       if context.get('classification_pending') else {}),
-                    **({'legacy_contract':ledger._legacy_contracts[player_id].to_dict(),
-                        'legacy_liability_scope':'original cap schedule; cash/protections/lifecycle unverified'}
-                       if player_id in ledger._legacy_contracts else {}),
-                    'contract_accounting':accounting,
-                    'personality':actor['personality'] if actor else None,
-                    'relationships':actor['relationships'] if actor else None,
-                    'agreed_promises':[{'agreement_request_id':request,'goals':agreement['goals']}
-                        for request,agreement in ledger._promise_agreements.items() if agreement['player_id'] == player_id],
-                    'promise_history':ledger.promise_history(player_id),
-                    'negotiation_history':history[-10:],
-                    'negotiation_history_total':len(history),
-                    'negotiation_history_has_more':len(history)>10}
+            return self._player_context_from_ledger(db,team_id,player_id,ledger,context_format=context_format)
+
+    def _player_context_from_ledger(self,db,team_id,player_id,ledger,*,context_format=None):
+        context = ledger.negotiation_context(player_id)  # Require declared identity; floors may remain unknown.
+        actor = ledger._actors.get(player_id)
+        history=self._negotiation_history(db,team_id,player_id)
+        accounting = None
+        calendar_accounting = None
+        if player_id in ledger._contracts:
+            agreement=ledger.generation_accounting(ledger.contract_identity(player_id).generation_id)
             if context_format in ('calendar_v1','calendar_v2','calendar_v3','calendar_v4'):
-                result.update(context_format=context_format,calendar_contract_context=calendar_accounting)
-            return result
+                calendar_accounting=self._calendar_contract_context_from_ledger(team_id,ledger,agreement,context_format=context_format)
+            else:
+                accounting=self._generation_accounting_view(ledger,agreement)
+        result = {'player_id':player_id,'financial_revision':ledger.revision,'initialized':actor is not None,
+                **({'classification_pending':True,'observed_player_source':context['observed_player_source']}
+                   if context.get('classification_pending') else {}),
+                **({'legacy_contract':ledger._legacy_contracts[player_id].to_dict(),
+                    'legacy_liability_scope':'original cap schedule; cash/protections/lifecycle unverified'}
+                   if player_id in ledger._legacy_contracts else {}),
+                'contract_accounting':accounting,
+                'personality':actor['personality'] if actor else None,
+                'relationships':actor['relationships'] if actor else None,
+                'agreed_promises':[{'agreement_request_id':request,'goals':agreement['goals']}
+                    for request,agreement in ledger._promise_agreements.items() if agreement['player_id'] == player_id],
+                'promise_history':ledger.promise_history(player_id),
+                'negotiation_history':history[-10:],
+                'negotiation_history_total':len(history),
+                'negotiation_history_has_more':len(history)>10}
+        if context_format in ('calendar_v1','calendar_v2','calendar_v3','calendar_v4'):
+            result.update(context_format=context_format,calendar_contract_context=calendar_accounting)
+        return result
 
     def contract_generations(self, team_id):
         """Legacy contract identities and unresolved opening/prior-cohort records.
