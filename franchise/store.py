@@ -607,6 +607,16 @@ class FranchiseStore:
         for event_id, kind, serialized in db.execute("SELECT id, kind, payload FROM events WHERE team_id=? AND (? IS NULL OR id<=?) ORDER BY id", (team_id,through_event_id,through_event_id)):
             payload = json.loads(serialized)
             if kind == "sign":
+                if 'proposal_request_id' in payload:
+                    expected=self._settlement_story(db,team_id,payload['proposal_request_id'],payload['request_id'],before_event_id=event_id)
+                    if (self._checkpoint_hash(expected)!=self._checkpoint_hash(payload['story'])
+                            or payload['expected_revision']!=expected['evidence']['financial_revision']
+                            or self._checkpoint_hash(payload['offer'])!=self._checkpoint_hash(expected['offer'])
+                            or self._checkpoint_hash(ledger.preview_offer(Offer.from_dict(payload['offer']),payload['expected_revision']))
+                               !=self._checkpoint_hash(expected['proposal_preview'])):
+                        raise ValueError('Settled signing differs from its accepted proposal')
+                elif payload['story'] is not None and ('proposal_request_id' in payload['story'] or payload['story'].get('decision_mode')=='proposal_settlement'):
+                    raise ValueError('Settlement story has no source proposal')
                 self._validate_story_evidence(payload["story"], efficiency_cache=efficiency_cache)
                 data = payload["offer"]
                 receipt = ledger.sign(payload["request_id"], Offer.from_dict(data), payload["expected_revision"])
@@ -1784,27 +1794,82 @@ class FranchiseStore:
 
     def sign(self, team_id: str, request_id: str, offer: Offer, expected_revision: int,
              *, access_check=None, story: dict | None = None):
+        return self._sign(team_id,request_id,offer,expected_revision,access_check=access_check,story=story)
+
+    def commit_accepted_proposal(self, team_id, proposal_request_id, request_id, expected_revision, *, access_check):
+        """Engine-only settlement; not guest application or save confirmation.
+
+        A future guest coordinator must journal/verify game effects separately.
+        Neither this method nor a recorded acceptance grants guest write access.
+        """
+        if (type(proposal_request_id) is not str or not proposal_request_id.strip()
+                or proposal_request_id==request_id or not callable(access_check)):
+            raise ValueError('Distinct proposal/settlement IDs and current access check required')
+        return self._sign(team_id,request_id,None,expected_revision,access_check=access_check,
+                          proposal_request_id=proposal_request_id)
+
+    def _settlement_story(self, db, team_id, proposal_request_id, request_id, *, before_event_id=None):
+        row=db.execute("SELECT id,payload FROM events WHERE team_id=? AND request_key=? AND kind='dialogue' "
+                       "AND (? IS NULL OR id<?)",
+                       (team_id,'dialogue:'+proposal_request_id,before_event_id,before_event_id)).fetchone()
+        if row is None:
+            raise Rejected('Recorded accepted proposal required')
+        proposal=json.loads(row[1])['event']
+        self._validate_dialogue(proposal)
+        if proposal['outcome']!='accepted_proposal':
+            raise Rejected('Only an accepted proposal can settle')
+        if db.execute("SELECT 1 FROM events WHERE team_id=? AND kind='sign' "
+                      "AND json_extract(payload,'$.proposal_request_id')=? AND (? IS NULL OR id<?)",
+                      (team_id,proposal_request_id,before_event_id,before_event_id)).fetchone():
+            raise Rejected('Proposal already settled')
+        player=proposal['offer']['player_id']
+        history=[]
+        for kind,serialized in db.execute("SELECT kind,payload FROM events WHERE team_id=? "
+                "AND kind IN ('sign','return_sign','dialogue') AND (? IS NULL OR id<?) ORDER BY id",
+                (team_id,before_event_id,before_event_id)):
+            payload=json.loads(serialized)
+            previous=payload['event'] if kind=='dialogue' else payload.get('story')
+            if previous is not None and previous['offer']['player_id']==player:
+                history.append(previous['request_id'])
+        if not history or history[-1]!=proposal_request_id or history[:-1]!=proposal.get('history_request_ids'):
+            raise Rejected('Accepted proposal is no longer the current negotiation')
+        return {**proposal,'request_id':request_id,'outcome':'signed','decision_mode':'proposal_settlement',
+                'proposal_request_id':proposal_request_id,'history_request_ids':history}
+
+    def _sign(self, team_id, request_id, offer, expected_revision, *, access_check=None, story=None,
+              proposal_request_id=None):
         if type(request_id) is not str or not request_id.strip():
             raise Rejected("A request ID is required")
         if story is not None and type(story) is not dict:
             raise ValueError("Story must be a JSON object")
-        self._validate_story_evidence(story)
-        payload = {"request_id": request_id, "offer": offer.to_dict(),
-                   "expected_revision": expected_revision, "story": story}
-        serialized = json.dumps(payload, allow_nan=False)
+        if story is not None and ('proposal_request_id' in story or story.get('decision_mode')=='proposal_settlement'):
+            raise Rejected('Proposal settlement requires its dedicated path')
         with self._connection(write=True) as db:
             ledger = self._load(db, team_id)
+            prior = db.execute("SELECT id,kind,payload FROM events WHERE team_id=? AND request_key=?", (team_id, "sign:" + request_id)).fetchone()
+            if proposal_request_id is not None:
+                story=self._settlement_story(db,team_id,proposal_request_id,request_id,
+                                            before_event_id=prior[0] if prior else None)
+                offer=Offer.from_dict(story['offer'])
+                if type(expected_revision) is not int or expected_revision!=story['evidence']['financial_revision']:
+                    raise Rejected('Settlement revision differs from accepted proposal')
+            self._validate_story_evidence(story)
+            payload = {"request_id": request_id, "offer": offer.to_dict(),
+                       "expected_revision": expected_revision, "story": story}
+            if proposal_request_id is not None:
+                payload['proposal_request_id']=proposal_request_id
+            serialized=json.dumps(payload,allow_nan=False)
             if db.execute("SELECT 1 FROM events WHERE team_id=? AND request_key=?", (team_id, "dialogue:" + request_id)).fetchone():
                 raise Rejected("Request already belongs to a recorded negotiation")
-            prior = db.execute("SELECT kind,payload FROM events WHERE team_id=? AND request_key=?", (team_id, "sign:" + request_id)).fetchone()
             if prior:
-                if prior[0] != 'sign':
+                if prior[1] != 'sign':
                     raise Rejected("Request belongs to an explicit return signing")
-                previous = json.loads(prior[1])
+                previous = json.loads(prior[2])
                 if "story" not in previous:
                     raise Rejected("Request belongs to an explicit return signing")
                 normalized = json.loads(serialized)
-                if previous["offer"] != normalized["offer"] or previous.get("story") != normalized["story"]:
+                if (previous["offer"] != normalized["offer"] or previous.get("story") != normalized["story"]
+                        or previous.get('proposal_request_id')!=proposal_request_id):
                     raise Rejected("Request already committed with different terms or story")
                 return ledger.sign(request_id, offer, expected_revision, access_check=access_check)
             if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (offer.player_id,)).fetchone():
@@ -1812,6 +1877,10 @@ class FranchiseStore:
             self._check_draft_right(db, team_id, offer.player_id)
             if story is not None:
                 self._check_history(db, team_id, offer.player_id, story)
+            if proposal_request_id is not None:
+                preview=ledger.preview_offer(offer,expected_revision)
+                if self._checkpoint_hash(preview)!=self._checkpoint_hash(story['proposal_preview']):
+                    raise Rejected('Accepted proposal preview changed before settlement')
             receipt = ledger.sign(request_id, offer, expected_revision, access_check=access_check)
             self._remember_promises(ledger,payload)
             if ledger._cash is not None:
@@ -1825,6 +1894,8 @@ class FranchiseStore:
             serialized = json.dumps(payload, allow_nan=False)
             db.execute("INSERT INTO ownership VALUES (?, ?)", (offer.player_id, team_id))
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'sign', ?)", (team_id, "sign:" + request_id, serialized))
+            if proposal_request_id is not None:
+                access_check()  # Shutdown here rolls back ownership, cash, story and cap together.
             return receipt
 
     @staticmethod

@@ -374,3 +374,28 @@ its term and total; acceptance explicitly says the signing remains held. Stale
 observations/screens discard the reply. This records a proposal, never an actual
 signing: accepted-deal settlement, current control/revision checks, guest contract
 application, ledger confirmation and crash/save recovery remain required.
+
+
+### Engine settlement foundation (not a bridge operation)
+
+`FranchiseStore.commit_accepted_proposal(team_id, proposal_request_id,
+request_id, expected_revision, access_check=...)` consumes a recorded acceptance
+without inference. It requires a distinct settlement ID and a callable current
+access check. In one SQLite write transaction it verifies the latest negotiation
+for that player, unchanged accepted preview/revision, current ownership and
+salary/draft constraints, then records the exact accepted offer, cash obligation,
+promises and signed story. The source proposal remains unchanged. A final access
+check after inserts can roll back all effects before SQL commit.
+
+The signing event carries `proposal_request_id`; replay reconstructs its story
+from the earlier accepted dialogue and verifies its exact preview, terms,
+evidence and history. The same settlement ID retries its original receipt;
+another ID cannot consume the proposal again. Historical retries preserve later
+transactions. Superseding dialogue, changed finances, foreign ownership, or a
+nonaccepted proposal reject. Ordinary signing cannot relabel a story as settlement.
+
+This method updates the independent engine only. It is deliberately absent from
+the bridge operations and never grants guest memory writes or confirms a save.
+A durable guest application/reconciliation coordinator is still required before
+native accepted offers can use it. Do not substitute it for that coordinator or
+call it at the native judgment boundary before game effects are verified.

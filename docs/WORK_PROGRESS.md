@@ -5840,3 +5840,38 @@ unfinished. The installed runtime does not enable this experimental mode.
 
 Prior held-source65f913a is confirmed green in fork CI: Build38671991468 and
 Franchise AI38671991412. This handoff change's CI remains to verify after push.
+
+## Core signing: atomic settlement of a recorded acceptance
+
+Added engine-only FranchiseStore.commit_accepted_proposal, reusing the existing
+signing transaction rather than creating another financial store. It derives
+terms, promises, personality/performance evidence and attributed reason from the
+persisted accepted proposal; callers cannot supply replacement terms or story.
+Requires distinct proposal/settlement IDs and a callable current access check.
+Revalidates latest player dialogue, financial revision/preview, global ownership
+and supported salary/draft rules. Ownership, annual cap, cash, promises and the
+signed story commit together, with a final access check after inserts. The
+acceptance dialogue remains an immutable separate event, linked from settlement.
+
+Replay reconstructs the expected settled story from its earlier proposal and
+checks exact terms/preview/history. Same-ID retries return the original receipt
+without inference or another financial change, including after later unrelated
+transactions. Different IDs cannot consume an acceptance twice; ordinary signing
+cannot forge the settlement label. Concurrent same-ID and competing-ID requests
+are covered. No bridge operation or native commit permission was added: guest
+application, guest confirmation, durable cross-save journal/recovery, complete
+required books/rules and actual game/save testing still gate delivery.
+
+Validation: all12 targeted settlement tests passed0.744s. They cover persisted
+cash/promises/story, original and4x SOFTDRINK encodings, historical retry,
+superseded/rejected/missing acceptance, revision/foreign ownership, rollback on
+shutdown after SQL inserts, tampered replay, and competing transactions. An actual
+child process exits73 after inserts/before commit; restart observes no phantom
+contract or cash and then settles once with no repeated inference. Final full738-test
+suite passed22.683s. The initial sandboxed suite had
+four loopback bind PermissionErrors; the authorized socket-enabled rerun passed.
+Money audit passed, including5050 bonus conservation cases. No game asset,
+installed runtime/save, cloud control or paid provider was changed or invoked.
+
+Prior native handoff05fc86d is verified green in fork CI: Build38673028105 and
+Franchise AI38673028333. Settlement-source CI remains to verify after push.
