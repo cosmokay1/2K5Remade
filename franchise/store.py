@@ -589,15 +589,18 @@ class FranchiseStore:
         return self._load_teams(db,(team_id,))[team_id]
 
     def _load_teams(self,db,team_ids):
-        ledgers={team:self._load_one(db,team) for team in team_ids}
+        # One read transaction may replay the same generated player for many
+        # clubs. Expected origins are immutable comparisons, never live actors.
+        actor_origins={}
+        ledgers={team:self._load_one(db,team,actor_origins=actor_origins) for team in team_ids}
         # One fresh read transaction validates the league, without persistent cache.
         if db.execute("SELECT 1 FROM events WHERE kind IN ('year_transition','calendar_anchor','trade_out','trade_in','generation_trade_out','generation_trade_in') LIMIT 1").fetchone():
             for (other,) in db.execute('SELECT id FROM teams').fetchall():
                 if other not in ledgers:
-                    self._load_one(db,other)
+                    self._load_one(db,other,actor_origins=actor_origins)
         return ledgers
 
-    def _load_one(self, db, team_id, *, through_event_id=None) -> Ledger:
+    def _load_one(self, db, team_id, *, through_event_id=None, actor_origins=None) -> Ledger:
         row = db.execute("SELECT config FROM teams WHERE id=?", (team_id,)).fetchone()
         if row is None:
             raise Rejected("Unknown team")
@@ -609,8 +612,12 @@ class FranchiseStore:
         relationship_sources = set()
         payment_references = set()
         efficiency_cache = {}  # Keep only the last derivation within this chronological read.
+        actor_origins={} if actor_origins is None else actor_origins
+        actor_posting=actor_registered=None
         for event_id, kind, serialized in db.execute("SELECT id, kind, payload FROM events WHERE team_id=? AND (? IS NULL OR id<=?) ORDER BY id", (team_id,through_event_id,through_event_id)):
             payload = json.loads(serialized)
+            if kind != 'actor':
+                actor_posting=actor_registered=None
             if kind == "sign":
                 if 'proposal_request_id' in payload:
                     expected=self._settlement_story(db,team_id,payload['proposal_request_id'],payload['request_id'],before_event_id=event_id)
@@ -754,12 +761,22 @@ class FranchiseStore:
             elif kind in ('trade_out','trade_in','generation_trade_out','generation_trade_in','calendar_trade_out','calendar_trade_in','calendar_layered_trade_out','calendar_layered_trade_in'):
                 self._replay_trade(db,ledger,team_id,kind,payload)
             elif kind == "actor":
-                ledger.negotiation_context(payload["player_id"])
+                # Actor registration changes neither classification nor finances.
+                # Compare every recorded posting, but calculate that unchanged
+                # value only once per contiguous actor block.
+                if actor_posting is None:
+                    actor_registered=ledger.registered_player_ids
+                    actor_posting=ledger.financial_snapshot()
+                if payload["player_id"] not in actor_registered:
+                    raise Rejected("Player is unknown or contract classification is missing")
                 self._validate_actor(payload["actor"])
                 from franchise.initialization import VERSION,initial_actor
                 personality = payload["actor"]["personality"]
                 if origin is not None:
-                    if payload['actor'] != initial_actor(origin['seed'],payload['player_id']):
+                    key=(origin['seed'],payload['player_id'])
+                    if key not in actor_origins:
+                        actor_origins[key]=initial_actor(*key)
+                    if payload['actor'] != actor_origins[key]:
                         raise ValueError('Player personality/initial relationships disagree with franchise origin')
                 elif personality.get('generation_version') == VERSION:
                     raise ValueError('Generated player personality has no franchise origin')
@@ -885,7 +902,8 @@ class FranchiseStore:
                     raise ValueError('Calendar-aware transaction posting disagrees with replay')
             elif 'calendar_format' in payload or ('calendar_posting' in payload and kind != 'year_transition'):
                 raise ValueError('Unexpected calendar transaction posting')
-            if payload.get("posting") != ledger.financial_snapshot():
+            posting=actor_posting if kind=='actor' else ledger.financial_snapshot()
+            if payload.get("posting") != posting:
                 raise ValueError("Recorded financial posting disagrees with replay")
         if origin is not None and set(ledger._actors) != ledger.registered_player_ids:
             raise ValueError('Initialized player personality coverage is incomplete')

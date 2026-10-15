@@ -42,6 +42,12 @@ binding, broader live migration and actual game handshake remain open.
 Windows + Proton is the Deck delivery priority. Defer further native Linux port
 work unless a concrete Proton limitation requires it; retain existing fixes.
 
+- [x] Remove repeated actor-origin/financial snapshot work during replay while
+      retaining every recorded integrity check. Real MyNFL1 Windows Giants replay
+      improved1.552s→0.366s, all32-club replay takes4.130s, and isolated read-only
+      service execution improved6.755s→4.029s with exact replies unchanged.
+      Actual game callback delivery and full transaction deadlines remain unverified.
+
 - [ ] Finish held native submission through accepted proposal, guest/ledger commit
       and recovery. An opt-in source path now defers retail judgment/precommit,
       queues one captured proposal (including a bounded cross-thread submit handoff)

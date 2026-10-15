@@ -7864,3 +7864,55 @@ database relationship, not the identity of the save active in guest memory,
 complete modern opening obligations or a one-use guest application permit.
 Actual game-boot handshake, legal signing/accounting/save-reload, supported rookie
 integration and final playable-build acceptance remain open.
+
+## October 15, 2026 — Faster actor replay with all integrity comparisons retained
+
+The actual MyNFL1 DB has2070 actor registrations per club (66240 total). Each
+registration previously built a complete negotiation context and rebuilt an
+unchanged financial snapshot, including serialized legacy-contract hashes.
+Store replay now checks registered membership directly, computes the unchanged
+classification/posting once per contiguous actor block, and compares every saved
+posting against it. Any other event invalidates the block values before replay.
+A single _load_teams read shares immutable expected origins keyed by seed/player;
+actual mutable actors remain separately decoded records. Nothing is cached across
+read transactions, stored financial history is not skipped, and no data migration
+or new application authority is introduced.
+
+All866 offline Python tests pass in41.715s. New regression cases reject late-block
+posting corruption, stale postings after an interleaved financial event, corrupt
+origins after another read and unknown actor identities. A sourced relationship
+update on one club cannot mutate the expected origin or another club's actor.
+Actual Windows CPython passes32 actor/initialization/namespace/handshake tests,
+then both14-reply and runtime-bound17-reply native saved-signing/disabled-restart
+recovery flows using the existing compiled checker. Launcher0, child replay-passed
+and replay-windows-passed are verified. Receipt: replay-ab02a28/windows-receipt.json;
+source manifest SHA256 9238488dbbcab83ce3532172761d06aeefa71e718b0f8eba669a108e1dd8a8a3.
+The unchanged native checker is71d89d2964063d88c7392ff01cd6728a5ca75719f4dea655449bac5f401892ab.
+
+Measured actual MyNFL1 copy on Mac: Giants1.749s→0.572s, all32 clubs3.901s.
+Windows: Giants1.552s→0.366s, all32 clubs4.130s. Old/new financial, cash and
+full actor fingerprints match exactly; final league postings also match their
+recorded source events. The Windows DB ce06504319f4eb2e4a3c41cc835184a2750720c99b492ab74853e2e2bcd10cb5
+is unchanged. Receipt: replay-ab02a28/windows-benchmark-receipt.json. These are
+isolated replay timings, not proof that a whole guest transaction meets a deadline.
+
+A separate actual Windows sidecar process check uses the pinned MyNFL1 signing
+context request, deliberately unavailable credentials and read-only operations.
+Old/new protocol replies match exactly, with AI disabled, classification-pending
+modern offers still rejected and all inputs unchanged. Process timing including
+launch improved6.755s→4.029s. The first private timing harness hung reading a
+pipe under Wine and was stopped by its exact PID; file-backed input
+and explicit child markers then passed. Receipt:
+replay-ab02a28/windows-service-receipt.json. No installed game/configuration,
+original save, live DB or remote control was changed; no paid inference.
+
+Static tracing for active-save binding found common load interiors around
+16E70B/16E7AE (input selection/prefix),16E7E0 (roster relocation),16E7FD
+(scheduler) and16E815/16E81A (tail/size). C2040 rewrites pointers in the serialized
+buffer, so hashing only after deserialization cannot identify its original bytes.
+Several generated exports share these interiors. A future source observation
+must cover the actual pre-relocation input span and selected container, and must
+not treat reaching one interior as complete successful load proof. No new load
+hook, active-franchise claim, application permit or playable-game delivery was
+introduced. Actual load selection, native signing/accounting/save-reload and final
+acceptance remain open.
