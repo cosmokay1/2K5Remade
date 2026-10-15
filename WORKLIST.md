@@ -42,8 +42,9 @@ addons, then applies the sidecar addon alongside SOFTDRINK. Retain one manager.
 A repack converter must target verified compatible hosts; universal binary
 conversion is not claimed.
 
-- [ ] Validate independent addon selection, disabled default, restart status and
-      missing-addon handling through the existing manager and real Windows DLL.
+- [x] Validate independent addon selection, disabled default, restart status and
+      missing-addon handling through existing manager callbacks and real Windows DLL:
+      d3ca4aa CI38658080834 passed. Actual UI/controller execution remains pending.
 - [ ] Verify addon installation/upgrade for pinned repacks; preserve user saves
       and reject unsupported native executable versions.
 - [ ] Verify manager UI/controller behavior and addon plus SOFTDRINK execution.
@@ -71,8 +72,8 @@ not establish v0.6 compatibility or a new completion percentage.
 
 ## Latest verified state — October 14, 2026
 
-- Latest published verified implementation: `6f75219`. Build `38656804259` and Franchise AI
-  `38656804337` passed. Windows DLL addon fixture and702 tests on Windows/Ubuntu passed; this addon build has not been installed or executed in the actual game. CI checks asset-free runtime and bridge components;
+- Latest published verified implementation: `d3ca4aa`. Build `38658080837` and Franchise AI
+  `38658080834` passed. Manager selection and DLL component checks passed. Windows DLL addon fixture and702 tests on Windows/Ubuntu passed; this addon build has not been installed or executed in the actual game. CI checks asset-free runtime and bridge components;
   the actual game target is excluded. The privately compiled standard game renders
   Franchise Options in Deck Gaming Mode, and the user confirms LT/RT work.
   Signing still uses the original game logic; the AI transaction hook is pending.

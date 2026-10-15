@@ -5381,3 +5381,12 @@ adds default-off and malformed-state denial, installed/missing status, delayed
 selection, unchanged content-pack choice and real module lifecycle. Source UI
 callbacks preserve the incumbent native menu; visual/controller verification is
 still pending.
+
+Manager implementationd3ca4aa CI38658080834 passed Windows/Ubuntu;
+Build38658080837 also passed. Windows compiled actual manager/loader/DLL code
+and ran loadable_game_addon, including default-off and malformed state,
+selection persistence and pending-restart labels, unchanged content-pack choice,
+missing DLL and ABI failure handling, and module unload/reload. Both platforms
+passed702 regressions and native checks; durable transport/restart checks passed.
+No screenshots/controller interaction, SOFTDRINK v0.6 runtime, repack conversion
+or private-game deployment were performed. Those acceptance gates remain open.
