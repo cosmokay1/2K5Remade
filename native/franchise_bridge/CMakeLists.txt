@@ -69,6 +69,24 @@ if(WIN32)
   target_include_directories(franchise_addon_check PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" ../../src)
   target_compile_definitions(franchise_addon_check PRIVATE NFL2K5_FRANCHISE_CLIENT WIN32_LEAN_AND_MEAN NOMINMAX)
   set_target_properties(franchise_addon_check PROPERTIES C_STANDARD 11)
+  if(MSVC)
+    set(OBSERVER_KERNEL "${CMAKE_CURRENT_SOURCE_DIR}/../../external/xboxrecomp/src/kernel")
+    add_executable(franchise_file_read_delivery_check ../game_addon/file_read_delivery_check.c
+      ../../src/nfl2k5_sidecar_loader.c "${OBSERVER_KERNEL}/kernel_file.c"
+      "${OBSERVER_KERNEL}/file_read_observer.c" "${OBSERVER_KERNEL}/kernel_overlay.c"
+      "${OBSERVER_KERNEL}/kernel_path.c" "${OBSERVER_KERNEL}/kernel_io.c" "${OBSERVER_KERNEL}/xbox_ggl.c")
+    target_include_directories(franchise_file_read_delivery_check PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
+      ../game_addon "${OBSERVER_KERNEL}" "${OBSERVER_KERNEL}/..")
+    target_compile_definitions(franchise_file_read_delivery_check PRIVATE NFL2K5_FRANCHISE_CLIENT
+      FILE_READ_DELIVERY_FOCUSED WIN32_LEAN_AND_MEAN NOMINMAX _CRT_SECURE_NO_WARNINGS)
+    target_compile_options(franchise_file_read_delivery_check PRIVATE /Gy)
+    target_link_options(franchise_file_read_delivery_check PRIVATE /OPT:REF)
+    target_link_libraries(franchise_file_read_delivery_check PRIVATE dbghelp)
+    set_target_properties(franchise_file_read_delivery_check PROPERTIES C_STANDARD 11
+      RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/file-read-delivery")
+    add_test(NAME kernel_file_read_to_addon COMMAND franchise_file_read_delivery_check $<TARGET_FILE:example_game_addon>)
+    set_tests_properties(kernel_file_read_to_addon PROPERTIES TIMEOUT 20)
+  endif()
   add_test(NAME loadable_game_addon COMMAND franchise_addon_check $<TARGET_FILE:franchise_game_addon> $<TARGET_FILE:franchise_bad_addon> $<TARGET_FILE:example_game_addon> $<TARGET_FILE:legacy_game_addon> $<TARGET_FILE:read_scope_game_addon>)
   set_tests_properties(loadable_game_addon PROPERTIES TIMEOUT 20)
   add_executable(franchise_host_handshake_check host_handshake_check.c ../../src/nfl2k5_franchise_host.c)

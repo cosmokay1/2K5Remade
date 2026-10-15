@@ -29,7 +29,9 @@ native offer submission, player response, legal financial commit and save recove
 Use one addon/application pipeline for vanilla Remade and compatible mod packs;
 do not branch negotiation/accounting/story policy on a mod name or executable
 whitelist. Supply verified calendar, money units and roster/contract context to
-the same rules. New v2 registries now persist explicit calendar/units/cap context without image
+the same rules. Compatibility checks must describe supported layouts and engine
+capabilities; differing roster content is data, not a separate application path.
+Reject unsupported layouts explicitly rather than infer support from a pack name. New v2 registries now persist explicit calendar/units/cap context without image
 whitelists. Copy-only v1 conversion preserves player IDs, personalities and
 contract schedules. The service now checks an explicitly configured expected
 load-image digest at hello, echoes the configured registry/snapshot identity and

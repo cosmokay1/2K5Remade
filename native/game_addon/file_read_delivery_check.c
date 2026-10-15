@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
+#ifdef FILE_READ_DELIVERY_FOCUSED
+void xbox_log(int level,const char *subsystem,const char *format,...){(void)level;(void)subsystem;(void)format;}
+int xbox_verbose(void){return 0;}
+#endif
 void *recomp_lookup(ULONG a){(void)a;abort();}
 void *recomp_lookup_manual(ULONG a){(void)a;abort();}
 int nfl2k5_addon_guest_range(uint32_t a,size_t n){(void)a;(void)n;return 0;}

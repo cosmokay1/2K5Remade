@@ -7974,3 +7974,20 @@ actual Windows read/EOF/error/completion order, kernel-to-loader-to-DLL identity
 byte delivery and full-game --validate before any installation. Live load/container
 binding, one-use application permits and actual signing/accounting/save-reload
 remain open. AI/control remains disabled; no paid inference or control renewal.
+
+## October 15, 2026 — Shared observer Windows I/O validation
+
+Runtime ea4a0eecb78bff79225768d7c167d9feb12f9447 passes both Windows and
+Linux actual file-I/O checks in CI38800594758. The focused Windows target links
+the real path, I/O and guest-lock dependencies; only logging is stubbed. Root
+checks now enable actual reads on both platforms and add a Windows
+kernel-to-loader-to-example-DLL delivery check without requiring game assets.
+Its root Windows result remains pending until the updated source runs in CI.
+
+The shared compatibility contract applies to original Remade and compatible packs:
+layout/capability checks guard the same application path, while verified calendar,
+money units and roster/contract content are explicit data. Historical named
+registry decoding is retained solely for durable recovery; it does not select
+new-franchise policy. Unsupported layouts must reject explicitly. No new mod-name
+branch, application grant, live installation or save modification was introduced.
+The Deck connection and actual full-game/save-load verification remain pending.
