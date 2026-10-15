@@ -59,9 +59,11 @@ class Negotiation:
         if type(proposal_only) is not bool:
             raise ValueError('Explicit proposal-only mode required')
         self._proposal_only = proposal_only
-        from franchise.guest_contracts import GUEST_CONTRACT_FORMAT
-        if contract_format is not None and (not proposal_only or contract_format != GUEST_CONTRACT_FORMAT):
-            raise ValueError('Supported guest proposal contract format required')
+        if contract_format is not None:
+            from franchise.guest_contracts import guest_money_scale
+            guest_money_scale(contract_format)
+            if not proposal_only:
+                raise ValueError('Supported guest proposal contract format required')
         self._contract_format = contract_format
         if not callable(access_check):
             raise ValueError("An access handshake is required")
@@ -116,8 +118,8 @@ class Negotiation:
             raise ValueError("Offer belongs to another player")
         guest_offer = None
         if self._contract_format is not None:
-            from franchise.guest_contracts import guest_offer_encoding
-            guest_offer = guest_offer_encoding(offer)  # Reject before inference/history writes.
+            from franchise.guest_contracts import guest_offer_encoding, guest_money_scale
+            guest_offer = guest_offer_encoding(offer, contract_format=self._contract_format)  # Reject before inference/history writes.
         if type(request_id) is not str or not request_id.strip():
             raise ValueError("A negotiation request ID is required")
         return_scope=self.ledger.return_scope_context() if hasattr(self.ledger,'return_scope_context') else None
@@ -164,7 +166,7 @@ class Negotiation:
             context['contract_format'] = self._contract_format
             context['guest_offer'] = guest_offer
             context['contract_format_constraints'] = {
-                'annual_salary_unit': 1000, 'base_guarantees_supported': False,
+                'annual_salary_unit': 1000 * guest_money_scale(self._contract_format), 'base_guarantees_supported': False,
                 'bonus_allocation_max_years': 5,
                 'annual_schedule': 'Must exactly encode an original game schedule; no rounding or truncating a demand'}
         from franchise.vertex_provider import VertexProvider
@@ -217,7 +219,7 @@ class Negotiation:
                 if self._contract_format is not None:
                     from franchise.guest_contracts import guest_offer_encoding
                     try:
-                        event['guest_counter'] = guest_offer_encoding(decision.counter)
+                        event['guest_counter'] = guest_offer_encoding(decision.counter, contract_format=self._contract_format)
                     except ValueError as exc:
                         raise Rejected(str(exc)) from exc
                 preview = self.ledger.preview_offer(decision.counter, snapshot["revision"])

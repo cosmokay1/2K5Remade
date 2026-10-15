@@ -2190,17 +2190,18 @@ class FranchiseStore:
     def _validate_dialogue(event, *, efficiency_cache=None):
         FranchiseStore._validate_story_evidence(event, efficiency_cache=efficiency_cache)
         if 'contract_format' in event:
-            from franchise.guest_contracts import GUEST_CONTRACT_FORMAT, guest_offer_encoding
-            if event['contract_format'] != GUEST_CONTRACT_FORMAT or event.get('decision_mode') != 'proposal':
+            from franchise.guest_contracts import guest_money_scale, guest_offer_encoding
+            guest_money_scale(event['contract_format'])
+            if event.get('decision_mode') != 'proposal':
                 raise ValueError('Invalid guest proposal contract format')
             if FranchiseStore._checkpoint_hash(event.get('guest_offer')) != FranchiseStore._checkpoint_hash(
-                    guest_offer_encoding(Offer.from_dict(event['offer']))):
+                    guest_offer_encoding(Offer.from_dict(event['offer']), contract_format=event['contract_format'])):
                 raise ValueError('Guest offer encoding disagrees with proposal')
             counter = event.get('counter')
             expected_encoding = None
             if counter is not None:
                 try:
-                    expected_encoding = guest_offer_encoding(Offer.from_dict(counter))
+                    expected_encoding = guest_offer_encoding(Offer.from_dict(counter), contract_format=event['contract_format'])
                 except ValueError:
                     if event.get('counter_validation', {}).get('status') != 'ineligible':
                         raise ValueError('Unrepresentable guest counter cannot be eligible')

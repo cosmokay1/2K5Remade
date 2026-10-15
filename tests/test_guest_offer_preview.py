@@ -28,6 +28,16 @@ class GuestOfferPreviewTests(unittest.TestCase):
         self.assertIsNone(result['reason'])
         self.assertEqual(before,self.store.load_team('a').financial_snapshot())
 
+    def test_softdrink_preview_uses_display_scale_for_cap_validation(self):
+        before=self.store.load_team('a').financial_snapshot()
+        result=preview_guest_offer(self.store,'a','free',amount_word=829,
+            flags_word=(1<<29)|(2<<16)|4,expected_revision=0,
+            contract_format='softdrink_fxg_v1')
+        self.assertEqual(result['outcome'],'accounting_rejected')
+        self.assertEqual(result['offer']['signing_bonus'],13264000)
+        self.assertEqual(result['contract_format'],'softdrink_fxg_v1')
+        self.assertEqual(self.store.load_team('a').financial_snapshot(),before)
+
     def test_modern_horizon_rounding_and_zero_amount_do_not_repair_terms(self):
         for amount,flags,reason in ((1949,(2<<29)|(6<<16)|4,'five-year'),
                                    (500,(2<<29)|(3<<16)|4,'rounding'),(0,2<<16,'inputs')):

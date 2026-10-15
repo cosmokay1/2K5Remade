@@ -891,7 +891,14 @@ inline void validate_restructure(const nlohmann::json& result, const nlohmann::j
 }
 /* Match observed original float32 stores and truncation, retaining every base
  * salary. Reject unsupported modern allocation rather than repair the bonus. */
-inline nlohmann::json exact_guest_offer(const nlohmann::json& raw,const std::string& player) {
+inline int64_t guest_money_scale(const std::string& format) {
+    if(format=="original_fxg_v1") return 1;
+    if(format=="softdrink_fxg_v1") return 4;
+    throw std::runtime_error("Unsupported guest contract format");
+}
+inline nlohmann::json exact_guest_offer(const nlohmann::json& raw,const std::string& player,
+                                       const std::string& format="original_fxg_v1") {
+    const auto scale=guest_money_scale(format);
     integer_money(raw.at("amount_word")); integer_money(raw.at("flags_word"));
     if(raw.at("amount_word")<1 || raw.at("amount_word")>65535 || raw.at("flags_word")>4294967295ULL)
         throw std::runtime_error("Unsupported guest offer words");
@@ -921,9 +928,9 @@ inline nlohmann::json exact_guest_offer(const nlohmann::json& raw,const std::str
             if(shape==4) direction=-direction;
             salary=static_cast<int64_t>(static_cast<float>(base+direction*static_cast<double>(base/2)*fraction));
         } else if(shape==5 && years>1) salary=base*(i%2==0?12:8)/10;
-        salaries.push_back(salary*1000); guarantees.push_back(0);
+        salaries.push_back(salary*1000*scale); guarantees.push_back(0);
     }
-    return {{"player_id",player},{"salaries",salaries},{"signing_bonus",amount*bonus*1000},{"guaranteed_salaries",guarantees}};
+    return {{"player_id",player},{"salaries",salaries},{"signing_bonus",amount*bonus*1000*scale},{"guaranteed_salaries",guarantees}};
 }
 inline void validate_result(const nlohmann::json& response, const nlohmann::json& request) {
     if (!response["error"].is_null()) return;
@@ -948,7 +955,7 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         normalized.erase("observation");normalized.erase("guest_offer");
         normalized["team_id"]=checkpoint.at("team_id");
         normalized["offer"]=inspected.at("offer");
-        normalized["contract_format"]="original_fxg_v1";
+        normalized["contract_format"]=inspected.value("contract_format",std::string("original_fxg_v1"));
         auto proposal_reply=response;
         proposal_reply["result"].erase("signing_checkpoint");
         validate_result(proposal_reply,normalized);
@@ -1348,24 +1355,26 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
             if (raw.at("amount_word")>65535 || raw.at("flags_word")>4294967295ULL)
                 throw std::runtime_error("Guest offer words out of range");
             const auto& terms=result.at("offer_context");
-            if (!terms.is_object() || terms.size()!=6 || terms.at("amount_word")!=raw.at("amount_word") ||
+            const auto format=terms.value("contract_format",std::string("original_fxg_v1"));
+            const auto scale=guest_money_scale(format);
+            if (!terms.is_object() || terms.size()!=6+terms.contains("contract_format") || terms.at("amount_word")!=raw.at("amount_word") ||
                 terms.at("flags_word")!=raw.at("flags_word")) throw std::runtime_error("Guest offer preview changed raw terms");
             const auto outcome=terms.at("outcome").get<std::string>();
             if (outcome=="format_rejected") {
                 bool compatible=false;
-                try{exact_guest_offer(raw,result.at("player_id").get<std::string>());compatible=true;}catch(const std::exception&){}
+                try{exact_guest_offer(raw,result.at("player_id").get<std::string>(),format);compatible=true;}catch(const std::exception&){}
                 if(compatible) throw std::runtime_error("Compatible guest terms mislabeled as format rejection");
                 if (!terms.at("offer").is_null() || !terms.at("preview").is_null())
                     throw std::runtime_error("Rejected guest format cannot expose an eligible offer");
             } else {
                 const auto offer=canonical_offer(terms.at("offer"));
-                if(offer!=exact_guest_offer(raw,result.at("player_id").get<std::string>()))
+                if(offer!=exact_guest_offer(raw,result.at("player_id").get<std::string>(),format))
                     throw std::runtime_error("Guest salary schedule differs from raw terms");
                 const auto flags=raw.at("flags_word").get<uint32_t>();
                 const auto years=(flags>>16)&15u, bonus=flags&15u;
                 if (offer.at("player_id")!=result.at("player_id") || !years || bonus>10 ||
                     (bonus && years>5) || offer.at("salaries").size()!=years ||
-                    offer.at("signing_bonus")!=raw.at("amount_word").get<int64_t>()*bonus*1000)
+                    offer.at("signing_bonus")!=raw.at("amount_word").get<int64_t>()*bonus*1000*scale)
                     throw std::runtime_error("Decoded guest offer identity, term or bonus mismatch");
                 for(const auto& guarantee:offer.at("guaranteed_salaries"))
                     if(guarantee!=0) throw std::runtime_error("Guest format cannot encode base guarantees");
@@ -1467,10 +1476,14 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
                 !result.at("contract_accounting").is_null())
                 throw std::runtime_error("Invalid legacy liability context");
             const auto& legacy=result.at("legacy_contract");
-            if (!legacy.is_object() || legacy.size()!=7 || legacy.at("player_id")!=request.at("player_id") ||
+            if (!legacy.is_object() || legacy.size()!=7+legacy.contains("game_dollar_scale") || legacy.at("player_id")!=request.at("player_id") ||
                 !legacy.at("source").is_string() ||
                 legacy.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
                 throw std::runtime_error("Invalid legacy identity or source");
+            if(legacy.contains("game_dollar_scale")) {
+                integer_money(legacy.at("game_dollar_scale"));
+                if(legacy.at("game_dollar_scale")!=4) throw std::runtime_error("Unsupported legacy scale");
+            }
             for (const auto* field:{"amount_word","bonus_code","shape_code","original_years","remaining_years"})
                 integer_money(legacy.at(field));
             if (legacy.at("amount_word")<1 || legacy.at("amount_word")>65535 ||
@@ -1566,12 +1579,14 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
     if (canonical_offer(result.at("offer")) != canonical_offer(request.at("offer")) || result.at("request_id") != request.at("request_id"))
         throw std::runtime_error("Response changed submitted contract");
     if(request.contains("contract_format")) {
-        if(operation!="negotiate_proposal" || request.at("contract_format")!="original_fxg_v1" ||
+        const auto format=request.at("contract_format").get<std::string>();
+        guest_money_scale(format);
+        if(operation!="negotiate_proposal" ||
             result.at("contract_format")!=request.at("contract_format"))
             throw std::runtime_error("Guest proposal contract format mismatch");
-        auto check_encoding=[](const nlohmann::json& raw,const nlohmann::json& offer) {
+        auto check_encoding=[&format](const nlohmann::json& raw,const nlohmann::json& offer) {
             if(!raw.is_object() || raw.size()!=2 ||
-                exact_guest_offer(raw,offer.at("player_id").get<std::string>())!=canonical_offer(offer) ||
+                exact_guest_offer(raw,offer.at("player_id").get<std::string>(),format)!=canonical_offer(offer) ||
                 (raw.at("flags_word").get<uint32_t>() & ~0xE00F000Fu))
                 throw std::runtime_error("Guest proposal encoding differs from exact offer");
         };

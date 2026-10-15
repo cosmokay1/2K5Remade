@@ -189,6 +189,34 @@ class NegotiationProposalTests(unittest.TestCase):
         self.assertIn('cap room', event['counter_validation']['reason'])
         self.assertEqual(self.store.load_team('game').revision, 0)
 
+    def test_softdrink_counter_encoding_and_restart_preserve_scale(self):
+        from franchise.guest_contracts import GuestContractTerms, SOFTDRINK_CONTRACT_FORMAT
+        fmt=SOFTDRINK_CONTRACT_FORMAT
+        request=self.game_request()
+        request.update(contract_format=fmt,
+            offer=GuestContractTerms(829,4,1,2).to_offer('v',contract_format=fmt).to_dict())
+        counter=GuestContractTerms(1000,4,2,2).to_offer('v',contract_format=fmt)
+        bridge=Bridge(self.store,provider=lambda _:json.dumps(dict(action='counter',reason='Counter',
+            salaries=list(counter.salaries),signing_bonus=counter.signing_bonus)),access_check=self.access)
+        before=self.store.load_team('game').financial_snapshot()
+        reply=bridge.handle(request);self.assertIsNone(reply['error'])
+        event=reply['result']
+        self.assertEqual(event['contract_format'],fmt)
+        self.assertEqual(event['guest_offer']['amount_word'],829)
+        self.assertEqual(event['guest_counter']['amount_word'],1000)
+        self.assertEqual(GuestContractTerms.from_context(**event['guest_counter']).to_offer(
+            'v',contract_format=fmt),counter)
+        reopened=Bridge(FranchiseStore(self.path),provider=lambda _:self.fail('Repeated inference'),
+            access_check=self.access)
+        self.assertEqual(reopened.handle(request),reply)
+        self.assertEqual(self.store.load_team('game').financial_snapshot(),before)
+        # Replaying with a false retail label cannot reinterpret persisted dollars.
+        with closing(sqlite3.connect(self.path)) as db,db:
+            payload=json.loads(db.execute("SELECT payload FROM events WHERE request_key='dialogue:proposal'").fetchone()[0])
+            payload['event']['contract_format']='original_fxg_v1'
+            db.execute("UPDATE events SET payload=? WHERE request_key='dialogue:proposal'",(json.dumps(payload),))
+        with self.assertRaisesRegex(ValueError,'encoding|schedule'):self.store.load_team('game')
+
     def test_tampered_game_encoding_fails_durable_replay(self):
         request = self.game_request()
         self.bridge.handle(request)

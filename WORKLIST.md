@@ -103,6 +103,9 @@ Do not deploy superseded staged diagnostics blindly or overwrite existing saves.
 - [x] Add explicit hash-pinned SOFTDRINK opening snapshot bindings: logical2026,
       preserved4:1 legacy export and scaled read-only checkpoint. MyNFL1 resolves
       2070 stable IDs/profiles and1693 active schedules; no active-game import.
+- [x] Carry verified pack offer scale through raw preview, exact counter encoding,
+      persisted dialogue replay and native response checks.726 Python regressions
+      and5767 host native/Python codec cases pass; no runtime deployment or signing.
 - [ ] Capture controlled pack signing/save/reload evidence; verify player identity,
       history, experience, calendar, salaries/payroll/cap and effective money scale.
 - [ ] Revalidate existing Xbox observer and bridge against pack code and saves;
@@ -387,7 +390,7 @@ invent future published NFL values: separate verified inputs from simulation pol
       Five exact sourced opportunity/yardage ratios now feed negotiation and draft
       contexts with sample counts, unknown coverage and durable recomputation.
       Actual capture, broader context and live-model weighting remain unverified.
-- [ ] Verify whether intended-receiver targets exist in guest state or saved
+- [ ] Map the original TT/Thrown To receiving stat to guest state and saved
       counters; otherwise instrument pass release/outcome events. Handle throws
       away, interceptions, spikes and nullified plays without inferring targets
       from receptions. Persist source/provenance for each counter.

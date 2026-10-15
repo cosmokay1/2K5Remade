@@ -64,3 +64,22 @@ which codes represent targets, pressures or quarterback hits, their units or
 coverage. Null history is unknown. Continue with UI/accessor code mapping and
 controlled play/simulation save pairs; do not treat an unidentified code as a
 pressure or hit count.
+
+
+## October14 — Original receiving Thrown To label verified
+
+User reports a receiving Thrown To tracker on-screen. Read-only comparison
+confirms UTF-16LE "Thrown To", with adjacent TT abbreviation and receiving/drop
+labels, in the clean original Xbox default.xbe at file offset0xB37D38. Original
+SHA25673105b17a3161c546fea792a1c84ce37f9966a67c416f474cdbfab74b911a4a9
+(size11948032) matches the pinned clean patch input. SOFTDRINK v0.6 XBE
+SHA256f67e6fc1cb76c9ea1f1ad504e4a6491ff126483d66a9da8ddb92950bbaf740ba
+contains the identical label at the same offset. Therefore this displayed stat
+label predates SOFTDRINK; it is a base-game receiving-stat investigation lead.
+
+No counter address/code, update semantics, nullified-pass rules, season reset,
+franchise persistence or played/CPU/fast-sim coverage is proved by the label.
+Locate the original receiving-stat accessor/descriptor for TT, then verify
+controlled before/after counters and save/reload. Earlier uncertainty concerns
+our extraction/mapping, not evidence that targets do not exist in the engine.
+No game files were changed or copied into source control for this check.

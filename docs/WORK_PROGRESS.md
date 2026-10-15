@@ -5719,3 +5719,33 @@ Full722 Python regressions passed22.535s. Read-only SSH confirms existing game
 PID102235 remains running through Proton; no installation or restart attempted.
 Future raw contract edits, estimated rookies and full non-roster obligations
 remain separate reconciliation requirements before live financial integration.
+
+
+## Pack-scale captured new offers and counters
+
+Added explicit softdrink_fxg_v1 proposal format alongside unchanged retail
+original_fxg_v1. Exact decoding multiplies guest-rounded salary/nominal bonus
+by4; reverse encoding respects4000 display-dollar units without altering raw
+amount/flags or repairing bonus loss. Captured preview selects format from the
+validated pinned binding, never a caller-supplied arbitrary multiplier.
+Negotiation format constraints tell the provider the correct salary unit;
+counters, persisted story events and replay retain/revalidate exact encoding.
+Base guarantees, unsupported bonus terms and unknown formats still reject.
+
+Updated native response validation for scaled legacy records, new-offer preview,
+proposal/counter encoding and captured nested checkpoint normalization. Native
+fixtures exercise both formats, eligible counter handling, false scale labels,
+unknown legacy scales and captured proposal substitution. The native/Python
+codec corpus now covers both scales over5767 accepted/rejected cases.
+
+Validation:726 Python regressions passed43.019s. Host clang C++ protocol fixture
+passed; native/Python5767-case codec parity passed. Used pinned nlohmann/json
+v3.12.0 header SHAaaf127c04cb31c406e5b04a63f1ae89369fccde6d8fa7cdda1ed4f32dfc5de63.
+New scaled preview correctly rejects a19.064M charge against10M cap; durable
+scaled counter replay does not invoke the provider again or sign a contract,
+and relabeling the persisted format as retail rejects.
+
+No Windows/game execution, deployment, guest commit, paid inference or remote
+control renewal occurred. Current installed ABI1 pair remains unchanged. Complete
+opening obligations, supported rules/classification and actual save/reload still
+gate live financial use.

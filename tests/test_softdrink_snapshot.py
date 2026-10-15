@@ -7,6 +7,7 @@ import unittest
 import tempfile
 from pathlib import Path
 
+from franchise.bridge import Bridge
 from franchise.books import OpeningBooks
 from franchise.cap import Ledger
 from franchise.store import FranchiseStore
@@ -74,6 +75,17 @@ class SoftdrinkSnapshotTests(unittest.TestCase):
             self.assertTrue(result['player_context']['initialized'])
             self.assertFalse(result['ai_authorized']);self.assertFalse(result['write_authorized'])
             self.assertEqual(store.load_team('49ers').financial_snapshot(),before)
+            bridge=Bridge(store,guest_snapshot=(bindings,payload),
+                provider=lambda _:self.fail('Read-only checkpoint invoked inference'),
+                access_check=lambda:self.fail('Read-only checkpoint enabled AI'))
+            reply=bridge.handle({'protocol':1,'request_id':'scaled-preview','operation':'signing_context',
+                'observation':observation,'expected_revision':0,'timeout_ms':5000,
+                'guest_offer':{'amount_word':829,'flags_word':(1<<29)|(2<<16)|4}})
+            self.assertIsNone(reply['error'])
+            preview=reply['result']['offer_context']
+            self.assertEqual(preview['contract_format'],'softdrink_fxg_v1')
+            self.assertEqual(preview['offer']['signing_bonus'],13264000)
+            self.assertEqual(preview['outcome'],'accounting_rejected')  # Unclassified actor.
             observation['team']['payroll_raw']*=4
             with self.assertRaises(ValueError):
                 reconcile_signing_context(bindings,payload,observation,store,expected_revision=0)

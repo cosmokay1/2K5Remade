@@ -10,7 +10,8 @@ int main(int argc,char** argv) {
             while(std::getline(std::cin,line)) {
                 const auto sample=franchise::parse_frame(line);
                 nlohmann::json actual=nullptr;
-                try{actual=franchise::exact_guest_offer(sample.at("raw"),sample.at("player_id").get<std::string>());}
+                try{actual=franchise::exact_guest_offer(sample.at("raw"),sample.at("player_id").get<std::string>(),
+                    sample.value("contract_format",std::string("original_fxg_v1")));}
                 catch(const std::exception&){}
                 const auto& expected=sample.at("offer");
                 if(expected.is_null()!=actual.is_null() || (!expected.is_null() && actual!=franchise::canonical_offer(expected)))
@@ -85,16 +86,17 @@ int main(int argc,char** argv) {
         proposal_reply["result"]["evidence"]={{"financial_revision",0}};
         proposal_reply["result"]["proposal_preview"]={{"revision",0},{"contract_charges",{10}},{"room_after",90}};
         franchise::validate_result(proposal_reply,proposal_request);
-        {
+        for(const auto& guest_format:{"original_fxg_v1","softdrink_fxg_v1"}) {
+        const auto scale=franchise::guest_money_scale(guest_format);
         auto guest_request=proposal_request,guest_reply=proposal_reply;
-        guest_request["contract_format"]="original_fxg_v1";
+        guest_request["contract_format"]=guest_format;
         auto encoding=nlohmann::json{{"amount_word",829},{"flags_word",(1u<<29)|(2u<<16)|4u}};
-        guest_request["offer"]=franchise::exact_guest_offer(encoding,"v");
+        guest_request["offer"]=franchise::exact_guest_offer(encoding,"v",guest_format);
         guest_reply["result"]["offer"]=guest_request["offer"];
-        guest_reply["result"]["contract_format"]="original_fxg_v1";
+        guest_reply["result"]["contract_format"]=guest_format;
         guest_reply["result"]["guest_offer"]=encoding;
         guest_reply["result"]["guest_counter"]=nullptr;
-        guest_reply["result"]["proposal_preview"]["contract_charges"]={4766000,3523000};
+        guest_reply["result"]["proposal_preview"]["contract_charges"]={4766000*scale,3523000*scale};
         franchise::validate_result(guest_reply,guest_request);
         auto counter_reply=guest_reply;
         counter_reply["result"]["action"]="counter";
@@ -803,6 +805,21 @@ int main(int argc,char** argv) {
         captured_event["evidence"]={{"financial_revision",0},{"personality",checkpoint["player_context"]["personality"]},
             {"relationships",checkpoint["player_context"]["relationships"]},{"performance",checkpoint["performance_context"]}};
         franchise::validate_result(captured_reply,captured_request);
+        auto scaled_captured=captured_reply;
+        auto& scaled_event=scaled_captured["result"];
+        auto& scaled_terms=scaled_event["signing_checkpoint"]["offer_context"];
+        scaled_terms["contract_format"]="softdrink_fxg_v1";
+        scaled_terms["offer"]=franchise::exact_guest_offer(captured_request["guest_offer"],std::string(32,'a'),"softdrink_fxg_v1");
+        scaled_terms["preview"]["contract_charges"]={19064000,14092000};
+        scaled_terms["preview"]["room_after"]=80936000;
+        scaled_event["offer"]=scaled_terms["offer"];
+        scaled_event["proposal_preview"]=scaled_terms["preview"];
+        scaled_event["contract_format"]="softdrink_fxg_v1";
+        franchise::validate_result(scaled_captured,captured_request);
+        scaled_event["contract_format"]="original_fxg_v1";
+        bool scale_mismatch_rejected=false;
+        try{franchise::validate_result(scaled_captured,captured_request);}catch(const std::exception&){scale_mismatch_rejected=true;}
+        if(!scale_mismatch_rejected) throw std::runtime_error("Captured proposal scale substitution accepted");
         nlohmann::json display_reply={{"error",nullptr},{"result",checkpoint}};
         display_reply["result"]["player_context"]["personality"]={{"money",0.5},{"security",0.2},
             {"playing_time",0.9},{"winning",0.8},{"loyalty",0.1}};
@@ -1299,6 +1316,14 @@ int main(int argc,char** argv) {
             {"bonus_code",4},{"shape_code",2},{"original_years",8},{"remaining_years",7},{"source","authored original terms"}};
         legacy_reply["result"]["legacy_liability_scope"]="original cap schedule; cash/protections/lifecycle unverified";
         franchise::validate_result(legacy_reply,player_request);
+        auto scaled_legacy=legacy_reply;
+        scaled_legacy["result"]["legacy_contract"]["game_dollar_scale"]=4;
+        franchise::validate_result(scaled_legacy,player_request);
+        scaled_legacy["result"]["legacy_contract"]["game_dollar_scale"]=2;
+        bool legacy_scale_rejected=false;
+        try{franchise::validate_result(scaled_legacy,player_request);}catch(const std::exception&){legacy_scale_rejected=true;}
+        if(!legacy_scale_rejected) throw std::runtime_error("Unsupported legacy scale accepted");
+
         for (int scenario=0;scenario<10;++scenario) {
             auto bad=legacy_reply;
             auto& legacy=bad["result"]["legacy_contract"];

@@ -2,7 +2,8 @@
 import unittest
 
 from franchise.cap import Ledger, Offer, Rejected
-from franchise.guest_contracts import GuestContractTerms, guest_terms_for_offer
+from franchise.guest_contracts import (GuestContractTerms, guest_terms_for_offer,
+    guest_offer_encoding, SOFTDRINK_CONTRACT_FORMAT)
 
 
 class GuestContractsTests(unittest.TestCase):
@@ -57,6 +58,33 @@ class GuestContractsTests(unittest.TestCase):
                 for shape in range(8):
                     offer = GuestContractTerms(1000 * years, bonus_code, shape, years).to_offer('p')
                     self.assertEqual(guest_terms_for_offer(offer).to_offer('p'), offer)
+
+    def test_softdrink_offer_round_trip_scales_after_guest_rounding(self):
+        fmt=SOFTDRINK_CONTRACT_FORMAT
+        terms=GuestContractTerms(829,4,1,2)
+        offer=terms.to_offer('p',contract_format=fmt)
+        self.assertEqual(offer.salaries,(12432000,7460000))
+        self.assertEqual(offer.signing_bonus,13264000)
+        self.assertEqual(offer.charges(5),(19064000,14092000))
+        raw=guest_offer_encoding(offer,contract_format=fmt)
+        self.assertEqual(raw,{'amount_word':829,'flags_word':(1<<29)|(2<<16)|4})
+        for years in (1,2,5,15):
+            for shape in range(8):
+                for bonus in ((0,4) if years<=5 else (0,)):
+                    candidate=GuestContractTerms(1000*years,bonus,shape,years)
+                    decoded=candidate.to_offer('p',contract_format=fmt)
+                    encoded=guest_terms_for_offer(decoded,contract_format=fmt)
+                    self.assertEqual(encoded.to_offer('p',contract_format=fmt),decoded)
+
+    def test_softdrink_rejects_unscaled_units_unknown_formats_and_bonus_loss(self):
+        fmt=SOFTDRINK_CONTRACT_FORMAT
+        with self.assertRaises(ValueError):
+            guest_terms_for_offer(Offer('p',(1001000,),0),contract_format=fmt)
+        with self.assertRaises(ValueError):
+            GuestContractTerms(500,4,2,3).to_offer('p',contract_format=fmt)
+        for unknown in ('unknown',4,None,True):
+            with self.subTest(unknown=unknown),self.assertRaises(ValueError):
+                GuestContractTerms(829,4,1,2).to_offer('p',contract_format=unknown)
 
     def test_context_extracts_only_contract_bits_and_checks_field_bounds(self):
         self.assertEqual(GuestContractTerms.from_context(1949, 0x4D060004),

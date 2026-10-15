@@ -115,3 +115,14 @@ false: this source audit omits a complete non-roster inventory, and estimates,
 transfers, changed terms and ambiguous names require resolution. A matching raw
 guest checkpoint cannot authorize writes against corrected external balances
 until the guest and ledger enforce the same complete obligations.
+
+
+New captured offers use the pinned binding to select original_fxg_v1 (retail) or
+softdrink_fxg_v1 (4:1). The raw amount/flags stay unchanged. Python and the native
+response validator scale annual salary and nominal bonus after guest rounding,
+then require exact modern allocation and exact reverse encoding. Proposal
+contexts state the actual display-dollar salary unit (4000 for SOFTDRINK);
+counteroffers and stored dialogue retain that format on replay. Format changes,
+nonrepresentable salaries/guarantees and inexact bonus allocation reject. This
+requires a matching service/native validator build; the old installed pair was
+not replaced. These are proposal-only paths, without guest commit authorization.
