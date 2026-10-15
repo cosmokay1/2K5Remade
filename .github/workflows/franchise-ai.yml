@@ -45,13 +45,15 @@ jobs:
         run: ctest --test-dir build-franchise-bridge -C Release --output-on-failure
       - name: Cross-check exact native guest salary schedules
         run: python -m tools.check_native_guest_terms build-franchise-bridge
-      - name: Compare native league financial capture to saved semantics
+      - name: Compare native financial and identity capture to saved semantics
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "Windows" ]; then
             python -m tools.check_native_finance_state build-franchise-bridge/Release/franchise_finance_state_check.exe
+            python -m tools.check_native_identity_state build-franchise-bridge/Release/franchise_finance_state_check.exe
           else
             python -m tools.check_native_finance_state build-franchise-bridge/franchise_finance_state_check
+            python -m tools.check_native_identity_state build-franchise-bridge/franchise_finance_state_check
           fi
       - name: Check interpreter shared epilogues
         if: runner.os == 'Windows'

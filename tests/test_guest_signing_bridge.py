@@ -17,6 +17,7 @@ from franchise.control import AccessDisabled
 from franchise.sidecar import read_guest_save, serve
 from franchise.store import FranchiseStore
 from tools.franchise_finance_state import saved_finance_state
+from tools.franchise_identity_state import saved_identity_state
 from tools.inspect_franchise_save import PLAYER_START, PLAYER_STRIDE
 import test_guest_signing_journal as journal_fixtures
 
@@ -44,7 +45,8 @@ class GuestSigningBridgeTests(unittest.TestCase):
         return dict(protocol=1,request_id='journal',operation='guest_signing_prepare',timeout_ms=5000,
                     team_id='49ers',proposal_request_id='proposal',guest_offer=self.fixture.raw,
                     expected_revision=self.fixture.revision,expected_before_sha256=digest(self.fixture.before),
-                    live_finance_sha256=digest(saved_finance_state(self.fixture.before)),**changes)
+                    live_finance_sha256=digest(saved_finance_state(self.fixture.before)),
+                    live_identity_sha256=digest(saved_identity_state(self.fixture.before)),**changes)
 
     def confirm(self):
         return dict(protocol=1,request_id='confirm',operation='guest_signing_confirm',timeout_ms=5000,
@@ -90,6 +92,25 @@ class GuestSigningBridgeTests(unittest.TestCase):
             with self.subTest(value=value):
                 self.assertEqual(self.bridge.handle({**self.prepare(),'live_finance_sha256':value})['error'],'invalid_request')
         self.assert_unchanged(False);self.provider.assert_not_called()
+
+    def test_unselected_biography_changes_reject_with_identical_finances(self):
+        changed=bytearray(self.fixture.before);changed[PLAYER_START+4]^=1
+        self.assertEqual(saved_finance_state(bytes(changed)),saved_finance_state(self.fixture.before))
+        request={**self.prepare(),'live_identity_sha256':digest(saved_identity_state(bytes(changed)))}
+        self.assertEqual(self.bridge.handle(request)['error'],'state_rejected')
+        self.assert_unchanged(False);self.provider.assert_not_called()
+
+    def test_identity_capture_is_required_and_canonical_on_every_preparation(self):
+        missing=self.prepare();missing.pop('live_identity_sha256')
+        self.assertEqual(self.bridge.handle(missing)['error'],'invalid_request')
+        for value in (None, True, 0, '', 'a'*63, 'A'*64, 'g'*64):
+            with self.subTest(value=value):
+                self.assertEqual(self.bridge.handle({**self.prepare(),'live_identity_sha256':value})['error'],'invalid_request')
+        self.assert_unchanged(False)
+        prepared=self.bridge.handle(self.prepare());self.assertIsNone(prepared['error'],prepared)
+        self.assertEqual(self.bridge.handle({**self.prepare(),'live_identity_sha256':'f'*64})['error'],'state_rejected')
+        self.assertEqual(self.bridge.handle(self.prepare()),prepared)
+        self.assert_unchanged();self.provider.assert_not_called()
 
     def test_preparation_retry_checks_new_capture_without_changing_existing_journal(self):
         prepared=self.bridge.handle(self.prepare());self.assertIsNone(prepared['error'],prepared)

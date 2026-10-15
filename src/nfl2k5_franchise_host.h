@@ -24,6 +24,8 @@ int nfl2k5_franchise_context_enabled(void);
 /* Application adapter, owner thread only. Read-only; no transaction lock. */
 struct FranchiseFinanceSnapshot;
 int nfl2k5_franchise_read_finance(struct FranchiseFinanceSnapshot *out);
+struct FranchiseIdentitySnapshot;
+int nfl2k5_franchise_read_identity(const struct FranchiseFinanceSnapshot *finance,struct FranchiseIdentitySnapshot *out);
 /* Explicit opt-in proposal mode always defers native writes; no commit grant. */
 /* Any callback thread may copy a captured intent; only the owner consumes it. */
 unsigned long long nfl2k5_franchise_submission_epoch(void);

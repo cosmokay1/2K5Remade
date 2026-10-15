@@ -41,11 +41,12 @@ misaligned bank members, duplicate membership (including across clubs/free
 agents), aliased club records and header/table changes during capture. It
 rechecks bank, calendar, cap and table metadata at the end.
 
-The native owner now captures this image when preparing a captured accepted
-proposal. The C client requires its used bytes, hashes them with Windows CNG,
-and adds `live_finance_sha256` to the otherwise captured preparation request.
-The service requires that canonical SHA256 and compares it to the independently
-read saved projection before reserving the journal. Missing captures, unsupported
+The native owner captures this image and its companion roster identity image
+when preparing a captured accepted proposal. The C client requires their used
+bytes, hashes them with Windows CNG, and adds `live_finance_sha256` and
+`live_identity_sha256` to the otherwise captured preparation request.
+The service requires both canonical SHA256s and compares them to independently
+read saved projections before reserving the journal. Missing captures, unsupported
 images and differing financial states cannot prepare work through this path.
 The existing saved-file/control/connection/deadline checks still run inside the
 preparation transaction. A failed local capture keeps signing held.
@@ -66,8 +67,38 @@ signing remains held, and no current code consumes this snapshot to authorize
 application. Cash and other unsupported opening obligations remain separate
 requirements.
 
+The companion `franchise.identity-state.v1` snapshot uses
+`FranchiseIdentitySnapshot`, allocated on the heap rather than the Windows
+stack. Its used bytes begin with three little-endian uint32 words: version1,
+bank count and member count. Each member then has 211 bytes: uint32 bank slot,
+four raw PBP/photo bytes, three raw DOB-region bytes, and two100-byte UTF-16LE
+name fields. Members are sorted by bank slot. Each name is nonempty, terminated
+within50 code units and zero padded; valid surrogate pairs are preserved, while
+control characters below32 and malformed UTF-16 are refused. Each record's raw
+biography fields and name pointers are checked again after reading its names;
+the bank header is rechecked at the end. Pointer relocation and roster order
+do not change it.
+
+All rostered and free-agent identities are included, matching the binding
+registry's membership scope. Unrostered bank biographies have no bound actor
+and are omitted; their contracts remain covered by the financial image. This
+does not issue new IDs, reroll personalities, prove real-world uniqueness or
+establish identity across bank/season migrations. The existing server binding
+checks remain authoritative for its saved actor mapping. No raw identity image
+is sent to the model or over the preparation protocol: only its SHA256 is sent.
+
+Both captures remain sampled comparisons. Equal identities and finances cannot
+prove that the active process selected the intended franchise namespace, that
+the pinned runtime is executing or that guest mutations have stopped. These
+conditions and revalidation at the actual transaction remain required before
+granting a one-use application permit. Current signing is still held.
+
 The CI command `python -m tools.check_native_finance_state <fixture executable>`
 runs the actual addon snapshot callback against authored relocated-memory files
 and compares it with saved semantics. It covers expanded banks, benign pointer
 relocation/free-agent ordering, financial and membership changes, malformed
 layouts and truncated memory. It neither boots the game nor verifies save/load.
+The same executable's `identity` mode is exercised by
+`python -m tools.check_native_identity_state <fixture executable>`, covering
+relocation, reordered free agents, expanded banks, unrelated player guard/name
+changes, valid Unicode and bounded/malformed name handling.

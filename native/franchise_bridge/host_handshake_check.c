@@ -13,8 +13,9 @@ static DWORD owner;
 static char last_request[4096];
 static FranchiseHostStatus take_status = FRANCHISE_HOST_OK;
 int nfl2k5_franchise_read_finance(struct FranchiseFinanceSnapshot *out){(void)out;assert(0);return 0;}
-FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient *client,const void *finance,size_t size) {
-    (void)client;(void)finance;(void)size;assert(0);return FRANCHISE_HOST_SERVICE_FAILURE;
+int nfl2k5_franchise_read_identity(const struct FranchiseFinanceSnapshot *finance,struct FranchiseIdentitySnapshot *out){(void)finance;(void)out;assert(0);return 0;}
+FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient *client,const void *finance,size_t size,const void *identity,size_t identity_size) {
+    (void)client;(void)finance;(void)size;(void)identity;(void)identity_size;assert(0);return FRANCHISE_HOST_SERVICE_FAILURE;
 }
 FranchiseHostStatus franchise_host_check_saved(FranchiseHostClient *client) {
     (void)client;assert(0);return FRANCHISE_HOST_SERVICE_FAILURE;

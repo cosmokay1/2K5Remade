@@ -3,6 +3,7 @@
 #include "signing_display.h"
 #include "saved_signing.h"
 #include "finance_state.h"
+#include "identity_state.h"
 #include <bcrypt.h>
 #include <cstring>
 #include <memory>
@@ -19,6 +20,17 @@ struct FranchiseHostClient {
     franchise::SavedSigningJournal candidate, journal;
     std::string operation;
 };
+static std::string signing_state_sha256(const unsigned char* bytes,size_t size) {
+    BCRYPT_ALG_HANDLE algorithm=nullptr;unsigned char digest[32];
+    if(BCryptOpenAlgorithmProvider(&algorithm,BCRYPT_SHA256_ALGORITHM,nullptr,0)<0)
+        throw std::runtime_error("Signing state SHA256 unavailable");
+    const auto hashed=BCryptHash(algorithm,nullptr,0,const_cast<PUCHAR>(bytes),static_cast<ULONG>(size),digest,sizeof(digest));
+    BCryptCloseAlgorithmProvider(algorithm,0);
+    if(hashed<0) throw std::runtime_error("Signing state SHA256 failed");
+    std::string fingerprint;fingerprint.reserve(64);
+    for(const auto byte:digest) {fingerprint+="0123456789abcdef"[byte>>4];fingerprint+="0123456789abcdef"[byte&15];}
+    return fingerprint;
+}
 extern "C" FranchiseHostStatus franchise_host_signing_display(const char* response,FranchiseSigningDisplay* out) {
     if(!response || !out) return FRANCHISE_HOST_INVALID_ARGUMENT;
     *out={};
@@ -113,7 +125,8 @@ extern "C" FranchiseHostStatus franchise_host_submit(FranchiseHostClient* client
     } catch (...) { client->ai_granted = false; return FRANCHISE_HOST_SERVICE_FAILURE; }
 }
 
-extern "C" FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient* client,const void* finance_state,size_t finance_size) {
+extern "C" FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient* client,const void* finance_state,size_t finance_size,
+                                                              const void* identity_state,size_t identity_size) {
     if(!client) return FRANCHISE_HOST_INVALID_ARGUMENT;
     if(client->pending || client->cached) return FRANCHISE_HOST_BUSY;
     if(client->candidate.preparation.is_null()) return FRANCHISE_HOST_NOT_READY;
@@ -124,17 +137,16 @@ extern "C" FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClie
        finance_size!=FRANCHISE_FINANCE_HEADER+FRANCHISE_FINANCE_RECORD*finance_get32(image+4) ||
        finance_get32(image+8)!=2 || finance_get32(image+24)!=32 || finance_get32(image+44))
         return FRANCHISE_HOST_INVALID_ARGUMENT;
+    const auto* identities=static_cast<const unsigned char*>(identity_state);
+    if(!identities || identity_size<FRANCHISE_IDENTITY_HEADER || identity_size>sizeof(FranchiseIdentitySnapshot::bytes) ||
+       finance_get32(identities)!=1 || finance_get32(identities+4)!=finance_get32(image+4) ||
+       finance_get32(identities+8)>finance_get32(image+4) ||
+       identity_size!=FRANCHISE_IDENTITY_HEADER+FRANCHISE_IDENTITY_RECORD*finance_get32(identities+8))
+        return FRANCHISE_HOST_INVALID_ARGUMENT;
     try {
         auto journal=client->candidate;
-        BCRYPT_ALG_HANDLE algorithm=nullptr;unsigned char digest[32];
-        if(BCryptOpenAlgorithmProvider(&algorithm,BCRYPT_SHA256_ALGORITHM,nullptr,0)<0)
-            throw std::runtime_error("Financial SHA256 unavailable");
-        const auto hashed=BCryptHash(algorithm,nullptr,0,const_cast<PUCHAR>(image),static_cast<ULONG>(finance_size),digest,sizeof(digest));
-        BCryptCloseAlgorithmProvider(algorithm,0);
-        if(hashed<0) throw std::runtime_error("Financial SHA256 failed");
-        std::string fingerprint;fingerprint.reserve(64);
-        for(const auto byte:digest) {fingerprint+="0123456789abcdef"[byte>>4];fingerprint+="0123456789abcdef"[byte&15];}
-        journal.preparation["live_finance_sha256"]=fingerprint;
+        journal.preparation["live_finance_sha256"]=signing_state_sha256(image,finance_size);
+        journal.preparation["live_identity_sha256"]=signing_state_sha256(identities,identity_size);
         const auto request=journal.preparation.dump();
         const auto status=franchise_host_submit(client,request.data(),request.size());
         if(status==FRANCHISE_HOST_OK) client->journal=std::move(journal);

@@ -2,6 +2,8 @@
 #include "game_addon.h"
 #include "franchise_addon.h"
 #include "finance_state.h"
+#include "identity_state.h"
+#include <stdlib.h>
 #include "../../src/nfl2k5_franchise_host.h"
 #include <stdio.h>
 #include <string.h>
@@ -45,6 +47,12 @@ int main(void){
     memset(&state,0xFF,sizeof(state));
     if(api->snapshot(FRANCHISE_FINANCE_SNAPSHOT,&state,sizeof(state)-1) ||
        api->snapshot(FRANCHISE_FINANCE_SNAPSHOT,&state,sizeof(state)) || state.size) return 7;
+    FranchiseIdentitySnapshot *identity=malloc(sizeof(*identity));
+    if(!identity) return 8;
+    memset(identity,0xFF,sizeof(*identity));
+    int invalid=api->snapshot(FRANCHISE_IDENTITY_SNAPSHOT,identity,sizeof(*identity)-1) ||
+                api->snapshot(FRANCHISE_IDENTITY_SNAPSHOT,identity,sizeof(*identity)) || identity->size;
+    free(identity);if(invalid) return 8;
     api->stop();
     puts("Actual adapter distinguishes judgment from precommit without extra sampling or offer intent");return 0;
 }

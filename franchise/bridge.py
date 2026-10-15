@@ -70,7 +70,7 @@ class Bridge:
                     raise Rejected('Saved-signing coordination is not configured')
                 fields={'protocol','request_id','operation','timeout_ms'}
                 if operation=='guest_signing_prepare':
-                    fields|={'team_id','proposal_request_id','guest_offer','expected_before_sha256','expected_revision','live_finance_sha256'}
+                    fields|={'team_id','proposal_request_id','guest_offer','expected_before_sha256','expected_revision','live_finance_sha256','live_identity_sha256'}
                 else:
                     fields|={'journal_request_id'}
                     if operation=='guest_signing_confirm': fields|={'expected_after_sha256'}
@@ -79,7 +79,7 @@ class Bridge:
                 timeout=request['timeout_ms']
                 if type(timeout) is not int or not 1<=timeout<=60000:
                     raise ValueError('Bounded saved-signing timeout required')
-                for key in ('expected_before_sha256','expected_after_sha256','live_finance_sha256'):
+                for key in ('expected_before_sha256','expected_after_sha256','live_finance_sha256','live_identity_sha256'):
                     if key in request and (type(request[key]) is not str or len(request[key])!=64
                             or any(c not in '0123456789abcdef' for c in request[key])):
                         raise ValueError('Canonical saved payload SHA256 required')
@@ -115,6 +115,9 @@ class Bridge:
                     from tools.franchise_finance_state import saved_finance_state
                     if hashlib.sha256(saved_finance_state(payload)).hexdigest()!=request['live_finance_sha256']:
                         raise Rejected('Live financial projection differs from the saved before-state; signing remains held')
+                    from tools.franchise_identity_state import saved_identity_state
+                    if hashlib.sha256(saved_identity_state(payload)).hexdigest()!=request['live_identity_sha256']:
+                        raise Rejected('Live roster identities differ from the saved before-state; signing remains held')
                     result=dict(request_id=request_id,state='prepared',before_payload_sha256=digest,write_authorized=False)
                     self._require_frame(request_id,result) # Before reserving the league journal.
                     result=guest_signing.prepare(self.store,request['team_id'],request['proposal_request_id'],request_id,

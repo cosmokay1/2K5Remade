@@ -1,6 +1,7 @@
 #include "nfl2k5_franchise_host.h"
 #include "host_client.h"
 #include "finance_state.h"
+#include "identity_state.h"
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -190,8 +191,12 @@ void nfl2k5_franchise_poll(void)
                  * It does not lock guest mutations or authorize application. */
                 FranchiseFinanceSnapshot finance;
                 const int captured=nfl2k5_franchise_read_finance(&finance);
+                FranchiseIdentitySnapshot *identity=malloc(sizeof(*identity));
+                const int identified=captured && identity && nfl2k5_franchise_read_identity(&finance,identity);
                 const FranchiseHostStatus status=franchise_host_prepare_accepted(franchise_client,
-                    captured?finance.bytes:NULL,captured?finance.size:0);
+                    captured?finance.bytes:NULL,captured?finance.size:0,
+                    identified?identity->bytes:NULL,identified?identity->size:0);
+                free(identity);
                 if(status!=FRANCHISE_HOST_NOT_READY) {
                     journal_locked=1;
                     if(status!=FRANCHISE_HOST_OK) goto failed;

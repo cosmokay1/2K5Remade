@@ -28,6 +28,7 @@ class SigningObserverTests(unittest.TestCase):
 #include "nfl2k5_franchise_host.h"
 #include "game_addon.h"
 #include "finance_state.h"
+#include "identity_state.h"
 #define NFL2K5_FRANCHISE_CLIENT 1
 static int context_enabled;
 static unsigned contexts;

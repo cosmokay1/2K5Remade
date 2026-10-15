@@ -32,7 +32,7 @@ static nlohmann::json submit(FranchiseHostClient* client,const nlohmann::json& r
 }
 int wmain(int argc,wchar_t** argv) {
     try {
-        require(argc==7);
+        require(argc==8);
         FranchiseHostClient* raw=nullptr;
         require(franchise_host_create(argv[1],argv[2],FRANCHISE_HOST_OFFLINE_FIXTURE,&raw)==FRANCHISE_HOST_OK);
         Client client(raw,&franchise_host_destroy);
@@ -46,14 +46,22 @@ int wmain(int argc,wchar_t** argv) {
         std::ifstream financial{std::filesystem::path(argv[6]),std::ios::binary};
         require(financial.good());
         std::vector<char> finance{std::istreambuf_iterator<char>(financial),std::istreambuf_iterator<char>()};
-        require(franchise_host_prepare_accepted(client.get(),nullptr,0)==FRANCHISE_HOST_INVALID_ARGUMENT);
-        require(franchise_host_prepare_accepted(client.get(),finance.data(),finance.size()-1)==FRANCHISE_HOST_INVALID_ARGUMENT);
+        std::ifstream biographies{std::filesystem::path(argv[7]),std::ios::binary};require(biographies.good());
+        std::vector<char> identities{std::istreambuf_iterator<char>(biographies),std::istreambuf_iterator<char>()};
+        require(franchise_host_prepare_accepted(client.get(),nullptr,0,nullptr,0)==FRANCHISE_HOST_INVALID_ARGUMENT);
+        require(franchise_host_prepare_accepted(client.get(),finance.data(),finance.size()-1,identities.data(),identities.size())==FRANCHISE_HOST_INVALID_ARGUMENT);
+        require(franchise_host_prepare_accepted(client.get(),finance.data(),finance.size(),nullptr,0)==FRANCHISE_HOST_INVALID_ARGUMENT);
+        require(franchise_host_prepare_accepted(client.get(),finance.data(),finance.size(),identities.data(),identities.size()-1)==FRANCHISE_HOST_INVALID_ARGUMENT);
         auto changed=finance;changed.at(changed.size()-10)^=1; // unrelated final bank slot's amount
-        require(franchise_host_prepare_accepted(client.get(),changed.data(),changed.size())==FRANCHISE_HOST_OK);
+        require(franchise_host_prepare_accepted(client.get(),changed.data(),changed.size(),identities.data(),identities.size())==FRANCHISE_HOST_OK);
         require(receive(client.get()).at("error")=="state_rejected");
         // Replaying the captured proposal must not spend another model request.
         require(submit(client.get(),proposal).at("result").at("outcome")=="accepted_proposal");
-        require(franchise_host_prepare_accepted(client.get(),finance.data(),finance.size())==FRANCHISE_HOST_OK);
+        auto changed_identity=identities;changed_identity.at(16)^=1; // unselected roster player's photo bytes
+        require(franchise_host_prepare_accepted(client.get(),finance.data(),finance.size(),changed_identity.data(),changed_identity.size())==FRANCHISE_HOST_OK);
+        require(receive(client.get()).at("error")=="state_rejected");
+        require(submit(client.get(),proposal).at("result").at("outcome")=="accepted_proposal");
+        require(franchise_host_prepare_accepted(client.get(),finance.data(),finance.size(),identities.data(),identities.size())==FRANCHISE_HOST_OK);
         const auto prepared=receive(client.get());
         require(prepared.at("error").is_null() && prepared.at("result").at("state")=="prepared");
         require(franchise_host_check_saved(client.get())==FRANCHISE_HOST_OK);

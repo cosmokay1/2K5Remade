@@ -38,6 +38,13 @@ def live_fixture(payload, relocation=0):
     word(0xB72918, bank)
     word(bank, count); word(bank+4, base)
     result[base:base+count*PLAYER_STRIDE] = payload[PLAYER_START:PLAYER_START+count*PLAYER_STRIDE]
+    cursor = 0x400000+relocation
+    for player in [player for team in roster['teams'].values() for player in team]+roster['free_agents']:
+        for field, name in ((0x10, 'first_name'), (0x14, 'last_name')):
+            encoded = (player[name]+'\0').encode('utf-16le')
+            word(base+player['source_slot']*PLAYER_STRIDE+field, cursor)
+            result[cursor:cursor+len(encoded)] = encoded
+            cursor += len(encoded)
     word(bank+0x38, len(roster['free_agents'])); word(bank+0x3C, free)
     for i, player in enumerate(roster['free_agents']):
         word(free+4*i, base+player['source_slot']*PLAYER_STRIDE)

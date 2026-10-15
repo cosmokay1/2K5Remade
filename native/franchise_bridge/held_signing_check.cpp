@@ -3,6 +3,7 @@
 #include "../../src/nfl2k5_franchise_host.h"
 #include "protocol.h"
 #include "finance_state.h"
+#include "identity_state.h"
 #include <windows.h>
 #include <cstdlib>
 #include <cstring>
@@ -36,9 +37,14 @@ int nfl2k5_franchise_read_finance(FranchiseFinanceSnapshot* out) {
     finance_put32(out->bytes,1);finance_put32(out->bytes+4,1);finance_put32(out->bytes+8,2);finance_put32(out->bytes+24,32);
     return 1;
 }
-FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient* c,const void* finance,size_t size) {
+int nfl2k5_franchise_read_identity(const FranchiseFinanceSnapshot* finance,FranchiseIdentitySnapshot* out) {
+    require(GetCurrentThreadId()==owner && finance);std::memset(out,0,sizeof(*out));out->size=FRANCHISE_IDENTITY_HEADER;
+    finance_put32(out->bytes,1);finance_put32(out->bytes+4,1);return 1;
+}
+FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient* c,const void* finance,size_t size,const void* identity,size_t identity_size) {
     require(GetCurrentThreadId()==owner && !c->pending);++preparations;
     require(finance && size==FRANCHISE_FINANCE_HEADER+FRANCHISE_FINANCE_RECORD);
+    require(identity && identity_size==FRANCHISE_IDENTITY_HEADER);
     if(preparation_status!=FRANCHISE_HOST_OK) return preparation_status;
     const std::string request=R"({"protocol":1,"request_id":"authored-guest","operation":"guest_signing_prepare"})";
     return franchise_host_submit(c,request.data(),request.size());

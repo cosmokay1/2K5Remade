@@ -1,5 +1,6 @@
 /* Authored memory file only, using the production capture implementation. */
 #include "finance_state.h"
+#include "identity_state.h"
 #include "../../src/nfl2k5_franchise_host.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,20 +24,24 @@ static int read_memory(uint32_t address,void *out,size_t size) {
     return range(address,size) && fseek(memory,(long)address,SEEK_SET)==0 && fread(out,1,size,memory)==size;
 }
 int main(int argc,char **argv) {
-    if(argc!=3 || !(memory=fopen(argv[1],"rb"))) return 2;
+    const int identity=argc==4 && !strcmp(argv[3],"identity");
+    if((argc!=3 && !identity) || !(memory=fopen(argv[1],"rb"))) return 2;
     if(fseek(memory,0,SEEK_END) || (extent=ftell(memory))<0) {fclose(memory);return 2;}
     NFL2K5AddonHost host={sizeof(host),range,read_memory};
-    FranchiseFinanceSnapshot *state=malloc(sizeof(*state));
+    size_t capacity=identity?sizeof(FranchiseIdentitySnapshot):sizeof(FranchiseFinanceSnapshot);
+    void *state=malloc(capacity);
     if(!state) {fclose(memory);return 2;}
     const NFL2K5AddonAPI *api=nfl2k5_addon_query(NFL2K5_ADDON_ABI);
     if(!api || !api->start(&host)) {free(state);fclose(memory);return 2;}
-    int captured=api->snapshot(FRANCHISE_FINANCE_SNAPSHOT,state,sizeof(*state));
+    int captured=api->snapshot(identity?FRANCHISE_IDENTITY_SNAPSHOT:FRANCHISE_FINANCE_SNAPSHOT,state,capacity);
     api->stop();
     fclose(memory);
     if(!captured) {free(state);return 1;}
     FILE *output=fopen(argv[2],"wb");
     if(!output) {free(state);return 2;}
-    int good=fwrite(state->bytes,1,state->size,output)==state->size;
+    uint32_t size=identity?((FranchiseIdentitySnapshot*)state)->size:((FranchiseFinanceSnapshot*)state)->size;
+    unsigned char *bytes=identity?((FranchiseIdentitySnapshot*)state)->bytes:((FranchiseFinanceSnapshot*)state)->bytes;
+    int good=fwrite(bytes,1,size,output)==size;
     if(fclose(output)) good=0;
     free(state);return good?0:2;
 }

@@ -6526,3 +6526,46 @@ status. Both actual-addon28-case comparisons and native boundary/interpreter
 checks passed. Build38730370102 also passed Windows/Linux runtime/tool and native
 presentation checks. No game binary was installed, guest write permitted or
 actual application/save/reload verified; those final requirements remain open.
+
+## Check every bound live roster identity before journal preparation
+
+Financially identical player banks can still contain different identities, while
+the existing observed biography protects only the selected candidate. Added an
+application-private identity snapshot covering all rostered/free-agent bank
+slots, their raw PBP/photo and DOB-region fields, and bounded UTF-16 first/last
+names in slot order. Native relocated pointers and roster ordering are excluded.
+The reader supports valid surrogate pairs and rejects malformed/unbounded names,
+rechecks each record's identity/pointers and the bank header, and allocates the
+expanded-bank buffer on the heap. Unrostered biographies have no bound actor;
+their contracts remain covered by the existing financial image.
+
+The actual addon owner now supplies both sampled images to preparation. The
+C client hashes both through the existing Windows CNG API, and the service
+requires both to match server-owned before-save projections before reserving
+the journal. Only the hashes cross this protocol; no names, hidden ratings or
+new inference are added to model requests. Terms/revision/bindings/book/control
+checks and persisted journals/recovery remain unchanged. Older preparation
+requests missing either digest are refused. Generic addon ABI2 and engine-sidecar
+process transport are unchanged; this is franchise application code.
+
+These comparisons do not prove active franchise namespace, runtime image or
+guest quiescence, and cannot authorize a later transaction. No apply permit,
+retail output-score replacement, installation or guest write was added. Identity
+migration and complete opening obligations remain required where unsupported.
+
+Validation: all805 Python regressions passed27.549s; three portable CTests
+passed0.95s. The actual addon callback passes25 identity comparison cases across
+relocated pointers, expanded5198-slot banks, reordered membership, unselected
+biography/name changes, valid Unicode, truncation and malformed names/pointers.
+The same25 pass AddressSanitizer/UndefinedBehaviorSanitizer; all28 existing native
+financial cases still pass. Service tests prove identity mismatch is rejected
+despite identical finances, missing/malformed fields cannot prepare work and
+bad retries preserve existing prepared state. Windows CNG/client execution,
+including unselected-identity rejection before matching preparation, is pending.
+
+The pinned MyNFL1 save still has SHA256
+4c8c31b4f400e25175223163a948e126cb83d10aa4bb98979a564ef287761ec3.
+Read-only identity projection covers2619 bank slots/2070 bound members with436782
+bytes and SHA256 a0dd8621024e0dffdc13282c27adddf085769ea308004a369b387eb8dbcc0386.
+The source save remained unchanged. This is saved-only evidence, not a live
+comparison, complete opening-book import or game application/save/reload result.

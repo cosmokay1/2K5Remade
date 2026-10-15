@@ -10,6 +10,7 @@
 #include "game_addon.h"
 #include "franchise_addon.h"
 #include "finance_state.h"
+#include "identity_state.h"
 #include "nfl2k5_sidecar_adapter.h"
 #ifdef NFL2K5_FRANCHISE_CLIENT
 #include "nfl2k5_franchise_host.h"
@@ -112,6 +113,10 @@ static bool signing_screen_name(uint32_t address, char out[151])
 int nfl2k5_franchise_read_finance(FranchiseFinanceSnapshot *out)
 {
     return franchise_finance_capture(&adapter_host,out);
+}
+int nfl2k5_franchise_read_identity(const FranchiseFinanceSnapshot *finance,FranchiseIdentitySnapshot *out)
+{
+    return franchise_identity_capture(&adapter_host,finance,out);
 }
 static bool signing_screen_observation(FranchiseSigningObservation *out, uint32_t expected_context)
 {
@@ -338,6 +343,15 @@ static int addon_event(const char *name,const void *data,size_t size) {
     return 0;
 }
 static int addon_snapshot(const char *name,void *out,size_t capacity) {
+    if(name && out && !strcmp(name,FRANCHISE_IDENTITY_SNAPSHOT) && capacity==sizeof(FranchiseIdentitySnapshot)) {
+        FranchiseFinanceSnapshot finance;
+        memset(out,0,capacity);
+        FranchiseIdentitySnapshot *identity=malloc(sizeof(*identity));
+        if(!identity) return 0;
+        const int captured=nfl2k5_franchise_read_finance(&finance) && nfl2k5_franchise_read_identity(&finance,identity);
+        if(captured) memcpy(out,identity,sizeof(*identity));
+        free(identity);return captured;
+    }
     if(name && out && !strcmp(name,FRANCHISE_FINANCE_SNAPSHOT) && capacity==sizeof(FranchiseFinanceSnapshot)) {
         FranchiseFinanceSnapshot state;
         memset(out,0,capacity);
