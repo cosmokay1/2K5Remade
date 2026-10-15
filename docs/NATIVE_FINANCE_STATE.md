@@ -139,3 +139,35 @@ expected projections. A mismatch exits nonzero; matching hashes do not establish
 the active franchise namespace, official NFL obligations, current AI authority,
 host/DMA exclusion or permission to apply a transaction. This is diagnostic
 evidence and is never consumed as an application permit.
+
+### A free agent reserved by the offer screen
+
+Actual SOFTDRINK v0.6 execution showed that opening Will Hernandez's offer removes
+his pointer from the free-agent pool before signing. His bank contract stays
+unchanged. The captured MyNFL1 state had identical cap/calendar fields, all32 team
+financial rows and all2619 bank contract/flag records, but slot2371 had no listed
+owner and its biography was absent from the member-only identity image. The
+remaining2069 sampled biographies matched the saved2070-member roster exactly.
+
+A strict saved-state comparison continues to reject this state. For an explicit
+read-only diagnostic, use the selected saved free-agent slot:
+
+```sh
+python3 -m tools.compare_live_franchise SAVEGAME.DAT live-franchise.dat --pending-free-agent-slot 2371
+```
+
+The expected offer-screen projection changes only that saved free agent's owner
+to unlisted and removes its identity row. It preserves every bank contract,
+calendar field, club financial row and other biography. Owned/unbound candidates,
+a different missing player, changed finances or mixed full/pending hashes fail.
+The comparison is explicitly scoped; the omitted player's live biography is not
+established by this image. Its current selected-player observation and eventual
+transaction checks remain necessary.
+
+Game-facing journal preparation accepts either the exact full saved pair or this
+exact transient pair for the player in the durable accepted proposal. Both hashes
+are checked together inside the journal transaction, including retries. The
+service derives the slot from its pinned bindings and accepted player ID; clients
+cannot supply a missing-player exception. Complete books, exact terms, current
+control, revision and save/recovery checks remain required. No game write or
+application permit is granted. The CLI diagnostic itself is not journal authority.

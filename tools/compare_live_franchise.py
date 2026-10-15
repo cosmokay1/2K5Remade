@@ -28,10 +28,17 @@ def read_capture(data):
     return finance, identity
 
 
-def compare(payload, capture):
+def compare(payload, capture, *, pending_free_agent_slot=None):
     finance, identity = read_capture(capture)
-    return {'financial_match': finance == saved_finance_state(payload),
-            'identity_match': identity == saved_identity_state(payload),
+    expected_finance, expected_identity = saved_finance_state(payload), saved_identity_state(payload)
+    scope = {}
+    if pending_free_agent_slot is not None:
+        from tools.franchise_offer_state import saved_offer_screen_state
+        expected_finance, expected_identity = saved_offer_screen_state(payload, pending_free_agent_slot)
+        scope = {'comparison_scope': 'offer_screen_pending_free_agent',
+                 'pending_free_agent_slot': pending_free_agent_slot}
+    return {**scope, 'financial_match': finance == expected_finance,
+            'identity_match': identity == expected_identity,
             'financial_sha256': hashlib.sha256(finance).hexdigest(),
             'identity_sha256': hashlib.sha256(identity).hexdigest()}
 
@@ -40,8 +47,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('save', type=Path)
     parser.add_argument('capture', type=Path)
+    parser.add_argument('--pending-free-agent-slot', type=int,
+                        help='Explicit diagnostic for the selected saved free agent temporarily absent from its pool')
     args = parser.parse_args(argv)
-    result = compare(args.save.read_bytes(), args.capture.read_bytes())
+    result = compare(args.save.read_bytes(), args.capture.read_bytes(),
+                     pending_free_agent_slot=args.pending_free_agent_slot)
     import json
     print(json.dumps(result, indent=2))
     if not result['financial_match'] or not result['identity_match']:

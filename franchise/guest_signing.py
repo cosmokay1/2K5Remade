@@ -120,8 +120,34 @@ def _read(store,db,request_id):
     return intent,state,before,after,proof
 
 
+def _check_live_preparation(payload, bindings, player_id, live_projection):
+    if live_projection is None:
+        return  # Direct offline journal callers do not claim a live capture.
+    if (type(live_projection) is not dict or set(live_projection) != {'finance', 'identity'} or
+            any(type(v) is not str or len(v) != 64 or any(c not in '0123456789abcdef' for c in v)
+                for v in live_projection.values())):
+        raise ValueError('Canonical live financial and identity digests required')
+    from tools.franchise_finance_state import saved_finance_state
+    from tools.franchise_identity_state import saved_identity_state
+    actual = (live_projection['finance'], live_projection['identity'])
+    full = (saved_finance_state(payload), saved_identity_state(payload))
+    if actual == tuple(_hash(value) for value in full):
+        return
+    # Bind the only allowed transient omission to the durable accepted proposal,
+    # never to a client-supplied slot or an arbitrary missing player.
+    members = resolve_bindings(bindings, payload)
+    selected = [slot for slot, player in members.items()
+                if player['player_id'] == player_id and player['team'] == 'free_agents']
+    if len(selected) == 1:
+        from tools.franchise_offer_state import saved_offer_screen_state
+        pending = saved_offer_screen_state(payload, selected[0])
+        if actual == tuple(_hash(value) for value in pending):
+            return
+    raise Rejected('Live financial/identity projections differ from the saved state or bound pending offer; signing remains held')
+
+
 def prepare(store,team_id,proposal_request_id,request_id,*,bindings,before_payload,guest_offer,
-            expected_before_sha256,expected_revision,access_check):
+            expected_before_sha256,expected_revision,access_check,live_projection=None):
     """Persist original save/accepted terms. This does not authorize guest writes."""
     if (any(type(v) is not str or not v.strip() for v in (team_id,proposal_request_id,request_id))
             or request_id==proposal_request_id or type(before_payload) is not bytes
@@ -137,6 +163,7 @@ def prepare(store,team_id,proposal_request_id,request_id,*,bindings,before_paylo
                     or before!=before_payload or _json(intent['bindings'])!=_json(bindings)
                     or _json(intent['guest_offer'])!=_json(guest_offer) or intent['expected_revision']!=expected_revision):
                 raise Rejected('Journal preparation retry changed or is already resolved')
+            _check_live_preparation(before_payload, bindings, intent['offer']['player_id'], live_projection)
             return {'request_id':request_id,'state':'prepared','before_payload_sha256':expected_before_sha256,'write_authorized':False}
         if db.execute("SELECT 1 FROM guest_signings WHERE state='prepared'").fetchone():
             raise Rejected('Another guest signing awaits recovery')
@@ -145,6 +172,7 @@ def prepare(store,team_id,proposal_request_id,request_id,*,bindings,before_paylo
             raise Rejected('Journal request already belongs to financial or negotiation history')
         story=store._settlement_story(db,team_id,proposal_request_id,request_id)
         offer=Offer.from_dict(story['offer'])
+        _check_live_preparation(before_payload, bindings, offer.player_id, live_projection)
         contract_format,ledger=_before_books(store,db,bindings,before_payload,offer,guest_offer,team_id)
         if (story.get('contract_format')!=contract_format or expected_revision!=story['evidence']['financial_revision']
                 or store._checkpoint_hash(ledger.preview_offer(offer,expected_revision))!=store._checkpoint_hash(story['proposal_preview'])):

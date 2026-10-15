@@ -61,6 +61,10 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       offer screen open, using a single-use thread-local context match in both
       compiled and interpreter hooks. Local actual-shim and generated-caller
       checks pass; game execution of this opt-in fix remains unverified.
+      Follow-up audit found CPU automatic negotiation also has a direct-write
+      route via00323B30 outside shared signing. The current per-record accepted
+      guard does not cover that route; move deferral before CPU loop dispatch
+      and validate both paths before enabling controlled signing.
       CPU settlement now also holds before removing a free agent or marking its
       offer refused; compiled and interpreter hooks preserve the pending record.
       Authored-loop and actual generated-caller probes pass locally; actual
@@ -119,6 +123,12 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       pass. After normal game exit, the validated pair is installed with all16
       save hashes and the launcher preserved. The user was asked to reopen a
       MyNFL1 offer screen for actual capture; AI and controlled signing remain off.
+      Actual capture now verifies matching cap/calendar/all32 club financial rows
+      and all2619 contracts. The selected free agent is temporarily unlisted while
+      its offer is open; the other2069 live member identities exactly match.
+      An explicit pending-offer projection now handles precisely the accepted
+      bound player's omission during journal preparation, preserving all other
+      comparisons. Actual AI signing/application/save recovery remains unfinished.
 - [ ] Reconcile the required opening obligations/rules before permitting financial
       writes, then prove signing and save/reload on the pinned pack.
       Optional explicit legacy-unknown cash scopes now preserve null total cash

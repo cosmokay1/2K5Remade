@@ -6995,3 +6995,62 @@ CPU/interactive pending-return fixtures, native DLL/pipe/restart/financial
 checks and existing interpreter fixtures. These checks do not establish actual
 post-install menu behavior. The latest read-only Deck check finds no running
 NFL2K5.exe and no live capture yet; launch/offer confirmation is still pending.
+
+
+### Actual SOFTDRINK offer capture and transient free-agent reconciliation
+
+The user says Look now; the new game session PID139951 maps the installed
+franchise addon and logs live_capture=written. Installed EXE/DLL hashes remain
+eefe906a...f5c9 /8b9bfb63...b32a as recorded above; provider and controlled-signing
+environment settings are absent. The465828-byte private capture SHA256 is
+8e6e09ad1d5918737cbd4446afcf24222cd4897a503d352367dfe43cace99d9b.
+Both current MyNFL1/UDATA save hashes still equal
+4c8c31b4f400e25175223163a948e126cb83d10aa4bb98979a564ef287761ec3.
+
+Strict full projections differ, and inspection identifies the entire difference:
+slot2371 (saved free agent Will Hernandez) has become unlisted in the live pool
+while the offer is open. Identity membership2070->2069 omits exactly that slot;
+all remaining biographies match. All2619 contract/flag records, all32 club
+financial rows and the entire cap/calendar header match byte-for-byte. This
+explains the private shared-signing probe's earlier apparent duplicate/absent
+free-agent issue: caller/menu membership must be accounted for separately from
+the shared routine. It is not proof of a full applied/saved transaction.
+
+Added an explicit read-only pending-offer expected projection, retaining strict
+comparison by default. The actual capture matches both projections exactly for
+that scope: finance172254b69b1405e45b9aa60ce36001bd93eea653ec53d7c88da0e16f36870352,
+identity1bd8efb558a7301e8519ee7177c8ac312b53e6e9fd238747e8b43378e553e491.
+The excluded selected biography still needs its current native observation and
+future commit validation; this member-only capture does not establish it.
+
+Journal preparation now checks the live pair inside its transaction after
+resolving the durable accepted player. It accepts exact full or exact selected
+pending-free-agent pairs only, derives the candidate from accepted player/pinned
+bindings, and rechecks retries. Clients cannot specify an omitted-player slot.
+Every other contract, owner, identity, calendar and money field remains compared;
+complete opening books, control and financial checks still apply. No native
+application, inference, remote renewal or write permission is added. All814
+offline Python regressions pass locally in30.797s, including new pending prepare/
+restart, cross-pair rejection, other financial/identity mismatch and no-mutation
+cases. Windows/Ubuntu CI still needs to run for this source change.
+
+Using the pinned4x profile, actual observed Giants roster-only figures reconcile
+as301.2M cap -211.984M payroll =89.216M room. This does not establish complete
+modern obligations or service/rookie classification. The user may back out
+without submitting; further actual game signing remains blocked on integration.
+Private actual-comparison evidence is native-05ac4e9/live-mynfl1-receipt.json;
+no capture/save data is committed.
+
+A separate CPU audit found a second automatic offer route from00324060 to
+00323B30 that directly removes a free agent and writes ownership/contracts,
+bypassing shared00323D80. Moving the existing CPU hold before the loop's dispatch
+is still required; no such fix is claimed in this reconciliation change.
+
+After verified collection, removed only the owned two-line temporary capture
+setting using an atomic launcher replacement (the executing shell retains its
+old inode). No game binary or save was changed; all16 save hashes remain the
+same. The launch entry returns to its original SHA256
+94f7dccc0a2e74fb693782fe925f6435d22928fcd02040e6d854339769c1c718.
+The capture remains intact, and future launches do not try another capture.
+Private capture-cleanup-receipt.json records the before/after hashes and backup;
+no provider/control settings were enabled or renewed.

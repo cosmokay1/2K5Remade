@@ -42,11 +42,11 @@ class GuestSigningBridgeTests(unittest.TestCase):
         return Bridge(FranchiseStore(self.fixture.path),**args)
 
     def prepare(self,**changes):
-        return dict(protocol=1,request_id='journal',operation='guest_signing_prepare',timeout_ms=5000,
+        return {**dict(protocol=1,request_id='journal',operation='guest_signing_prepare',timeout_ms=5000,
                     team_id='49ers',proposal_request_id='proposal',guest_offer=self.fixture.raw,
                     expected_revision=self.fixture.revision,expected_before_sha256=digest(self.fixture.before),
                     live_finance_sha256=digest(saved_finance_state(self.fixture.before)),
-                    live_identity_sha256=digest(saved_identity_state(self.fixture.before)),**changes)
+                    live_identity_sha256=digest(saved_identity_state(self.fixture.before))),**changes}
 
     def confirm(self):
         return dict(protocol=1,request_id='confirm',operation='guest_signing_confirm',timeout_ms=5000,
@@ -73,6 +73,36 @@ class GuestSigningBridgeTests(unittest.TestCase):
         self.assertIn('guest_signing_confirm',self.bridge.handle(hello)['result']['operations'])
         with self.assertRaises(ValueError): self.make_bridge(guest_snapshot=None)
         self.provider.assert_not_called();self.assert_unchanged(False)
+
+    def test_bound_pending_free_agent_prepares_and_retries_without_financial_mutation(self):
+        from tools.franchise_offer_state import saved_offer_screen_state
+        finance, identity = saved_offer_screen_state(self.fixture.before, 1)
+        request = self.prepare(live_finance_sha256=digest(finance), live_identity_sha256=digest(identity))
+        result = self.bridge.handle(request)
+        self.assertIsNone(result['error'], result)
+        self.assertFalse(result['result']['write_authorized'])
+        self.assertEqual(self.make_bridge().handle(request), result)
+        self.assert_unchanged(); self.provider.assert_not_called()
+        self.assertEqual(self.fixture.before, self.current)
+
+    def test_pending_offer_requires_joint_hashes_and_preserves_every_other_field(self):
+        from tools.franchise_offer_state import saved_offer_screen_state
+        finance, identity = saved_offer_screen_state(self.fixture.before, 1)
+        for financial, identities in ((finance, saved_identity_state(self.fixture.before)),
+                                      (saved_finance_state(self.fixture.before), identity)):
+            result = self.bridge.handle(self.prepare(live_finance_sha256=digest(financial),
+                                                    live_identity_sha256=digest(identities)))
+            self.assertEqual(result['error'], 'state_rejected'); self.assert_unchanged(False)
+        for offset in (12, 48, 432 + 1 * 11 + 1, 432 + 2 * 11 + 3):
+            changed = bytearray(finance); changed[offset] ^= 1
+            result = self.bridge.handle(self.prepare(live_finance_sha256=digest(changed),
+                                                    live_identity_sha256=digest(identity)))
+            self.assertEqual(result['error'], 'state_rejected'); self.assert_unchanged(False)
+        changed = bytearray(identity); changed[16] ^= 1
+        result = self.bridge.handle(self.prepare(live_finance_sha256=digest(finance),
+                                                live_identity_sha256=digest(changed)))
+        self.assertEqual(result['error'], 'state_rejected'); self.assert_unchanged(False)
+        self.provider.assert_not_called()
 
     def test_financial_mismatch_rejects_before_creating_a_journal(self):
         changed=bytearray(self.fixture.before)
@@ -136,7 +166,7 @@ class GuestSigningBridgeTests(unittest.TestCase):
         self.provider.assert_not_called();self.assertEqual(self.fixture.calls,1)
 
     def test_paths_payloads_raw_authority_and_extra_fields_cannot_be_supplied(self):
-        for name in ('save','path','before_payload','bindings','write_authorized','offer','game_stopped'):
+        for name in ('save','path','before_payload','bindings','write_authorized','offer','game_stopped','pending_free_agent_slot','live_projection'):
             with self.subTest(name=name):
                 self.assertEqual(self.bridge.handle({**self.prepare(),name:True})['error'],'invalid_request')
         self.assertEqual(self.bridge.handle({**self.prepare(),'expected_before_sha256':'0'*64})['error'],'state_rejected')

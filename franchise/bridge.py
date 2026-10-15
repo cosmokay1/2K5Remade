@@ -112,17 +112,12 @@ class Bridge:
                 elif operation=='guest_signing_prepare':
                     if digest!=request['expected_before_sha256']:
                         raise Rejected('Current save differs from the captured before-save')
-                    from tools.franchise_finance_state import saved_finance_state
-                    if hashlib.sha256(saved_finance_state(payload)).hexdigest()!=request['live_finance_sha256']:
-                        raise Rejected('Live financial projection differs from the saved before-state; signing remains held')
-                    from tools.franchise_identity_state import saved_identity_state
-                    if hashlib.sha256(saved_identity_state(payload)).hexdigest()!=request['live_identity_sha256']:
-                        raise Rejected('Live roster identities differ from the saved before-state; signing remains held')
                     result=dict(request_id=request_id,state='prepared',before_payload_sha256=digest,write_authorized=False)
                     self._require_frame(request_id,result) # Before reserving the league journal.
                     result=guest_signing.prepare(self.store,request['team_id'],request['proposal_request_id'],request_id,
                         bindings=self.guest_snapshot[0],before_payload=payload,guest_offer=request['guest_offer'],
-                        expected_before_sha256=digest,expected_revision=request['expected_revision'],access_check=guarded)
+                        expected_before_sha256=digest,expected_revision=request['expected_revision'],access_check=guarded,
+                        live_projection={'finance':request['live_finance_sha256'],'identity':request['live_identity_sha256']})
                 else:
                     if digest!=request['expected_after_sha256']:
                         raise Rejected('Current save differs from the submitted after-save')
