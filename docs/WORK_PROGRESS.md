@@ -6160,3 +6160,45 @@ confirm and disabled recovery. The fresh log is guest-journal-windows/probe.log
 in the private build stage. These are component fixtures, not game signing or
 save/reload acceptance. Next core work remains native journal coordination and
 verified opening obligations, followed by controlled apply/save/reload/recovery.
+
+## Native held acceptance to saved-signing preparation
+
+Added an explicit NFL2K5_FRANCHISE_GUEST_SIGNING=1 mode shared by the native
+host and service; absence defaults off and other values reject. Native startup
+requires the existing pinned-context/performance/guest-offer/held-negotiation
+configuration. The installed runtime remains unchanged and this unfinished mode
+must not be enabled there. A consumed validated captured acceptance is converted
+into a journal request using its exact source proposal ID, raw terms, team,
+revision and before-save hash; there are no caller overrides or new inference.
+The deterministic journal ID appends -guest to the proposal ID. Nonaccepted,
+uncaptured and error responses produce no preparation. Altered source evidence
+rejects through existing native validators. The C client requires a successful
+hello grant and all three advertised journal operations for journal writes.
+
+The actual owner-thread C host queues preparation only while the captured offer
+and screen remain current. Once queued it keeps retail judgment held and blocks
+further offer requests, retaining pending receipt collection across navigation.
+Errors, malformed/lost receipts and transport failures never unlock an uncertain
+signing. A preparation receipt must match ID/hash/state and deny write authority.
+Native display continues to describe a held signing rather than a completed
+contract. Durable pending-work guards survive restart; no automatic cancellation,
+guest application, file restore or remote renewal is introduced. Actual opening
+legacy obligations and apply/save/reload/recovery remain unfinished.
+
+Validation: all779 local regressions passed27.609s, including actual sidecar
+children with explicit environment opt-in, CLI replay and invalid-value refusal.
+Money audit passed5050 conservation cases. Native protocol checks passed0.25s,
+including source substitution, rejection/error handling and corrupt receipt
+refusal. Authored C-host fixtures now cover opt-in gating, owner-thread prepare,
+queued/failed preparation remaining held across changed offers/screens, and stale
+acceptance suppression; these fixtures use transport stubs, not game memory.
+
+Actual private MSVC compilation passed for the final host/client/DLL and plain-C
+smoke executable. Real Windows/Proton protocol, held-host, handshake and loadable
+addon fixtures passed under the isolated ABI2 fixture prefix, each with fresh
+child completion receipts and expected stdout. Private handoff-fixtures-receipt.json
+records staged DLL04128fbee37218606271247d03ee9bfab6bd45a2bfa9d4c37d9fae1cdf2c5cd7.
+Installed EXE1742d8c and DLLd4d1020 hashes remain unchanged. These authored
+component checks do not establish accepted live game application or save/reload.
+Hosted Windows/Linux CI and plain-C service lifecycle assertions remain to verify
+after push. No game execution, installation or paid request was performed.

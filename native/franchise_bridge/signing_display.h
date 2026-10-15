@@ -11,6 +11,8 @@ struct SigningDisplayText { std::string priorities,offer,history; };
 inline SigningDisplayText signing_display(const nlohmann::json& response) {
     if(!response.at("error").is_null()) throw std::runtime_error("No valid signing context");
     const auto& result=response.at("result");
+    if(result.contains("state") && result.at("state")=="prepared" && result.at("write_authorized")==false)
+        return {"","Accepted terms reserved. Signing remains held.","Game application and recovery are pending."};
     if(result.contains("signing_checkpoint")) {
         auto checkpoint=response;checkpoint["result"]=result.at("signing_checkpoint");
         auto text=signing_display(checkpoint);

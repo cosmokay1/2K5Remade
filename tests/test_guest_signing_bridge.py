@@ -214,6 +214,7 @@ class GuestSigningBridgeTests(unittest.TestCase):
         self.assert_unchanged(pending=confirm);self.provider.assert_not_called()
 
     def process_request(self,command,request,env=None):
+        if env is None: env=dict(os.environ,NFL2K5_FRANCHISE_GUEST_SIGNING='0')
         process=subprocess.Popen(command,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,env=env)
         try:
             process.stdin.write(json.dumps(request)+'\n');process.stdin.flush()
@@ -237,6 +238,13 @@ class GuestSigningBridgeTests(unittest.TestCase):
         command=[sys.executable,'-m','franchise.sidecar','--database',str(self.fixture.path),
                  '--provider','offline-fixture','--guest-save',str(save),'--guest-bindings',str(bindings)]
         self.assertEqual(self.process_request(command,self.prepare())['error'],'state_rejected')
+        enabled=dict(os.environ,NFL2K5_FRANCHISE_GUEST_SIGNING='1')
+        reply=self.process_request(command,self.prepare(),enabled);self.assertIsNone(reply['error'],reply)
+        for value in ('yes','','2'):
+            result=subprocess.run(command,input='',text=True,capture_output=True,
+                env=dict(enabled,NFL2K5_FRANCHISE_GUEST_SIGNING=value),timeout=10)
+            self.assertNotEqual(result.returncode,0)
+            self.assertIn('must be 0 or 1',result.stderr)
         command+=['--guest-signing']
         reply=self.process_request(command,self.prepare());self.assertIsNone(reply['error'],reply)
         save.write_bytes(self.fixture.after)

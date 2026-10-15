@@ -12,6 +12,9 @@ static int ready_value;
 static DWORD owner;
 static char last_request[4096];
 static FranchiseHostStatus take_status = FRANCHISE_HOST_OK;
+FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient *client) {
+    (void)client;assert(0);return FRANCHISE_HOST_SERVICE_FAILURE;
+}
 FranchiseHostStatus franchise_host_signing_display(const char *response,FranchiseSigningDisplay *out) {
     assert(response && out); memset(out,0,sizeof(*out));
     strcpy(out->priorities,"Authored priorities");return FRANCHISE_HOST_OK;
@@ -77,6 +80,7 @@ static DWORD WINAPI foreign_callback(void *unused)
 int main(void)
 {
     owner = GetCurrentThreadId();
+    _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SIGNING",L"0");
     _wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER", L"");
     _wputenv_s(L"NFL2K5_FRANCHISE_AI_BUDGET_DATABASE", L"");
     _wputenv_s(L"NFL2K5_FRANCHISE_AI_BUDGET_SCOPE", L"");

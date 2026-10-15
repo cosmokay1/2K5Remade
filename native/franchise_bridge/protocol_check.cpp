@@ -1,6 +1,7 @@
 #include "contract_response.h"
 #include "launch_options.h"
 #include "signing_display.h"
+#include "saved_signing.h"
 #include <iostream>
 
 int main(int argc,char** argv) {
@@ -805,6 +806,44 @@ int main(int argc,char** argv) {
         captured_event["evidence"]={{"financial_revision",0},{"personality",checkpoint["player_context"]["personality"]},
             {"relationships",checkpoint["player_context"]["relationships"]},{"performance",checkpoint["performance_context"]}};
         franchise::validate_result(captured_reply,captured_request);
+        const auto preparation=franchise::saved_signing_prepare(captured_request,captured_reply);
+        if(preparation!=nlohmann::json{{"protocol",1},{"request_id","captured-proposal-guest"},
+            {"operation","guest_signing_prepare"},{"timeout_ms",10000},{"team_id",checkpoint["team_id"]},
+            {"proposal_request_id","captured-proposal"},{"guest_offer",captured_request["guest_offer"]},
+            {"expected_revision",0},{"expected_before_sha256",checkpoint["saved_payload_sha256"]}})
+            throw std::runtime_error("Captured journal preparation changed accepted source");
+        nlohmann::json prepared={{"error",nullptr},{"result",{{"request_id",preparation["request_id"]},
+            {"state","prepared"},{"before_payload_sha256",checkpoint["saved_payload_sha256"]},{"write_authorized",false}}}};
+        franchise::validate_result(prepared,preparation);
+        if(franchise::signing_display(prepared).offer.find("Signing remains held.")==std::string::npos)
+            throw std::runtime_error("Preparation display implied a signing");
+        for(int scenario=0;scenario<5;++scenario) {
+            auto bad=prepared;
+            if(scenario==0) bad["result"]["write_authorized"]=true;
+            if(scenario==1) bad["result"]["request_id"]="other";
+            if(scenario==2) bad["result"]["state"]="settled";
+            if(scenario==3) bad["result"]["before_payload_sha256"]=std::string(64,'c');
+            if(scenario==4) bad["result"]["extra"]=false;
+            bool rejected=false;
+            try{franchise::validate_result(bad,preparation);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Invalid journal preparation receipt accepted");
+        }
+        auto declined=captured_reply;
+        declined["result"]["action"]="reject";declined["result"]["outcome"]="player_rejected";
+        declined["result"].erase("proposal_preview");
+        if(!franchise::saved_signing_prepare(captured_request,declined).is_null() ||
+           !franchise::saved_signing_prepare(captured_request,nlohmann::json{{"error","ai_disabled"}}).is_null() ||
+           !franchise::saved_signing_prepare(proposal_request,proposal_reply).is_null())
+            throw std::runtime_error("Unaccepted or uncaptured offer prepared a journal");
+        for(int scenario=0;scenario<3;++scenario) {
+            auto bad=captured_reply;
+            if(scenario==0) bad["result"]["guest_offer"]["amount_word"]=830;
+            if(scenario==1) bad["result"]["signing_checkpoint"]["financial_revision"]=1;
+            if(scenario==2) bad["result"]["signing_checkpoint"]["write_authorized"]=true;
+            bool rejected=false;
+            try{franchise::saved_signing_prepare(captured_request,bad);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Altered captured acceptance prepared a journal");
+        }
         auto held_display_reply=captured_reply;
         held_display_reply["result"]["signing_checkpoint"]["player_context"]["personality"]={
             {"money",0.5},{"security",0.2},{"playing_time",0.9},{"winning",0.8},{"loyalty",0.1}};

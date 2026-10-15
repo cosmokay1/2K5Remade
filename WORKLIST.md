@@ -40,6 +40,9 @@ native offer submission, player response, legal financial commit and save recove
       current save reads and expose bounded recovery status without AI access.
       Windows restarted save-reader compatibility is repaired and CI-verified
       at f876edb (Franchise38680339623, Build38680339592).
+      Explicit native preparation now binds the consumed captured acceptance to
+      its exact terms/hash/revision; queued preparation holds further offers
+      across screen changes and uncertain replies. No guest write is granted.
       Native application and save/reload remain unconnected.
       Game-facing acceptance remains held until native application, save/reload
       and recovery are connected and verified. Actual game execution remains

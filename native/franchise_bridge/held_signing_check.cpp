@@ -14,6 +14,8 @@ static nlohmann::json submitted;
 static unsigned submissions;
 static DWORD owner;
 static bool ready;
+static unsigned preparations;
+static FranchiseHostStatus preparation_status=FRANCHISE_HOST_NOT_READY;
 static void require(bool ok) { if(!ok) throw std::runtime_error("Held signing host invariant failed"); }
 FranchiseHostStatus franchise_host_create(const wchar_t*,const wchar_t*,FranchiseHostMode mode,FranchiseHostClient** out) {
     require(mode==FRANCHISE_HOST_VERTEX_RUNTIME);client.pending=false;*out=&client;return FRANCHISE_HOST_OK;
@@ -27,6 +29,12 @@ FranchiseHostStatus franchise_host_submit(FranchiseHostClient* c,const char* byt
     require(submitted.at("protocol")==1);++submissions;c->pending=true;return FRANCHISE_HOST_OK;
 }
 FranchiseHostStatus franchise_host_ready(FranchiseHostClient*,int* out) { require(GetCurrentThreadId()==owner);*out=ready;return FRANCHISE_HOST_OK; }
+FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient* c) {
+    require(GetCurrentThreadId()==owner && !c->pending);++preparations;
+    if(preparation_status!=FRANCHISE_HOST_OK) return preparation_status;
+    const std::string request=R"({"protocol":1,"request_id":"authored-guest","operation":"guest_signing_prepare"})";
+    return franchise_host_submit(c,request.data(),request.size());
+}
 FranchiseHostStatus franchise_host_take(FranchiseHostClient* c,char* buffer,size_t capacity,size_t* required) {
     require(GetCurrentThreadId()==owner && c->pending && ready);const char response[]="{\"fixture\":true}";
     require(capacity>=sizeof(response));std::memcpy(buffer,response,sizeof(response));*required=sizeof(response);
@@ -50,6 +58,7 @@ static void submit_foreign(const FranchiseSigningObservation& observation,unsign
 int main(int argc,char** argv) {
     try {
         owner=GetCurrentThreadId();
+        _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SIGNING",L"0");
         for(const auto* key:{L"NFL2K5_FRANCHISE_AI_BUDGET_DATABASE",L"NFL2K5_FRANCHISE_AI_BUDGET_SCOPE",
              L"NFL2K5_FRANCHISE_AI_REQUEST_LIMIT",L"NFL2K5_FRANCHISE_AI_TOKEN_LIMIT"}) _wputenv_s(key,L"");
         _wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER",L"vertex");
@@ -114,9 +123,44 @@ int main(int argc,char** argv) {
         submit_foreign(malformed,nfl2k5_franchise_submission_epoch());
         require(nfl2k5_franchise_submit_held(nullptr,nfl2k5_franchise_submission_epoch())==1);
         nfl2k5_franchise_signing_context(&observation);require(submissions==7);
+        require(preparations==0); // Opt-in default never prepares a journal.
         nfl2k5_franchise_stop();
         _wputenv_s(L"NFL2K5_FRANCHISE_NEGOTIATION",L"0");require(nfl2k5_franchise_start()==1);
         require(nfl2k5_franchise_submit_held(&observation,nfl2k5_franchise_submission_epoch())==0);nfl2k5_franchise_stop();
+        _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SIGNING",L"1");
+        require(nfl2k5_franchise_start()==0); // Requires held negotiation.
+        _wputenv_s(L"NFL2K5_FRANCHISE_NEGOTIATION",L"1");
+        for(auto status:{FRANCHISE_HOST_OK,FRANCHISE_HOST_NOT_READY,FRANCHISE_HOST_SERVICE_FAILURE}) {
+            preparation_status=status;preparations=0;
+            require(nfl2k5_franchise_start()==1);
+            nfl2k5_franchise_on_fsm(0x557B2C,1);nfl2k5_franchise_poll();
+            nfl2k5_franchise_signing_context(&observation);nfl2k5_franchise_poll();
+            submit_foreign(observation,nfl2k5_franchise_submission_epoch());
+            nfl2k5_franchise_signing_context(&observation);nfl2k5_franchise_poll();
+            require(preparations==1);
+            if(status==FRANCHISE_HOST_OK) {
+                require(submitted["operation"]=="guest_signing_prepare");
+                // Navigate away with preparation pending, then consume it.
+                nfl2k5_franchise_on_fsm(0,0);nfl2k5_franchise_poll();
+            }
+            const auto count=submissions;
+            nfl2k5_franchise_on_fsm(0x557B2C,1);
+            ++observation.offer_amount;
+            submit_foreign(observation,nfl2k5_franchise_submission_epoch());
+            nfl2k5_franchise_signing_context(&observation);
+            if(status!=FRANCHISE_HOST_NOT_READY) require(submissions==count && preparations==1);
+            require(nfl2k5_franchise_submit_held(nullptr,0)==1); // Never releases retail judgment.
+            nfl2k5_franchise_stop();
+        }
+        // Obsolete acceptance must never reserve a signing.
+        preparations=0;preparation_status=FRANCHISE_HOST_OK;
+        require(nfl2k5_franchise_start()==1);
+        nfl2k5_franchise_on_fsm(0x557B2C,1);nfl2k5_franchise_poll();
+        nfl2k5_franchise_signing_context(&observation);nfl2k5_franchise_poll();
+        submit_foreign(observation,nfl2k5_franchise_submission_epoch());
+        nfl2k5_franchise_signing_context(&observation);
+        ++observation.offer_amount;nfl2k5_franchise_signing_context(&observation);
+        nfl2k5_franchise_poll();require(preparations==0);nfl2k5_franchise_stop();
         require(argc==1 || argc==2);
         if(argc==2) {
             std::ofstream receipt(argv[1]);receipt<<"held-signing-host-passed\n";receipt.close();require(receipt.good());

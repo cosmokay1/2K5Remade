@@ -115,7 +115,10 @@ def main():
                         help='Pinned original saved payload for read-only signing reconciliation')
     parser.add_argument('--guest-bindings', default=os.environ.get('NFL2K5_FRANCHISE_GUEST_BINDINGS'),
                         help='Existing pinned player bindings; requires --guest-save')
-    parser.add_argument('--guest-signing', action='store_true',
+    journal_mode=os.environ.get('NFL2K5_FRANCHISE_GUEST_SIGNING','0')
+    if journal_mode not in ('0','1'):
+        parser.error('NFL2K5_FRANCHISE_GUEST_SIGNING must be 0 or 1')
+    parser.add_argument('--guest-signing', action='store_true',default=journal_mode=='1',
                         help='Experimental saved-signing journal coordination; requires pinned save/bindings, never writes game files')
     args = parser.parse_args()
     if args.impersonate_runtime and args.provider != "vertex":

@@ -22,6 +22,7 @@ static int receive(FranchiseHostClient* client) {
         if (!ready) Sleep(1);
     }
     if (!require_status(franchise_host_take(client,NULL,0,&required),FRANCHISE_HOST_BUFFER_TOO_SMALL) || !required) return 0;
+    if (!require_status(franchise_host_prepare_accepted(client),FRANCHISE_HOST_BUSY)) return 0;
     {
         char sentinel = 'x';
         size_t repeated = 0;
@@ -36,11 +37,13 @@ static int receive(FranchiseHostClient* client) {
             repeated != required || response[required-1] != '\0') { free(response); return 0; }
         puts(response); free(response);
     }
-    return require_status(franchise_host_take(client,NULL,0,&required),FRANCHISE_HOST_NOT_READY) &&
+    return require_status(franchise_host_prepare_accepted(client),FRANCHISE_HOST_NOT_READY) &&
+        require_status(franchise_host_take(client,NULL,0,&required),FRANCHISE_HOST_NOT_READY) &&
         require_status(franchise_host_ready(client,&ready),FRANCHISE_HOST_OK) && !ready;
 }
 
 int wmain(int argc, wchar_t** argv) {
+    if(!require_status(franchise_host_prepare_accepted(NULL),FRANCHISE_HOST_INVALID_ARGUMENT)) return 1;
     FranchiseHostClient* client = NULL;
     char oversized[4096];
     int ready = 1, ok = 0;

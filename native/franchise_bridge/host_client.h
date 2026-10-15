@@ -43,10 +43,15 @@ FranchiseHostStatus franchise_host_create_with_token_budget(const wchar_t* pytho
     unsigned long long request_limit, unsigned long long token_limit, FranchiseHostClient** out_client);
 /* Explicit UTF-8 JSON bytes, excluding terminator; max 4095, no NUL/CR/LF.
  * A pending or unread cached reply rejects the next submission as BUSY.
- * AI negotiate requires a validated successful hello grant. Server access is
+ * AI negotiation and journal writes require a validated successful hello grant;
+ * journal writes additionally require advertised journal operations. Server access is
  * checked again per request; ai_disabled/failedhello clears the local grant.
  * Manual and read operations remain available without an AI grant. */
 FranchiseHostStatus franchise_host_submit(FranchiseHostClient* client, const char* bytes, size_t length);
+/* Queue preparation only for the last consumed, validated captured acceptance.
+ * Requires hello AI grant and advertised journal support. NOT_READY means no
+ * accepted proposal. No caller overrides and no guest write grant. */
+FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient* client);
 /* Nonblocking; reports 1 for an unread cached reply or completed transport task. */
 FranchiseHostStatus franchise_host_ready(FranchiseHostClient* client, int* ready_out);
 /* required_size includes the NUL terminator. NULL+0 queries a ready reply's

@@ -504,3 +504,29 @@ automatic shutdown renewal is introduced. Startup recovery from an unreadable or
 invalid-layout save still needs a dedicated recovery launcher; it is not silently
 accepted as a valid opening snapshot. Actual native application/save/reload,
 legacy cash import and real-game acceptance remain open.
+
+### Native held acceptance preparation
+
+`NFL2K5_FRANCHISE_GUEST_SIGNING=1` explicitly enables the same service journal
+mode and native coordination. Only `0` or `1` are accepted; absence defaults off.
+The game additionally requires its existing pinned context, saved-performance,
+guest-offer and held-negotiation configuration. This unfinished mode must remain
+off in the installed runtime until application and recovery are connected.
+
+After consuming a validated captured acceptance, the native client can prepare
+only that exact proposal, using its checkpoint team, revision, save hash and
+captured raw terms. The journal ID is the proposal ID with `-guest` appended.
+There are no caller-supplied overrides. A successful hello AI grant and advertised
+journal capability are required; the server still checks current remote control.
+Rejections, counters, errors, uncaptured proposals and obsolete screen/offer
+responses do not trigger native preparation. Preparation requests no inference.
+
+Once queued, the owner-thread host blocks further offer requests and keeps retail
+signing held across changed terms and screen transitions. It consumes the pending
+receipt even after leaving the screen. Error, lost or malformed replies never
+unlock signing: the journal may already have committed. The receipt is strictly
+matched to the journal ID and before-save hash and cannot grant guest writes.
+Logs retain the receipt for recovery; no guest application, file restore, automatic
+cancellation or recovery completion is implied. A restart does not clear a
+durable journal; the service's pending-work guard continues to reject competing
+writes. Recovery must inspect the saved journal before any later application.

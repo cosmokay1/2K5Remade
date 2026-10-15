@@ -936,6 +936,16 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
     if (!response["error"].is_null()) return;
     const auto& result = response["result"];
     auto operation = request.at("operation").get<std::string>();
+    if(operation=="guest_signing_prepare") {
+        if(!result.is_object() || result.size()!=4 || result.at("request_id")!=request.at("request_id") ||
+           result.at("state")!="prepared" || result.at("write_authorized")!=false ||
+           result.at("before_payload_sha256")!=request.at("expected_before_sha256"))
+            throw std::runtime_error("Invalid saved-signing preparation receipt");
+        const auto hash=result.at("before_payload_sha256").get<std::string>();
+        if(hash.size()!=64 || hash.find_first_not_of("0123456789abcdef")!=std::string::npos)
+            throw std::runtime_error("Invalid saved-signing payload hash");
+        return;
+    }
     if(operation=="negotiate_proposal" && request.contains("observation")) {
         auto checkpoint_request=request;
         checkpoint_request["operation"]="signing_context";

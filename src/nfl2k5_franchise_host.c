@@ -15,6 +15,7 @@ static int signing_active, context_sent;
 static int saved_performance;
 static int inspect_guest_offer;
 static int proposal_requested, proposal_sent, proposal_pending;
+static int journal_enabled, journal_pending, journal_locked;
 /* One bounded submit intent. Foreign callbacks never inspect owner state or
  * touch the transport. Screen transitions/stop invalidate the copied intent. */
 static SRWLOCK submission_lock=SRWLOCK_INIT;
@@ -83,6 +84,7 @@ void nfl2k5_franchise_stop(void)
     submission_enabled=submission_active=submission_pending=0;++submission_epoch;
     ReleaseSRWLockExclusive(&submission_lock);
     proposal_requested=proposal_sent=proposal_pending=0;
+    journal_enabled=journal_pending=journal_locked=0;
     context_sequence = context_logged = 0;
     signing_active = context_sent = 0;
     observation_valid = observation_fresh = 0;
@@ -113,7 +115,7 @@ void nfl2k5_franchise_on_fsm(uint32_t descriptor, int push)
     }
     signing_active=active;
     nfl2k5_franchise_poll();
-    if (hello_failed || hello_pending || context_pending) return;
+    if (hello_failed || hello_pending || context_pending || journal_locked) return;
     if (push && descriptor == 0x00557B2Cu && (!context_enabled || !hello_consumed)) {
         static const char request[] = "{\"protocol\":1,\"request_id\":\"game-sign-hello\",\"operation\":\"hello\"}";
         if (franchise_host_submit(franchise_client, request, sizeof(request) - 1) != FRANCHISE_HOST_OK)
@@ -130,7 +132,7 @@ void nfl2k5_franchise_poll(void)
 {
     if ((DWORD)InterlockedCompareExchange(&franchise_owner_thread,0,0) != GetCurrentThreadId() ||
         !franchise_client || hello_failed) return;
-    if (hello_pending || context_pending) {
+    if (hello_pending || context_pending || journal_pending) {
         int ready = 0;
         static char response[65536];
         size_t required = 0;
@@ -139,7 +141,22 @@ void nfl2k5_franchise_poll(void)
         if (!ready) return;
         if (franchise_host_take(franchise_client, response, sizeof(response), &required) != FRANCHISE_HOST_OK)
             goto failed;
-        if (context_pending) {
+        if(journal_pending) {
+            journal_pending=0;
+            /* A lost/error receipt may still follow a committed preparation.
+             * Never unlock or submit another offer without journal recovery. */
+            fprintf(stderr,"[FRANCHISE] Held signing preparation reply: %s\n",response);
+            if(signing_active && observation_valid && observation_fresh &&
+               screen_epoch==requested_epoch && same_observation(&observed,&requested)) {
+                FranchiseSigningDisplay next={0};
+                if(franchise_host_signing_display(response,&next)!=FRANCHISE_HOST_OK) {
+                    snprintf(next.offer,sizeof(next.offer),"Signing paused. Original signing remains held.");
+                    snprintf(next.history,sizeof(next.history),"Check saved-signing recovery before further offers.");
+                }
+                snprintf(next.title,sizeof(next.title),"%s %s",requested.first_name,requested.last_name);
+                AcquireSRWLockExclusive(&display_lock);display=next;display_valid=1;ReleaseSRWLockExclusive(&display_lock);
+            }
+        } else if (context_pending) {
             context_pending = 0;
             const int was_proposal=proposal_pending;proposal_pending=0;
             int current=signing_active && observation_valid && observation_fresh &&
@@ -159,6 +176,17 @@ void nfl2k5_franchise_poll(void)
                 if (current)
                     fprintf(stderr, "[FRANCHISE] %s reply: %s\n", was_proposal ? "Held negotiation" : "Read-only signing context", response);
                 else fprintf(stderr,"[FRANCHISE] Discarded obsolete signing context reply.\n");
+            }
+            if(current && was_proposal && journal_enabled) {
+                const FranchiseHostStatus status=franchise_host_prepare_accepted(franchise_client);
+                if(status!=FRANCHISE_HOST_NOT_READY) {
+                    journal_locked=1;
+                    if(status!=FRANCHISE_HOST_OK) goto failed;
+                    journal_pending=1;
+                    AcquireSRWLockExclusive(&display_lock);
+                    snprintf(display.offer,sizeof(display.offer),"Preparing accepted terms. Signing remains held.");
+                    ReleaseSRWLockExclusive(&display_lock);
+                }
             }
         } else {
             hello_pending = 0;
@@ -219,7 +247,7 @@ static void consume_submission(const FranchiseSigningObservation *o) {
 }
 void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
 {
-    if (!nfl2k5_franchise_context_enabled() || !franchise_client) return;
+    if (!nfl2k5_franchise_context_enabled() || !franchise_client || journal_locked) return;
     observation_fresh=0; /* NULL or failed sampling invalidates reply freshness. */
     if (!o) {
         consume_submission(NULL);proposal_requested=0;
@@ -325,6 +353,10 @@ int nfl2k5_franchise_start(void)
     if(negotiate && *negotiate && wcscmp(negotiate,L"0") && wcscmp(negotiate,L"1")) return 0;
     const int hold_enabled=negotiate && !wcscmp(negotiate,L"1");
     if(hold_enabled && (!inspect_context || !inspect_performance || !offer_enabled)) return 0;
+    const wchar_t *journal=_wgetenv(L"NFL2K5_FRANCHISE_GUEST_SIGNING");
+    if(journal && wcscmp(journal,L"0") && wcscmp(journal,L"1")) return 0;
+    const int prepare_enabled=journal && !wcscmp(journal,L"1");
+    if(prepare_enabled && !hold_enabled) return 0;
     const wchar_t *budget_database = _wgetenv(L"NFL2K5_FRANCHISE_AI_BUDGET_DATABASE");
     const wchar_t *budget_scope = _wgetenv(L"NFL2K5_FRANCHISE_AI_BUDGET_SCOPE");
     const wchar_t *budget_limit = _wgetenv(L"NFL2K5_FRANCHISE_AI_REQUEST_LIMIT");
@@ -365,6 +397,7 @@ int nfl2k5_franchise_start(void)
     submission_enabled=hold_enabled;submission_active=submission_pending=0;++submission_epoch;
     ReleaseSRWLockExclusive(&submission_lock);
     proposal_requested=proposal_sent=proposal_pending=0;
+    journal_enabled=prepare_enabled;journal_pending=journal_locked=0;
     context_revision = revision;
     context_sequence = context_logged = 0;
     request_session=GetTickCount64();

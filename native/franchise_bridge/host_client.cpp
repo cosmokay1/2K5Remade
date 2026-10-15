@@ -1,6 +1,7 @@
 #include "host_client.h"
 #include "pipe_client.h"
 #include "signing_display.h"
+#include "saved_signing.h"
 #include <cstring>
 #include <memory>
 #include <string>
@@ -11,6 +12,8 @@ struct FranchiseHostClient {
     bool pending = false;
     bool cached = false;
     bool ai_granted = false;
+    bool journal_capable = false;
+    std::string request, preparation;
     std::string operation;
 };
 extern "C" FranchiseHostStatus franchise_host_signing_display(const char* response,FranchiseSigningDisplay* out) {
@@ -92,14 +95,30 @@ extern "C" FranchiseHostStatus franchise_host_submit(FranchiseHostClient* client
             !request.at("operation").is_string() || request.at("operation").get<std::string>().empty()) return FRANCHISE_HOST_INVALID_ARGUMENT;
         operation = request.at("operation").get<std::string>();
     } catch (...) { return FRANCHISE_HOST_INVALID_ARGUMENT; }
-    if ((operation == "negotiate" || operation == "negotiate_proposal") && !client->ai_granted)
+    const bool journal_write=operation=="guest_signing_prepare" || operation=="guest_signing_confirm";
+    if ((operation == "negotiate" || operation == "negotiate_proposal" || journal_write) && !client->ai_granted)
+        return FRANCHISE_HOST_SERVICE_FAILURE;
+    if(journal_write && !client->journal_capable)
         return FRANCHISE_HOST_SERVICE_FAILURE;
     try {
         client->transport->submit(std::move(frame));
+        client->request.assign(bytes,length);
+        client->preparation.clear();
         client->operation = std::move(operation);
         client->pending = true;
         return FRANCHISE_HOST_OK;
     } catch (...) { client->ai_granted = false; return FRANCHISE_HOST_SERVICE_FAILURE; }
+}
+
+extern "C" FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient* client) {
+    if(!client) return FRANCHISE_HOST_INVALID_ARGUMENT;
+    if(client->pending || client->cached) return FRANCHISE_HOST_BUSY;
+    if(client->preparation.empty()) return FRANCHISE_HOST_NOT_READY;
+    if(!client->ai_granted || !client->journal_capable) return FRANCHISE_HOST_SERVICE_FAILURE;
+    try {
+        const auto request=client->preparation;
+        return franchise_host_submit(client,request.data(),request.size());
+    } catch(...) {client->ai_granted=false;return FRANCHISE_HOST_SERVICE_FAILURE;}
 }
 
 extern "C" FranchiseHostStatus franchise_host_ready(FranchiseHostClient* client, int* ready_out) {
@@ -123,10 +142,20 @@ extern "C" FranchiseHostStatus franchise_host_take(FranchiseHostClient* client, 
             client->pending = false;
             client->reply = client->transport->take();
             const auto response = franchise::parse_frame(client->reply); // Already transport-validated.
-            if (client->operation == "hello")
+            if (client->operation == "hello") {
                 client->ai_granted = response.at("error").is_null() &&
                     response.at("result").at("ai_enabled").is_boolean() && response.at("result").at("ai_enabled") == true;
+                client->journal_capable=false;
+                if(client->ai_granted) {
+                    const auto& ops=response.at("result").at("operations");
+                    client->journal_capable=true;
+                    for(const auto* name:{"guest_signing_prepare","guest_signing_confirm","guest_signing_status"})
+                        client->journal_capable=client->journal_capable && std::find(ops.begin(),ops.end(),name)!=ops.end();
+                }
+            }
             if (response.at("error") == "ai_disabled") client->ai_granted = false;
+            const auto prepare=franchise::saved_signing_prepare(franchise::parse_frame(client->request),response);
+            if(!prepare.is_null()) client->preparation=prepare.dump();
             client->cached = true;
         }
         *required_size = client->reply.size()+1;
