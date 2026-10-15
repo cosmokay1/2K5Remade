@@ -6987,3 +6987,11 @@ installed-menu-hooks-receipt.json is copied locally. AI and controlled signing
 remain off. The user was asked to launch the same Steam entry, load MyNFL1 and
 open a contract offer without submitting. Actual post-install callback/capture,
 visual behavior and game/save comparison remain unverified.
+
+
+Source268e8d8 now passed the full Windows/Ubuntu Franchise38762514947 suite and
+Build38762515073. This includes the new compiled actual-hook registration test,
+CPU/interactive pending-return fixtures, native DLL/pipe/restart/financial
+checks and existing interpreter fixtures. These checks do not establish actual
+post-install menu behavior. The latest read-only Deck check finds no running
+NFL2K5.exe and no live capture yet; launch/offer confirmation is still pending.
