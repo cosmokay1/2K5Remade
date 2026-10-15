@@ -36,6 +36,10 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       now preserves exact terms, promises and cash with restart/replay checks.
       Read-only saved-signing confirmation now checks pinned identities, exact
       contract terms, unchanged bank contracts/calendar and all32 payrolls.
+      Saved confirmation also checks a shared exact native target image, including
+      preserved packed status bits and byte8 flags across the whole bank. An
+      isolated actual-generated signing probe matches pending-before/final images;
+      this does not prove live application or save/reload.
       A durable engine journal now preserves before/after saves, freezes competing
       store writes and commits confirmed effects with the ledger atomically.
       Explicit opt-in service operations now prepare/confirm against server-owned

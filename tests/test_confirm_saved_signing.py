@@ -7,6 +7,9 @@ import unittest
 
 from franchise.guest_contracts import GuestContractTerms
 from tools.confirm_saved_signing import confirm_saved_signing
+from tools.franchise_offer_state import expected_signed_state
+from tools.franchise_finance_state import saved_finance_state
+from tools.franchise_identity_state import saved_identity_state
 from tools.franchise_snapshot_bindings import create_bindings, SOFTDRINK_PROFILE, SOFTDRINK_XBE_SHA256
 from tools.inspect_franchise_save import PLAYER_START, PLAYER_STRIDE
 import test_legacy_contracts as fixtures
@@ -128,5 +131,55 @@ class SavedSigningConfirmationTests(unittest.TestCase):
         self.assertEqual(report['contract_format'],'softdrink_fxg_v1')
         self.assertEqual(report['contract_charges'],[19064000,14092000])
         self.assertEqual(report['after_roster_payroll']-report['before_roster_payroll'],19064000)
+        self.assertEqual(expected_signed_state(self.bindings,self.before,offer=self.offer,
+            guest_offer=self.raw,team_id='49ers'),
+            (saved_finance_state(self.after),saved_identity_state(self.after)))
         self.bindings['game_profile']['xbe_sha256']='0'*64
         with self.assertRaises(ValueError): self.confirm()
+
+    def test_expected_native_target_matches_independently_authored_saved_signing(self):
+        before=self.before
+        for team,index in (('49ers',0),('Bears',1)):
+            expected=expected_signed_state(self.bindings,before,offer=self.offer,
+                guest_offer=self.raw,team_id=team)
+            after=self.signed(before,team=index)
+            self.assertEqual(expected,(saved_finance_state(after),saved_identity_state(after)))
+        self.assertEqual(self.before,before)
+
+    def test_raw_flag_changes_outside_native_signing_effects_are_rejected(self):
+        for slot,offset,bit in ((0,8,1),(1,8,1),(2,8,1),
+                                (0,36,1<<31),(1,36,1<<31),(2,36,1<<31)):
+            after=bytearray(self.after)
+            where=PLAYER_START+slot*PLAYER_STRIDE+offset
+            if offset==8:after[where]^=bit
+            else:struct.pack_into('<I',after,where,struct.unpack_from('<I',after,where)[0]^bit)
+            with self.subTest(slot=slot,offset=offset),self.assertRaisesRegex(ValueError,'raw financial'):
+                self.confirm(bytes(after))
+
+    def test_target_preserves_other_packed_bits_and_only_clears_signing_flag(self):
+        before=bytearray(self.before)
+        where=PLAYER_START+PLAYER_STRIDE
+        before[where+8]=0xA9
+        preserved=0xF000FFF0
+        original=struct.unpack_from('<I',before,where+36)[0]
+        struct.pack_into('<I',before,where+36,original|preserved)
+        self.before=bytes(before)
+        after=bytearray(self.signed(self.before))
+        after[where+8]=0xA1
+        packed=struct.unpack_from('<I',after,where+36)[0]
+        struct.pack_into('<I',after,where+36,packed|preserved)
+        self.assertEqual(expected_signed_state(self.bindings,self.before,offer=self.offer,
+            guest_offer=self.raw,team_id='49ers'),
+            (saved_finance_state(bytes(after)),saved_identity_state(bytes(after))))
+        self.confirm(bytes(after))
+        after[where+8]|=8
+        with self.assertRaisesRegex(ValueError,'raw financial'):self.confirm(bytes(after))
+
+    def test_target_refuses_wrong_candidate_or_terms(self):
+        owned=GuestContractTerms.from_context(**self.raw).to_offer(self.bindings['players'][0]['player_id'])
+        unknown=GuestContractTerms.from_context(**self.raw).to_offer('unknown')
+        for offer,raw,team in ((unknown,self.raw,'49ers'),(owned,self.raw,'49ers'),
+                               (self.offer,{**self.raw,'amount_word':828},'49ers'),
+                               (self.offer,self.raw,'unsupported')):
+            with self.subTest(team=team),self.assertRaises(ValueError):
+                expected_signed_state(self.bindings,self.before,offer=offer,guest_offer=raw,team_id=team)

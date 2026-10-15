@@ -171,3 +171,29 @@ service derives the slot from its pinned bindings and accepted player ID; client
 cannot supply a missing-player exception. Complete books, exact terms, current
 control, revision and save/recovery checks remain required. No game write or
 application permit is granted. The CLI diagnostic itself is not journal authority.
+
+### Expected isolated signing target
+
+`tools.franchise_offer_state.expected_signed_state` derives the final financial
+and identity comparison images from a pinned before-save, bound free-agent ID,
+exact accepted offer/captured terms and target team. It returns comparison bytes,
+not a modified save or memory-write command. The image moves only the selected
+owner, updates its amount and the native mapped term/bonus/shape fields,
+preserves the other packed bits, clears player byte8 bit3 and adds the exact
+first-year raw charge to the target payroll. Complete roster identity membership
+is restored; other records, cap, calendar and club fields remain exact.
+
+Saved confirmation now checks this image after its existing detailed economic,
+identity, calendar and payroll checks. Thus unrelated packed-status or bank-flag
+changes cannot be hidden by equal decoded contract values. Existing result fields
+and journal formats are unchanged. Unsupported identity changes (including any
+native custom commentary-ID reassignment) still require separate validation;
+this does not relax identity binding or claim every native signing variant.
+
+A private isolated probe executes the actual generated shared signing routine,
+with authored relocated memory, local legal constants, retail judgment bypassed
+and UI/judgment calls configured to abort. Its pending-before image and final
+financial/identity images match the expected projections, including preserved
+packed bits and the cleared flag. This is generated-routine evidence, not game
+execution, an uninterrupted transaction guarantee, a permit or save/reload proof.
+The installed runtime remains unchanged and controlled signing remains held.

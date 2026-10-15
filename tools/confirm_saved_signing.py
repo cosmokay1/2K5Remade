@@ -79,6 +79,16 @@ def confirm_saved_signing(bindings,before,after,*,expected_before_sha256,offer,g
         delta=(current['roster_payroll_dollars']-previous['roster_payroll_dollars'])*scale
         if delta!=(charges[0] if team==team_id else 0):
             raise ValueError('Saved payroll change differs from the accepted contract charge')
+    # Check the raw financial comparison boundary too. Decoded economic fields
+    # alone omit other packed status bits and byte8 flags, including unbound
+    # bank records. The same target image can be used by a native coordinator.
+    from tools.franchise_offer_state import expected_signed_state
+    from tools.franchise_finance_state import saved_finance_state
+    from tools.franchise_identity_state import saved_identity_state
+    expected_finance, expected_identity = expected_signed_state(bindings, before,
+        offer=offer, guest_offer=guest_offer, team_id=team_id)
+    if saved_finance_state(after) != expected_finance or saved_identity_state(after) != expected_identity:
+        raise ValueError('Saved raw financial/identity effects differ from the isolated signing target')
     previous,current=before_cap['teams'][team_id],after_cap['teams'][team_id]
     return {'format':'saved-signing-confirmation-v1','franchise_id':bindings['franchise_id'],
         'bindings_sha256':hashlib.sha256(json.dumps(bindings,sort_keys=True,allow_nan=False,separators=(',',':')).encode()).hexdigest(),

@@ -1,4 +1,4 @@
-"""Expected transient offer-screen membership; never a save edit or write permit."""
+"""Expected offer/signing comparison images; never a save edit or write permit."""
 import struct
 
 from tools.franchise_finance_state import saved_finance_state, HEADER_SIZE as FINANCE_HEADER, RECORD_SIZE as FINANCE_RECORD
@@ -27,3 +27,49 @@ def saved_offer_screen_state(payload: bytes, source_slot: int):
         raise ValueError('Exactly one bound free-agent biography required')
     struct.pack_into('<I', finance, owner_offset, 0xffffffff)
     return bytes(finance), struct.pack('<3I', 1, count, members - 1) + b''.join(kept)
+
+
+def expected_signed_state(bindings, payload: bytes, *, offer, guest_offer, team_id):
+    """Predict isolated native contract/owner/payroll effects, without editing a save.
+
+    This is an expected comparison image, not a permitted memory-write plan.
+    Identity remains the complete bound membership, including the candidate who
+    was temporarily removed while its offer screen was open. Full books,
+    roster eligibility, runtime authority and uninterrupted application remain
+    the coordinator's responsibility.
+    """
+    from franchise.cap import Offer
+    from franchise.guest_contracts import GuestContractTerms, GUEST_CONTRACT_FORMAT, SOFTDRINK_CONTRACT_FORMAT
+    from tools.franchise_snapshot_bindings import resolve_bindings, binding_money_scale
+    from tools.inspect_franchise_save import TEAMS
+    if not isinstance(offer, Offer) or team_id not in TEAMS:
+        raise ValueError('Typed accepted offer and supported target team required')
+    if type(guest_offer) is not dict or set(guest_offer) != {'amount_word', 'flags_word'}:
+        raise ValueError('Complete captured guest offer required')
+    scale = binding_money_scale(bindings)
+    contract_format = SOFTDRINK_CONTRACT_FORMAT if scale == 4 else GUEST_CONTRACT_FORMAT
+    terms = GuestContractTerms.from_context(**guest_offer)
+    if terms.to_offer(offer.player_id, contract_format=contract_format) != offer:
+        raise ValueError('Captured guest terms differ from accepted offer')
+    members = resolve_bindings(bindings, payload)
+    selected = [slot for slot, player in members.items()
+                if player['player_id'] == offer.player_id and player['team'] == 'free_agents']
+    if len(selected) != 1:
+        raise ValueError('Bound saved free-agent candidate required')
+    finance = bytearray(saved_finance_state(payload))
+    record = FINANCE_HEADER + selected[0] * FINANCE_RECORD
+    # 323D80 changes only these mapped bits at player+24, the amount at +0A,
+    # and clears bit3 at +08. Preserve all other packed status bits.
+    packed = struct.unpack_from('<I', finance, record + 3)[0]
+    mask = 0x0FF7000F
+    replacement = (terms.years << 24) | (terms.bonus_code << 20) | (terms.shape_code << 16) | terms.years
+    finance[record] &= 0xF7
+    struct.pack_into('<HI', finance, record + 1, terms.amount_word, (packed & ~mask) | replacement)
+    struct.pack_into('<I', finance, record + 7, TEAMS.index(team_id))
+    payroll_offset = 48 + 12 * TEAMS.index(team_id)
+    payroll = struct.unpack_from('<I', finance, payroll_offset)[0]
+    charge = offer.charges(5)[0] / (1000 * scale)
+    if charge.denominator != 1 or payroll + charge > 0xFFFFFFFF:
+        raise ValueError('Exact representable native payroll required')
+    struct.pack_into('<I', finance, payroll_offset, payroll + int(charge))
+    return bytes(finance), saved_identity_state(payload)

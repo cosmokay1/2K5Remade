@@ -7161,3 +7161,34 @@ existing with-client signing-stage fixture pass locally; the10 focused compiled/
 interpreter/patch-cache tests also pass. Windows/Ubuntu CI for this new source is
 pending. The installed Deck runtime and its settings remain untouched. Native
 positive application and actual signing/save/reload are still incomplete.
+
+### October 15 — Exact native post-signing comparison target
+
+Added a reusable expected final financial/identity image for one bound free-agent
+signing. It uses the validated money profile and exact captured/accepted terms,
+updates only the native mapped fields and selected owner/payroll, preserves other
+packed status bits and clears byte8 bit3. The full identity membership includes
+the selected player again. No save or guest memory is written. Saved confirmation
+now consumes this target after its existing detailed checks, closing omissions
+for raw byte8 and non-economic packed flags across every bank record. Existing
+receipts/journal formats are unchanged; no protocol permit is added.
+
+Four additional confirmation tests cover independent authored transitions to two
+teams, both money scales, selected/other/unbound flag changes, preserved status
+bits, the exact cleared signing flag, wrong candidates/ownership and terms. All14
+confirmation tests pass. All824 Python regressions pass in32.125s; final narrowed
+candidate test additions also pass. No further money formulas changed.
+
+A private actual-generated-routine probe validates the same target independently
+of authored after-save construction. It runs original shared signing323D80 and
+its generated callees using authored relocated memory and user-provided local
+constants, bypassing retail judgment; unexpected UI/judgment paths abort. Starting
+with exactly the selected free agent reserved, the actual production addon reader
+captures matching pending-before and final images, including deliberately set
+preserved status bits and byte8 bit3 clearing. Guest result1, final finance SHA
+94bb53a3311849c97e330dd66ef2159e70bf1c7bcbc0668681deefe8eef8ffce and identity SHA
+b675304ccbfa5171a8ed670c328da5118f7f9837df5fbf2030ba532bcdf98ad1.
+Private receipt native-commit-probe/target-receipt.json and generated probe/assets
+stay untracked. This is isolated generated execution, not live gameplay, modern
+opening-book verification, a permit or game save/reload. The installed game,
+saves and controls remain unchanged. Positive live application remains open.
