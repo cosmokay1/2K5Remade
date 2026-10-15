@@ -325,9 +325,10 @@ PATCHES = [
 """),
     # Optional addon deferral uses the original failure cleanup. Interactive
     # offers defer before retail judgment; bypass callers also defer before
-    # ownership/contract writes. The addon never grants a commit here.
+    # ownership/contract writes. A separate application authorization can replace
+    # judgment, but must be consumed again at the original precommit boundary.
     ("FRANCHISE_SIGN_HOLD_JUDGMENT", "sub_00323D80", "loc_00323F0A: ;", "after", """\
-    { extern int nfl2k5_franchise_hold_signing_at(uint32_t, uint32_t); if(nfl2k5_franchise_hold_signing_at(1u, esi)) goto loc_00323E99; }
+    { extern int nfl2k5_franchise_judge_signing(uint32_t); int decision=nfl2k5_franchise_judge_signing(esi); if(decision==1) goto loc_00323E99; if(decision==2) { edi=ebp; eax=1; goto loc_00323F13; } }
 """),
     ("FRANCHISE_SIGN_HOLD_COMMIT", "sub_00323D80", "loc_00323F17: ;", "after", """\
     { extern int nfl2k5_franchise_hold_signing_at(uint32_t, uint32_t); if(nfl2k5_franchise_hold_signing_at(2u, esi)) goto loc_00323E99; }
@@ -764,13 +765,19 @@ def main():
                 end-=2
                 marked=None
         if marked is not None and pid in ("FRANCHISE_SIGN_HOLD_JUDGMENT","FRANCHISE_SIGN_HOLD_COMMIT"):
+            location=next((lines[j].strip() for j in range(marked-1,start,-1)
+                           if lines[j].strip().startswith('loc_') and lines[j].strip().endswith(': ;')),None)
+            if location!=anchor:
+                failed.append("%s: unrecognized signing gate location" % pid)
+                continue
             # Upgrade only the recognized old one-line hold. Existing generated
             # caches otherwise retain v1 forever because their marker is present.
             old="{ extern int nfl2k5_franchise_hold_signing(uint32_t); if(nfl2k5_franchise_hold_signing(esi)) goto loc_00323E99; }"
+            previous="{ extern int nfl2k5_franchise_hold_signing_at(uint32_t, uint32_t); if(nfl2k5_franchise_hold_signing_at(1u, esi)) goto loc_00323E99; }"
             expected=code.strip()
             current=lines[marked+1].strip() if marked+1<end else ""
             if current!=expected:
-                if current!=old:
+                if current!=old and not (pid=="FRANCHISE_SIGN_HOLD_JUDGMENT" and current==previous):
                     failed.append("%s: unrecognized signing gate body" % pid)
                 elif check_only:
                     failed.append("%s: old signing gate requires upgrade" % pid)

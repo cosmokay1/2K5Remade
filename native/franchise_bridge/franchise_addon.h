@@ -6,6 +6,11 @@
 #define FRANCHISE_FSM_EVENT "franchise.fsm.v1"
 #define FRANCHISE_SIGN_SUBMIT_EVENT "franchise.sign-submit.v1"
 #define FRANCHISE_SIGN_GATE_EVENT "franchise.sign-gate.v2"
+/* Separate from legacy hold replies. Current production addon issues no grant.
+ * Stage1 validates a prepared application; stage2 consumes its authorization.
+ * Both require exact context, current control and an uninterrupted commit plan. */
+#define FRANCHISE_SIGN_APPLICATION_EVENT "franchise.sign-application.v1"
+#define FRANCHISE_SIGN_APPLICATION_AUTHORIZED 2
 #define FRANCHISE_SIGN_JUDGMENT 1u
 #define FRANCHISE_SIGN_PRECOMMIT 2u
 #define FRANCHISE_SIGNING_EVENT "franchise.signing.v1"

@@ -11,6 +11,7 @@ static int mode(const char *value) {
 }
 int main(void) {
     if(mode("1")) return 1;
+    if(nfl2k5_franchise_judge_signing(0x1234)!=1 || !nfl2k5_franchise_signing_was_held(0x1234)) return 9;
     for(uint32_t stage=1;stage<=2;++stage) {
         if(!nfl2k5_franchise_hold_signing_at(stage,0x1234) ||
            !nfl2k5_franchise_signing_was_held(0x1234) ||

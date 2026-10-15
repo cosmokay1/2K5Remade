@@ -24,10 +24,11 @@ class FranchiseInterpreterHooksTests(unittest.TestCase):
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-static uint32_t g_esi,g_edi,context;
+static uint32_t g_esi,g_edi,g_ebp,g_eax,context;
 #define MEM32(address) context
 static unsigned count,events,object,descriptor,pushed,stage,held_context,consumed;
 static int hold_reply=1;
+static int judgment_reply=1;
 static struct {uint32_t va;uint32_t (*callback)(void);} hooks[16];
 void recomp_interp_add_hook(uint32_t va,uint32_t from,uint32_t (*callback)(void)){
  hooks[count].va=va;hooks[count++].callback=callback;
@@ -36,6 +37,7 @@ void nfl2k5_diag_fsm(uint32_t obj,uint32_t desc,int push){
  ++events;object=obj;descriptor=desc;pushed=push;
 }
 int nfl2k5_franchise_hold_signing_at(uint32_t s,uint32_t c){stage=s;held_context=c;return hold_reply;}
+int nfl2k5_franchise_judge_signing(uint32_t c){held_context=c;return judgment_reply;}
 int nfl2k5_franchise_signing_was_held(uint32_t c){++consumed;return 0;}
 ''' + block + r'''
 int main(void){
@@ -56,6 +58,12 @@ int main(void){
  if(hooks[2].callback()!=0x324173 || stage!=2 || held_context || consumed!=1) return 7;
  hold_reply=0;
  if(hooks[2].callback() || consumed!=1) return 8;
+ g_ebp=0x10000;g_eax=0x87654321;g_edi=0x11223344;
+ if(hooks[5].callback()!=0x323E99 || held_context!=g_esi || g_eax!=0x87654321 || g_edi!=0x11223344) return 9;
+ judgment_reply=0;
+ if(hooks[5].callback() || g_eax!=0x87654321 || g_edi!=0x11223344) return 10;
+ judgment_reply=2;
+ if(hooks[5].callback()!=0x323F13 || g_eax!=1 || g_edi!=g_ebp || g_esi!=0x12345678) return 11;
  return 0;
 }
 ''')

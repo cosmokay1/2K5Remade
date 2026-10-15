@@ -24,6 +24,7 @@ class SigningPatchUpgradeTests(unittest.TestCase):
             if kind!='fresh':
                 lines.append('    '+self.module.marker(pid))
                 if kind=='old': body='{ extern int nfl2k5_franchise_hold_signing(uint32_t); if(nfl2k5_franchise_hold_signing(esi)) goto loc_00323E99; }'
+                elif kind=='v2' and pid.endswith('JUDGMENT'): body='{ extern int nfl2k5_franchise_hold_signing_at(uint32_t, uint32_t); if(nfl2k5_franchise_hold_signing_at(1u, esi)) goto loc_00323E99; }'
                 elif kind=='custom' and pid.endswith('JUDGMENT'): body='/* user modified gate */'
                 else: body=code.strip()
                 lines.append('    '+body)
@@ -36,7 +37,8 @@ class SigningPatchUpgradeTests(unittest.TestCase):
 
     def assert_current(self):
         text=self.path.read_text()
-        self.assertIn('hold_signing_at(1u, esi)',text)
+        self.assertIn('judge_signing(esi)',text)
+        self.assertIn('eax=1; goto loc_00323F13',text)
         self.assertIn('hold_signing_at(2u, esi)',text)
         self.assertNotIn('hold_signing(esi)',text)
         for row in self.module.PATCHES:self.assertEqual(text.count(self.module.marker(row[0])),1)
@@ -52,15 +54,30 @@ class SigningPatchUpgradeTests(unittest.TestCase):
         self.assertEqual(self.run_patch(True),1);self.assertEqual(self.path.read_bytes(),before)
         self.assertEqual(self.run_patch(),0);self.assert_current();self.assertEqual(self.run_patch(True),0)
 
+    def test_recognized_v2_judgment_requires_upgrade(self):
+        self.source('v2');before=self.path.read_bytes()
+        self.assertEqual(self.run_patch(True),1);self.assertEqual(self.path.read_bytes(),before)
+        self.assertEqual(self.run_patch(),0);self.assert_current()
+        self.assertEqual(self.run_patch(True),0)
+
     def test_unknown_edited_body_fails_without_replacing_user_code(self):
         self.source('custom');before=self.path.read_bytes()
         self.assertEqual(self.run_patch(),1);self.assertEqual(self.path.read_bytes(),before)
         self.assertEqual(self.run_patch(True),1);self.assertEqual(self.path.read_bytes(),before)
 
+    def test_moved_application_judgment_gate_is_not_trusted(self):
+        for kind in ('current','v2'):
+            self.source(kind)
+            self.path.write_text(self.path.read_text().replace('loc_00323F0A: ;','loc_00323F09: ;'))
+            before=self.path.read_bytes()
+            self.assertEqual(self.run_patch(),1);self.assertEqual(self.path.read_bytes(),before)
+            self.assertEqual(self.run_patch(True),1)
+
     def test_old_windows_cache_keeps_crlf_during_upgrade(self):
-        self.source('old','\r\n');self.assertEqual(self.run_patch(),0);self.assert_current()
-        data=self.path.read_bytes()
-        self.assertNotIn(b'\n',data.replace(b'\r\n',b''))
+        for kind in ('old','v2'):
+            self.source(kind,'\r\n');self.assertEqual(self.run_patch(),0);self.assert_current()
+            data=self.path.read_bytes()
+            self.assertNotIn(b'\n',data.replace(b'\r\n',b''))
 
 
 class CPUSigningPatchUpgradeTests(unittest.TestCase):

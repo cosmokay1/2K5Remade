@@ -7273,3 +7273,47 @@ save, control or inference setting was changed. Its pending normal-exit request
 is unchanged; do not run old preparation scripts over the updated source manifest.
 Actual automatic menu context, native application and game save/reload remain open.
 Windows/Ubuntu CI must run for this new source.
+
+### October 15 — Native accepted-judgment branch with separate commit authorization
+
+Implemented the missing judgment replacement at the existing compiled and
+interpreter hooks. The domain-specific application event uses the existing addon
+transport; no generic ABI, arbitrary memory-write API or new infrastructure was
+introduced. Explicit negotiation plus saved-signing modes and exact application
+reply2 can select the original judged-result continuation with EAX1. Precommit
+requires a second same-context reply2 and consumes the thread-local context
+before invoking addon code. Bypass/CPU, stale/mismatched/repeated/invalid grants,
+new-call/lifecycle/legacy-hold resets and mode changes cannot reuse it. Existing
+v2 replies remain hold-only. Known old judgment caches upgrade; moved or custom
+gates fail, preserving user edits and CRLF behavior.
+
+Production DLL deliberately has no application-event handler and still grants
+nothing. It needs a verified remote/durable permit issuer, current complete
+books and identities, active runtime/franchise binding and an uninterrupted
+mutation plan. In particular the previously documented post-contract UI path
+is unresolved; this patch does not pin or suppress it. No live application mode
+was enabled or deployed. The pending read-only launch configuration remains for
+the already installed game, independently of this new native source.
+
+All831 Python regressions pass in34.015s. Focused checks execute actual owned
+interpreter callbacks and production generated patches with the actual host
+shim; accepted authored judgments skip retail scoring but retain the commit/
+history branch, missing commit grants hold, and disabled mode preserves retail
+accept/reject behavior. Actual no-client, legacy-stage and new two-stage native
+fixtures pass locally. Added the two-stage fixture to Windows/Ubuntu CTest and a
+current-production-DLL refusal check; new Windows CI/build execution is pending.
+
+Private native-application-probe/target-receipt.json executes43 actual generated
+functions plus the actual shim, with authored two-stage addon grants and original
+interactive bypass argument0. Retail judgment and unexpected UI paths abort if
+reached. The original signing returns1 with expected stack/output, exactly one
+judgment/commit grant, and the same target finance SHA
+94bb53a3311849c97e330dd66ef2159e70bf1c7bcbc0668681deefe8eef8ffce and identity SHA
+b675304ccbfa5171a8ed670c328da5118f7f9837df5fbf2030ba532bcdf98ad1. The pending-before
+image and preserved status/cleared flag agree as well. Generated source, local
+constants and memory images stay private; temporary edits to tracked generated
+cache files were removed after the probe, retaining only owned patch tooling.
+This is not actual game execution, control authorization, saved signing, modern
+book completion or final delivery. No user save, installed binary or control
+changed. Next: production authorization/coordinator and actual application/save
+verification after the required accounting/runtime conditions are established.

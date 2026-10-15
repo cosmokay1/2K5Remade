@@ -93,6 +93,10 @@ int wmain(int argc,wchar_t **argv) {
     FreeLibrary(dll);
     for(int cycle=0;cycle<2;++cycle) {
         if(!nfl2k5_franchise_start() || nfl2k5_franchise_start()) return 7;
+        for(uint32_t stage=1;stage<=2;++stage) {
+            const FranchiseSignGateEvent application={stage,0x1234};
+            if(nfl2k5_addon_event(FRANCHISE_SIGN_APPLICATION_EVENT,&application,sizeof(application))) return 53;
+        }
         nfl2k5_diag_fsm(0,0x557B2C,1);
         nfl2k5_franchise_guest_poll();
         nfl2k5_diag_signing(0,0,0,0,0);

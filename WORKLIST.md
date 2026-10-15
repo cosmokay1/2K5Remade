@@ -74,8 +74,10 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       actual game CPU settlement/save verification remains open.
       Judgment and precommit now use distinct addon events, so bypass/precommit
       callers hold without creating interactive negotiation intents. Existing
-      generated v1 hooks have an explicit upgrade check; application permits
-      and the retail judgment-result replacement remain unfinished.
+      generated v1 hooks have an explicit upgrade check; the native judgment-result replacement now has a separate two-stage
+      application-event branch, exercised with authored grants through actual
+      generated signing code. Current production DLL grants nothing; remote/
+      durable permits, uninterrupted application and game verification remain open.
       An explicitly requested controlled-signing mode now also holds when the
       addon is unavailable, rather than silently falling through to retail.
       This now includes builds with sidecar support compiled out: both judgment

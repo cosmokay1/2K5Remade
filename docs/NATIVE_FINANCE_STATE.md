@@ -197,3 +197,39 @@ financial/identity images match the expected projections, including preserved
 packed bits and the cleared flag. This is generated-routine evidence, not game
 execution, an uninterrupted transaction guarantee, a permit or save/reload proof.
 The installed runtime remains unchanged and controlled signing remains held.
+
+### Native judgment replacement boundary (production grants remain unavailable)
+
+The host shim now recognizes a separate application-specific event,
+`franchise.sign-application.v1`, using the existing stage/context payload and ABI2
+transport. This does not change the reusable addon API. Exact reply2 means an
+application authorizer approved that stage; other replies cannot grant a
+controlled transaction. Existing sign-gate.v2 replies remain hold-only.
+
+With negotiation and saved-signing modes explicitly requested, the judgment
+hook can skip retail judgment, set EAX1 and enter the original judged-result
+continuation. A thread-local context then requires a second, same-context reply2
+at precommit. That context is consumed before calling the addon. Missing,
+invalid, repeated, bypass/CPU or mismatched grants hold; beginning another call,
+consuming/resetting hold state, lifecycle reset and intervening legacy holds
+invalidate it. Turning either requested mode off after judgment holds that call.
+The compiled and interpreter hooks follow the same continuations. Known v1/v2
+cached patches upgrade explicitly; custom bodies or moved gates reject.
+
+**The production franchise addon does not implement this event and issues no
+application authorization.** No service/remote permit issuer was added. Future
+implementation must bind the prepared journal, exact current offer and complete
+books, active franchise/runtime, current remote authority, durable one-use
+permission and an uninterrupted mutation plan before either reply2. A trusted
+addon return value is a local signal, not independent evidence of those facts.
+The unresolved optional UI path after contract writes still prevents assuming
+that every original signing call is uninterrupted. Do not enable live signing
+based on this component.
+
+Asset-free tests execute the production patches and host shim with authored
+stage grants, proving retail judgment is skipped while original commit/history
+branches remain, with retail behavior preserved when disabled. A private probe
+also executes actual generated signing/callees and the actual shim with authored
+grants and retail judgment/UI abort stubs. Its final financial and identity
+images match the expected signing target. This is isolated generated-code
+execution, not production authorization, live gameplay or saved-game proof.
