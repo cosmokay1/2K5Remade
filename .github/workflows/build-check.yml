@@ -16,6 +16,12 @@ jobs:
       - name: Runtime functions exist
         run: python tools/ci/check-runtime-symbols.py src external/xboxrecomp/src
 
+      - name: Check native presentation styles without a browser or game assets
+        run: |
+          cmake -S native/presentation -B build-presentation -G "Visual Studio 17 2022" -A x64
+          cmake --build build-presentation --config Release --parallel
+          ctest --test-dir build-presentation -C Release --output-on-failure
+
       - name: Check out pinned SDL3 source (3.2.20)
         uses: actions/checkout@v4
         with:

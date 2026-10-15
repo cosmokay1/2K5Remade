@@ -6030,3 +6030,50 @@ comparison. The game needs an off-screen alpha surface rather than a separate
 GUI window. README describes its Windows drawing adapter as unexecuted; GitHub
 reports no recognized repository license. No Nicotine code/dependency was copied
 or integrated; source reuse terms and embedding validation remain unresolved.
+
+## Optional WebView build and actual native style parity
+
+Added NFL2K5_HTML_PRESENTATIONS (defaultON) to omit webview2_host.cpp, its SDK
+requirement and loader when disabled. The retained native JSON renderer, package
+geometry, assets, fonts and animation definitions remain. Disabled builds log
+and exclude unsupported HTML packages, so they cannot select an empty browser
+presentation. DefaultON protects NBC_SNF until its native equivalent is visually
+verified; this does not fulfill that replacement or the native Linux game port.
+No installed game, selected presentation or save was changed.
+
+Added native/presentation, an asset-free fixture compiling the actual presentation
+and portrait source twice with HTML support on/off. The enabled fixture's browser
+factory fails if called; neither variant links WebView. Authored match state goes
+through the real HUD callback and returns BGRA/geometry, not a mock drawing. The
+fixture waits for unchanged frames after initialization/fade and retains bytes.
+Both Windows executables compiled under private MSVC19.44 and executed in the
+isolated Deck Proton fixture prefix, with fresh child completion markers and
+stdout. This is Windows component execution, not a native Linux renderer or
+actual game execution. Logos absent from source remain absent in both variants;
+asset-complete style and animation review is still required. Windows CI now runs
+this actual renderer comparison without retail assets.
+
+The initial FOX comparison failed while CBS matched. A fixed800ms capture could
+finish during initialization/fade; waiting for stable frames still reproduced
+the mismatch. Inspection identified a real existing cache issue: eased opacity
+was rounded to three decimals in the render signature before the entrance
+transform reached its final geometry. The key now includes lifecycle state and
+progress, forcing the final settled frame to redraw. With that correction the
+actual on/off variants match exactly in both pixels and placement:
+- FOX1040x185, stride4160, HUD120,507;17432 colored pixels; BGRA SHA256
+  395234650fb39a91adf5eafa2cedd44bfd5dcc7f9ec67d13f69f3352cebaf718.
+- CBS1186x428, stride4744, HUD47,268;79600 colored pixels; BGRA SHA256
+  62566bfbf1d408ec666e53e5a6051a2c136289ea96232c817d3666aa17633bbd.
+Private receipt/images retained under .local-runtime/presentation-verified.
+
+A separate cloned-source Windows game configuration also passed with
+NFL2K5_WEBVIEW2_SDK=/task/deliberately-missing-webview-sdk and HTML disabled;
+build.ninja contains the disabled source define and neither WebView host nor
+loader. The first configure lacked the existing SDL3 dependency mount; retry
+with dependencies mounted read-only passed. This was configuration verification,
+not a full game compilation or boot. Python compare source compiles; diff checks
+pass. New presentation-source CI remains to verify after push.
+
+The independent native Linux transport milestone is now CI-verified: consumer
+8503615 Franchise38677356141 passed Windows/Ubuntu, Build38677356207 passed;
+standalone fast-forward export2a2110d CI38677485314 passed Windows/Ubuntu.

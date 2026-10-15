@@ -1,0 +1,25 @@
+cmake_minimum_required(VERSION 3.20)
+project(NativePresentationCheck LANGUAGES CXX)
+if(NOT WIN32)
+  message(FATAL_ERROR "The retained Direct2D renderer check requires Windows; it is not the Linux game port.")
+endif()
+set(CMAKE_CXX_STANDARD 17)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(PRESENTATION_SOURCES render_check.cpp ../../src/nfl2k5_presentation.cpp ../../src/presentation/portraits.cpp)
+# Both execute the same existing native renderer. The enabled build has a
+# fail-on-use browser factory, proving native styles never need a WebView.
+foreach(mode IN ITEMS native legacy)
+  add_executable(presentation_${mode}_check ${PRESENTATION_SOURCES})
+  target_include_directories(presentation_${mode}_check PRIVATE ../../src)
+  target_compile_definitions(presentation_${mode}_check PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+  if(mode STREQUAL "native")
+    target_compile_definitions(presentation_${mode}_check PRIVATE NFL2K5_HTML_PRESENTATIONS=0)
+  else()
+    target_compile_definitions(presentation_${mode}_check PRIVATE NFL2K5_HTML_PRESENTATIONS=1)
+  endif()
+endforeach()
+enable_testing()
+add_test(NAME native_style_parity COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/compare.py"
+  $<TARGET_FILE:presentation_native_check> $<TARGET_FILE:presentation_legacy_check>
+  "${CMAKE_CURRENT_SOURCE_DIR}/../.." "${CMAKE_CURRENT_BINARY_DIR}/rendered")
+set_tests_properties(native_style_parity PROPERTIES TIMEOUT 30)

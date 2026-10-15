@@ -21,6 +21,9 @@
  * Test switches: NFL2K5_PRES_TEST=1 draws the bug with made-up state
  * everywhere; NFL2K5_PRES_EVENT=<animation> replays that animation every few
  * seconds; NFL2K5_PRES_LOG=1 logs the raw match state. */
+#ifndef NFL2K5_HTML_PRESENTATIONS
+#define NFL2K5_HTML_PRESENTATIONS 1
+#endif
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
@@ -523,6 +526,10 @@ static void load_packages()
              * the entry page, not in JSON. */
             if (!load_json(p.dir + "/mod.json", p.root) || p.root.str("type") != "html") continue;
             if (!p.root.flag("enabled", true)) continue;
+#if !NFL2K5_HTML_PRESENTATIONS
+            fprintf(stderr, "[PRES] HTML package %s requires the omitted WebView host, skipped\n", dir8);
+            continue;
+#endif
             p.html = true;
             p.entry = p.root.str("entry", "index.html");
             if (const JVal *r = p.root.get("replaces"))
@@ -3269,6 +3276,10 @@ static void html_stop()
  * its proportions at any resolution and is not stretched across ultrawide. */
 static int html_hud(const XboxHudFrame *f, XboxHudImage *img, const GameState &g, const HtmlContext &cx)
 {
+#if !NFL2K5_HTML_PRESENTATIONS
+    (void)f; (void)img; (void)g; (void)cx;
+    return 0; // HTML packages are excluded at discovery in this build.
+#else
     int pk = s_sel_pkg;
     const Package &pkg = s_pkgs[pk];
     float gw = f->game_w, gh = f->game_h;
@@ -3391,6 +3402,7 @@ static int html_hud(const XboxHudFrame *f, XboxHudImage *img, const GameState &g
     img->changed = surf.serial != shown;
     shown = surf.serial;
     return 1;
+#endif
 }
 
 #ifdef NFL2K5_FRANCHISE_CLIENT
@@ -3702,6 +3714,9 @@ static int hud_callback(const XboxHudFrame *f, XboxHudImage *img)
              var(c, "down_distance").c_str(), var(c, "quarter").c_str(), (g.t[0].abbr + g.t[1].abbr).c_str(),
              g.t[0].score, g.t[1].score, g.t[0].timeouts, g.t[1].timeouts, g.poss * 10 + g.phase);
     std::string sig = sigbuf;
+    /* Eased opacity rounds to 1 before the entrance transform finishes.
+     * Include progress/state so the final settled geometry is actually drawn. */
+    sig += "|life:" + std::to_string((int)s_bug_lifecycle) + ":" + std::to_string(s_life_progress);
     /* A finished/cancelled card must clear its pixels even if the match
      * clock is stopped and none of the scorebug fields changed. */
     sig += s_anim_on ? "|animation" : "|noanimation";

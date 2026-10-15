@@ -4,6 +4,21 @@ Status: HTML presentation host introduced 2026-09-30. The JSON presentation
 renderer (CBS, FOX and the imported packages) is unchanged and still the path
 for every `presentation.json` package.
 
+## Native-only build preparation (October 2026)
+
+`-DNFL2K5_HTML_PRESENTATIONS=OFF` omits the WebView2 implementation, SDK
+requirement and loader library. Existing `presentation.json` packages retain the
+same renderer, styles and animations. Unsupported HTML packages are logged and
+excluded from this build's selection. The option defaults to ON until HTML
+packages, including NBC SNF, have visually verified native replacements; do not
+switch an installed HTML presentation to this build as a substitute for that work.
+
+`native/presentation` executes the actual Direct2D FOX/CBS renderer with authored
+match state and compares its settled BGRA pixels and HUD geometry with HTML
+support enabled/disabled. Neither fixture links a WebView implementation. See
+[the check instructions](../native/presentation/README.md). This prepares removal
+of the browser dependency; it is not native Linux rendering or game verification.
+
 ## 1. What existed before this work (inventory, 2026-09-30)
 
 | Item | Where | What it is |

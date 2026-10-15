@@ -74,8 +74,13 @@ until a native full-game build is verified.
 - [x] Add and execute native Linux engine-sidecar process transport checks on the
       Deck without Proton: protocol, echo and process ownership checks passed.
       This does not port the franchise adapter or the game.
-- [ ] Verify Windows/Linux standalone CI and consumer regressions for this change,
-      then update the independent addon export.
+- [x] Verify Windows/Linux standalone CI and consumer regressions:8503615 consumer
+      Franchise38677356141 and Build38677356207 passed. Standalone export2a2110d
+      Windows/Ubuntu CI38677485314 passed.
+- [x] Make WebView optional for native JSON styles; compile the real retained
+      renderer with/without HTML support and verify identical settled FOX/CBS BGRA
+      pixels and HUD placement. Full Windows game configuration accepts a missing
+      WebView SDK when disabled. This is not an NBC replacement or Linux renderer.
 - [ ] Replace HTML/WebView presentation rendering while retaining package layout,
       colors, logos, typography and animations; compare rendered output. Existing
       FOX/CBS JSON packages already use the native Windows renderer. The NBC HTML
