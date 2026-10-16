@@ -6,6 +6,7 @@
 #include <windows.h>
 #include <dbghelp.h>
 #include <bcrypt.h>
+#include "nfl2k5_crash_context.h"
 #else
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -234,6 +235,9 @@ static LONG CALLBACK crash_report(EXCEPTION_POINTERS *ep)
             code, (unsigned long long)ep->ContextRecord->Rip);
     fprintf(stderr, "[CRASH] eax=%08X ecx=%08X edx=%08X esp=%08X ebx=%08X esi=%08X edi=%08X\n",
             g_eax, g_ecx, g_edx, g_esp, g_ebx, g_esi, g_edi);
+    const char *capture=getenv("NFL2K5_CRASH_GUEST_CONTEXT");
+    if(code==EXCEPTION_INT_DIVIDE_BY_ZERO && capture && !strcmp(capture,"1"))
+        nfl2k5_crash_context(stderr,ep->ContextRecord,g_esp,(uintptr_t)xbox_GetMemoryOffset(),g_xbox_total_ram);
     fflush(stderr);
     RECOMP_ICALL_FEEDBACK_DUMP();
     return EXCEPTION_EXECUTE_HANDLER;

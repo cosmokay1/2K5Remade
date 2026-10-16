@@ -9622,3 +9622,43 @@ Post-failure integrity verification matches the installed package and unchanged
 franchise database. All203 nonpartition save files remain unchanged; Partition0
 and5 differ following ordinary startup, and are preserved. Both game and owned
 service are stopped. No new franchise reply/model request/signing was reached.
+
+
+## Bounded native-register/guest-memory crash evidence
+
+Added opt-in NFL2K5_CRASH_GUEST_CONTEXT=1 for Windows integer-divide faults.
+The existing report's guest globals may lag generated code's native working
+registers. The additional report prints native integer registers and fixed
+96-byte windows for eligible primary guest-RAM candidates plus the guest stack,
+using current-process ReadProcessMemory rather than unchecked dereferences.
+It never follows arbitrary host pointers, assigns object identities, substitutes
+a divisor or resumes the fault. Unreadable/out-of-range windows are skipped or
+reported. Default-off behavior and the original fatal-exception path are retained.
+The helper does not freeze other threads or claim atomic object-state evidence.
+
+The new asset-free Windows CTest checks explicit zero-divisor memory, native
+register values, high addresses, PAGE_NOACCESS and unchanged authored memory.
+All11 portable checks pass. Seven isolated Windows/Proton checks, including the
+new capture check and the existing editor/protocol/held-signing/addon checks,
+pass with a fresh child marker. The diagnostic game --validate also passes.
+Compiler provenance verifies252 source files; the diagnostic EXE hash is
+4a4572a71f211c0a2d5846d1f03af54c13cf6fb3712769fba5af94eeb44ccd93.
+No Python/service/accounting rule changed.
+
+A single bounded asset-bearing experiment copied the runtime,205 saves and
+installed Proton prefix into startup-context-v1. Retail/pack assets are shared
+by symlink for loading; original runtime/save/prefix files were not replaced.
+AI/provider configuration was absent. Private PID244077 progressed into movie,
+audio submissions and rendered vblank/frame timing without reproducing the
+fault during50 seconds. Only that exact private game was stopped at the bound;
+launcher exit1 is cleanup evidence, not a captured crash. The actual diagnostic
+log is preserved separately as actual-diagnostic-session.log. No CRASH-CONTEXT
+output was produced, so an actual failing object snapshot remains unverified.
+All205 original save hashes and installed file hashes match before/after. The
+installed contract-editor package remains unchanged and still lacks this new
+capture; no initialization repair or stable boot acceptance is claimed.
+
+The previously installed source d8e8f61 now has completed success on both
+Windows/Linux in Build38859363956 and Franchise38859363974. Those CI results
+do not close the actual startup or editor/signing/save-load gates. Private
+checks, validation, copied-run receipt and logs: .local-runtime/startup-context-v1.

@@ -59,6 +59,15 @@ pre-existing SOFTDRINK startup divide-by-zero twice (`sub_003CAD50`, host
 initialization before asking for another franchise-screen test; isolated checks
 do not establish actual editor or signing acceptance.
 
+An opt-in bounded Windows crash-context capture now has an authored memory-safety
+CTest. Seven isolated Windows/Proton checks and the diagnostic game --validate
+pass. One bounded run on copied runtime/saves/prefix reached movie/audio/vblank
+execution without reproducing the fault; all205 original saves and installed
+files remained unchanged. The diagnostic was stopped after50 seconds. The
+capture is not installed in the user's runtime and no actual divide-fault object
+snapshot or initialization fix has been verified. See
+[startup diagnostics](docs/STARTUP_CRASH_DIAGNOSTICS.md).
+
 Windows + Proton is the Deck delivery priority. Defer further native Linux port
 work unless a concrete Proton limitation requires it; retain existing fixes.
 
