@@ -1,6 +1,7 @@
 """Compile actual observation code against authored RAM; no retail fixtures."""
 from pathlib import Path
 import shutil
+import sys
 import subprocess
 import tempfile
 import unittest
@@ -15,8 +16,13 @@ class SigningObserverTests(unittest.TestCase):
         host = (ROOT / 'src/main.c').read_text()
         capability = host[host.index('int nfl2k5_addon_guest_range('):]
         capability = capability[:capability.index('\n#endif')]
-        observer = capability + source[source.index('static NFL2K5AddonHost adapter_host;'):
-                                       source.index('static int addon_start(')]
+        # Compile the actual portable observer, not the independent Windows cap
+        # cache between its host declaration and observation state. Cap ownership
+        # and DLL initialization are covered by the production native checks.
+        host_start=source.index('static NFL2K5AddonHost adapter_host;')
+        host_declaration=source[host_start:source.index('\n',host_start)+1]
+        observer = capability + host_declaration + source[source.index('static int capture_attempted;',host_start):
+                                                         source.index('static int addon_start(')]
         harness = r'''
 #include <stdbool.h>
 #include <stdint.h>
@@ -215,12 +221,17 @@ int main(void) {
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)
             (path / 'observer.c').write_text(harness + observer + cases)
-            subprocess.run(['cc', '-std=c11', '-Wall', '-Wextra', '-Werror',
-                            '-I', str(ROOT / 'src'),
-                            '-I', str(ROOT / 'native/franchise_bridge'),
-                            str(path / 'observer.c'), '-o', str(path / 'observer.exe')], check=True)
-            result = subprocess.run([str(path / 'observer.exe')], capture_output=True, text=True)
-            self.assertEqual(result.returncode,0,result.stderr)
+            # Also exercise Windows preprocessor branches on POSIX; this caught
+            # a Windows-only fixture boundary error that the native build did not.
+            variants=[[]] if sys.platform=='win32' else [[],['-D_WIN32']]
+            for flags in variants:
+                with self.subTest(compiler_flags=flags):
+                    subprocess.run(['cc', '-std=c11', '-Wall', '-Wextra', '-Werror',*flags,
+                                    '-I', str(ROOT / 'src'),
+                                    '-I', str(ROOT / 'native/franchise_bridge'),
+                                    str(path / 'observer.c'), '-o', str(path / 'observer.exe')], check=True)
+                    result = subprocess.run([str(path / 'observer.exe')], capture_output=True, text=True)
+                    self.assertEqual(result.returncode,0,result.stderr)
         self.assertIn('bank_slot=1 first_name="Test" last_name="Player"', result.stderr)
         self.assertEqual(result.stderr.count('bank_slot=1 first_name="Test" last_name="Player"'), 4)
         self.assertIn('identity_scope=current_bank_locator', result.stderr)

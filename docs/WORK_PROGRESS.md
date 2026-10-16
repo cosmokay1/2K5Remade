@@ -10061,3 +10061,21 @@ https://github.com/cosmokay1/2K5Remade/actions/runs/38945425584
 Ubuntu has passed; Windows completion was still pending when this evidence was
 recorded. The scheduled follow-up remains PAUSED; no controls were enabled or
 renewed, no paid inference occurred and no binary release was published.
+
+## Windows source-CI observer fixture correction
+
+The source72511cd Windows job failed one isolated C observer compilation. Its
+text-extracted fixture accidentally included the new Windows cap-cache state,
+without the Windows/cap ownership headers needed by that separate component.
+The production MSVC DLL, private Windows component checks and game validation
+were already successful; this was not a failed game compilation or accounting
+assertion. The failed CI remains visible in run38945425584.
+
+The correction changes the test only: extract the actual observer host declaration
+and the complete observation-state/function block, excluding the independent cap
+cache. All authored bank/name/bounds/read-only assertions remain. On POSIX the
+fixture now compiles/runs both native and _WIN32 preprocessor variants, so this
+platform-specific extraction error is caught before Windows CI. Both variants
+pass locally. No financial or native production code changed; the validated v2
+executable/addon remain the compiled72511cd pair. Fresh source CI is required
+before treating the corrected test suite as verified on Windows.
