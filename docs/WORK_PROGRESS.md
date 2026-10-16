@@ -9032,3 +9032,17 @@ failure. It has not been run. The user was asked to exit normally because the
 installed game remains running. Actual boot/takeover/controller, editor/submit,
 model response and signing/save-reload are still unverified. No installed game,
 save, remote control or paid inference was changed.
+
+
+## Approved preview installed after normal exit
+
+The user reported closed. The installer independently verified the game and owned
+service were absent, checked all249 source hashes, completed test/validation
+receipts, old installed hashes and candidate hashes, then backed up the game,
+addon and wrapper before replacing the matching set. All205 save-file hashes
+remain unchanged. The installed EXE/DLL are the b1105267/5771c92c validated pair;
+wrapperdf88996c adds preview on port0 while AI and guest application stay off.
+Private screen-package-e45a634/installation-receipt.json records the hashes and
+unchanged saves; installed-before-preview retains the original three files.
+Actual live franchise screen takeover/controller behavior is still to verify.
+No control renewal, inference request or financial write was made.

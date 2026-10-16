@@ -864,8 +864,10 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
       and isolated Proton game --validate passes with a child completion marker.
       All20 matching Windows package tests pass under Deck Proton, loading the
       actual paired game addon DLL. A hash-pinned preview-only package and
-      backup/rollback installer are ready. Normal-exit installation and live
-      offer-screen verification remain pending; the installed game is untouched.
+      backup/rollback installer are ready. After the user's normal exit, the
+      matching game/DLL/preview wrapper were installed with backups and all205
+      saves verified unchanged. Actual live offer-screen/controller takeover
+      remains unverified; offer editing/submission and AI remain disabled.
 - [ ] Integrate persistent stories/relationships into the actual franchise experience.
 - [ ] Add opt-in configuration, backups, recovery and explicit migration handling.
 
