@@ -86,6 +86,12 @@ static void submit_foreign(const FranchiseSigningObservation& observation,unsign
     require(WaitForSingleObject(thread,5000)==WAIT_OBJECT_0);DWORD code=1;
     require(GetExitCodeThread(thread,&code) && !code);CloseHandle(thread);
 }
+static void require_no_negotiation_view() {
+    static FranchiseNegotiationView view;
+    std::memset(&view,0x7f,sizeof(view));
+    require(!nfl2k5_franchise_negotiation_view(&view));
+    for(size_t i=0;i<sizeof(view);++i) require(!reinterpret_cast<unsigned char*>(&view)[i]);
+}
 int main(int argc,char** argv) {
     try {
         owner=GetCurrentThreadId();
@@ -123,6 +129,7 @@ int main(int argc,char** argv) {
         require(submissions==3 && submitted["operation"]=="negotiate_proposal");
         require(!submitted.contains("performance_format") && submitted["guest_offer"]["amount_word"]==829);
         require(submitted["expected_revision"]==0 && submitted["observation"]["biography"]["first_name"]=="Authored");
+        require_no_negotiation_view(); // Waiting must not expose the previous read-only reply.
         nfl2k5_franchise_poll();
         require(nfl2k5_franchise_submit_held(&observation,nfl2k5_franchise_submission_epoch())==1);
         nfl2k5_franchise_signing_context(&observation);require(submissions==3); // No repeated inference.
@@ -182,17 +189,17 @@ int main(int argc,char** argv) {
                 ready=false;++observation.offer_amount;
                 nfl2k5_franchise_signing_context(&observation);
                 nfl2k5_franchise_poll();require(submissions==count);
-                FranchiseSigningDisplay view={};require(!nfl2k5_franchise_display(&view));
+                FranchiseSigningDisplay view={};require(!nfl2k5_franchise_display(&view));require_no_negotiation_view();
                 // Navigate away with preparation pending, then consume it.
                 nfl2k5_franchise_on_fsm(0,0);
                 ready=true;nfl2k5_franchise_poll();
-                require(!nfl2k5_franchise_display(&view)); // Stale receipt stays hidden.
+                require(!nfl2k5_franchise_display(&view));require_no_negotiation_view(); // Stale receipt stays hidden.
                 const auto checked=saved_checks;
                 require(nfl2k5_franchise_completed()==1 && completed_observations==1);
                 nfl2k5_franchise_poll();
                 require(saved_checks==checked+1 && submitted["operation"]=="guest_signing_status");
                 nfl2k5_franchise_poll(); // Consume while the signing screen is closed.
-                require(!nfl2k5_franchise_display(&view));
+                require(!nfl2k5_franchise_display(&view));require_no_negotiation_view();
                 completion_readable=false;
                 require(!nfl2k5_franchise_completed());
                 completion_readable=true;
@@ -227,7 +234,7 @@ int main(int argc,char** argv) {
         submit_foreign(observation,nfl2k5_franchise_submission_epoch());
         nfl2k5_franchise_signing_context(&observation);++source_epoch;
         nfl2k5_franchise_poll();require(!preparations);
-        FranchiseSigningDisplay stale={};require(!nfl2k5_franchise_display(&stale));
+        FranchiseSigningDisplay stale={};require(!nfl2k5_franchise_display(&stale));require_no_negotiation_view();
         nfl2k5_franchise_stop();source_epoch=1;
         image_available=false;
         require(nfl2k5_franchise_start()==1);

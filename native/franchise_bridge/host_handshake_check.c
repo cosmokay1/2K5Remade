@@ -11,6 +11,10 @@ static unsigned submissions, takes;
 static int ready_value;
 static DWORD owner;
 static char last_request[4096];
+/* Near the transport limit, includes UTF-8 and data the compact display omits.
+ * This fixture exercises ownership/framing, not the separate protocol parser. */
+static char authored_response[65536];
+static FranchiseNegotiationView full_view;
 static int image_present;
 static char image_digest[65];
 int nfl2k5_franchise_source_path_matches(uint64_t epoch){return epoch!=0;}
@@ -73,9 +77,9 @@ FranchiseHostStatus franchise_host_ready(FranchiseHostClient *client, int *ready
 FranchiseHostStatus franchise_host_take(FranchiseHostClient *client, char *buffer, size_t capacity, size_t *required)
 {
     assert(client == (FranchiseHostClient *)&owned && GetCurrentThreadId() == owner);
-    ++takes; *required = 3;
+    ++takes; *required = strlen(authored_response)+1;
     if (take_status != FRANCHISE_HOST_OK) return take_status;
-    assert(capacity >= 3); memcpy(buffer, "{}", 3);
+    assert(capacity >= *required); memcpy(buffer, authored_response, *required);
     return FRANCHISE_HOST_OK;
 }
 void franchise_host_destroy(FranchiseHostClient *client)
@@ -89,10 +93,21 @@ static DWORD WINAPI foreign_callback(void *unused)
     nfl2k5_franchise_poll();
     FranchiseSigningDisplay view={0};
     nfl2k5_franchise_display(&view); /* Renderer copy does not access transport. */
+    nfl2k5_franchise_negotiation_view(&full_view);
     return 0;
 }
 int main(void)
 {
+    const char prefix[]="{\"result\":{\"reason\":\"";
+    const char suffix[]="\xe2\x80\x99\",\"performance_context\":{\"saved_history\":[]},\"offer\":{\"salaries\":[6328000,3796000],\"signing_bonus\":6752000}},\"error\":null}";
+    memset(authored_response,'r',sizeof(authored_response)-1);
+    memcpy(authored_response,prefix,sizeof(prefix)-1);
+    memcpy(authored_response+sizeof(authored_response)-sizeof(suffix),suffix,sizeof(suffix));
+    assert(strlen(authored_response)==65535);
+    memset(&full_view,0x7f,sizeof(full_view));
+    assert(!nfl2k5_franchise_negotiation_view(&full_view));
+    for(size_t i=0;i<sizeof(full_view);++i) assert(!((unsigned char*)&full_view)[i]);
+
     owner = GetCurrentThreadId();
     _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SIGNING",L"0");
     _wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER", L"");
@@ -169,13 +184,22 @@ int main(void)
     nfl2k5_franchise_poll(); /* Context collected on the same screen. */
     FranchiseSigningDisplay view={0};
     assert(nfl2k5_franchise_display(&view) && !strcmp(view.title,"Authored Player"));
+    assert(nfl2k5_franchise_negotiation_view(&full_view));
+    assert(!strcmp(full_view.summary.title,view.title) && !strcmp(full_view.response,authored_response));
+    // Consumer edits never mutate the host-owned original or its v1 summary.
+    full_view.response[0]='!';full_view.summary.title[0]='!';
+    assert(nfl2k5_franchise_negotiation_view(&full_view) && !strcmp(full_view.response,authored_response));
+    assert(!strcmp(full_view.summary.title,"Authored Player"));
+
     nfl2k5_franchise_signing_context(&observation); assert(submissions==5); /* Unchanged sample. */
     assert(nfl2k5_franchise_display(&view));
     nfl2k5_franchise_signing_context(NULL); assert(!nfl2k5_franchise_display(&view));
+    assert(!nfl2k5_franchise_negotiation_view(&full_view) && !full_view.response[0] && !full_view.summary.title[0]);
     nfl2k5_franchise_signing_context(&observation); assert(nfl2k5_franchise_display(&view));
     observation.offer_amount=1950;
     nfl2k5_franchise_signing_context(&observation); assert(submissions==5); /* Debounce edits. */
     assert(!nfl2k5_franchise_display(&view));
+    assert(!nfl2k5_franchise_negotiation_view(&full_view));
     Sleep(350);
     nfl2k5_franchise_signing_context(&observation); assert(submissions==6);
     ready_value=0;
@@ -202,6 +226,7 @@ int main(void)
     strcpy(observation.first_name,"Bad\"Name");
     nfl2k5_franchise_signing_context(&observation); assert(submissions==9);
     nfl2k5_franchise_stop();
+    assert(!nfl2k5_franchise_negotiation_view(&full_view) && !full_view.response[0]);
     /* Same host path forwards any canonical load identity, with no name lookup. */
     for(unsigned i=0;i<2;++i) {
         memset(image_digest,'a'+i,64);image_digest[64]=0;image_present=1;

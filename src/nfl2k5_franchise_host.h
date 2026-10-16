@@ -43,6 +43,10 @@ int nfl2k5_franchise_submit_held(const FranchiseSigningObservation *observation,
 void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *observation);
 /* Renderer-safe owned copy; never touches transport or guest memory. */
 int nfl2k5_franchise_display(FranchiseSigningDisplay *out);
+/* Complete current response for an addon-owned replacement screen. Returns zero
+ * and clears output while waiting, hidden, invalidated or no reply is available.
+ * A successful snapshot is evidence only, never an input or commit permit. */
+int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out);
 #ifdef __cplusplus
 }
 #endif

@@ -1,5 +1,6 @@
 /* Actual host shim, authored addon replies; no game memory or process launch. */
 #include "../../src/nfl2k5_sidecar_adapter.h"
+#include "../../src/nfl2k5_franchise_host.h"
 #include "../game_addon/loader.h"
 #include "franchise_addon.h"
 #include <stdio.h>
@@ -7,7 +8,8 @@
 #include <string.h>
 extern void nfl2k5_franchise_stop(void);
 uint64_t xbox_ggl_current_serial(void){return 0;}
-static int gate_reply,legacy_reply;
+static int gate_reply,legacy_reply,view_reply;
+static FranchiseNegotiationView authored_view;
 static unsigned gates,legacy;
 static uint32_t last_stage,last_context;
 static int mode(const char* value){
@@ -20,7 +22,10 @@ static int mode(const char* value){
 int nfl2k5_addon_start(void){return 1;}
 void nfl2k5_addon_stop(void){}
 void nfl2k5_addon_poll(void){}
-int nfl2k5_addon_snapshot(const char* name,void* out,size_t capacity){(void)name;(void)out;(void)capacity;return 0;}
+int nfl2k5_addon_snapshot(const char* name,void* out,size_t capacity){
+    if(strcmp(name,FRANCHISE_NEGOTIATION_VIEW_SNAPSHOT) || capacity!=sizeof(authored_view)) return 0;
+    memcpy(out,&authored_view,sizeof(authored_view));return view_reply;
+}
 int nfl2k5_addon_event(const char* name,const void* data,size_t size){
     if(!strcmp(name,FRANCHISE_SIGN_GATE_EVENT) && size==sizeof(FranchiseSignGateEvent)){
         FranchiseSignGateEvent event;memcpy(&event,data,sizeof(event));++gates;
@@ -32,6 +37,18 @@ int nfl2k5_addon_event(const char* name,const void* data,size_t size){
     return 0;
 }
 int main(void){
+    FranchiseNegotiationView view;
+    memset(&authored_view,0,sizeof(authored_view));
+    strcpy(authored_view.summary.title,"Authored player");
+    strcpy(authored_view.response,"{\"reason\":\"Complete agent response\"}");
+    memset(&view,0x7f,sizeof(view));
+    if(nfl2k5_franchise_negotiation_view(NULL) || nfl2k5_franchise_negotiation_view(&view)) return 17;
+    // A missing/older/failing addon may write before returning zero. Clear all
+    // such data, rather than displaying a previous player's stale response.
+    for(size_t i=0;i<sizeof(view);++i) if(((unsigned char*)&view)[i]) return 18;
+    view_reply=1;
+    if(!nfl2k5_franchise_negotiation_view(&view) || memcmp(&view,&authored_view,sizeof(view))) return 19;
+
     if(mode("0")) return 6;
     for(uint32_t stage=FRANCHISE_SIGN_JUDGMENT;stage<=FRANCHISE_SIGN_PRECOMMIT;++stage){
         gates=legacy=0;gate_reply=1;legacy_reply=0;

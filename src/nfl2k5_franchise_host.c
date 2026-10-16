@@ -51,10 +51,12 @@ static int observation_valid, observation_fresh;
 static unsigned long long changed_tick, screen_epoch, requested_epoch;
 static SRWLOCK display_lock=SRWLOCK_INIT;
 static FranchiseSigningDisplay display;
+static char display_response[65536];
 static int display_valid;
 static void clear_display(void) {
     AcquireSRWLockExclusive(&display_lock);
     memset(&display,0,sizeof(display));
+    memset(display_response,0,sizeof(display_response));
     display_valid=0;
     ReleaseSRWLockExclusive(&display_lock);
 }
@@ -65,6 +67,26 @@ int nfl2k5_franchise_display(FranchiseSigningDisplay *out) {
     if(!display_valid) memset(out,0,sizeof(*out));
     ReleaseSRWLockShared(&display_lock);
     return out->title[0]!=0;
+}
+int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out) {
+    int available;
+    if(!out) return 0;
+    memset(out,0,sizeof(*out));
+    AcquireSRWLockShared(&display_lock);
+    available=display_valid && display.title[0] && display_response[0];
+    if(available) {
+        memcpy((char*)out+offsetof(FranchiseNegotiationView,summary),&display,sizeof(display));
+        memcpy((char*)out+offsetof(FranchiseNegotiationView,response),display_response,sizeof(display_response));
+    }
+    ReleaseSRWLockShared(&display_lock);
+    return available;
+}
+/* Called under display_lock only after a successful formatter/transport check.
+ * Never clip a frame: all data or no replacement view. */
+static void copy_display_response(const char *response) {
+    const size_t size=strlen(response);
+    memset(display_response,0,sizeof(display_response));
+    if(size<sizeof(display_response)) memcpy(display_response,response,size+1);
 }
 static int same_observation(const FranchiseSigningObservation *a,const FranchiseSigningObservation *b)
 {
@@ -199,7 +221,8 @@ void nfl2k5_franchise_poll(void)
                 FranchiseSigningDisplay next={0};
                 if(franchise_host_signing_display(response,&next)==FRANCHISE_HOST_OK) {
                     snprintf(next.title,sizeof(next.title),"%s %s",observed.first_name,observed.last_name);
-                    AcquireSRWLockExclusive(&display_lock); display=next; display_valid=1; ReleaseSRWLockExclusive(&display_lock);
+                    AcquireSRWLockExclusive(&display_lock); display=next; display_valid=1;
+                    copy_display_response(response); ReleaseSRWLockExclusive(&display_lock);
                 } else clear_display();
             } else clear_display();
             /* Changed terms retain the debounce; unreadable or new-screen
@@ -312,6 +335,7 @@ static void consume_submission(const FranchiseSigningObservation *o) {
         snprintf(display.title,sizeof(display.title),"%s %s",o->first_name,o->last_name);
         snprintf(display.offer,sizeof(display.offer),"Negotiating with player. Original signing held.");
         snprintf(display.history,sizeof(display.history),"Waiting for a controlled, cap-checked response.");
+        memset(display_response,0,sizeof(display_response));
         display_valid=1;
         ReleaseSRWLockExclusive(&display_lock);
     }

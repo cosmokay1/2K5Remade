@@ -842,6 +842,14 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
 - [ ] Integrate all supported roster transactions and season advancement.
 - [ ] Reconcile the external ledger and guest state before every financial write. The bridge now has a remote-gated proposal-only negotiation path that records accepted dialogue without cap/ownership mutation; exact preview persistence and retry checks pass. Actual guest commit confirmation, recovery and save reconciliation remain pending.
 - [ ] Add real franchise negotiation UI with cap/cash/guarantee effects and reasons.
+      Target a full addon-owned replacement screen, preserving the game style and
+      free-agency timing, rather than extending the compact diagnostic overlay.
+      See docs/NEGOTIATION_SCREEN.md for the flow, input ownership and acceptance.
+      The complete context/proposal snapshot is implemented separately from the
+      unchanged compact-display ABI: exact offer/preview, saved evidence, missing
+      data and full agent/counter/promise response, without another inference.
+      Renderer/editor, controller takeover, real response display and application
+      remain unimplemented/unverified; the installed diagnostic still clips text.
 - [ ] Integrate persistent stories/relationships into the actual franchise experience.
 - [ ] Add opt-in configuration, backups, recovery and explicit migration handling.
 

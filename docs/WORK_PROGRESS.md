@@ -8853,3 +8853,31 @@ Final frozen-source validation passes all896 Python tests in43.017s, including
 the injected second-insert rollback and captured historical-reply regressions.
 All nine local native CTests pass. Cross-platform CI and actual Windows/game
 execution of this reaction feature remain pending; no live inference was used.
+
+
+## Replacement negotiation screen — complete addon view boundary
+
+The user wants a full replacement negotiation screen. docs/NEGOTIATION_SCREEN.md
+now defines the integrated terms/performance/promises/agent-response flow and the
+required input ownership. Drawing over the old screen alone is explicitly not a
+completed takeover. No new WebView, launcher or generic transport API is needed.
+
+franchise.negotiation-view.v1 now supplies an owned complete context/proposal
+frame and the current compact status through the existing named snapshot API.
+The retained compact-display ABI remains unchanged. No agent reason, exact annual
+schedule, existing promise/counter or sourced performance data is reduced to the
+old short display strings. Journal progress preserves its matching context;
+submitting again clears the old reply. Existing player/terms/source/screen
+invalidation hides or clears it. Renderer calls do not perform I/O or inference;
+this data is never an application grant. Missing/older addons and unsuccessful
+snapshots clear the entire destination, including partial output from an addon.
+
+The portable signing-shim test now verifies complete owned copies and failed
+snapshot clearing; all nine rebuilt local native CTests pass. Windows fixtures
+add a maximum-size 65,535-byte UTF-8 response, consumer mutation isolation,
+foreign-thread reads, pending submission and stale/new-source visibility checks.
+Windows CI is required before claiming those fixtures passed. Previous e8c2240
+Build and Franchise AI checks are now both fully successful, including Windows.
+No model request, game deployment, UI rendering or contract write occurred in this
+chunk. Actual replacement controls/layout, financial completion and real-game
+signing/save/reload remain open. The Deck settings and disabled AI are unchanged.

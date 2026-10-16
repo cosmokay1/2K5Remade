@@ -48,6 +48,13 @@ static _Thread_local uint64_t accepted_guest_serial;
 int nfl2k5_franchise_start(void) { held_signing_context=accepted_signing_context=applying_signing_context=0; return nfl2k5_addon_start(); }
 void nfl2k5_franchise_stop(void) { held_signing_context=accepted_signing_context=applying_signing_context=0; nfl2k5_addon_stop(); }
 void nfl2k5_franchise_guest_poll(void) { nfl2k5_addon_poll(); }
+int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out) {
+    if(!out) return 0;
+    /* Older addons and unavailable snapshots must never leave stale UI data. */
+    memset(out,0,sizeof(*out));
+    if(nfl2k5_addon_snapshot(FRANCHISE_NEGOTIATION_VIEW_SNAPSHOT,out,sizeof(*out))) return 1;
+    memset(out,0,sizeof(*out));return 0;
+}
 int nfl2k5_franchise_display(FranchiseSigningDisplay *out) {
     return nfl2k5_addon_snapshot(FRANCHISE_DISPLAY_SNAPSHOT,out,sizeof(*out));
 }

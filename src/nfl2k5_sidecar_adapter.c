@@ -559,6 +559,10 @@ static int addon_snapshot(const char *name,void *out,size_t capacity) {
         if(!nfl2k5_franchise_read_finance(&state)) return 0;
         memcpy(out,&state,sizeof(state));return 1;
     }
+    if(name && out && !strcmp(name,FRANCHISE_NEGOTIATION_VIEW_SNAPSHOT) && capacity==sizeof(FranchiseNegotiationView)) {
+        /* Copy directly into the caller-owned output; no second 64KiB stack copy. */
+        return nfl2k5_franchise_negotiation_view((FranchiseNegotiationView*)out);
+    }
     if(!name || !out || strcmp(name,FRANCHISE_DISPLAY_SNAPSHOT) || capacity!=sizeof(FranchiseSigningDisplay)) return 0;
     FranchiseSigningDisplay display;
     if(!nfl2k5_franchise_display(&display)) return 0;

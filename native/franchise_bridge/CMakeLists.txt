@@ -28,6 +28,7 @@ target_compile_definitions(franchise_finance_state_check PRIVATE NFL2K5_FRANCHIS
 set_target_properties(franchise_finance_state_check PROPERTIES C_STANDARD 11)
 add_test(NAME protocol_boundary COMMAND franchise_protocol_check)
 add_executable(franchise_signing_stage_check signing_stage_check.c game_addon_adapter.c)
+target_include_directories(franchise_signing_stage_check PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_definitions(franchise_signing_stage_check PRIVATE NFL2K5_FRANCHISE_CLIENT)
 set_target_properties(franchise_signing_stage_check PROPERTIES C_STANDARD 11)
 add_test(NAME signing_stage_boundary COMMAND franchise_signing_stage_check)

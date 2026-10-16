@@ -25,6 +25,16 @@ typedef enum FranchiseHostStatus {
 typedef struct FranchiseSigningDisplay {
     char title[310], priorities[160], offer[256], history[160];
 } FranchiseSigningDisplay;
+/* Replacement-screen data, separate from the retained v1 compact display ABI.
+ * The owned JSON is the complete current context/proposal reply, not rendered text.
+ * summary also reflects later journal progress; those status replies do not
+ * discard the offer/evidence/agent response. Neither field is an authorization.
+ * It carries no input ownership, inference permission or signing authority. */
+typedef struct FranchiseNegotiationView {
+    FranchiseSigningDisplay summary;
+    char response[65536];
+} FranchiseNegotiationView;
+
 /* Format an already transport-validated read-only context; no I/O or grant. */
 /* Compare against the most recently consumed, validated hello or read-only runtime binding. */
 FranchiseHostStatus franchise_host_loaded_payload_matches(FranchiseHostClient *client,const char *sha256);

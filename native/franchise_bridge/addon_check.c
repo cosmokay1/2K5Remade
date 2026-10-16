@@ -97,6 +97,7 @@ int wmain(int argc,wchar_t **argv) {
        api->event(FRANCHISE_FSM_EVENT,&sentinel,sizeof(sentinel)) ||
        api->event(FRANCHISE_SIGN_GATE_EVENT,&sentinel,sizeof(sentinel)) ||
        api->snapshot(FRANCHISE_DISPLAY_SNAPSHOT,&sentinel,sizeof(sentinel)) ||
+       api->snapshot(FRANCHISE_NEGOTIATION_VIEW_SNAPSHOT,&sentinel,sizeof(sentinel)) ||
        api->snapshot("unknown",&sentinel,sizeof(sentinel)) || sentinel!=0xAABBCCDD) return 30;
     FreeLibrary(dll);
     for(int cycle=0;cycle<2;++cycle) {
@@ -114,6 +115,12 @@ int wmain(int argc,wchar_t **argv) {
            !nfl2k5_franchise_hold_signing_at(0,0)) return 50;
         FranchiseSigningDisplay display={0};
         if(nfl2k5_franchise_display(&display)) return 8;
+        FranchiseNegotiationView *full=malloc(sizeof(*full));
+        if(!full) return 67;
+        memset(full,0x7f,sizeof(*full));
+        if(nfl2k5_franchise_negotiation_view(full)) return 68;
+        for(size_t i=0;i<sizeof(*full);++i) if(((unsigned char*)full)[i]) return 69;
+        free(full);
         nfl2k5_franchise_stop();nfl2k5_franchise_stop();
         if(nfl2k5_franchise_display(&display)) return 9;
     }

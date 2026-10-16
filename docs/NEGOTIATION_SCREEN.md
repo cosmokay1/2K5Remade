@@ -1,0 +1,90 @@
+# Addon negotiation screen
+
+The UI target is a replacement for the native contract negotiation screen. The
+compact HUD is an interim diagnostic, not the final interaction. Keep the game's
+visual style and controller conventions; use the retained native renderer rather
+than a WebView or separate launcher. This screen belongs to the franchise addon;
+the independent engine-sidecar transport does not acquire franchise rules.
+
+## Player flow
+
+1. Open a player's contract negotiation from the normal franchise menu. Resolve
+   the current player, team, loaded-save epoch and supported financial revision
+   before offering editable controls. Opening or browsing never calls the model.
+2. Show annual salaries, signing bonus, supported guarantees, annual cap charges
+   and the resulting cap room. Separate cash compensation from cap charges.
+   Show sourced performance with its actual window and coverage. Missing counters
+   say unavailable; raw saved period/mode codes do not become current-season stats.
+   No hidden ratings, numerical personality scores or replacement overall grade.
+3. Edit contract terms and supported promises inside the replacement screen.
+   A promise specifies the goal, target and observation window. Unsupported
+   guarantees/terms cannot be submitted. Preview checks are ordinary accounting,
+   not model requests; fresh evidence is required after changes.
+4. Explicitly submit one offer. Freeze that submission while it is pending, then
+   show the complete player/agent explanation and accepted/rejected/counter terms.
+   A counter remains a proposal with its own accounting eligibility. A response
+   cannot itself sign, commit promises or fabricate a holdout. Durable offended
+   reactions already exist; approach limits and withdrawal remain separate work.
+5. Apply an accepted deal only through the verified native transaction boundary,
+   fresh remote control, journal and ledger checks. Reconcile the resulting save
+   and reload it. Preserve native offseason free-agency waiting and competition;
+   a replacement screen must not turn an auction bid into an immediate signing.
+
+B returns to the franchise menu. Leaving during an outstanding request does not
+cancel or forget a decision already persisted. Reopening resolves the existing
+request; it does not purchase another model call. The existing Steam entry and
+Gaming Mode Xbox trigger mapping remain the entry point.
+
+## Input ownership is part of the replacement
+
+An opaque full-screen picture is insufficient: original controls must not run
+underneath it. The runtime needs one bounded controller-event bridge after its
+host input gathering (including the retained legacy path), before the packet is
+written to guest memory. Ownership must be scoped to the verified offer screen
+and controlling port, with edge/release handling and an explicit B exit. The
+addon owns draft edits, focus and pending state. Rendering never submits an offer
+or reads guest memory. The native signing path remains held while addon-controlled
+negotiation is active, even when AI is disabled or the addon fails.
+
+Use the existing named addon event/snapshot mechanism. Do not add mod-name
+branches, a new IPC service or an independent cap implementation. Original and
+SOFTDRINK content are selected by validated data/contract capabilities. The
+unchanged vanilla path still operates when addon negotiation is not selected.
+
+## Implemented data boundary
+
+`franchise.negotiation-view.v1` accepts exactly `sizeof(FranchiseNegotiationView)`.
+It copies an owned compact status plus the complete transport-validated JSON
+context/proposal reply, up to the existing 65,535-byte frame bound. The body keeps
+exact schedules, financial previews, performance records, missing-data/source
+labels, agent speech and counter/promise proposals already present in that reply.
+No second model call, new monetary conversion or reason truncation is introduced.
+
+The compact status may advance through journal preparation/recovery while the
+matching context/proposal remains available. Status replies do not replace it
+with a smaller journal payload. During a new submission the previous reply is
+cleared. Player/offer/source/screen invalidation and shutdown use the existing
+visibility and clearing rules. Copies do not borrow transport memory or perform
+I/O. Missing/older addons and failed snapshots return an empty replacement view.
+The v1 compact display and generic addon ABI are unchanged.
+
+This snapshot is display evidence, not an authorization or an editable source of
+truth. Consumers must parse it once per changed body, render only relevant fields
+and preserve uncertainty. Empty history must never become zero production. Raw
+JSON and internal IDs are not player-facing UI.
+
+## Remaining implementation and acceptance
+
+- Build the full native layout and controller-owned editor together; retire the
+  compact diagnostic only when controls cannot reach the covered native screen.
+- Use the same draft in financial previews, promise proposals and explicit submit;
+  require current player/source/revision and preserve request identity on retry.
+- Render actual stats and full explanations at Deck 1280x800 and 1280x720, with
+  controller-accessible overflow rather than silently clipped speech or counters.
+- Verify cancel, pending exit/reopen, changed player/save, shutdown, original and
+  SOFTDRINK capabilities, offseason waiting and in-season free agency.
+- Complete a bounded real model response test with writes held, then verify actual
+  legal signing, ledger/save agreement and reload before enabling application.
+
+No replacement renderer, controller takeover, live model test or controlled native
+signing is delivered by the data-boundary change alone. AI remains disabled.
