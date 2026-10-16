@@ -157,3 +157,19 @@ neither is hidden as a passing graphics test.
 for testing, preserving its sequence counter. It requires exclusive producer
 ownership and a transport older than two seconds; ordinary `--live` still
 requires a fresh mapping. This does not enable any AI/franchise controls.
+
+## Reusable tooling
+
+Native Steam recording is now maintained independently in the private
+[steam-capture-tools](https://github.com/cosmokay1/steam-capture-tools) repository
+(initial extraction `c4f6c9a`). It takes a Steam game ID, bounded duration and
+recovery receipt; it contains no 2K5 assets, runtime paths or franchise policy.
+Nine offline lifecycle tests passed at extraction. The original Deck recording
+is verified in EVIDENCE.md; the extracted CLI still needs a live acceptance run.
+
+The bounded renderer capture remains in the runtime fork
+[cosmokay1/xboxrecomp](https://github.com/cosmokay1/xboxrecomp/tree/codex/shadow-box-live-proof)
+at `484a568`, already pinned by this branch. It depends on NV2A/D3D11 renderer
+internals, so a separate generic capture library would add coupling without a
+current consumer. Companion-process messaging remains independently maintained
+in [engine-sidecar](https://github.com/cosmokay1/engine-sidecar).
