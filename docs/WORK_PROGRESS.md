@@ -8745,3 +8745,28 @@ matching-checkpoint scope still does not establish full active-franchise
 lifetime or complete opening/non-roster/rookie obligations. Native controlled
 signing, financial reconciliation and save/reload remain required before AI
 application; no user offer was submitted by this verification.
+
+### Early load-attempt invalidation before AI application
+
+The shared load router can exit on allocation/selection failures before reaching
+the existing read BEGIN checkpoint. Previously the addon retained an earlier
+decoded origin on those paths. A new observation at the existing router entry
+0016E540 clears that origin and advances its epoch before any guest table/read
+access. It is present in all five generated copies and the interpreter hook,
+with identical behavior independent of pack names. It changes no game registers,
+return values, offers or save bytes. The generic addon transport is unchanged.
+
+The addon accepts the new application-specific attempt event even when guest
+memory is unreadable. It clears the old owned source; late hash completions and
+decoded callbacks cannot revive it. A later complete read/input/decode can
+establish a new checkpoint. Epoch exhaustion remains invalid. Native state and
+production-DLL fixtures cover those cases; interpreter checks verify the callback
+works with negotiation disabled and preserves registers. All25 generated load
+patches pass idempotency/location checks. The actual local generated cache also
+accepts all five new entry observations. All884 Python tests pass in44.050s;
+all nine local native CTests pass. Windows/Linux CI is pending.
+
+No new build was installed or tested in the running game. This addresses the
+known before-BEGIN failure gap; it does not prove new-franchise creation, every
+exit/post-decode failure path, full active-session authority, or production
+application permits. Those remain required before actual AI-controlled signing.

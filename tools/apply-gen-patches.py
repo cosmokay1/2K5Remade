@@ -727,6 +727,8 @@ PATCHES = [
 # The load router's shared interior appears in all five converted exports.
 # Keep each generated copy and interpreted execution on the same observations.
 for _load_func in ("sub_0016E1D0","sub_0016E290","sub_0016E350","sub_0016E3F0","sub_0016E540"):
+    PATCHES.append(("FRANCHISE_LOAD_ATTEMPT_"+_load_func,_load_func,"loc_0016E540: ;","after",
+        "    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(5u,0,0,0,0); }\n"))
     for _load_name,_load_anchor,_load_stage in (("BEGIN","loc_0016E6CA: ;",1),("FAILED","loc_0016E6DC: ;",2),("INPUT","loc_0016E70B: ;",3),("DECODED","loc_0016E81A: ;",4)):
         PATCHES.append(("FRANCHISE_LOAD_"+_load_name+"_"+_load_func,_load_func,_load_anchor,"after",
             "    { extern void nfl2k5_franchise_load_boundary(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t); nfl2k5_franchise_load_boundary(%du,esi,%s,ebp,esp); }\n" % (_load_stage,"eax<=UINT32_MAX-ebx?ebx+eax:UINT32_MAX" if _load_stage==4 else "ebx")))

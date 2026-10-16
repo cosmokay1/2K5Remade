@@ -15,6 +15,21 @@ int main(void) {
     franchise_load_read_finish(&state,1,&source);input(&state);require(state.phase==FRANCHISE_LOAD_INPUT_MATCHED);
     event.stage=FRANCHISE_LOAD_DECODED;event.offset=FRANCHISE_SAVE_BYTES;franchise_load_decoded(&state,&event,7);
     require(state.phase==FRANCHISE_LOAD_DECODED_SEEN && state.source.sequence==5);
+    /* Failed entry before BEGIN revokes the checkpoint and late hash work. */
+    FranchiseLoadRead decoded=state;
+    franchise_load_attempt(&state);
+    require(state.epoch==2 && state.phase==FRANCHISE_LOAD_INVALID && !state.source.sequence && !state.buffer && !state.owner);
+    franchise_load_read_finish(&state,decoded.epoch,&source);
+    require(state.phase==FRANCHISE_LOAD_INVALID && !state.source.sequence);
+    event.stage=FRANCHISE_LOAD_DECODED;event.offset=FRANCHISE_SAVE_BYTES;
+    franchise_load_decoded(&state,&event,7);require(state.phase==FRANCHISE_LOAD_INVALID);
+    event.stage=FRANCHISE_LOAD_BEGIN;event.offset=0;franchise_load_begin(&state,&event,7,FRANCHISE_SAVE_BYTES,9);
+    require(state.epoch==3 && state.phase==FRANCHISE_LOAD_READING);
+    require(franchise_load_read_begin(&state,&read_event)==3);
+    franchise_load_read_finish(&state,3,&source);input(&state);
+    event.stage=FRANCHISE_LOAD_DECODED;event.offset=FRANCHISE_SAVE_BYTES;franchise_load_decoded(&state,&event,7);
+    require(state.phase==FRANCHISE_LOAD_DECODED_SEEN);
+    state=decoded;
     /* A new load cannot inherit a matching read from a prior load. */
     event.stage=FRANCHISE_LOAD_BEGIN;event.offset=0;franchise_load_begin(&state,&event,7,FRANCHISE_SAVE_BYTES,9);
     require(state.epoch==2 && !state.source.sequence);franchise_load_read_finish(&state,1,&source);input(&state);require(state.phase==FRANCHISE_LOAD_INVALID);
@@ -33,5 +48,6 @@ int main(void) {
     begin(&state);event.stage=FRANCHISE_LOAD_BEGIN;franchise_load_begin(&state,&event,7,FRANCHISE_SAVE_BYTES,9);require(state.phase==FRANCHISE_LOAD_INVALID);
     begin(&state);event.stage=FRANCHISE_LOAD_DECODED;event.offset=FRANCHISE_SAVE_BYTES;franchise_load_decoded(&state,&event,7);require(state.phase==FRANCHISE_LOAD_INVALID);
     begin(&state);state.epoch=UINT64_MAX;event.stage=FRANCHISE_LOAD_BEGIN;event.offset=0;franchise_load_begin(&state,&event,7,FRANCHISE_SAVE_BYTES,9);require(state.phase==FRANCHISE_LOAD_INVALID && state.epoch==UINT64_MAX);
+    franchise_load_attempt(&state);require(state.phase==FRANCHISE_LOAD_INVALID && state.epoch==UINT64_MAX && !state.source.sequence);
     return 0;
 }

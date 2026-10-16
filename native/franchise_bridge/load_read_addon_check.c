@@ -42,7 +42,7 @@ int wmain(int argc,wchar_t **argv){
         readable=attempt!=3;event.stage=FRANCHISE_LOAD_INPUT;require(api->event(FRANCHISE_LOAD_EVENT,&event,sizeof(event)));
         if(attempt==2)payload[0x100]^=1;
         event.stage=FRANCHISE_LOAD_DECODED;event.offset=FRANCHISE_SAVE_BYTES;require(api->event(FRANCHISE_LOAD_EVENT,&event,sizeof(event)));
-        require(api->snapshot(FRANCHISE_LOAD_READ_SNAPSHOT,&state,sizeof(state)) && state.epoch==attempt+1);
+        require(api->snapshot(FRANCHISE_LOAD_READ_SNAPSHOT,&state,sizeof(state)) && state.epoch==attempt+(attempt?2:1));
         require(state.phase==(attempt?FRANCHISE_LOAD_INVALID:FRANCHISE_LOAD_DECODED_SEEN));
         if(!attempt){require(state.source.guest_address==event.buffer && state.source.sequence==1);require(!strcmp(state.source.payload_sha256,"029c7da24320dc1eb2422141a2b6fa777c1f3d276c7fbb709510ecb45b531450"));}
         require(api->snapshot(FRANCHISE_SOURCE_MATCH_SNAPSHOT,&match,sizeof(match)));
@@ -53,6 +53,11 @@ int wmain(int argc,wchar_t **argv){
             require(api->snapshot(FRANCHISE_SOURCE_MATCH_SNAPSHOT,&match,sizeof(match)) && match.configured && !match.matched);
             _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SAVE",wide);
             require(api->snapshot(FRANCHISE_SOURCE_MATCH_SNAPSHOT,&match,sizeof(match)) && match.matched && match.epoch==1);
+            /* Entry may return before any readable table or buffer exists. */
+            readable=0;event.stage=FRANCHISE_LOAD_ATTEMPT;
+            require(api->event(FRANCHISE_LOAD_EVENT,&event,sizeof(event)));
+            require(api->snapshot(FRANCHISE_LOAD_READ_SNAPSHOT,&state,sizeof(state)) && state.epoch==2 && state.phase==FRANCHISE_LOAD_INVALID && !state.source.sequence);
+            require(api->snapshot(FRANCHISE_SOURCE_MATCH_SNAPSHOT,&match,sizeof(match)) && !match.matched);
         }
 
     }

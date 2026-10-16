@@ -60,6 +60,14 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       flags are false; offer preview refuses unresolved contract classification.
       This does not verify full lifecycle invalidation or signing/save-reload.
 
+- [x] Revoke the saved load checkpoint at shared load-router entry, before
+      allocation/read failures can leave the prior origin usable. Generated and
+      interpreted paths emit the same invalidation without guest table access;
+      old in-flight read work cannot repopulate the revoked epoch. All884 Python
+      tests and nine local native checks pass. Windows/Linux CI and actual game
+      execution remain pending; this closes an early-failure gap, not the full
+      active-franchise lifetime requirement or application authority.
+
 - [ ] Finish held native submission through accepted proposal, guest/ledger commit
       and recovery. An opt-in source path now defers retail judgment/precommit,
       queues one captured proposal (including a bounded cross-thread submit handoff)

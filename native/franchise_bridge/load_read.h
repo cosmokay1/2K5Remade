@@ -9,6 +9,7 @@
 #define FRANCHISE_LOAD_FAILED 2u
 #define FRANCHISE_LOAD_INPUT 3u
 #define FRANCHISE_LOAD_DECODED 4u
+#define FRANCHISE_LOAD_ATTEMPT 5u
 #define FRANCHISE_LOAD_READING 1u
 #define FRANCHISE_LOAD_INPUT_MATCHED 2u
 #define FRANCHISE_LOAD_DECODED_SEEN 3u
@@ -21,6 +22,13 @@ typedef struct FranchiseLoadRead {
     FranchiseSaveRead source;
 } FranchiseLoadRead;
 static inline void franchise_load_invalid(FranchiseLoadRead *state){state->phase=FRANCHISE_LOAD_INVALID;}
+/* The router can return before it allocates a read buffer. Revoke the prior
+ * checkpoint at entry, without reading a table or relying on later callbacks. */
+static inline void franchise_load_attempt(FranchiseLoadRead *state) {
+    uint64_t epoch=state->epoch;
+    memset(state,0,sizeof(*state));state->epoch=epoch==UINT64_MAX?epoch:epoch+1;
+    state->phase=FRANCHISE_LOAD_INVALID;state->last_stage=FRANCHISE_LOAD_ATTEMPT;
+}
 static inline void franchise_load_begin(FranchiseLoadRead *state,const FranchiseLoadEvent *event,
         uint32_t owner,uint32_t size,uint32_t kind) {
     uint64_t epoch=state->epoch;uint32_t previous=state->phase;

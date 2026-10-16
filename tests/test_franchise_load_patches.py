@@ -18,10 +18,10 @@ class LoadPatchesTests(unittest.TestCase):
         module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
         module.LENIENT=False
         module.PATCHES=[row for row in module.PATCHES if row[0].startswith('FRANCHISE_LOAD_')]
-        self.assertEqual(len(module.PATCHES),20)
+        self.assertEqual(len(module.PATCHES),25)
         functions=sorted({row[1] for row in module.PATCHES})
         self.assertEqual(functions,['sub_0016E1D0','sub_0016E290','sub_0016E350','sub_0016E3F0','sub_0016E540'])
-        anchors=('loc_0016E6CA: ;','loc_0016E6DC: ;','loc_0016E70B: ;','loc_0016E81A: ;')
+        anchors=('loc_0016E540: ;','loc_0016E6CA: ;','loc_0016E6DC: ;','loc_0016E70B: ;','loc_0016E81A: ;')
         with tempfile.TemporaryDirectory() as directory:
             module.GEN=directory;source=Path(directory)/'recomp_fixture.c'
             source.write_text('\n'.join('void '+fn+'(void)\n{\n'+'\n'.join(anchors)+'\n}\n' for fn in functions))

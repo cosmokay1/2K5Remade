@@ -45,7 +45,7 @@ void nfl2k5_franchise_load_boundary(uint32_t s,uint32_t b,uint32_t o,uint32_t t,
 ''' + block + r'''
 int main(void){
  nfl2k5_franchise_interp_hooks();
- if(count!=6 || hooks[0].va!=0x6E3E6 || hooks[1].va!=0x6E439) return 1;
+ if(count!=7 || hooks[0].va!=0x6E3E6 || hooks[1].va!=0x6E439) return 1;
  g_esi=0x12345678;g_edi=0x557B2C;
  if(hooks[0].callback() || events!=1 || object!=g_esi || descriptor!=g_edi || pushed!=1) return 2;
  if(hooks[1].callback() || events!=2 || object!=g_esi || descriptor || pushed) return 3;
@@ -58,24 +58,26 @@ int main(void){
  if(g_ebx!=628476 || g_eax!=91568)return 14;
  g_ebx=UINT32_MAX;g_eax=1;
  if(hooks[5].callback() || load_offset!=UINT32_MAX || g_ebx!=UINT32_MAX || g_eax!=1)return 15;
+ if(hooks[6].va!=0x16E540 || hooks[6].callback() || load_stage!=5 || load_buffer || load_offset || load_table || load_stack)return 16;
+ if(g_esi!=0x12345678 || g_ebx!=UINT32_MAX || g_eax!=1 || g_ebp!=24 || g_esp!=0x2000)return 17;
 #ifdef _WIN32
  if(_putenv_s("NFL2K5_FRANCHISE_NEGOTIATION","1")) return 5;
 #else
  if(setenv("NFL2K5_FRANCHISE_NEGOTIATION","1",1)) return 5;
 #endif
  count=0;nfl2k5_franchise_interp_hooks();
- if(count!=12 || hooks[6].va!=0x324072 || hooks[7].va!=0x323D80 ||
-    hooks[8].va!=0x3478B6 || hooks[9].va!=0x323F0A || hooks[10].va!=0x323F17 || hooks[11].va!=0x32404E) return 6;
- if(hooks[6].callback()!=0x324173 || stage!=2 || held_context || consumed!=1) return 7;
+ if(count!=13 || hooks[7].va!=0x324072 || hooks[8].va!=0x323D80 ||
+    hooks[9].va!=0x3478B6 || hooks[10].va!=0x323F0A || hooks[11].va!=0x323F17 || hooks[12].va!=0x32404E) return 6;
+ if(hooks[7].callback()!=0x324173 || stage!=2 || held_context || consumed!=1) return 7;
  hold_reply=0;
- if(hooks[6].callback() || consumed!=1) return 8;
+ if(hooks[7].callback() || consumed!=1) return 8;
  g_ebp=0x10000;g_eax=0x87654321;g_edi=0x11223344;
- if(hooks[9].callback()!=0x323E99 || held_context!=g_esi || g_eax!=0x87654321 || g_edi!=0x11223344) return 9;
+ if(hooks[10].callback()!=0x323E99 || held_context!=g_esi || g_eax!=0x87654321 || g_edi!=0x11223344) return 9;
  judgment_reply=0;
- if(hooks[9].callback() || g_eax!=0x87654321 || g_edi!=0x11223344) return 10;
+ if(hooks[10].callback() || g_eax!=0x87654321 || g_edi!=0x11223344) return 10;
  judgment_reply=2;
- if(hooks[9].callback()!=0x323F13 || g_eax!=1 || g_edi!=g_ebp || g_esi!=0x12345678) return 11;
- if(hooks[11].callback() || completed!=g_esi || g_eax!=1 || g_edi!=g_ebp) return 12;
+ if(hooks[10].callback()!=0x323F13 || g_eax!=1 || g_edi!=g_ebp || g_esi!=0x12345678) return 11;
+ if(hooks[12].callback() || completed!=g_esi || g_eax!=1 || g_edi!=g_ebp) return 12;
  return 0;
 }
 ''')

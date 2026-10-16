@@ -406,6 +406,9 @@ static int load_read_table(const FranchiseLoadEvent *event,uint32_t *size,uint32
     *size=words[0];*kind=words[2];return 1;
 }
 static void load_read_boundary(const FranchiseLoadEvent *event) {
+    if(event->stage==FRANCHISE_LOAD_ATTEMPT) {
+        AcquireSRWLockExclusive(&save_read_lock);franchise_load_attempt(&load_read);ReleaseSRWLockExclusive(&save_read_lock);return;
+    }
     uint32_t size=0,kind=0;int table=load_read_table(event,&size,&kind);
     const uint32_t owner=GetCurrentThreadId();
     if(event->stage==FRANCHISE_LOAD_BEGIN) {
@@ -491,7 +494,7 @@ static int addon_event(const char *name,const void *data,size_t size) {
     }
     if(!strcmp(name,FRANCHISE_LOAD_EVENT) && size==sizeof(FranchiseLoadEvent)) {
         FranchiseLoadEvent event;memcpy(&event,data,sizeof(event));
-        if(event.stage<FRANCHISE_LOAD_BEGIN || event.stage>FRANCHISE_LOAD_DECODED)return 0;
+        if(event.stage<FRANCHISE_LOAD_BEGIN || event.stage>FRANCHISE_LOAD_ATTEMPT)return 0;
         load_read_boundary(&event);return 1;
     }
 #endif
