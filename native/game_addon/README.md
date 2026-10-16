@@ -89,3 +89,31 @@ the successful delivered span maps completely inside its current bounded guest
 memory. Unknown/nonmapped locations remain zero. No bytes are dereferenced to
 calculate the locator, and this metadata grants no memory access or save/load
 authority. v1 events remain unchanged for existing addons.
+
+The optional UI messages in ui.h reuse ABI2's existing event function. They add
+no process transport, model policy or franchise dependency to the loader:
+
+- addon.ui-input.v1 receives a gathered Xbox-style packet (ports0–3), after host
+  controller/keyboard/mouse/script input and before guest delivery. The packet is
+  read-only to the addon. Return0 to leave it alone,1 to consume all controls, or2
+  to consume everything and forward exactly one B packet to leave the native
+  menu. The host quarantines previously consumed held controls until neutral if
+  handling stops, so an addon disappearance does not release a held A into the
+  original menu. The addon owns edge/debounce and controlling-port selection.
+- addon.ui-draw.v1 receives a caller-owned BGRA buffer for the current game area,
+  bounded to320–2048 pixels per dimension. The payload is an explicitly writable
+  NFL2K5AddonDraw despite the generic event function's const-void signature: write
+  pixels and changed only; retain neither pointer. Return1 only for a complete
+  opaque/appropriately premultiplied image. Honor redraw by copying a cached image
+  even if application content is unchanged. The host validates dimensions, stride,
+  capacity and buffer identity and needs complete pixels after a resize/failure.
+  Return0 for no surface; the usual native HUD path then runs.
+
+The input and presentation callbacks may run on different threads. Synchronize
+addon state, keep them bounded, and do not submit requests or block on transport.
+They confer no extra guest-memory scope and never authorize game transactions.
+The franchise preview consumes these hooks with its renderer/navigation inside the
+DLL; the legacy compact panel remains an interim franchise-specific host path.
+The main manager still has its one explicit addon slot. A tested rebuilt game is
+needed to supply these optional messages; merely installing a new DLL cannot add
+host hooks to an older repack. Source fixture execution is not live-game proof.

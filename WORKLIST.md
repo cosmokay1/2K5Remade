@@ -852,7 +852,8 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
       Contract/Performance/Agent sections, complete scrollable responses, one-use
       Back and held-button quarantine. The preview refuses AI/application mode;
       native signing remains held even if the addon fails. Eleven portable native
-      checks pass. Windows rendering and actual Deck takeover remain unverified;
+      checks pass, and all20 Windows native checks/render fixtures pass at both
+      Deck resolutions. Actual Deck takeover remains unverified;
       editing/submission/application remain unfinished. Installed code is unchanged.
 - [ ] Integrate persistent stories/relationships into the actual franchise experience.
 - [ ] Add opt-in configuration, backups, recovery and explicit migration handling.

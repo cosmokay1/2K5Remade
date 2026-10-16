@@ -8936,3 +8936,24 @@ other-controller/mixed-mode rejection checks join the final confirmation fixture
 Final Windows confirmation is pending. The extracted standalone sidecar CI
 38677485314 remains successful;469406a Linux engine and Linux runtime checks pass.
 No installed game, save, controller mapping or remote control was changed.
+
+
+Final UI confirmation: fb743f6 passes all20 Windows native CTests, including the
+real renderer and extra wrong-port, invalid-port, mixed-mode and UTF-8 checks.
+Authored captures from38843271087 were downloaded privately and inspected at both
+Deck sizes in the one allowed confirmation pass. Exact grouped amounts/total,
+shorter reading measure and whole-line scrolling are readable; no further visual
+polish is scheduled. Both Windows and Linux Build38843271009 pass. Linux's full
+Franchise AI job passes; the broader Windows job is still running at this entry.
+The earlier469406a full Franchise AI38842645097 and Build38842645059 both pass.
+The optional host UI protocol is documented in native/game_addon/README.md.
+
+This completes the authored read-only screen/layout/input-fixture milestone, not
+actual game integration. The installed executable/DLL and205 save files were not
+replaced; the user game remains running. A fresh private game build/package,
+normal-exit installation and real Deck offer-screen/controller verification are
+still required. The isolated compiler temporary-IL error remains an environment
+issue for private packaging; use the established clean compiler setup rather than
+assuming this failed stage is deliverable. Editor/submit, actual bounded model
+response, complete finance coverage, native application and save/reload remain
+open. Do not deploy a DLL alone to an older host that lacks the UI hooks.
