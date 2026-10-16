@@ -726,8 +726,10 @@ binding, durable imported-amendment preparation, a separate five-second one-use
 native authorization, same-lock judgment/precommit checks, fixed native dispatch
 and cap-only saved recovery.971 Python tests,13 portable native checks and56
 offline Bridge/native response cases pass locally. The private Windows candidate
-is building in live-clock-signing-v1; actual Deck negotiation, signing and reload
-are still unverified. Experimental upstream Linux changes were not adopted; the
+is sealed in live-clock-signing-v1:10 Windows component/addon checks,971
+Windows service tests(11 skips),5,767 native contract cases,56 amendment
+responses and game --validate pass under Proton. Corrected Windows/Linux CI
+is green. Actual Deck negotiation, signing and reload are still unverified. Experimental upstream Linux changes were not adopted; the
 working Proton runtime and installed saves remain unchanged. The scheduler is off.
 
 ## Current blockers

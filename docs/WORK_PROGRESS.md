@@ -10169,3 +10169,33 @@ scope and all original scheduling/held-signing assertions. The held observation
 also carries an authored descriptor sample so the newly required journal clock
 can be serialized. This correction changes fixture linkage, not production
 signing or accounting behavior. Corrected Windows CI remains required.
+
+### Sealed live-clock/signing Windows candidate
+
+Candidate source746ad8b (production behavior345344b) passed corrected Windows
+and Ubuntu franchise CI run38952492278 and build check38952492577. The private
+Deck compiler completed the game and addon against the existing ea4a0ee runtime;
+no experimental upstream Linux code was adopted.
+
+The exact paired Windows executable/addon passed10 component checks under
+Proton: one-use application, payroll shim, cap enforcement, crash context,
+protocol, navigation, loading render, host handshake, held signing and addon
+loading. Its isolated Windows service passed971 tests(11 platform skips), both
+saved-signing fixture modes,5,767 native contract cases and56 amendment response
+cases. The game's --validate child produced the required success marker. This
+is validation-mode/fixture evidence, not real negotiation/signing/save proof.
+
+Private evidence and held-mode package are in live-clock-signing-v1. Executable
+SHA256:52ba0d882bbce49f174961c0d920e235671f8a970f84ac42b039db452dbdb296.
+Addon SHA256:df906e0309286efa1c1b242f333a8c2a485a48002ca9ee5cdcbaf32d073a9da4.
+The service snapshot verifies519 files; the effective native/public runtime
+snapshot verifies516 files. Packaging confirmed all205 installed save files,
+the installed executable/addon/launcher and franchise database unchanged. No
+installation, inference request or AI/signing flag activation occurred.
+
+Read-only cloud preflight found the remote control enabled and unexpired through
+2026-10-20T19:20:26.943409Z. The existing runtime Token Creator grant expired
+2026-10-15T19:10:27Z, and the held launcher still uses missing runtime credentials.
+Neither the grant nor the control was changed or renewed. Fresh runtime credential
+authorization and actual MyNFL1 clock/signing/cap/save/reload proof remain open.
+The scheduled follow-up remains PAUSED.
