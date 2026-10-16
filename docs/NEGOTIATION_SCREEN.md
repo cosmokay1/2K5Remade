@@ -89,8 +89,12 @@ team/controller assignment. Negotiation and guest signing must both be off;
 conflicting modes reject service startup. The game shim holds native signing
 throughout preview mode, including missing/disabled addon and failed rendering.
 
-Contract, Performance and Agent sections use the retained dark palette and
-Bahnschrift. LT/RT or left/right change sections; D-pad scrolls; B sends exactly
+Contract, Performance and Agent sections use a navy/crimson franchise layout and
+Bahnschrift. A vertical section list, structured annual money table and dedicated
+scrollable dialogue/evidence panel replace the initial text-only prototype.
+The table is used only for supported previews with up to five annual rows;
+longer/rejected offers use the full scrollable view so terms/reasons remain
+accessible. Colors do not claim team branding without sourced palette metadata. LT/RT or left/right change sections; D-pad scrolls; B sends exactly
 one native Back packet and dismisses the view. Entry waits for held buttons to be
 released before navigation. Addon failure/invalidation quarantines held controls
 until neutral, preventing an old A/trigger press from reaching the native menu.
@@ -118,6 +122,6 @@ input ownership until the actual installed build is exercised.
   legal signing, ledger/save agreement and reload before enabling application.
 
 The data-boundary change alone did not deliver a screen. The subsequent read-only
-implementation passes initial Windows rendering fixtures and still needs actual
-Deck verification; it
-does not deliver editing, a live model test or controlled signing. AI remains disabled.
+implementation passes Windows rendering fixtures and isolated Proton execution
+on the Deck; actual game takeover still needs verification. It does not deliver
+editing, a live model test or controlled signing. AI remains disabled.

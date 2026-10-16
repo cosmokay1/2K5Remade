@@ -8957,3 +8957,44 @@ issue for private packaging; use the established clean compiler setup rather tha
 assuming this failed stage is deliverable. Editor/submit, actual bounded model
 response, complete finance coverage, native application and save/reload remain
 open. Do not deploy a DLL alone to an older host that lacks the UI hooks.
+
+
+## Compiler repair and redesigned contract presentation
+
+The isolated probe Wine prefix has no Windows TEMP variable (`wine cmd /c set
+TEMP` reports it undefined). The established compiler prefix reports
+C:\users\root\Temp. An explicit Linux TMP/TEMP override did not repair the
+probe prefix. The private fixture build now uses the existing initialized
+/task/compiler-prefix-clean, mounted from native-05ac4e9, matching the established
+private game build setup. Three Windows executables compile successfully there;
+the renderer also compiles in two subsequent fresh containers. The previous
+D8037 temporary-IL-file packaging blocker is resolved for this compiler setup.
+No SDK/license change or game-file replacement was required. The private
+negotiation-screen-preview/build.sh and build-screen.sh record the working setup.
+
+The user rejected the plain text presentation. The addon now uses a navy/crimson
+franchise layout with a strong player header, vertical section navigation,
+right-aligned annual salary/protected-base/cap columns, a distinct cap-room band,
+and a dedicated scrollable agent/evidence area. Colors are a generic game palette;
+no unverified team identity or branding is invented. Unsupported/ineligible offers
+and longer contracts retain the complete scrollable text path instead of clipping
+rows or accounting reasons. Rendering remains cached and inside the addon. Input,
+financial rules, missing-data semantics and preview-only signing holds are retained.
+
+Current source hashes are checked before isolated Proton execution on the Deck.
+Renderer, held-signing and host-handshake Windows children all pass. Proton's
+launcher returned0 without forwarding child stdout on the first attempt, so the
+runner now captures child logs and checks fresh per-child Windows completion
+markers rather than treating that launcher exit as proof. All three child markers
+and both existing success messages are verified.24 authored PNGs have correct
+1280x800/1280x720 dimensions, including seven-year terms and accounting rejection.
+A batched inspection of the actual Proton captures confirms readable tables,
+full text/scroll access and the new layout. Private checks-receipt.json preserves
+source hashes, results, zero model requests and no game installation. This is
+execution of authored fixture programs on the Deck, not the running game.
+
+The previous fb743f6 full Windows/Linux Franchise AI38843271087 and runtime
+Build38843271009 now both pass. New redesign CI follows. Actual rebuilt game
+packaging, normal-exit installation, live offer-screen takeover, editor/submit,
+AI execution and signing/save-reload remain unfinished. Existing saves, installed
+runtime/launcher, control grants and paid inference policy were not changed.

@@ -855,6 +855,11 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
       checks pass, and all20 Windows native checks/render fixtures pass at both
       Deck resolutions. Actual Deck takeover remains unverified;
       editing/submission/application remain unfinished. Installed code is unchanged.
+      The compiler TEMP blocker is repaired by using the initialized Wine prefix;
+      repeated fresh-container builds and all three isolated Windows/Proton child
+      checks pass. The user-requested redesign adds salary/cap columns, stronger
+      navy/crimson hierarchy and a dedicated dialogue area;24 authored captures
+      include long contracts/rejections. Actual game build/install remains pending.
 - [ ] Integrate persistent stories/relationships into the actual franchise experience.
 - [ ] Add opt-in configuration, backups, recovery and explicit migration handling.
 

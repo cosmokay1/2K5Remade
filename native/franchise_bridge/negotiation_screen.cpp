@@ -13,6 +13,7 @@ std::mutex screen_lock;
 franchise::NegotiationNavigation navigation;
 std::string body,title,status,closed_body,paint_key,presented_body;
 std::array<std::string,3> pages;
+nlohmann::json screen_reply;
 std::vector<unsigned char> pixels;
 int width,height;
 bool paint_failed=false;
@@ -36,7 +37,8 @@ bool refresh() {
     const std::string next=view.response;
     if(next==closed_body) return false;
     if(next!=body || title!=view.summary.title) {
-        pages=franchise::negotiation_pages(franchise::parse_frame(next));
+        auto parsed=franchise::parse_frame(next);
+        pages=franchise::negotiation_pages(parsed);screen_reply=std::move(parsed);
         body=next;title=view.summary.title;navigation.reset();presented_body.clear();paint_key.clear();paint_failed=false;
     }
     status=view.summary.offer;return true;
@@ -62,10 +64,16 @@ bool paint(NFL2K5AddonDraw& draw) {
         const auto old_bitmap=SelectObject(dc,bitmap);
         const float u=std::min(draw.width/1100.0f,draw.height/700.0f);
         auto px=[&](float value){return static_cast<int>(std::lround(value*u));};
-        const int margin=px(32),right=draw.width-margin,body_top=px(164),body_bottom=draw.height-px(62);
-        const int body_right=std::min(right,margin+px(850));
-        RECT background{0,0,static_cast<LONG>(draw.width),static_cast<LONG>(draw.height)};
-        HBRUSH brush=CreateSolidBrush(RGB(9,14,23));FillRect(dc,&background,brush);DeleteObject(brush);
+        const COLORREF white=RGB(247,249,253),secondary=RGB(184,205,229),accent=RGB(178,35,57);
+        auto fill=[&](int left,int top,int right,int bottom,COLORREF color) {
+            RECT rect{left,top,right,bottom};HBRUSH brush=CreateSolidBrush(color);
+            FillRect(dc,&rect,brush);DeleteObject(brush);
+        };
+        fill(0,0,draw.width,draw.height,RGB(9,16,27));
+        fill(0,0,draw.width,px(7),accent);
+        fill(0,px(7),draw.width,px(122),RGB(17,29,46));
+        fill(0,px(122),px(222),draw.height-px(54),RGB(13,23,38));
+        fill(px(222),px(122),px(223),draw.height-px(54),RGB(42,61,84));
         SetBkMode(dc,TRANSPARENT);
         auto text=[&](const std::string& value,int left,int top,int max_right,int bottom,int size,int weight,COLORREF color,UINT flags) {
             HFONT font=CreateFontW(-px(static_cast<float>(size)),0,0,0,weight,FALSE,FALSE,FALSE,DEFAULT_CHARSET,
@@ -75,27 +83,82 @@ bool paint(NFL2K5AddonDraw& draw) {
             DrawTextW(dc,content.c_str(),static_cast<int>(content.size()),&rect,flags|DT_NOPREFIX);
             SelectObject(dc,old);DeleteObject(font);return rect;
         };
-        text(title,margin,px(22),right,px(65),32,FW_BOLD,RGB(255,255,255),DT_SINGLELINE);
-        text(status,margin,px(70),right,px(116),18,FW_NORMAL,RGB(199,219,245),DT_WORDBREAK);
+        text(title,px(30),px(25),draw.width-px(30),px(75),36,FW_BOLD,white,DT_SINGLELINE|DT_END_ELLIPSIS);
+        text("Contract negotiation",px(32),px(80),draw.width-px(32),px(108),19,FW_NORMAL,secondary,DT_SINGLELINE);
         const char *tabs[]={"Contract","Performance","Agent"};
         for(unsigned i=0;i<3;++i) {
-            const int left=margin+px(195.0f*i);
-            text(tabs[i],left,px(124),left+px(180),px(153),22,i==navigation.page?FW_BOLD:FW_NORMAL,
-                i==navigation.page?RGB(255,255,255):RGB(199,219,245),DT_SINGLELINE);
-            if(i==navigation.page){RECT line{left,px(155),left+px(175),px(157)};brush=CreateSolidBrush(RGB(199,219,245));FillRect(dc,&line,brush);DeleteObject(brush);}
+            const int top=px(153+62.0f*i);
+            if(i==navigation.page) fill(px(17),top,px(205),top+px(48),accent);
+            text(tabs[i],px(33),top+px(12),px(197),top+px(40),23,
+                i==navigation.page?FW_BOLD:FW_NORMAL,i==navigation.page?white:secondary,DT_SINGLELINE);
         }
-        const auto measured=text(pages[navigation.page],margin,0,body_right,0,22,FW_NORMAL,RGB(255,255,255),DT_CALCRECT|DT_WORDBREAK);
-        const int line_height=std::max(1,static_cast<int>(text("M",margin,0,body_right,0,22,FW_NORMAL,RGB(255,255,255),DT_CALCRECT|DT_SINGLELINE).bottom));
-        const int raw_overflow=std::max(0,static_cast<int>(measured.bottom)-body_bottom+body_top);
-        const int overflow=((raw_overflow+line_height-1)/line_height)*line_height;
-        navigation.scroll[navigation.page]=std::min(navigation.scroll[navigation.page],static_cast<int>(std::ceil(overflow/u)));
-        const int offset=std::min((px(static_cast<float>(navigation.scroll[navigation.page]))/line_height)*line_height,overflow);
-        SaveDC(dc);IntersectClipRect(dc,margin,body_top,right,body_bottom);
-        text(pages[navigation.page],margin,body_top-offset,body_right,body_top-offset+measured.bottom+px(28),22,FW_NORMAL,RGB(255,255,255),DT_WORDBREAK);
-        RestoreDC(dc,-1);
-        std::string footer="LT / RT  Section     D-pad  Scroll     B  Back";
-        if(overflow) footer+="     "+std::to_string(static_cast<int>(100LL*offset/overflow))+"%";
-        text(footer,margin,draw.height-px(39),right,draw.height-px(10),18,FW_NORMAL,RGB(199,219,245),DT_SINGLELINE);
+        text("READ-ONLY",px(31),draw.height-px(164),px(201),draw.height-px(139),17,FW_BOLD,secondary,DT_SINGLELINE);
+        text("Offer submission is off.\nNo contract is signed.",px(31),draw.height-px(129),px(201),draw.height-px(67),17,FW_NORMAL,secondary,DT_WORDBREAK);
+        const int left=px(255),right=draw.width-px(32),bottom=draw.height-px(76);
+        const auto& result=screen_reply.at("result");
+        const auto& checkpoint=result.contains("signing_checkpoint")?result.at("signing_checkpoint"):result;
+        const auto context=checkpoint.value("offer_context",nlohmann::json::object());
+        const bool table=navigation.page==0 && context.contains("offer") && !context.at("offer").is_null()
+            && context.at("offer").at("salaries").size()<=5
+            && context.contains("preview") && !context.at("preview").is_null();
+        const char *headings[]={"Your offer","Performance evidence","Agent response"};
+        text(headings[navigation.page],left,px(149),right,px(185),27,FW_BOLD,white,DT_SINGLELINE);
+        int overflow=0,offset=0;
+        if(table) {
+            const auto& offer=context.at("offer");const auto& salaries=offer.at("salaries");
+            int64_t total=offer.at("signing_bonus").get<int64_t>();
+            for(const auto& salary:salaries) total+=salary.get<int64_t>(); // already bounded by negotiation_pages
+            text(std::to_string(salaries.size())+" years  /  "+franchise::screen_money(total)+" total",left,px(195),right,px(227),25,FW_BOLD,white,DT_SINGLELINE);
+            text("Signing bonus  "+franchise::screen_money(offer.at("signing_bonus")),left,px(237),right,px(264),19,FW_NORMAL,secondary,DT_SINGLELINE);
+            const int top=px(286),row=px(35);
+            const int span=right-left;
+            const int columns[]={left,left+span*13/100,left+span*43/100,left+span*71/100,right};
+            const char *labels[]={"YEAR","BASE SALARY","PROTECTED BASE","CAP CHARGE"};
+            fill(left,top,right,top+px(33),RGB(30,47,69));
+            for(int i=0;i<4;++i) text(labels[i],columns[i]+px(11),top+px(8),columns[i+1]-px(10),top+px(29),15,FW_BOLD,secondary,DT_SINGLELINE|(i?DT_RIGHT:DT_LEFT));
+            const auto preview=context.value("preview",nlohmann::json());
+            for(size_t i=0;i<salaries.size();++i) {
+                const int y=top+px(33)+static_cast<int>(i)*row;
+                fill(left,y,right,y+row,i%2?RGB(19,33,51):RGB(16,28,44));
+                fill(left,y+row-1,right,y+row,RGB(37,55,77));
+                const std::string values[]={std::to_string(i+1),franchise::screen_money(salaries[i]),
+                    offer.contains("guaranteed_salaries")?franchise::screen_money(offer.at("guaranteed_salaries").at(i)):"Not specified",
+                    !preview.is_null()?franchise::screen_money(preview.at("contract_charges").at(i)):"Unavailable"};
+                for(int col=0;col<4;++col) text(values[col],columns[col]+px(11),y+px(8),columns[col+1]-px(10),y+row-px(3),20,col==3?FW_BOLD:FW_NORMAL,white,DT_SINGLELINE|(col?DT_RIGHT:DT_LEFT));
+            }
+            const int cap_top=std::max(top+px(33)+static_cast<int>(salaries.size())*row+px(26),bottom-px(98));
+            fill(left,cap_top,right,cap_top+px(56),RGB(24,44,65));
+            text("Cap room after offer",left+px(16),cap_top+px(16),right-px(245),cap_top+px(44),20,FW_NORMAL,secondary,DT_SINGLELINE);
+            text(!preview.is_null()?franchise::screen_money(preview.at("room_after")):"Unavailable",right-px(245),cap_top+px(13),right-px(16),cap_top+px(46),25,FW_BOLD,white,DT_SINGLELINE|DT_RIGHT);
+            text("Accounting preview. Opening liabilities are still being verified.",left,cap_top+px(68),right,bottom+px(15),17,FW_NORMAL,secondary,DT_WORDBREAK);
+            if(context.contains("reason") && context.at("reason").is_string())
+                text(context.at("reason").get<std::string>(),left,px(266),right,px(287),16,FW_NORMAL,secondary,DT_SINGLELINE|DT_END_ELLIPSIS);
+        } else {
+            const int panel_top=px(205),body_top=panel_top+px(24),body_bottom=bottom-px(18);
+            fill(left,panel_top,right,bottom,RGB(18,32,50));
+            const int body_left=left+px(24),body_right=right-px(26);
+            const auto measured=text(pages[navigation.page],body_left,0,body_right,0,22,FW_NORMAL,white,DT_CALCRECT|DT_WORDBREAK);
+            const int line_height=std::max(1,static_cast<int>(text("M",body_left,0,body_right,0,22,FW_NORMAL,white,DT_CALCRECT|DT_SINGLELINE).bottom));
+            const int raw_overflow=std::max(0,static_cast<int>(measured.bottom)-body_bottom+body_top);
+            overflow=((raw_overflow+line_height-1)/line_height)*line_height;
+            navigation.scroll[navigation.page]=std::min(navigation.scroll[navigation.page],static_cast<int>(std::ceil(overflow/u)));
+            offset=std::min((px(static_cast<float>(navigation.scroll[navigation.page]))/line_height)*line_height,overflow);
+            SaveDC(dc);IntersectClipRect(dc,body_left,body_top,body_right,body_bottom);
+            text(pages[navigation.page],body_left,body_top-offset,body_right,body_top-offset+measured.bottom+px(28),22,FW_NORMAL,white,DT_WORDBREAK);
+            RestoreDC(dc,-1);
+            if(overflow) {
+                const int track_top=body_top,track_bottom=body_bottom,track_x=right-px(9);
+                fill(track_x,track_top,track_x+px(3),track_bottom,RGB(48,66,89));
+                const int thumb=std::max(px(24),(track_bottom-track_top)*(track_bottom-track_top)/std::max(1,static_cast<int>(measured.bottom)));
+                const int y=track_top+static_cast<int>((track_bottom-track_top-thumb)*static_cast<double>(offset)/overflow);
+                fill(track_x,y,track_x+px(3),y+thumb,secondary);
+            }
+        }
+        fill(0,draw.height-px(53),draw.width,draw.height,RGB(15,27,43));
+        fill(0,draw.height-px(54),draw.width,draw.height-px(53),RGB(42,61,84));
+        text("LT / RT  Change section",px(31),draw.height-px(34),px(302),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
+        text("D-pad  Scroll",px(323),draw.height-px(34),px(554),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
+        text("B  Back",draw.width-px(138),draw.height-px(34),draw.width-px(31),draw.height-px(9),18,FW_BOLD,white,DT_SINGLELINE|DT_RIGHT);
         auto *bytes=static_cast<unsigned char*>(bits);
         // GDI text does not maintain alpha; this full-screen surface is opaque.
         for(size_t i=3;i<draw.capacity;i+=4) bytes[i]=255;

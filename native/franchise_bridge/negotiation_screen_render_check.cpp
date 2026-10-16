@@ -92,6 +92,15 @@ int main(int argc,char** argv) {
             fixture=negotiation_screen_fixture();fixture["request_id"]="missing-history"+std::to_string(height);
             fixture["result"]["performance_context"]["saved_history"]=nlohmann::json::array();
             capture("missing-contract");press(7);capture("missing-performance");
+            fixture=negotiation_screen_fixture();fixture["request_id"]="ineligible"+std::to_string(height);
+            fixture["result"]["offer_context"]["preview"]=nullptr;
+            fixture["result"]["offer_context"]["reason"]="The salary minimum has not been classified. Player classification must be resolved before an offer can be evaluated.";
+            capture("ineligible-offer");
+            fixture=negotiation_screen_fixture();fixture["request_id"]="long-contract"+std::to_string(height);
+            fixture["result"]["offer_context"]["offer"]={{"salaries",{1000000,1000000,1000000,1000000,1000000,1000000,1000000}},
+                {"signing_bonus",0},{"guaranteed_salaries",{0,0,0,0,0,0,0}}};
+            fixture["result"]["offer_context"]["preview"]={{"contract_charges",{1000000,1000000,1000000,1000000,1000000,1000000,1000000}},{"room_after",10000000}};
+            capture("long-contract-top");for(int i=0;i<20;++i)press(-1,2);capture("long-contract-bottom");
             // A failed paint cannot keep invisible input ownership.
             NFL2K5AddonDraw bad{1280,static_cast<uint32_t>(height),1,0,nullptr,1,0};
             require(!franchise_negotiation_screen_event(NFL2K5_ADDON_UI_DRAW,&bad,sizeof(bad)),"Malformed surface accepted");
