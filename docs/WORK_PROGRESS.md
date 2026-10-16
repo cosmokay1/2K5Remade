@@ -9419,3 +9419,26 @@ and only team relationships. New traits must retain individual variation;
 existing actors must not reroll. Relevant mentorship/leadership/role-competition/
 conflict history must persist and feed negotiation/morale, with readable sourced
 screen explanations. These requirements are not claimed implemented.
+
+## Saved personality visible in Agent preview
+
+The Agent section now includes the persisted fictional actor's leading two
+priorities and qualitative team trust/respect/connection. It reuses the compact
+signing display's existing stable priority ordering, so the two surfaces agree.
+Relationship descriptions use the existing neutral0.5 initialization point;
+missing fields stay unknown, invalid numeric ranges refuse rendering. No numeric
+traits, real-athlete personality claims or invented agent quotes are exposed.
+This adds no model calls, rule changes, source-of-truth writes or generic host
+changes. Age-conditioned generation and player-to-player ties remain pending.
+
+All11 local native CTests pass, including preserved compact-display behavior,
+priority visibility and neutral/positive/strained/unknown relationship cases.
+An isolated MSVC build on the Deck passes navigation, full protocol and actual
+Windows renderer checks under Proton, with launcher0 and a fresh passed marker.
+The authored Agent page renders at1280x800 and1280x720; one combined visual review
+finds personality/relationship copy and existing footer/navigation legible without
+overlap. Private receipts and captures are in .local-runtime/personality-preview.
+These are renderer fixtures, not installed-game personality screenshots. The
+running game, live database and saves were not replaced or modified by this
+isolated check. Discord posting is paused at the user's request for a local draft
+and screenshot review; no progress post has been sent.

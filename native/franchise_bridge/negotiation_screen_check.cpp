@@ -13,6 +13,17 @@ int main() {
         auto tables=franchise::performance_tables(fixture["result"]["performance_context"]);
         require(tables.size()==2 && tables[0].title=="Passing" && tables[1].title=="Defense");
         require(tables[0].rows[0].values[1]=="478" && tables[1].rows[0].values[1]=="2.5");
+        require(pages[2].find("Priorities: winning and playing time")!=std::string::npos);
+        require(pages[2].find("Trust: Neutral")!=std::string::npos);
+        auto relationship=fixture;
+        relationship["result"]["player_context"]["relationships"]={{"trust",0.3},{"respect",0.7}};
+        const auto relation_page=franchise::negotiation_pages(relationship)[2];
+        require(relation_page.find("Trust: Strained")!=std::string::npos && relation_page.find("Respect: Positive")!=std::string::npos);
+        require(relation_page.find("Team connection: Unknown")!=std::string::npos);
+        auto absent_personality=fixture;absent_personality["result"].erase("player_context");
+        require(franchise::negotiation_pages(absent_personality)[2].find("personality and team relationship unavailable")!=std::string::npos);
+        relationship["result"]["player_context"]["relationships"]["trust"]=2;
+        bool bad_relationship=false;try{franchise::negotiation_pages(relationship);}catch(...){bad_relationship=true;}require(bad_relationship);
         auto receiving=fixture;
         receiving["result"]["performance_context"]["saved_history"]={
             {{"metric","receptions"},{"value",70},{"unit","count"},{"period_code_raw",1},{"mode_code_raw",0}},

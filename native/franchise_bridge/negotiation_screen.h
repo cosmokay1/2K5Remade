@@ -1,6 +1,7 @@
 #ifndef NFL2K5_NEGOTIATION_SCREEN_H
 #define NFL2K5_NEGOTIATION_SCREEN_H
 #include "protocol.h"
+#include "signing_display.h"
 #include "../game_addon/ui.h"
 #include <array>
 #include <algorithm>
@@ -175,6 +176,24 @@ inline std::array<std::string,3> negotiation_pages(const nlohmann::json& reply) 
         }
     } else performance<<"No saved stats available for this player.\n";
     performance<<u8"Saved history. \u2014 means not recorded.\n";
+    if(checkpoint.contains("player_context") && checkpoint.at("player_context").value("initialized",false)) {
+        const auto& player=checkpoint.at("player_context");
+        agent<<"Player personality\n"<<personality_priorities(player.at("personality"))
+            <<"\nFictional traits saved for this franchise.\n\nRelationship with your team\n";
+        const auto& relationships=player.at("relationships");
+        for(const auto* key:{"trust","respect","team_connection"}) {
+            const auto label=key==std::string("team_connection")?"Team connection":key==std::string("trust")?"Trust":"Respect";
+            agent<<label<<": ";
+            if(!relationships.contains(key) || relationships.at(key).is_null()) agent<<"Unknown";
+            else {
+                const auto& value=relationships.at(key);
+                if(!value.is_number() || value<0 || value>1) throw std::runtime_error("Invalid team relationship");
+                agent<<(value==0.5?"Neutral":value>0.5?"Positive":"Strained");
+            }
+            agent<<"\n";
+        }
+        agent<<"\n";
+    } else agent<<"Player personality and team relationship unavailable.\n\n";
     if(result.contains("signing_checkpoint")) {
         agent<<result.at("reason").get<std::string>()<<"\n";
         if(result.contains("counter") && !result.at("counter").is_null()) {

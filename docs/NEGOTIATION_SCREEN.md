@@ -111,6 +111,14 @@ resolves Dart to2025 and Nabers to2024/2025, rather than exposing raw title year
 Height, weight and age at season start are read from the pinned player record and
 shown beside the name. Injury tendency remains explicitly insufficient history
 until sourced injury/availability observations are connected.
+The Agent section also shows the saved fictional personality's two leading
+priorities, using the same ordering as the existing compact display. Team trust,
+respect and connection are described as neutral at the initialization midpoint,
+positive above it or strained below it; missing observations remain unknown.
+These descriptions expose neither numeric traits nor hidden gameplay ratings.
+They are saved simulation state, not a claim about the real athlete or a quote
+from an agent. Age-conditioned generation, personality evolution and teammate
+relationships remain separate pending features.
 The raw Record list, unit suffixes and long missing-metric inventories are removed
 from the player page. Agent explanations keep their dedicated scrollable prose. Colors do not claim team branding without sourced palette metadata. Up/down on the D-pad or left stick selects vertical sections; LT/RT also change sections. The right stick scrolls content; B sends exactly
 one native Back packet and dismisses the view. Entry waits for held buttons to be

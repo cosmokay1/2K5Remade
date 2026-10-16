@@ -7,6 +7,18 @@
 #include <iomanip>
 #include <sstream>
 namespace franchise {
+inline std::string personality_priorities(const nlohmann::json& personality) {
+    std::array<std::pair<double,std::string>,5> priorities;
+    const char* keys[]={"money","security","playing_time","winning","loyalty"};
+    const char* labels[]={"pay","security","playing time","winning","loyalty"};
+    for(size_t i=0;i<priorities.size();++i) {
+        const auto& value=personality.at(keys[i]);
+        if(!value.is_number() || value<0 || value>1) throw std::runtime_error("Invalid fictional priority");
+        priorities[i]={value.get<double>(),labels[i]};
+    }
+    std::stable_sort(priorities.begin(),priorities.end(),[](const auto& a,const auto& b){return a.first>b.first;});
+    return "Priorities: "+priorities[0].second+" and "+priorities[1].second;
+}
 struct SigningDisplayText { std::string priorities,offer,history; };
 inline SigningDisplayText signing_display(const nlohmann::json& response) {
     if(!response.at("error").is_null()) throw std::runtime_error("No valid signing context");
@@ -51,17 +63,8 @@ inline SigningDisplayText signing_display(const nlohmann::json& response) {
     if(result.at("write_authorized")!=false || result.at("ai_authorized")!=false)
         throw std::runtime_error("Display cannot grant negotiation authority");
     const auto& personality=result.at("player_context").at("personality");
-    std::array<std::pair<double,std::string>,5> priorities;
-    const char* keys[]={"money","security","playing_time","winning","loyalty"};
-    const char* labels[]={"pay","security","playing time","winning","loyalty"};
-    for(size_t i=0;i<priorities.size();++i) {
-        const auto& value=personality.at(keys[i]);
-        if(!value.is_number() || value<0 || value>1) throw std::runtime_error("Invalid fictional priority");
-        priorities[i]={value.get<double>(),labels[i]};
-    }
-    std::stable_sort(priorities.begin(),priorities.end(),[](const auto& a,const auto& b){return a.first>b.first;});
     SigningDisplayText text;
-    text.priorities="Priorities: "+priorities[0].second+" and "+priorities[1].second;
+    text.priorities=personality_priorities(personality);
     text.offer="Offer preview unavailable.";
     if(result.contains("offer_context")) {
         const auto& offer=result.at("offer_context");
