@@ -47,6 +47,14 @@ inline std::vector<ScreenPersonality> screen_personalities(const nlohmann::json&
     }
     return traits;
 }
+inline std::string screen_trait_description(const std::string& key) {
+    if(key=="pay") return "Places a high value on compensation.";
+    if(key=="security") return "Values financial security when considering a contract.";
+    if(key=="playing time") return "Values a meaningful role and opportunities on the field.";
+    if(key=="winning") return "Values the chance to compete and win.";
+    if(key=="loyalty") return "Values continuity and connection with a team.";
+    throw std::runtime_error("Unknown displayed personality trait");
+}
 struct ScreenRelationship {std::string label;double value=0;bool known=false;};
 inline std::vector<ScreenRelationship> screen_relationships(const nlohmann::json& checkpoint) {
     std::vector<ScreenRelationship> rows;
@@ -168,7 +176,7 @@ inline void screen_terms(std::ostringstream& text,const nlohmann::json& offer) {
     }
     text<<"Signing bonus (total): "<<screen_money(offer.at("signing_bonus"))<<"\n";
 }
-inline std::array<std::string,3> negotiation_pages(const nlohmann::json& reply) {
+inline std::array<std::string,4> negotiation_pages(const nlohmann::json& reply) {
     if(!reply.at("error").is_null()) throw std::runtime_error("No negotiation view");
     const auto& result=reply.at("result");
     const auto& checkpoint=result.contains("signing_checkpoint")?result.at("signing_checkpoint"):result;
@@ -225,13 +233,37 @@ inline std::array<std::string,3> negotiation_pages(const nlohmann::json& reply) 
                 <<": "<<screen_number(goal.at("target"))<<"; window: "<<goal.at("window").get<std::string>()<<"\n";
         }
     } else agent<<"No player response has been requested.\n";
-    agent<<"\nOffer editing and submission are not enabled in this read-only preview.\n";
-    return {contract.str(),performance.str(),agent.str()};
+    std::ostringstream personality;
+    const auto traits=screen_personalities(checkpoint);
+    if(traits.empty()) personality<<"Personality unavailable.\n";
+    for(const auto& trait:traits) personality<<trait.label<<"\n"<<screen_trait_description(trait.key)<<"\n\n";
+    return {contract.str(),performance.str(),personality.str(),agent.str()};
+}
+struct ScreenMessage {std::string sender,body;bool outgoing=false;};
+inline std::vector<ScreenMessage> screen_conversation(const nlohmann::json& reply,const std::string& response_text) {
+    const auto& result=reply.at("result");
+    if(!result.contains("signing_checkpoint")) return {};
+    std::vector<ScreenMessage> messages;
+    // A draft preview is not a sent message. Only the captured submission's
+    // exact offer can appear on the outgoing side of this exchange.
+    if(result.contains("offer") && result.at("offer").is_object()) {
+        const auto& offer=result.at("offer");
+        int64_t total=offer.at("signing_bonus").get<int64_t>();
+        for(const auto& salary:offer.at("salaries")) {
+            const auto value=salary.get<int64_t>();
+            if(value<0 || total<0 || total>std::numeric_limits<int64_t>::max()-value) throw std::runtime_error("Invalid conversation offer");
+            total+=value;
+        }
+        messages.push_back({"You",std::to_string(offer.at("salaries").size())+" years / "+screen_money(total)+
+            " total\nSigning bonus: "+screen_money(offer.at("signing_bonus")),true});
+    }
+    messages.push_back({"Player / agent",response_text,false});
+    return messages;
 }
 /* Local navigation only. No transport, model, game clock or financial changes. */
 struct NegotiationNavigation {
     unsigned page=0;
-    std::array<int,3> scroll{};
+    std::array<int,4> scroll{};
     bool armed=false;
     uint16_t previous_buttons=0;
     std::array<uint8_t,8> previous_analog{};
@@ -253,8 +285,8 @@ struct NegotiationNavigation {
             return vertical[index]!=before ? vertical[index] : 0;
         };
         const int section=stick(0,input.axes[1]),scrolling=stick(1,input.axes[3]);
-        if((pressed&2) || section<0 || down(7)) page=(page+1)%3;
-        if((pressed&1) || section>0 || down(6)) page=(page+2)%3;
+        if((pressed&2) || section<0 || down(7)) page=(page+1)%4;
+        if((pressed&1) || section>0 || down(6)) page=(page+3)%4;
         if(scrolling>0) scroll[page]=std::max(0,scroll[page]-90);
         if(scrolling<0) scroll[page]=std::min(100000,scroll[page]+90);
         previous_buttons=input.buttons;

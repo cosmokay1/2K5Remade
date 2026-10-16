@@ -13,7 +13,7 @@ namespace {
 std::mutex screen_lock;
 franchise::NegotiationNavigation navigation;
 std::string body,title,status,closed_body,paint_key,presented_body;
-std::array<std::string,3> pages;
+std::array<std::string,4> pages;
 nlohmann::json screen_reply;
 std::vector<unsigned char> pixels;
 int width,height;
@@ -96,39 +96,38 @@ bool paint(NFL2K5AddonDraw& draw) {
         const auto& checkpoint=result.contains("signing_checkpoint")?result.at("signing_checkpoint"):result;
         const auto profile=checkpoint.value("performance_context",nlohmann::json::object());
         const auto traits=franchise::screen_personalities(checkpoint);
-        for(size_t trait=0;trait<traits.size();++trait) {
-            const auto& personality=traits[trait];
-            // Small authored line icons: shield, stopwatch, linked rings,
-            // coin and trophy. No font glyphs or external bitmap dependency.
-            const int x=px(33+190.0f*trait),y=px(66);
+        auto trait_icon=[&](const std::string& key,int x,int y) {
             HPEN pen=CreatePen(PS_SOLID,std::max(1,px(2)),secondary);
             const auto old_pen=SelectObject(dc,pen);const auto old_brush=SelectObject(dc,GetStockObject(NULL_BRUSH));
             auto line=[&](std::initializer_list<POINT> points) {
                 std::vector<POINT> scaled;for(const auto& point:points) scaled.push_back({x+px(point.x),y+px(point.y)});
                 Polyline(dc,scaled.data(),static_cast<int>(scaled.size()));
             };
-            if(personality.key=="security") line({{1,1},{17,1},{17,10},{14,15},{9,19},{4,15},{1,10},{1,1}});
-            else if(personality.key=="playing time") {
+            if(key=="security") line({{1,1},{17,1},{17,10},{14,15},{9,19},{4,15},{1,10},{1,1}});
+            else if(key=="playing time") {
                 Ellipse(dc,x+px(1),y+px(3),x+px(18),y+px(20));line({{9,6},{9,12},{13,12}});
                 line({{6,0},{12,0}});line({{9,0},{9,3}});
             }
-            else if(personality.key=="loyalty") {
+            else if(key=="loyalty") {
                 Ellipse(dc,x,y+px(3),x+px(12),y+px(16));Ellipse(dc,x+px(7),y+px(3),x+px(19),y+px(16));
-            } else if(personality.key=="pay") {
+            } else if(key=="pay") {
                 Ellipse(dc,x,y,x+px(19),y+px(19));line({{9,4},{9,15}});line({{5,6},{13,6}});line({{5,12},{13,12}});
             } else {line({{4,1},{15,1},{15,8},{12,12},{7,12},{4,8},{4,1}});
                 line({{4,3},{0,3},{0,7},{4,9}});line({{15,3},{19,3},{19,7},{15,9}});
                 line({{9,12},{9,18}});line({{4,18},{15,18}});}
             SelectObject(dc,old_brush);SelectObject(dc,old_pen);DeleteObject(pen);
-            text(personality.label,x+px(28),px(64),x+px(175),px(90),18,FW_BOLD,secondary,DT_SINGLELINE);
-        }
-        if(traits.empty()) text("Personality unavailable",px(32),px(64),draw.width-px(32),px(90),18,FW_NORMAL,secondary,DT_SINGLELINE);
-        text(franchise::screen_profile(profile),px(32),px(96),draw.width-px(32),px(119),16,FW_NORMAL,secondary,DT_SINGLELINE);
-        const char *tabs[]={"Contract","Performance","Agent"};
-        for(unsigned i=0;i<3;++i) {
-            const int top=px(153+62.0f*i);
-            if(i==navigation.page) fill(px(17),top,px(205),top+px(48),accent);
-            text(tabs[i],px(33),top+px(12),px(197),top+px(40),23,
+        };
+        const auto physical=franchise::screen_profile(profile);
+        const auto physical_size=text(physical,0,0,draw.width,0,19,FW_NORMAL,secondary,DT_CALCRECT|DT_SINGLELINE);
+        const int icons_left=px(32)+physical_size.right+px(28),row_y=px(80);
+        text(physical,px(32),row_y,draw.width-px(32),row_y+px(28),19,FW_NORMAL,secondary,DT_SINGLELINE);
+        for(size_t trait=0;trait<traits.size();++trait)
+            trait_icon(traits[trait].key,icons_left+px(34.0f*trait),row_y+px(2));
+        const char *tabs[]={"Contract","Performance","Personality","Agent"};
+        for(unsigned i=0;i<4;++i) {
+            const int top=px(147+48.0f*i);
+            if(i==navigation.page) fill(px(17),top,px(205),top+px(42),accent);
+            text(tabs[i],px(33),top+px(9),px(197),top+px(35),22,
                 i==navigation.page?FW_BOLD:FW_NORMAL,i==navigation.page?white:secondary,DT_SINGLELINE);
         }
         text("INJURY TENDENCY",px(31),px(362),px(204),px(387),15,FW_BOLD,secondary,DT_SINGLELINE);
@@ -137,7 +136,7 @@ bool paint(NFL2K5AddonDraw& draw) {
         text("Offer submission is off.\nNo contract is signed.",px(31),draw.height-px(129),px(201),draw.height-px(67),17,FW_NORMAL,secondary,DT_WORDBREAK);
         const int left=px(255),right=draw.width-px(32),bottom=draw.height-px(76);
         const auto context=checkpoint.value("offer_context",nlohmann::json::object());
-        const char *headings[]={"Your offer","Player stats","Agent response"};
+        const char *headings[]={"Your offer","Player stats","Personality","Agent response"};
         text(headings[navigation.page],left,px(149),right,px(185),27,FW_BOLD,white,DT_SINGLELINE);
         int overflow=0,offset=0;
         if(navigation.page<2 && body!="loading") {
@@ -217,6 +216,40 @@ bool paint(NFL2K5AddonDraw& draw) {
                 const int position=top+static_cast<int>((height-thumb)*static_cast<double>(offset)/overflow);
                 fill(track,position,right,position+thumb,secondary);
             }
+        } else if(navigation.page==3 && body!="loading") {
+            const int top=px(205),message_left=left+px(20),message_right=right-px(20);
+            const int bubble_width=(message_right-message_left)*86/100;
+            const auto messages=franchise::screen_conversation(screen_reply,pages[3]);
+            std::vector<int> heights;
+            int content=0;
+            for(const auto& message:messages) {
+                const auto measured=text(message.body,0,0,bubble_width-px(32),0,21,FW_NORMAL,white,DT_CALCRECT|DT_WORDBREAK);
+                const int height=px(52)+measured.bottom;
+                heights.push_back(height);content+=height+px(18);
+            }
+            if(!messages.empty()) content-=px(18);
+            const int viewport=bottom-top;
+            overflow=std::max(0,content-viewport);
+            navigation.scroll[3]=std::min(navigation.scroll[3],static_cast<int>(std::ceil(overflow/u)));
+            offset=std::min(px(static_cast<float>(navigation.scroll[3])),overflow);
+            int y=top+std::max(0,viewport-content)-offset;
+            SaveDC(dc);IntersectClipRect(dc,left,top,right,bottom);
+            if(messages.empty()) text("No conversation yet.\nOffer submission is currently off.",message_left,bottom-px(78),message_right,bottom,21,FW_NORMAL,secondary,DT_WORDBREAK);
+            for(size_t i=0;i<messages.size();++i) {
+                const auto& message=messages[i];
+                const int x=message.outgoing?message_right-bubble_width:message_left;
+                fill(x,y,x+bubble_width,y+heights[i],message.outgoing?RGB(35,57,81):RGB(18,32,50));
+                text(message.sender,x+px(16),y+px(12),x+bubble_width-px(16),y+px(36),17,FW_BOLD,secondary,DT_SINGLELINE);
+                text(message.body,x+px(16),y+px(39),x+bubble_width-px(16),y+heights[i]-px(10),21,FW_NORMAL,white,DT_WORDBREAK);
+                y+=heights[i]+px(18);
+            }
+            RestoreDC(dc,-1);
+            if(overflow) {
+                fill(right-px(3),top,right,bottom,RGB(48,66,89));
+                const int thumb=std::max(px(24),viewport*viewport/std::max(1,content));
+                const int position=top+static_cast<int>((viewport-thumb)*static_cast<double>(offset)/overflow);
+                fill(right-px(3),position,right,position+thumb,secondary);
+            }
         } else {
             const int panel_top=px(205),body_top=panel_top+px(24),body_bottom=bottom-px(18);
             fill(left,panel_top,right,bottom,RGB(18,32,50));
@@ -224,15 +257,23 @@ bool paint(NFL2K5AddonDraw& draw) {
             const auto measured=text(pages[navigation.page],body_left,0,body_right,0,22,FW_NORMAL,white,DT_CALCRECT|DT_WORDBREAK);
             const int line_height=std::max(1,static_cast<int>(text("M",body_left,0,body_right,0,22,FW_NORMAL,white,DT_CALCRECT|DT_SINGLELINE).bottom));
             const auto relationships=navigation.page==2 && body!="loading"?franchise::screen_relationships(checkpoint):std::vector<franchise::ScreenRelationship>{};
+            const int traits_height=navigation.page==2?px(74.0f*traits.size()):0;
             const int bars_height=relationships.empty()?0:px(197);
-            const int content_height=bars_height+static_cast<int>(measured.bottom);
+            const int prose_height=navigation.page==2 && !traits.empty()?0:static_cast<int>(measured.bottom);
+            const int content_height=traits_height+bars_height+prose_height;
             const int raw_overflow=std::max(0,content_height-body_bottom+body_top);
             overflow=((raw_overflow+line_height-1)/line_height)*line_height;
             navigation.scroll[navigation.page]=std::min(navigation.scroll[navigation.page],static_cast<int>(std::ceil(overflow/u)));
             offset=std::min((px(static_cast<float>(navigation.scroll[navigation.page]))/line_height)*line_height,overflow);
             SaveDC(dc);IntersectClipRect(dc,body_left,body_top,body_right,body_bottom);
+            if(navigation.page==2) for(size_t i=0;i<traits.size();++i) {
+                const int y=body_top-offset+px(74.0f*i);
+                trait_icon(traits[i].key,body_left,y+px(3));
+                text(traits[i].label,body_left+px(32),y,body_right,y+px(28),22,FW_BOLD,white,DT_SINGLELINE);
+                text(franchise::screen_trait_description(traits[i].key),body_left+px(32),y+px(29),body_right,y+px(70),18,FW_NORMAL,secondary,DT_WORDBREAK);
+            }
             if(!relationships.empty()) {
-                int y=body_top-offset;
+                int y=body_top+traits_height-offset;
                 text("Relationship with your team",body_left,y,body_right,y+px(30),22,FW_BOLD,white,DT_SINGLELINE);
                 y+=px(42);
                 for(const auto& relationship:relationships) {
@@ -247,8 +288,8 @@ bool paint(NFL2K5AddonDraw& draw) {
                     y+=px(43);
                 }
             }
-            const int prose_top=body_top+bars_height-offset;
-            text(pages[navigation.page],body_left,prose_top,body_right,prose_top+measured.bottom+px(28),22,FW_NORMAL,white,DT_WORDBREAK);
+            const int prose_top=body_top+traits_height+bars_height-offset;
+            if(prose_height) text(pages[navigation.page],body_left,prose_top,body_right,prose_top+measured.bottom+px(28),22,FW_NORMAL,white,DT_WORDBREAK);
             RestoreDC(dc,-1);
             if(overflow) {
                 const int track_top=body_top,track_bottom=body_bottom,track_x=right-px(9);

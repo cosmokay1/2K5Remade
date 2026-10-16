@@ -89,7 +89,7 @@ team/controller assignment. Negotiation and guest signing must both be off;
 conflicting modes reject service startup. The game shim holds native signing
 throughout preview mode, including missing/disabled addon and failed rendering.
 
-Contract, Performance and Agent sections use a navy/crimson franchise layout and
+Contract, Performance, Personality and Agent sections use a navy/crimson franchise layout and
 Bahnschrift. A vertical section list, structured annual money table and dedicated
 scrollable dialogue/evidence panel replace the initial text-only prototype.
 Contract terms use the annual table whenever an offer can be decoded, including
@@ -111,20 +111,30 @@ resolves Dart to2025 and Nabers to2024/2025, rather than exposing raw title year
 Height, weight and age at season start are read from the pinned player record and
 shown beside the name. Injury tendency remains explicitly insufficient history
 until sourced injury/availability observations are connected.
-The header shows the two leading saved personality traits separately beneath the
-player name. Each has its own authored line icon and label: pay (coin), security
-(shield), playing time (stopwatch), winning (trophy) and loyalty (linked rings).
-The shared priority ordering agrees with the compact display; the replacement
-screen does not combine them into a single Priorities sentence or show a
-fictional-traits disclaimer. Missing initialized personality stays unavailable.
-The Agent section shows separate labeled bars for team trust, respect and
-connection, followed by the existing player/agent response. Each bar reads the
-saved value on the same zero-to-one range, with a neutral midpoint marker;
-missing values remain Unknown rather than appearing as a known zero. Numeric
-traits and hidden gameplay ratings are not printed. Bars and dialogue scroll as
-one panel, retaining full response/counter/promise content. These are saved
-simulation state, not generated quotes. Age-conditioned generation, personality
-evolution, teammate relationships and market momentum remain pending.
+The header places compact icon-only references to the two leading saved traits
+on the same row as height, weight and age. Each trait retains its own authored
+line icon: pay (coin), security (shield), playing time (stopwatch), winning (trophy)
+and loyalty (linked rings). A dedicated Personality section repeats each icon
+beside its name and short description so players can learn the symbols. The
+shared priority ordering agrees with the compact display; the replacement
+screen does not combine them into a Priorities sentence or show a fictional-traits
+label. Missing initialized personality stays unavailable on its detail page.
+
+Personality also shows separate labeled bars for team trust, respect and
+connection. Each bar reads the saved value on the same zero-to-one range, with a
+neutral midpoint marker; missing values remain Unknown rather than appearing as
+a known zero. Numeric traits and hidden gameplay ratings are not printed. Trait
+descriptions and bars share the existing scrollable detail panel.
+
+Agent uses a bottom-aligned conversation layout. The captured submitted offer
+appears on the right with sender You; the full player/agent response appears on
+the left with its counter and proposed promises intact. A draft preview never
+becomes a sent message. Before a response exists, the empty state says there is
+no conversation yet and submission is off. The current captured exchange is
+shown; older exchanges and typed free-form chat are not connected. Long messages
+scroll without truncating the response. No timestamps or conversations are
+invented. Age-conditioned generation, personality evolution, teammate
+relationships and market momentum remain pending.
 The raw Record list, unit suffixes and long missing-metric inventories are removed
 from the player page. Agent explanations keep their dedicated scrollable prose. Colors do not claim team branding without sourced palette metadata. Up/down on the D-pad or left stick selects vertical sections; LT/RT also change sections. The right stick scrolls content; B sends exactly
 one native Back packet and dismisses the view. Entry waits for held buttons to be

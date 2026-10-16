@@ -72,7 +72,7 @@ int main(int argc,char** argv) {
             NFL2K5AddonInput other{};other.port=1;other.analog[7]=255;nfl2k5_addon_ui_input(&other);
             require(!other.analog[7],"Other port reached the native menu");
             require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed) && !changed,"Other port navigated the view");
-            press(7);capture("performance");press(7);capture("agent-empty");
+            press(7);capture("performance");press(7);capture("personality");press(7);capture("agent-empty");
             for(const auto* trait:{"money","security","playing_time","winning","loyalty"}) {
                 fixture=negotiation_screen_fixture();fixture["request_id"]=std::string("trait-")+trait+std::to_string(height);
                 fixture["result"]["player_context"]["personality"][trait]=1;
@@ -83,16 +83,20 @@ int main(int argc,char** argv) {
             fixture=negotiation_screen_fixture();fixture["request_id"]="before-counter"+std::to_string(height);
             auto checkpoint=fixture["result"];
             fixture["result"]={{"signing_checkpoint",checkpoint},{"counter",checkpoint["offer_context"]["offer"]},
-                {"counter_validation",{{"status","eligible"}}},{"reason",
+                {"offer",checkpoint["offer_context"]["offer"]},{"counter_validation",{{"status","eligible"}}},{"reason",
                     u8"We\u2019d appreciate a clear role as much as the money in this offer. "
                     "We want a clear path to starting and a deal that reflects the production in the records you have. "
                     "Where the records are missing, we should talk about that uncertainty rather than assume the worst. "
                     "Our counter keeps the annual salaries and bonus explicit so you can review the cap impact. "
                     "This is a proposal, and we are waiting for your response. END OF AGENT RESPONSE."}};
             fixture["request_id"]="authored-counter"+std::to_string(height);
-            capture("counter-contract");press(7);press(7);capture("agent-full");
+            capture("counter-contract");press(7);press(7);press(7);capture("agent-full");
             for(int i=0;i<12;++i)press(-1,2);capture("agent-bottom");
             press(-1,1);capture("agent-up"); // end clamping must allow immediate upward movement
+            fixture["request_id"]="short-conversation"+std::to_string(height);
+            fixture["result"]["counter"]=nullptr;
+            fixture["result"]["reason"]="The term works for us. Before we agree, we need to discuss his role on the team.";
+            capture("conversation-short-contract");press(7);press(7);press(7);capture("conversation-short");
             // Exactly one native B pulse, then quarantine the held B button.
             NFL2K5AddonInput input{};nfl2k5_addon_ui_input(&input);input.analog[1]=255;
             nfl2k5_addon_ui_input(&input);require(input.analog[1]==255,"Back did not leave the native offer menu");

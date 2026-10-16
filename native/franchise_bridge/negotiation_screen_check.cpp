@@ -15,6 +15,8 @@ int main() {
         require(tables[0].rows[0].values[1]=="478" && tables[1].rows[0].values[1]=="2.5");
         require(pages[2].find("Priorities:")==std::string::npos);
         require(pages[2].find("Fictional")==std::string::npos);
+        require(pages[2].find("Winning\nValues the chance to compete and win.")!=std::string::npos);
+        require(pages[3].find("Winning")==std::string::npos);
         const auto traits=franchise::screen_personalities(fixture["result"]);
         require(traits.size()==2 && traits[0].label=="Winning" && traits[1].label=="Playing time");
         auto relationship=fixture;
@@ -67,10 +69,17 @@ int main() {
             {"counter_validation",{{"status","ineligible"},{"reason","Insufficient supported cap room"}}},
             {"counter_promises",{{{"metric","starts"},{"target",12},{"window","regular season"}}}}};
         pages=franchise::negotiation_pages(proposal);
-        require(pages[2].find(proposal["result"]["reason"].get<std::string>())!=std::string::npos);
-        require(pages[2].find("Counter eligibility: ineligible")!=std::string::npos);
-        require(pages[2].find("starts: 12; window: regular season")!=std::string::npos);
-        require(pages[2].find("$3,796,000")!=std::string::npos);
+        require(pages[3].find(proposal["result"]["reason"].get<std::string>())!=std::string::npos);
+        require(pages[3].find("Counter eligibility: ineligible")!=std::string::npos);
+        require(pages[3].find("starts: 12; window: regular season")!=std::string::npos);
+        require(pages[3].find("$3,796,000")!=std::string::npos);
+        require(franchise::screen_conversation(fixture,pages[3]).empty());
+        proposal["result"]["offer"]=fixture["result"]["offer_context"]["offer"];
+        const auto conversation=franchise::screen_conversation(proposal,pages[3]);
+        require(conversation.size()==2 && conversation[0].outgoing && !conversation[1].outgoing);
+        require(conversation[0].body.find("$16,876,000")!=std::string::npos);
+        require(conversation[1].body.find("END OF FULL RESPONSE")!=std::string::npos);
+        require(conversation[1].body.find("starts: 12")!=std::string::npos);
         auto hidden=fixture;hidden["result"]["performance_context"]["saved_history"][0]["metric"]="overall_rating";
         bool hidden_refused=false;try{franchise::negotiation_pages(hidden);}catch(...){hidden_refused=true;}
         require(hidden_refused);
@@ -81,13 +90,13 @@ int main() {
         input={};nav.input(input);input.analog[7]=255;nav.input(input);require(nav.page==1);
         nav.input(input);require(nav.page==1); // held trigger is not repeated
         input={};nav.input(input);input.analog[7]=255;nav.input(input);require(nav.page==2);
-        input={};nav.input(input);input.buttons=2;nav.input(input);require(nav.page==0); // down selects next vertical section
-        nav.input(input);require(nav.page==0);
+        input={};nav.input(input);input.buttons=2;nav.input(input);require(nav.page==3); // down selects next vertical section
+        nav.input(input);require(nav.page==3);
         input={};nav.input(input);input.buttons=1;nav.input(input);require(nav.page==2);
         input={};nav.input(input);input.buttons=4;nav.input(input);require(nav.page==2); // horizontal d-pad is not vertical navigation
         input={};nav.input(input);input.buttons=8;nav.input(input);require(nav.page==2);
-        input={};nav.input(input);input.axes[1]=-20000;nav.input(input);require(nav.page==0);
-        nav.input(input);require(nav.page==0);input.axes[1]=-12000;nav.input(input);require(nav.page==0);
+        input={};nav.input(input);input.axes[1]=-20000;nav.input(input);require(nav.page==3);
+        nav.input(input);require(nav.page==3);input.axes[1]=-12000;nav.input(input);require(nav.page==3);
         input.axes[1]=0;nav.input(input);input.axes[1]=20000;nav.input(input);require(nav.page==2);
         input={};nav.input(input);input.axes[3]=-20000;nav.input(input);require(nav.scroll[2]==90);
         nav.input(input);require(nav.scroll[2]==90);
@@ -97,6 +106,9 @@ int main() {
         input={};nav.input(input);require(nav.armed);
         input={};nav.input(input);input.analog[1]=255;require(nav.input(input)==2);
         nav.reset();require(!nav.armed && !nav.page && !nav.scroll[2]);
+        input={};nav.input(input);input.buttons=1;nav.input(input);require(nav.page==3);
+        input={};nav.input(input);input.buttons=2;nav.input(input);require(nav.page==0);
+
         std::puts("Exact terms, separate saved records, full responses/counters/promises and navigation passed");return 0;
     } catch(const std::exception& error){std::fprintf(stderr,"%s\n",error.what());return 1;}
 }

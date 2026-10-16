@@ -9474,3 +9474,34 @@ from sourced production, honors/playoff events, health and actual interest/bids;
 no competing offers, press coverage or prices may be invented. Routine updates
 must not buy extra model requests. The negotiation screen must expose the known
 causes and consequences when these mechanics are implemented.
+
+## Compact trait references, Personality details and Agent conversation
+
+The user's follow-up moves trait labels/explanations into a dedicated Personality
+section. The header now shows only the two small trait icons immediately after
+height/weight/season-start age on one row, across all sections. Personality
+repeats each icon beside its label/description and owns the saved relationship
+bars. Agent remains dedicated to negotiation, using right-aligned submitted-offer
+and left-aligned full response bubbles, anchored at the bottom when content fits.
+The existing contract/performance tables are retained. Four-section controller
+navigation wraps in both directions and preserves held-button quarantine/Back.
+
+A draft context never becomes a sent message. Only a captured result's exact
+submitted offer creates an outgoing bubble; its matching response/counter/promises
+remain complete on the incoming side. The current exchange is rendered, not an
+invented chat history. Before a reply exists the empty conversation state says
+submission is off. No composer, model call, timestamps, history fabrication or
+new transaction authority is introduced. Long responses retain independent
+scrolling. Missing personality/relationships stay unavailable/Unknown.
+
+All11 local native CTests pass, including new four-section wrap checks, separate
+personality content and exact conversation totals/full-response preservation.
+The isolated MSVC/Windows/Proton navigation, protocol and actual-renderer children
+pass with launcher0 and a fresh passed marker. Render scenarios include all five
+trait icons, relationship boundaries/unknowns, full responses/scrolling and short
+bottom-aligned conversations at1280x800 and1280x720. One combined visual review of
+Personality and the short conversation confirms the header row, descriptions,
+bars, sender labels and bubbles fit without footer/sidebar overlap. Private
+receipts/captures: .local-runtime/personality-conversation. These are authored
+renderer previews, not installed-game AI conversations. Installed runtime/saves
+remain unchanged; no Discord message was sent.
