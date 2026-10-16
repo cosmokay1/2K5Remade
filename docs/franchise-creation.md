@@ -35,6 +35,22 @@ read retail rosters, create a game save or demonstrate native-game playability.
 
 ## Bootstrap command
 
+### Planned age and interpersonal behavior
+
+The current v1 generator is independent of age and creates team-specific neutral
+relationships; it does not implement player-to-player ties. New generation should
+use verified age and career stage to influence trait likelihoods while preserving
+individual variation. Existing saved personalities must never be rerolled by an
+upgrade. Later changes should be bounded, recorded consequences of career events.
+
+Personality should also influence mentorship, leadership, competition for roles
+and conflict between players. Store relevant relationships as shared events make
+them meaningful, rather than generating every possible pair. Preserve their
+history across trades and reloads, and connect evidenced effects to morale and
+negotiation. The screen must explain known priorities and relevant relationships
+in ordinary language without exposing numeric traits or inventing shared history.
+These are delivery requirements, not implemented v1 behavior.
+
 A verified game adapter can supply a bounded JSON bundle with exact top-level fields
 `format` (integer 1), `source` (declared export provenance), `seed` (string or null),
 and `teams` (team IDs mapped to `Ledger.bootstrap_config()` objects). Original source

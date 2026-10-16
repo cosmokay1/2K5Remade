@@ -9392,3 +9392,30 @@ own verified copy of the289-file source set and Windows runtime, with the
 original live ledger/usage database and disabled controls preserved. Installation
 and actual in-game verification still require normal game exit; previews are
 authored renderer fixtures, not a claimed installed-game screenshot.
+
+The combined table/year/profile package is now installed after confirmed normal
+exit. Its protected installation receipt pins source010ac4f and verifies all205
+save files unchanged across replacement. Both Windows/Linux Build38853338314 and
+Franchise38853338326 completed successfully. Actual game execution now shows
+Dart's annual contract table, saved6ft2/225lb profile and age23, with unknown injury
+history explicitly labeled. A real context response carries season2026, all nine
+mapped passing/rushing/game observations and the saved physical profile; AI and
+write authorization are false. Context roundtrip1145ms, largest poll gap21ms,
+zero transport failures. This is actual contract-screen/context evidence; the
+attempted keyboard Down did not switch the visible addon tab, so actual updated
+Performance navigation/rendering is not verified by this capture.
+
+Post-launch read-only verification matches all installed candidate hashes and the
+unchanged ledger database. All203 nonpartition save files match installation;
+Partition0.img andPartition5.img changed during normal running and are preserved.
+No offer was submitted or contract signed; save/reload transaction verification
+remains open. Private receipts/captures are under football-profile and
+game-test-control in .local-runtime.
+
+The user requires age/career stage to influence personality and personalities to
+influence player-to-player relationships. Added explicit pending delivery items
+and documented the distinction from currentv1 generation, which has no age input
+and only team relationships. New traits must retain individual variation;
+existing actors must not reroll. Relevant mentorship/leadership/role-competition/
+conflict history must persist and feed negotiation/morale, with readable sourced
+screen explanations. These requirements are not claimed implemented.
