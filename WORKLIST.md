@@ -22,6 +22,11 @@ Repository: https://github.com/cosmokay1/2K5Remade
 Branch: `codex/franchise-negotiation`. Progress evidence: [WORK_PROGRESS.md](docs/WORK_PROGRESS.md).
 Resume from the earliest unblocked unchecked item, respecting dependencies.
 
+Private build storage: reuse the active toolchain, shared Google SDK and test
+prefixes. Retain the current candidate and working rollback; prune obsolete
+compiler/test prefixes after retaining their receipts. Copy virtual disk images
+sparsely. Preserve unique assets, saves, ledgers and source/rollback evidence.
+
 ## Current priority — core franchise negotiation
 
 The user deferred additional statistics investigation on October14. Prioritize
@@ -731,6 +736,11 @@ Windows service tests(11 skips),5,767 native contract cases,56 amendment
 responses and game --validate pass under Proton. Corrected Windows/Linux CI
 is green. Actual Deck negotiation, signing and reload are still unverified. Experimental upstream Linux changes were not adopted; the
 working Proton runtime and installed saves remain unchanged. The scheduler is off.
+The isolated candidate's two actual startups reproduced the existing
+sub_003CAD50 divide-by-zero before franchise load. The previous launcher was
+restored; all205 original save hashes and ledger hash match. Live signing is
+blocked by startup, with zero model requests. Approved runtime credentials did
+pass Windows shutdown-control authentication and were removed after the test.
 
 ## Current blockers
 

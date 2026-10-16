@@ -10199,3 +10199,47 @@ Read-only cloud preflight found the remote control enabled and unexpired through
 Neither the grant nor the control was changed or renewed. Fresh runtime credential
 authorization and actual MyNFL1 clock/signing/cap/save/reload proof remain open.
 The scheduled follow-up remains PAUSED.
+
+### Deck artifact cleanup and approved runtime test preparation
+
+At the user's request, pruned obsolete private build artifacts on the Deck.
+Converted20 dense Partition*.img files across four test profiles to sparse
+storage using zero-block reclamation; each retained its exact length and SHA256.
+This reclaimed20,973,584,384 allocated bytes without changing game/save contents.
+Removed seven obsolete private compiler/test prefixes (4,722,556,928 allocated
+bytes), retaining the active compiler, shared dependencies, working game, current
+candidate and rollback evidence. The Deck reported29,507,751,936 free bytes
+(about28GiB) afterward. Detailed receipts remain private in
+live-clock-signing-v1/cleanup-20261016. No Podman images, retail assets, user saves,
+franchise ledgers, or active Proton prefixes were deleted.
+
+Prepared an isolated current MyNFL1 save/ledger profile for the bounded signing
+test, preserving all205 original save hashes and the original ledger hash.
+The profile shares the existing inference usage file/scope and immutable ceiling
+of one request/20,000 reserved tokens; existing attempts remain zero. It shares
+installed assets and dependencies rather than duplicating large game/SDK copies.
+The installed launcher remains unchanged. The scheduled follow-up remains PAUSED.
+
+### Runtime authentication passed; isolated startup remains blocked
+
+The isolated interpreter successfully loaded the existing shared Google SDK and
+nonrefreshable runtime token. Actual Windows GoogleControl read/authentication
+passed with credential expiry2026-10-16T20:02:21Z and zero model requests. This
+proves current runtime object-read access, not effective model inference.
+
+Routed the existing Steam entry reversibly to the isolated candidate, using a
+backed-up launcher. The first launch and one unchanged retry both exited before
+franchise loading with integer-divide exception0xC0000094 at host0x1423CE87F.
+The exact private link map places this in sub_003CAD50, matching the previously
+recorded startup stream/audio divisor failure class. This does not establish
+its initialization cause or a fix. No fabricated divisor, exception suppression,
+new game patch, negotiation, signing or save operation was attempted.
+
+Preserved both session/kernel traces, restored the previous installed launcher
+by exact hash, and removed the temporary runtime token. All205 original save
+hashes and the original franchise database hash match the pretest baseline.
+The working executable/addon were never replaced. The conditional IAM grant
+retains its approved fixed expiry; it was not extended. The scheduled task stays
+PAUSED. Actual salary-clock capture and signing/save/reload proof remain blocked
+by the startup failure. The cleanup remains effective: the Deck still reports
+about28GiB free after these test launches.

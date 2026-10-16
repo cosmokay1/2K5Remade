@@ -237,3 +237,31 @@ This proves the Windows control component can read with a delegated runtime toke
 Persistent keyless sidecar/Deck authentication, actual native/game hello and
 inference remain unverified; local source ADC is still unavailable. Do not turn
 this one-time token exercise into automatic renewal or credential distribution.
+
+
+## Approved temporary delegation — October 16, 2026
+
+The user explicitly approved a new service-account-only Token Creator grant for
+cosmokay@gmail.com on franchise-runtime@llm-2k5.iam.gserviceaccount.com,
+ending October16 at1:30PM PDT (2026-10-16T20:30:00Z). Applied and independently
+verified the exact conditional binding, title private-franchise-deck-test-20261016.
+The previous expired condition remains historical and was not extended.
+No project-wide delegation, service-account key, owner credential transfer,
+shutdown-control write or scheduled-task enablement was performed.
+
+Minted a30-minute runtime access token for the isolated Windows preflight;
+the private ADC wrapper has no usable refresh fields and cannot fall back to
+owner credentials. The temporary local token copy was removed after SSH transfer.
+The test continues to use the existing one-request/20,000-token durable budget.
+An initial Windows preflight found the isolated interpreter lacked the shared
+Google SDK path; linked its search path to the existing installed SDK rather
+than duplicating dependencies. Authentication/model execution evidence remains
+separate from the IAM grant itself. No automatic grant renewal is authorized.
+
+
+October16 Windows preflight subsequently passed with the existing shared SDK:
+valid runtime credentials, successful fresh shutdown-control read and zero model
+requests. Two isolated game startups then failed before franchise loading at the
+previously recorded sub_003CAD50 divide-by-zero. The original launcher was
+restored and the Deck token file removed. The approved conditional grant is not
+extended or automatically renewed; live inference/signing remains unverified.
