@@ -138,3 +138,26 @@ is not15FPS of distinct captured images. A replacement using a real-time screen
 capture path is required; do not present that screenshot sequence as a smooth
 video or a frame-rate demonstration. The Deck was unreachable when replacement
 capture setup began.
+
+## Replacement real-time recording (2026-10-16)
+
+The low-rate screenshot sequence was replaced with Steam's native continuous
+recorder, temporarily set to on-demand60FPS. A rejected direct PipeWire format
+negotiation stopped the compositor's recording source; restarting the supported
+`gamescope-session.target` restored it. Native recording then received actual
+video. Its separate intro test decoded1,790 frames with521 distinct downscaled
+images and1,182 adjacent image changes.
+
+The delivered replacement is `.local-runtime/shadow-engine/native-video/dynamic-shadow-60fps.mp4`:
+20.000175seconds,1,200 decoded H.264 frames,1280×800, approximately60FPS,
+13,576,897bytes. It is a lossless remux of the first20seconds of native capture,
+with no screenshot sampling, motion interpolation or audio. Extracted frames
+show the fixed box's shadow changing with the moving light. The producer still
+runs at the experiment's15Hz target; recording60FPS does not change that rate.
+SHA256: `47cadf2ffce71ec56389a23298ef09957595a43158c5bf07e36771073823c60b`.
+
+The original launcher and all205 original saves were hash-verified unchanged.
+The exact disposable game was stopped and Steam's previous recording mode0
+(disabled) restored. The separate long full-clip export was unnecessary; the
+completed short replacement was saved before restarting Steam normally to
+cancel that extra encoding work.
