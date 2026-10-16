@@ -9923,3 +9923,11 @@ native signing actions remain held but cannot enqueue agent dialogue if the
 replacement renderer is unavailable. Only the explicit checked addon mailbox
 can submit in this mode. The native scheduling test verifies that bypass stays
 closed. Generic addon ABI, host draw/input hooks and installed files are unchanged.
+
+
+The authored Windows6d61bfc captures show pending/error/reply bubbles fitting at
+both resolutions. Visual review caught a stale read-only/off sidebar label in
+submission mode; the candidate now states Signing held and distinguishes queued,
+paused, checked and received states. Preview-only wording is retained. Free-agent
+predicted room is also hidden after error/dirty/pending states, and first-load
+errors replace the misleading loading message. Final Windows rerender remains.
