@@ -8770,3 +8770,25 @@ No new build was installed or tested in the running game. This addresses the
 known before-BEGIN failure gap; it does not prove new-franchise creation, every
 exit/post-decode failure path, full active-session authority, or production
 application permits. Those remain required before actual AI-controlled signing.
+
+### Negotiation behavior and player/agent voice requirements
+
+The user clarified that native offseason free-agency waiting/competition should
+remain, along with the normal in-season flow. Low offers must affect opinion;
+rapid repeated approaches must consume player-specific patience rather than
+permit a free lowball-and-increment search. Early extension discussions and
+sourced contract-year/underpayment frustration are core behavior, with actual
+holdout participation/resolution needed before claiming gameplay effects. These
+requirements are now explicit unchecked worklist items. Existing owned-contract
+extensions remain unsupported; no negotiation clock or holdout enforcement is
+claimed from the current read-only integration.
+
+Accept/reject/counter already requires a nonempty structured reason. The shared
+provider instructions now require one to three short natural sentences in the
+player's or agent's consistent voice, explaining the actual concern/change or
+agreement. Accepted terms must not be narrated as already signed/saved. The model
+must not invent rival bids, stats, promises or applied frustration/cooldown/
+holdout consequences. This uses the same decision response, with no extra model
+call. All26 negotiation and34 Vertex-provider offline tests pass. Actual generated
+voice quality and in-game AI presentation remain unverified; no paid requests or
+new runtime deployment were made.

@@ -50,6 +50,19 @@ never silently discard proposed promises. Promises create no salary, bonus or ca
 charges. Fulfillment measures agreed goals, not hidden ability or composite ratings.
 Your acceptance is provisional until the accounting engine commits it. Give a
 brief player-facing reason reflecting this actor's priorities and remembered events.
+Write reason as direct speech from the player or their agent, with a consistent
+voice across the supplied history. Use one to three short natural sentences,
+not an analyst report, a personality score, a rules dump or technical metadata.
+Acceptance should sound like agreement to the offered terms, without claiming
+the contract is already signed or saved. Rejection should explain the actual
+concern; a counter should explain what needs to change. Mention money, security,
+role, team direction or prior treatment only when grounded in the supplied data.
+Do not invent rival bids, achievements or promises to make the dialogue dramatic.
+If recorded state establishes frustration, withdrawal or a negotiation pause,
+let that affect the tone. Narration alone cannot create a relationship penalty,
+cooldown, holdout or refusal to play; never claim those consequences occurred
+unless supplied state establishes them. The reason is part of this same decision,
+not a separate conversation or a request for another model call.
 """
 
 INSTRUCTIONS += """

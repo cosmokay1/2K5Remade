@@ -762,6 +762,22 @@ invent future published NFL values: separate verified inputs from simulation pol
 - [ ] Make guarantees and supported nonfinancial promises meaningful negotiated terms.
 - [ ] Trigger stories from committed events and actual consequences, not invented facts.
 - [ ] Add negotiation deadlines, withdrawal, holdout/request state, and resolution.
+      Preserve native offseason free-agency waiting/competition and the normal
+      in-season signing flow. Bad offers must have durable opinion consequences;
+      repeated lowball-and-increment attempts must not be a free search for the
+      minimum price. Player-specific patience limits approaches in a short
+      verified game-time window, survives restart and permits withdrawal.
+      Early extension talks should provide more opportunity to reach agreement;
+      current owned-contract extensions are explicitly unsupported and must be
+      implemented. Sourced contract-year/underpayment frustration may progress
+      toward a holdout, with actual participation effects and resolution required
+      before claiming holdout gameplay. Do not use wall time or invented market
+      value/hidden ratings to manufacture these states.
+- [ ] Present each accept/reject/counter as concise natural speech from the player
+      or agent, consistent with remembered treatment and supported consequences.
+      The existing structured reason is required for every action and uses the
+      same decision request; voice instructions are now explicit. Actual in-game
+      AI response display and behavior remain unverified with AI disabled.
 - [ ] Bound inference frequency; cache recorded decisions; add usage/cost telemetry. Provider context is byte-bounded and safe last-completed-call token diagnostics are captured; a thread-safe rolling per-provider request limit now rejects excess calls before the SDK. A persistent SQLite request budget now reserves each actual SDK attempt before
       submission, shares its ceiling across processes/restarts, keeps failed or
       unfinished attempts counted and records nullable token usage without prompt
