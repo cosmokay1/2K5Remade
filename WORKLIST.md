@@ -707,8 +707,12 @@ validated. Current source milestone:
       ledger reconciliation and save/reload under fresh authorized AI control.
 
 Evidence:965 Python tests,12 portable native checks and42 actual offline Bridge
-reply/native validation cases pass locally. The combined private Windows/Deck
-candidate is being validated; its receipts must pass before packaging. This is
+reply/native validation cases pass locally. Combined private candidate72511cd
+is staged at cap-earned-salary-v2:9 Windows component/addon checks,965 Windows
+service tests(10 skips), native saved-signing/term fixtures and game --validate
+pass under Proton. The paired executable/addon,512-file service snapshot and
+held-mode wrapper are ready for offline/read-only Deck testing, not live signing.
+All205 saves, installed files and the database remain unchanged. This is
 source/fixture validation; current
 private game remains the cap-room/bumpers preview with AI/signing off. The native
 validator supports the first imported comparison only; repeated engine agreements

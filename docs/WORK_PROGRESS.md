@@ -10019,3 +10019,45 @@ bytes. Source evidence is retained locally, without publishing retail memory.
 Automatic live clock binding, accepted-plan issuance, post-apply reconciliation
 and real legal signing/save/reload remain delivery gates. Keep AI/signing held
 until those gates and fresh control authorization pass.
+
+## Combined cap/earned-pay Deck candidate staged —72511cd
+
+The final cap-earned-salary-v2 Windows build succeeds in the approved private
+compiler container. Nine Windows native/component/addon/controller/render checks
+pass under Proton, including the production payroll shim and exact cap-state
+boundary. The fresh pinned service runs965 tests in143.880 seconds, passing with
+10 expected compiler/platform skips. Both native saved-signing coordination modes,
+5,767 native/Python guest term cases and42 native/Python amendment replies pass.
+Adding the missing public config to the snapshot resolves all3 v1 test failures;
+no production SDK or credential workaround was used.
+
+The paired game executable passes isolated --validate with a fresh successful
+child completion marker. This does not execute a franchise gameplay boot,
+application grant, signing or save/reload. Final private hashes:
+
+- NFL2K5.exe:78b69c84b443cd3548b57a52f0edc643895ed51fb37f891e65191f270eb52feb
+- franchise-addon.dll:df7e9d548fd6ab511d6b7ee719760072c0c72d0295fad74546b74514deed6335
+
+The prepared package includes the paired executable/addon, a wrapper pointing to
+the fresh staged interpreter and512-file service snapshot. All488 public source
+files in the effective build manifest match72511cd;21 runtime overlay files are
+individually pinned by hash. The private root CMake validation adaptation remains
+explicit. Preparation confirms the installed executable, addon, wrapper, database
+and all205 save files are unchanged. The package is not installed. Its wrapper
+keeps AI, guest signing and native offer porting off.
+
+Receipts and a readable test plan are retained locally in
+.local-runtime/cap-earned-salary-v2 and on the Deck at
+/home/deck/.local/share/2k5-franchise-build/cap-earned-salary-v2. The receipt marks
+ready_for_offline_and_readonly_deck_test=true and ready_for_live_signing_test=false.
+The production issuer still needs accepted-plan publication and trusted live
+salary-clock binding before a real signing/cap/ledger/save/reload test. Do not
+present this prepared candidate as a completed playable franchise integration.
+
+Source72511cd is pushed. Paired source Build check succeeds:
+https://github.com/cosmokay1/2K5Remade/actions/runs/38945425775
+Franchise CI is tracked at:
+https://github.com/cosmokay1/2K5Remade/actions/runs/38945425584
+Ubuntu has passed; Windows completion was still pending when this evidence was
+recorded. The scheduled follow-up remains PAUSED; no controls were enabled or
+renewed, no paid inference occurred and no binary release was published.
