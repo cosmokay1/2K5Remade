@@ -9312,3 +9312,83 @@ and two valid context replies, with correct Dart slot987 and Nabers slot998,
 AI/write authorization false. Nabers's actual roundtrip is1.146s with18ms maximum
 owner poll gap. The game is left on Nabers's Performance screen, with no held keys
 or background test driver.
+
+
+### Football stat and annual contract tables
+
+The user rejected the raw Record/unit/missing-field text wall and requested the
+same tabular treatment for Contract. Both sections now use aligned native tables
+inside the approved navy/crimson layout. Performance groups Receiving, Passing,
+Rushing and the mapped Defense counters, with familiar abbreviations and separate
+saved period/mode rows. It does not invent calendar years, aggregate duplicate
+entries, fill unknowns with zero, or display speculative pressure/QB-hit columns.
+Games-only observations remain visible. The user-facing missing-field inventory
+and Record numbering are removed; one short source/unknown-value note remains.
+
+Contract uses one annual row whenever decoded offer terms exist, including
+rejected/active-player offers and longer terms. It shows base salary, guaranteed
+base, supported bonus cap and cap hit, plus total/bonus and supported cap room.
+Unavailable preview figures are dashes; no new financial authority, proration
+policy or active-contract settlement is introduced. Existing liabilities are not
+replaced. Long tables scroll; Agent prose and navigation stay intact. Exact
+fractional cap amounts remain exact, with a compact fraction in the cell.
+
+Eleven local native CTests pass. Tests cover distinct periods/modes, repeated
+entries without summing, negative yards, known zero, unsupported metrics, and
+annual terms with and without a cap preview. The first Windows/Proton round
+passes protocol/navigation/render/handshake/held-signing child checks and renders
+both1280x800 and1280x720. One combined visual review covers Contract, receiver
+Performance, rejected Contract and mixed-category Performance. A single final
+batch removes speculative Defense headers, retains games-only observations and
+compact exact fractions, and corrects a synthetic yard-unit label. The source
+uses existing design context because the Impeccable launcher lacked execution
+permission; no missing product/design brief was invented. Final confirmation and
+protected addon-only package preparation follow. The running game is unchanged.
+
+The user's subsequent requests expand this batch to calendar-year labels and
+physical/injury information. YEAR now uses the pinned franchise baseline year
+plus the retained native calendar candidate offset; the raw game year stays in
+the evidence. New optional franchise_season_year and player_profile fields are
+strictly validated at the native reply boundary, with compatibility for old
+responses. Actual saved readback resolves Dart to2025 and Nabers to2024/2025.
+Their saved physical values decode to74in/225lb and72in/200lb respectively, both
+age23 at September1 of the configured2026 season. Invalid/missing DOB or height
+remains unknown. No real wall-clock aging is used. Record-layout field provenance
+is the pinned mod-editor reference already credited in HISTORICAL_STATS.md;
+no third-party source code was vendored.
+
+The header shows saved height/weight/season-start age; the sidebar identifies
+injury tendency as insufficient recorded history. Injury history/availability
+capture is not yet connected, so an injury-prone/durable assessment is neither
+invented nor derived from hidden injury ratings. The native profile validator
+currently refuses nonnull injury assessments. All915 Python tests pass after
+these read-only metadata additions. Local native tests passed before the final
+additional profile-validator rejection case; synchronized Windows checks follow.
+
+The worklist and screen design now require each remaining negotiation system to
+ship its relevant sourced state, comparisons, usable controller actions,
+explanations, pending/error handling and persistence verification in this screen.
+That is a delivery criterion, not a commitment to add unsupported placeholder
+controls now. Backend-only progress is not a finished player feature.
+
+The final expanded Windows package passes all five protocol/navigation/render/
+handshake/held-signing fixture children with a fresh passed marker and launcher0.
+Isolated actual game validation exits0 with a fresh validated marker. Windows
+CPython tests pass:15 signing-context,10 performance-export and7 snapshot checks.
+Both native saved-signing integration variants (ordinary and runtime-bound) pass
+against the updated service, using authored files/providers with zero paid model
+requests. This specifically exercises the real native reply-validation boundary
+for the new calendar/profile fields.915 Python regressions pass; no further
+functional changes followed those checks.
+
+The combined final visual confirmation checks Contract and receiver Performance
+at1280x800 plus rejected Contract and mixed-category Performance at1280x720.
+Calendar years, exact columns, missing-value dashes, physical profile and injury
+unknown state render without overlapping navigation/footer. No more polish loop
+is planned. New EXE06fb67cc03201073cc10dbc17504ff98c97a8ff412cffb680b1ab8487a32d74e
+and DLL5e391494a3db2032f1e9c774ddac95e4e82f14d3d94f96fcb06a3ccd9f19ba11
+are pinned in private football-profile validation receipts. The service has its
+own verified copy of the289-file source set and Windows runtime, with the
+original live ledger/usage database and disabled controls preserved. Installation
+and actual in-game verification still require normal game exit; previews are
+authored renderer fixtures, not a claimed installed-game screenshot.

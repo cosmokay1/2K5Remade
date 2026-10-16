@@ -58,6 +58,30 @@ class SavedPerformanceTests(unittest.TestCase):
         self.assertEqual(bytes(payload),before)
         self.assertNotIn('targets',{r['metric'] for r in rows})
 
+    def test_franchise_calendar_is_separate_from_raw_title_year(self):
+        from tools.franchise_game_context import raw_context
+        payload=self.fixture()
+        payload[0x917EF]+=22  # Explicit schedule epoch differs from raw scheduler.
+        payload=bytes(payload)
+        context=raw_context(payload)
+        context['season_year']+=22
+        bindings=create_bindings(payload,game_context=context)
+        performance=saved_player_performance(bindings,payload,0)
+        self.assertEqual(performance['franchise_season_year'],context['season_year'])
+        self.assertEqual(performance['saved_display_year'],context['season_year']-22)
+        self.assertEqual(performance['saved_history'][0]['candidate_calendar_year'],2020)
+
+    def test_physical_profile_uses_saved_values_and_season_age_without_injury_rating(self):
+        payload=self.fixture();record=PLAYER_START
+        payload[record+0x2A]=75;payload[record+0x2B]=74
+        payload[record+0x19]=5<<4;payload[record+0x1A]=(3<<5)|13;payload[record+0x1B]=0
+        payload=bytes(payload)
+        profile=saved_player_performance(create_bindings(payload),payload,0)['player_profile']
+        self.assertEqual(profile,dict(height_inches=74,weight_pounds=225,age_years=23,injury_tendency=None))
+        empty=self.fixture();empty[record+0x2B]=0
+        unknown=saved_player_performance(create_bindings(bytes(empty)),bytes(empty),0)['player_profile']
+        self.assertIsNone(unknown['height_inches']);self.assertIsNone(unknown['age_years'])
+
     def test_foreign_player_performance_cannot_enter_model_context(self):
         payload = bytes(self.fixture()); bindings = create_bindings(payload)
         performance = saved_player_performance(bindings, payload, 0)

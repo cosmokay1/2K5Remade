@@ -95,6 +95,15 @@ int main(int argc,char** argv) {
             fixture=negotiation_screen_fixture();fixture["request_id"]="missing-history"+std::to_string(height);
             fixture["result"]["performance_context"]["saved_history"]=nlohmann::json::array();
             capture("missing-contract");press(7);capture("missing-performance");
+            fixture=negotiation_screen_fixture();fixture["request_id"]="receiving"+std::to_string(height);
+            fixture["result"]["performance_context"]["saved_history"]=nlohmann::json::array();
+            for(int period=1;period<=2;++period) {
+                const std::pair<const char*,int> entries[]={{"games",period==1?15:4},{"receptions",period==1?109:18},
+                    {"receiving_yards",period==1?1204:271},{"receiving_touchdowns",period==1?7:2}};
+                for(const auto& entry:entries) fixture["result"]["performance_context"]["saved_history"].push_back(
+                    {{"metric",entry.first},{"value",entry.second},{"unit",std::string(entry.first)=="receiving_yards"?"yards":"count"},{"period_code_raw",period},{"mode_code_raw",0},{"candidate_calendar_year",2001+period}});
+            }
+            capture("receiver-contract");press(7);capture("receiver-performance");
             fixture=negotiation_screen_fixture();fixture["request_id"]="ineligible"+std::to_string(height);
             fixture["result"]["offer_context"]["preview"]=nullptr;
             fixture["result"]["offer_context"]["reason"]="The salary minimum has not been classified. Player classification must be resolved before an offer can be evaluated.";

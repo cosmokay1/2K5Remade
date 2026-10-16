@@ -852,6 +852,21 @@ int main(int argc,char** argv) {
         try {franchise::validate_result(invalid_receiving,performance_request);}
         catch(const std::exception&) {invalid_receiving_rejected=true;}
         if(!invalid_receiving_rejected) throw std::runtime_error("Receiving count with yards unit accepted");
+        auto dated_performance=performance_reply;
+        dated_performance["result"]["performance_context"]["franchise_season_year"]=2026;
+        franchise::validate_result(dated_performance,performance_request);
+        dated_performance["result"]["performance_context"]["player_profile"]={{"height_inches",74},{"weight_pounds",225},{"age_years",23},{"injury_tendency",nullptr}};
+        franchise::validate_result(dated_performance,performance_request);
+        auto invalid_profile=dated_performance;
+        invalid_profile["result"]["performance_context"]["player_profile"]["injury_tendency"]="injury prone";
+        bool invented_injury_rejected=false;
+        try{franchise::validate_result(invalid_profile,performance_request);}catch(const std::exception&){invented_injury_rejected=true;}
+        if(!invented_injury_rejected) throw std::runtime_error("Unsourced injury assessment accepted");
+        for(const nlohmann::json invalid:{nlohmann::json(true),nlohmann::json(1999),nlohmann::json(2256)}) {
+            dated_performance["result"]["performance_context"]["franchise_season_year"]=invalid;
+            bool rejected=false;try{franchise::validate_result(dated_performance,performance_request);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Invalid displayed franchise year accepted");
+        }
         auto captured_request=guest_request;
         captured_request["operation"]="negotiate_proposal";
         captured_request["request_id"]="captured-proposal";

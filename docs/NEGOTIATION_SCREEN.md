@@ -92,9 +92,27 @@ throughout preview mode, including missing/disabled addon and failed rendering.
 Contract, Performance and Agent sections use a navy/crimson franchise layout and
 Bahnschrift. A vertical section list, structured annual money table and dedicated
 scrollable dialogue/evidence panel replace the initial text-only prototype.
-The table is used only for supported previews with up to five annual rows;
-longer/rejected offers use the full scrollable view so terms/reasons remain
-accessible. Colors do not claim team branding without sourced palette metadata. Up/down on the D-pad or left stick selects vertical sections; LT/RT also change sections. The right stick scrolls content; B sends exactly
+Contract terms use the annual table whenever an offer can be decoded, including
+active-player/rejected offers and long contracts. Columns show year, base salary,
+guaranteed base, bonus cap and cap hit. Unsupported/unavailable preview amounts
+stay unknown, never zero; a rejected offer keeps its available terms visible.
+Long tables scroll with the right stick. The cap-room figure is shown only when
+an authoritative supported preview exists, retaining its opening-liability caveat.
+
+Performance uses football stat tables for Receiving (G/REC/YDS/TD), Passing
+(G/CMP/ATT/YDS/TD/INT), Rushing (G/ATT/YDS/TD) and mapped Defense (G/SCK).
+Only categories with observed values are shown; games-only evidence has an
+appearances table. Rows join only identical saved period/mode keys. Repeated
+metric entries remain separate, without summing or guessing a season. Missing
+cells use a dash; a known zero stays zero. Unmapped pressure/QB-hit fields do not
+appear as speculative columns. The YEAR column maps validated saved calendar candidates through the pinned
+franchise season year; an unavailable mapping remains a dash. Current MyNFL1
+resolves Dart to2025 and Nabers to2024/2025, rather than exposing raw title years.
+Height, weight and age at season start are read from the pinned player record and
+shown beside the name. Injury tendency remains explicitly insufficient history
+until sourced injury/availability observations are connected.
+The raw Record list, unit suffixes and long missing-metric inventories are removed
+from the player page. Agent explanations keep their dedicated scrollable prose. Colors do not claim team branding without sourced palette metadata. Up/down on the D-pad or left stick selects vertical sections; LT/RT also change sections. The right stick scrolls content; B sends exactly
 one native Back packet and dismisses the view. Entry waits for held buttons to be
 released before navigation. Sticks use a neutral dead zone and one action per deflection, with hysteresis to prevent drift repeats. Addon failure/invalidation quarantines held controls
 until neutral, preventing an old A/trigger press from reaching the native menu.
@@ -125,5 +143,16 @@ input ownership until the actual installed build is exercised.
 
 The data-boundary change alone did not deliver a screen. The subsequent read-only
 implementation passes Windows rendering fixtures and isolated Proton execution
-on the Deck; actual game takeover still needs verification. It does not deliver
+on the Deck; actual Dart/Nabers takeover is verified on the previous installed build. The
+new table-only addon still needs installation and actual game verification. It does not deliver
 editing, a live model test or controlled signing. AI remains disabled.
+
+
+## Delivery rule for remaining systems
+
+This screen evolves with the remaining negotiation systems. Completion includes
+visible sourced state, useful comparisons, controller-operated actions, pending
+and failure states, natural-language outcomes and save/reload verification.
+Current/proposed contracts, promises, agent stance/timing, fifth-year options and
+injury evidence must join this interface as their engine paths become usable.
+Do not represent backend plumbing or disconnected controls as a finished feature.

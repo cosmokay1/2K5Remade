@@ -3,6 +3,27 @@ from tools.franchise_snapshot_bindings import resolve_bindings
 from tools.inspect_player_history import NAMED_METRICS, calendar_candidates
 
 
+def _physical_profile(payload, source_slot, season_year):
+    from datetime import date
+    from tools.inspect_franchise_save import PLAYER_START, PLAYER_STRIDE
+    record=PLAYER_START+source_slot*PLAYER_STRIDE
+    height=payload[record+0x2B]
+    weight=payload[record+0x2A]+150
+    month=payload[record+0x19]>>4
+    day=payload[record+0x1A]&31
+    raw_year=(payload[record+0x1A]>>5)|((payload[record+0x1B]&15)<<3)
+    age=None
+    try:
+        birth_year=season_year-(season_year-raw_year%100)%100
+        birth=date(birth_year,month,day)
+        candidate=season_year-birth.year-((9,1)<(birth.month,birth.day))
+        if 18<=candidate<=60:age=candidate
+    except ValueError:
+        pass
+    return dict(height_inches=height if 60<=height<=84 else None,
+                weight_pounds=weight,age_years=age,injury_tendency=None)
+
+
 def saved_player_performance(bindings: dict, payload: bytes, source_slot: int) -> dict:
     if type(source_slot) is not int or source_slot < 0:
         raise ValueError('Supported integer player slot required')
@@ -32,6 +53,10 @@ def saved_player_performance(bindings: dict, payload: bytes, source_slot: int) -
     present = {row['metric'] for row in observations}
     return {'player_id': player['player_id'], 'source': source,
         'saved_display_year': history['saved_display_year'],
+        # resolve_bindings already verifies this configured franchise calendar
+        # against its pinned snapshot; raw title years may use another epoch.
+        'franchise_season_year': bindings['baseline_year'],
+        'player_profile': _physical_profile(payload,source_slot,bindings['baseline_year']),
         'saved_history': observations, 'excluded_entries': excluded,
         'missing_named_metrics': sorted({name for name, _ in NAMED_METRICS.values()} - present),
         'unmapped_requested_metrics': ['tackles', 'targets', 'pressures', 'qb_hits'],

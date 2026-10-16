@@ -92,7 +92,10 @@ bool paint(NFL2K5AddonDraw& draw) {
             SelectObject(dc,old);DeleteObject(font);return rect;
         };
         text(title,px(30),px(25),draw.width-px(30),px(75),36,FW_BOLD,white,DT_SINGLELINE|DT_END_ELLIPSIS);
-        text("Contract negotiation",px(32),px(80),draw.width-px(32),px(108),19,FW_NORMAL,secondary,DT_SINGLELINE);
+        const auto& result=screen_reply.at("result");
+        const auto& checkpoint=result.contains("signing_checkpoint")?result.at("signing_checkpoint"):result;
+        const auto profile=checkpoint.value("performance_context",nlohmann::json::object());
+        text(franchise::screen_profile(profile),px(32),px(80),draw.width-px(32),px(108),19,FW_NORMAL,secondary,DT_SINGLELINE);
         const char *tabs[]={"Contract","Performance","Agent"};
         for(unsigned i=0;i<3;++i) {
             const int top=px(153+62.0f*i);
@@ -100,47 +103,92 @@ bool paint(NFL2K5AddonDraw& draw) {
             text(tabs[i],px(33),top+px(12),px(197),top+px(40),23,
                 i==navigation.page?FW_BOLD:FW_NORMAL,i==navigation.page?white:secondary,DT_SINGLELINE);
         }
+        text("INJURY TENDENCY",px(31),px(362),px(204),px(387),15,FW_BOLD,secondary,DT_SINGLELINE);
+        text("Insufficient recorded history",px(31),px(394),px(202),px(467),18,FW_NORMAL,white,DT_WORDBREAK);
         text("READ-ONLY",px(31),draw.height-px(164),px(201),draw.height-px(139),17,FW_BOLD,secondary,DT_SINGLELINE);
         text("Offer submission is off.\nNo contract is signed.",px(31),draw.height-px(129),px(201),draw.height-px(67),17,FW_NORMAL,secondary,DT_WORDBREAK);
         const int left=px(255),right=draw.width-px(32),bottom=draw.height-px(76);
-        const auto& result=screen_reply.at("result");
-        const auto& checkpoint=result.contains("signing_checkpoint")?result.at("signing_checkpoint"):result;
         const auto context=checkpoint.value("offer_context",nlohmann::json::object());
-        const bool table=navigation.page==0 && context.contains("offer") && !context.at("offer").is_null()
-            && context.at("offer").at("salaries").size()<=5
-            && context.contains("preview") && !context.at("preview").is_null();
-        const char *headings[]={"Your offer","Performance evidence","Agent response"};
+        const char *headings[]={"Your offer","Player stats","Agent response"};
         text(headings[navigation.page],left,px(149),right,px(185),27,FW_BOLD,white,DT_SINGLELINE);
         int overflow=0,offset=0;
-        if(table) {
-            const auto& offer=context.at("offer");const auto& salaries=offer.at("salaries");
-            int64_t total=offer.at("signing_bonus").get<int64_t>();
-            for(const auto& salary:salaries) total+=salary.get<int64_t>(); // already bounded by negotiation_pages
-            text(std::to_string(salaries.size())+" years  /  "+franchise::screen_money(total)+" total",left,px(195),right,px(227),25,FW_BOLD,white,DT_SINGLELINE);
-            text("Signing bonus  "+franchise::screen_money(offer.at("signing_bonus")),left,px(237),right,px(264),19,FW_NORMAL,secondary,DT_SINGLELINE);
-            const int top=px(286),row=px(35);
-            const int span=right-left;
-            const int columns[]={left,left+span*13/100,left+span*43/100,left+span*71/100,right};
-            const char *labels[]={"YEAR","BASE SALARY","PROTECTED BASE","CAP CHARGE"};
-            fill(left,top,right,top+px(33),RGB(30,47,69));
-            for(int i=0;i<4;++i) text(labels[i],columns[i]+px(11),top+px(8),columns[i+1]-px(10),top+px(29),15,FW_BOLD,secondary,DT_SINGLELINE|(i?DT_RIGHT:DT_LEFT));
-            const auto preview=context.value("preview",nlohmann::json());
-            for(size_t i=0;i<salaries.size();++i) {
-                const int y=top+px(33)+static_cast<int>(i)*row;
-                fill(left,y,right,y+row,i%2?RGB(19,33,51):RGB(16,28,44));
-                fill(left,y+row-1,right,y+row,RGB(37,55,77));
-                const std::string values[]={std::to_string(i+1),franchise::screen_money(salaries[i]),
-                    offer.contains("guaranteed_salaries")?franchise::screen_money(offer.at("guaranteed_salaries").at(i)):"Not specified",
-                    !preview.is_null()?franchise::screen_money(preview.at("contract_charges").at(i)):"Unavailable"};
-                for(int col=0;col<4;++col) text(values[col],columns[col]+px(11),y+px(8),columns[col+1]-px(10),y+row-px(3),20,col==3?FW_BOLD:FW_NORMAL,white,DT_SINGLELINE|(col?DT_RIGHT:DT_LEFT));
+        if(navigation.page<2 && body!="loading") {
+            std::vector<franchise::ScreenTable> tables;
+            std::string summary,note;
+            if(navigation.page==0) {
+                auto annual=franchise::contract_table(context);
+                if(!annual.rows.empty()) {
+                    const auto& offer=context.at("offer");
+                    int64_t total=offer.at("signing_bonus").get<int64_t>();
+                    for(const auto& value:offer.at("salaries")) total+=value.get<int64_t>();
+                    summary=std::to_string(annual.rows.size())+" years  /  "+franchise::screen_money(total)+" total";
+                    tables.push_back(std::move(annual));
+                }
+                note=context.contains("preview") && !context.at("preview").is_null()?
+                    "Offer only. Opening liabilities remain unverified.":"Offer only. Existing contract obligations remain.";
+                if(context.contains("reason") && context.at("reason").is_string()) note+="\n"+context.at("reason").get<std::string>();
+            } else {
+                if(checkpoint.contains("performance_context")) tables=franchise::performance_tables(checkpoint.at("performance_context"));
+                note=u8"Saved history. \u2014 means not recorded. Separate entries are not combined.";
             }
-            const int cap_top=std::max(top+px(33)+static_cast<int>(salaries.size())*row+px(26),bottom-px(98));
-            fill(left,cap_top,right,cap_top+px(56),RGB(24,44,65));
-            text("Cap room after offer",left+px(16),cap_top+px(16),right-px(245),cap_top+px(44),20,FW_NORMAL,secondary,DT_SINGLELINE);
-            text(!preview.is_null()?franchise::screen_money(preview.at("room_after")):"Unavailable",right-px(245),cap_top+px(13),right-px(16),cap_top+px(46),25,FW_BOLD,white,DT_SINGLELINE|DT_RIGHT);
-            text("Accounting preview. Opening liabilities are still being verified.",left,cap_top+px(68),right,bottom+px(15),17,FW_NORMAL,secondary,DT_WORDBREAK);
-            if(context.contains("reason") && context.at("reason").is_string())
-                text(context.at("reason").get<std::string>(),left,px(266),right,px(287),16,FW_NORMAL,secondary,DT_SINGLELINE|DT_END_ELLIPSIS);
+            const int top=px(202),row_height=px(34),gap=px(22),header=px(30),section=px(30);
+            const bool preview=navigation.page==0 && context.contains("preview") && !context.at("preview").is_null();
+            const auto measured_note=text(note,left,0,right-px(12),0,17,FW_NORMAL,secondary,DT_CALCRECT|DT_WORDBREAK);
+            int content=summary.empty()?0:px(67);
+            for(const auto& table:tables) content+=section+header+static_cast<int>(table.rows.size())*row_height+gap;
+            if(preview) content+=px(62);
+            content+=static_cast<int>(measured_note.bottom)+px(14);
+            if(tables.empty()) content+=px(64);
+            overflow=std::max(0,content-(bottom-top));
+            navigation.scroll[navigation.page]=std::min(navigation.scroll[navigation.page],static_cast<int>(std::ceil(overflow/u)));
+            offset=std::min(px(static_cast<float>(navigation.scroll[navigation.page])),overflow);
+            SaveDC(dc);IntersectClipRect(dc,left,top,right,bottom);
+            int y=top-offset;
+            if(!summary.empty()) {
+                text(summary,left,y,right,y+px(30),25,FW_BOLD,white,DT_SINGLELINE);
+                text("Signing bonus  "+franchise::screen_money(context.at("offer").at("signing_bonus")),left,y+px(35),right,y+px(60),19,FW_NORMAL,secondary,DT_SINGLELINE);
+                y+=px(67);
+            }
+            if(tables.empty()) {
+                text(navigation.page==0?"Contract details unavailable":"No saved stats available",left,y,right,y+px(35),24,FW_BOLD,white,DT_SINGLELINE);
+                y+=px(64);
+            }
+            for(const auto& table:tables) {
+                text(table.title,left,y,right,y+px(26),22,FW_BOLD,white,DT_SINGLELINE);y+=section;
+                const int span=right-left-px(12),first=span*(navigation.page==0?15:24)/100;
+                const int cells=static_cast<int>(table.columns.size())-1;
+                std::vector<int> columns{left,left+first};
+                for(int col=1;col<=cells;++col) columns.push_back(left+first+(span-first)*col/cells);
+                fill(left,y,right-px(12),y+header,RGB(30,47,69));
+                for(size_t col=0;col<table.columns.size();++col)
+                    text(table.columns[col],columns[col]+px(10),y+px(7),columns[col+1]-px(10),y+header-px(3),15,FW_BOLD,secondary,DT_SINGLELINE|(col?DT_RIGHT:DT_LEFT));
+                y+=header;
+                for(size_t row=0;row<table.rows.size();++row) {
+                    fill(left,y,right-px(12),y+row_height,row%2?RGB(19,33,51):RGB(16,28,44));
+                    fill(left,y+row_height-1,right-px(12),y+row_height,RGB(37,55,77));
+                    const auto& values=table.rows[row];
+                    text(values.label,columns[0]+px(10),y+px(7),columns[1]-px(10),y+row_height-px(3),19,FW_NORMAL,secondary,DT_SINGLELINE);
+                    for(size_t col=0;col<values.values.size();++col)
+                        text(values.values[col],columns[col+1]+px(10),y+px(7),columns[col+2]-px(10),y+row_height-px(3),navigation.page==0?18:22,FW_NORMAL,white,DT_SINGLELINE|DT_RIGHT);
+                    y+=row_height;
+                }
+                y+=gap;
+            }
+            if(preview) {
+                fill(left,y,right-px(12),y+px(48),RGB(24,44,65));
+                text("Cap room after offer",left+px(12),y+px(13),right-px(245),y+px(40),20,FW_NORMAL,secondary,DT_SINGLELINE);
+                text(franchise::screen_money(context.at("preview").at("room_after")),right-px(245),y+px(10),right-px(26),y+px(42),25,FW_BOLD,white,DT_SINGLELINE|DT_RIGHT);
+                y+=px(62);
+            }
+            text(note,left,y,right-px(12),y+measured_note.bottom+px(8),17,FW_NORMAL,secondary,DT_WORDBREAK);
+            RestoreDC(dc,-1);
+            if(overflow) {
+                const int track=right-px(3),height=bottom-top;
+                fill(track,top,right,bottom,RGB(48,66,89));
+                const int thumb=std::max(px(24),height*height/content);
+                const int position=top+static_cast<int>((height-thumb)*static_cast<double>(offset)/overflow);
+                fill(track,position,right,position+thumb,secondary);
+            }
         } else {
             const int panel_top=px(205),body_top=panel_top+px(24),body_bottom=bottom-px(18);
             fill(left,panel_top,right,bottom,RGB(18,32,50));

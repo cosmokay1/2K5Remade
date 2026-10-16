@@ -8,20 +8,43 @@ int main() {
         require(franchise::screen_money("3316000/3")=="$3316000/3 (exact dollars)");
         auto fixture=negotiation_screen_fixture();auto pages=franchise::negotiation_pages(fixture);
         for(const auto* term:{"$6,328,000","$3,796,000","$6,752,000","$9,704,000","$7,172,000","$79,512,000","$16,876,000"}) require(pages[0].find(term)!=std::string::npos);
-        require(pages[1].find("Record 1: completions: 478 count")!=std::string::npos);
-        require(pages[1].find("Record 2: sacks: 2.5 sacks")!=std::string::npos);
-        require(pages[1].find("unknown, not zero")!=std::string::npos && pages[1].find("qb hits")!=std::string::npos);
+        require(pages[1].find("Record ")==std::string::npos);
+        require(franchise::screen_profile(fixture["result"]["performance_context"])=="6'0\"  /  200 lb  /  Age 23 at season start");
+        auto tables=franchise::performance_tables(fixture["result"]["performance_context"]);
+        require(tables.size()==2 && tables[0].title=="Passing" && tables[1].title=="Defense");
+        require(tables[0].rows[0].values[1]=="478" && tables[1].rows[0].values[1]=="2.5");
         auto receiving=fixture;
         receiving["result"]["performance_context"]["saved_history"]={
-            {{"metric","receptions"},{"value",70},{"unit","count"}},
-            {{"metric","receiving_yards"},{"value",900},{"unit","yards"}},
-            {{"metric","receiving_touchdowns"},{"value",4},{"unit","count"}}};
-        const auto receiving_page=franchise::negotiation_pages(receiving)[1];
-        require(receiving_page.find("receptions: 70 count")!=std::string::npos);
-        require(receiving_page.find("receiving yards: 900 yards")!=std::string::npos);
-        require(receiving_page.find("receiving touchdowns: 4 count")!=std::string::npos);
+            {{"metric","receptions"},{"value",70},{"unit","count"},{"period_code_raw",1},{"mode_code_raw",0}},
+            {{"metric","receiving_yards"},{"value",900},{"unit","yards"},{"period_code_raw",1},{"mode_code_raw",0}},
+            {{"metric","receiving_touchdowns"},{"value",4},{"unit","count"},{"period_code_raw",1},{"mode_code_raw",0}},
+            {{"metric","receptions"},{"value",18},{"unit","count"},{"period_code_raw",2},{"mode_code_raw",0}},
+            {{"metric","receiving_yards"},{"value",-4},{"unit","yards"},{"period_code_raw",2},{"mode_code_raw",0}}};
+        auto stats=franchise::performance_tables(receiving["result"]["performance_context"]);
+        require(stats.size()==1 && stats[0].title=="Receiving" && stats[0].rows.size()==2);
+        require(stats[0].columns==std::vector<std::string>({"YEAR","G","REC","YDS","TD"}));
+        require(stats[0].rows[0].values==std::vector<std::string>({u8"\u2014","70","900","4"}));
+        require(stats[0].rows[1].values==std::vector<std::string>({u8"\u2014","18","-4",u8"\u2014"}));
+        auto& history=receiving["result"]["performance_context"]["saved_history"];
+        auto duplicate=history[0];duplicate["value"]=9;history.push_back(duplicate);
+        duplicate["mode_code_raw"]=1;history.push_back(duplicate);
+        stats=franchise::performance_tables(receiving["result"]["performance_context"]);
+        require(stats[0].rows.size()==4 && stats[0].rows[2].values[1]=="9" && stats[0].rows[3].values[1]=="9");
+        auto games_only=fixture["result"]["performance_context"];
+        games_only["saved_history"]={{{"metric","games"},{"value",0},{"period_code_raw",3},{"mode_code_raw",0}}};
+        const auto appearances=franchise::performance_tables(games_only);
+        require(appearances.size()==1 && appearances[0].rows[0].values[0]=="0");
+        require(tables[1].columns==std::vector<std::string>({"YEAR","G","SCK"}));
+        require(tables[0].rows[0].label=="2024" && tables[1].rows[0].label=="2025");
+        auto unknown_year=fixture["result"]["performance_context"];unknown_year.erase("franchise_season_year");
+        require(franchise::performance_tables(unknown_year)[0].rows[0].label==u8"\u2014");
+        auto annual=franchise::contract_table(fixture["result"]["offer_context"]);
+        require(annual.rows.size()==2 && annual.rows[0].values[2]=="$3,376,000" && annual.rows[1].values[3]=="$7,172,000");
+        auto unpreviewed=fixture["result"]["offer_context"];unpreviewed["preview"]=nullptr;
+        annual=franchise::contract_table(unpreviewed);
+        require(annual.rows.size()==2 && annual.rows[0].values[0]=="$6,328,000" && annual.rows[0].values[2]==u8"\u2014" && annual.rows[0].values[3]==u8"\u2014");
         auto missing=fixture;missing["result"]["performance_context"]["saved_history"]=nlohmann::json::array();
-        require(franchise::negotiation_pages(missing)[1].find("No mapped performance records")!=std::string::npos);
+        require(franchise::negotiation_pages(missing)[1].find("No saved stats available")!=std::string::npos);
         auto proposal=fixture;proposal["result"]={{"signing_checkpoint",fixture["result"]},
             {"reason",std::string(1800,'r')+" END OF FULL RESPONSE"},{"counter",fixture["result"]["offer_context"]["offer"]},
             {"counter_validation",{{"status","ineligible"},{"reason","Insufficient supported cap room"}}},

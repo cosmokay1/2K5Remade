@@ -1449,7 +1449,23 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
             integer_money(evidence.at("saved_display_year"));
             const std::string source="original-fxg:"+result.at("saved_payload_sha256").get<std::string>()+
                 ":slot:"+std::to_string(result.at("source_slot").get<int64_t>());
-            if (!evidence.is_object() || evidence.size()!=9 || evidence.at("player_id")!=result.at("player_id") ||
+            if(evidence.contains("player_profile")) {
+                const auto& profile=evidence.at("player_profile");
+                if(!profile.is_object() || profile.size()!=4 || !profile.at("injury_tendency").is_null())
+                    throw std::runtime_error("Unsupported player profile or injury assessment");
+                for(const auto& field:{"height_inches","weight_pounds","age_years"}) if(!profile.at(field).is_null()) {
+                    integer_money(profile.at(field));
+                    const int low=std::string(field)=="height_inches"?60:std::string(field)=="weight_pounds"?150:18;
+                    const int high=std::string(field)=="height_inches"?84:std::string(field)=="weight_pounds"?405:60;
+                    if(profile.at(field)<low || profile.at(field)>high) throw std::runtime_error("Invalid physical profile");
+                }
+            }
+            if(evidence.contains("franchise_season_year")) {
+                integer_money(evidence.at("franchise_season_year"));
+                if(evidence.at("franchise_season_year")<2000 || evidence.at("franchise_season_year")>2255)
+                    throw std::runtime_error("Invalid franchise display calendar");
+            }
+            if (!evidence.is_object() || evidence.size()!=9+evidence.contains("franchise_season_year")+evidence.contains("player_profile") || evidence.at("player_id")!=result.at("player_id") ||
                 evidence.at("source")!=source || evidence.at("saved_display_year")!=request.at("observation").at("calendar").at("display_year") ||
                 evidence.at("scope")!="Saved historical counters only; calendar years are candidates. Raw modes are not played/CPU/fast-sim coverage. Entries are not summed and missing metrics are not zero. No current-week, salary-credit or promise-goal attribution." ||
                 !evidence.at("history_present").is_boolean() ||

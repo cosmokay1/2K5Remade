@@ -42,6 +42,17 @@ Runtime verifies its namespace/bootstrap fingerprint. Actual MyNFL1 read-only
 handshake/context consumption is verified. Full active guest-franchise lifetime,
 broader live migration and AI-enabled signing authority remain open.
 
+**Negotiation interface delivery rule:** enhance this screen alongside each
+remaining system. A negotiation feature is complete only when its sourced state,
+relevant comparison, player action and natural-language outcome are usable here,
+including controller navigation, pending/error states and verified persistence.
+Extensions/pay reductions/restructures need current-vs-proposed annual terms and
+cap effects; promises need proposal controls and fulfillment; agent decisions
+need their explanation and negotiation status; fifth-year options need eligibility
+and deadlines; injury assessments need actual injury/availability evidence.
+Unavailable data stays explicit. Avoid shipping backend-only milestones as a
+finished player feature, or adding disconnected placeholder controls.
+
 Windows + Proton is the Deck delivery priority. Defer further native Linux port
 work unless a concrete Proton limitation requires it; retain existing fixes.
 
@@ -98,6 +109,15 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       navigation reaches Dart Performance, backs out, selects receivers/Nabers,
       opens Re-negotiate Contract, waits for a fresh reply and captures receiving
       evidence. Whole-franchise unattended signing/save/reload remains open.
+
+- [x] Replace raw performance records and rejected-offer paragraphs with football
+      and annual contract tables. Stat rows retain separate saved periods/modes,
+      abbreviated football columns, calendar-year labels, unknown dashes and known
+      zeroes. Saved height/weight/season-start age appear with the player name;
+      injury tendency remains unknown pending actual injury history. Contract
+      tables include supported bonus/cap charges without inventing preview data.
+      Both supported Deck resolutions are covered by Windows rendering fixtures;
+      installation and actual-game table verification remain pending.
 
 - [ ] Finish held native submission through accepted proposal, guest/ledger commit
       and recovery. An opt-in source path now defers retail judgment/precommit,

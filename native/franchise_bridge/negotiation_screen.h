@@ -31,6 +31,96 @@ inline std::string screen_money(const nlohmann::json& value) {
     for(int i=static_cast<int>(number.size())-3;i>first;i-=3) number.insert(static_cast<size_t>(i),",");
     return "$"+number;
 }
+struct ScreenStatRow {std::string label;std::vector<std::string> values;};
+struct ScreenTable {std::string title;std::vector<std::string> columns;std::vector<ScreenStatRow> rows;};
+inline std::string screen_profile(const nlohmann::json& evidence) {
+    if(!evidence.contains("player_profile")) return "Contract negotiation";
+    const auto& profile=evidence.at("player_profile");std::vector<std::string> parts;
+    if(!profile.at("height_inches").is_null()) {const int height=profile.at("height_inches").get<int>();parts.push_back(std::to_string(height/12)+"'"+std::to_string(height%12)+"\"");}
+    if(!profile.at("weight_pounds").is_null()) parts.push_back(std::to_string(profile.at("weight_pounds").get<int>())+" lb");
+    if(!profile.at("age_years").is_null()) parts.push_back("Age "+std::to_string(profile.at("age_years").get<int>())+" at season start");
+    std::string label;for(const auto& part:parts){if(!label.empty()) label+="  /  ";label+=part;}
+    return label.empty()?"Physical profile unavailable":label;
+}
+inline std::string performance_year(const nlohmann::json& evidence,const nlohmann::json& entry) {
+    if(!evidence.contains("franchise_season_year") || !evidence.contains("saved_display_year") ||
+       !entry.contains("candidate_calendar_year") || entry.at("candidate_calendar_year").is_null()) return u8"\u2014";
+    return std::to_string(evidence.at("franchise_season_year").get<int>()-
+        evidence.at("saved_display_year").get<int>()+entry.at("candidate_calendar_year").get<int>());
+}
+inline std::vector<ScreenTable> performance_tables(const nlohmann::json& evidence) {
+    std::vector<ScreenTable> tables;
+    if(!evidence.contains("saved_history")) return tables;
+    const auto& history=evidence.at("saved_history");
+    for(const auto& row:history) screen_metric(row.at("metric").get<std::string>());
+    for(const auto* field:{"missing_named_metrics","unmapped_requested_metrics"})
+        if(evidence.contains(field)) for(const auto& metric:evidence.at(field)) screen_metric(metric.get<std::string>());
+    struct Category {const char *title;std::vector<std::pair<std::string,std::string>> columns;};
+    const Category categories[]={
+        {"Receiving",{{"games","G"},{"receptions","REC"},{"receiving_yards","YDS"},{"receiving_touchdowns","TD"}}},
+        {"Passing",{{"games","G"},{"completions","CMP"},{"pass_attempts","ATT"},{"passing_yards","YDS"},{"passing_touchdowns","TD"},{"interceptions_thrown","INT"}}},
+        {"Rushing",{{"games","G"},{"rush_attempts","ATT"},{"rushing_yards","YDS"},{"rushing_touchdowns","TD"}}},
+        {"Defense",{{"games","G"},{"sacks","SCK"}}}};
+    for(const auto& category:categories) {
+        bool present=false;
+        for(const auto& entry:history) for(size_t col=1;col<category.columns.size();++col)
+            if(entry.at("metric")==category.columns[col].first) present=true;
+        if(!present) continue;
+        ScreenTable table{category.title,{"YEAR"},{}};
+        for(const auto& col:category.columns) table.columns.push_back(col.second);
+        // Join only identical saved period/mode keys. Repeated metric entries get
+        // their own row; never sum them or guess a different season/calendar.
+        std::vector<std::pair<int,int>> keys;
+        std::vector<std::vector<bool>> occupied;
+        for(const auto& entry:history) {
+            size_t col=0;
+            while(col<category.columns.size() && entry.at("metric")!=category.columns[col].first) ++col;
+            if(col==category.columns.size()) continue;
+            const auto key=std::make_pair(entry.at("period_code_raw").get<int>(),entry.at("mode_code_raw").get<int>());
+            size_t row=0;
+            while(row<keys.size() && (keys[row]!=key || occupied[row][col])) ++row;
+            if(row==keys.size()) {
+                keys.push_back(key);occupied.push_back(std::vector<bool>(category.columns.size()));
+                table.rows.push_back({performance_year(evidence,entry),std::vector<std::string>(category.columns.size(),u8"\u2014")});
+            }
+            occupied[row][col]=true;
+            table.rows[row].values[col]=screen_number(entry.at("value"));
+        }
+        // A games-only period does not create a misleading empty category row.
+        for(size_t row=table.rows.size();row-->0;) {
+            bool has_stat=false;for(size_t col=1;col<occupied[row].size();++col) has_stat|=occupied[row][col];
+            if(!has_stat) table.rows.erase(table.rows.begin()+row);
+        }
+        tables.push_back(std::move(table));
+    }
+    if(tables.empty()) {
+        ScreenTable games{"Games played",{"YEAR","G"},{}};
+        for(const auto& entry:history) if(entry.at("metric")=="games")
+            games.rows.push_back({performance_year(evidence,entry),{screen_number(entry.at("value"))}});
+        if(!games.rows.empty()) tables.push_back(std::move(games));
+    }
+    return tables;
+}
+inline ScreenTable contract_table(const nlohmann::json& context) {
+    ScreenTable table{"Annual breakdown",{"YEAR","BASE SALARY","GUAR. BASE","BONUS CAP","CAP HIT"},{}};
+    if(!context.contains("offer") || context.at("offer").is_null()) return table;
+    const auto& offer=context.at("offer");const auto& salaries=offer.at("salaries");
+    const bool preview=context.contains("preview") && !context.at("preview").is_null();
+    for(size_t year=0;year<salaries.size();++year) {
+        std::string bonus=u8"\u2014",charge=u8"\u2014";
+        if(preview) {
+            const auto& amount=context.at("preview").at("contract_charges").at(year);
+            charge=amount.is_string()?"$"+amount.get<std::string>():screen_money(amount);
+            // Only display a derived bonus charge when the authoritative preview
+            // uses exact integer amounts; retain unknown for fractional charges.
+            if(amount.is_number_integer() && salaries[year].is_number_integer())
+                bonus=screen_money(amount.get<int64_t>()-salaries[year].get<int64_t>());
+        }
+        table.rows.push_back({"Year "+std::to_string(year+1),{screen_money(salaries[year]),
+            offer.contains("guaranteed_salaries")?screen_money(offer.at("guaranteed_salaries").at(year)):u8"\u2014",bonus,charge}});
+    }
+    return table;
+}
 inline void screen_terms(std::ostringstream& text,const nlohmann::json& offer) {
     const auto& salaries=offer.at("salaries");
     int64_t total=offer.at("signing_bonus").get<int64_t>();
@@ -74,30 +164,17 @@ inline std::array<std::string,3> negotiation_pages(const nlohmann::json& reply) 
         <<"Cash compensation and cap charges are different amounts.\n"
         <<"Opening liabilities are not fully verified.\n";
     if(checkpoint.contains("performance_context")) {
-        const auto& evidence=checkpoint.at("performance_context");
-        const auto& rows=evidence.at("saved_history");
-        if(rows.empty()) performance<<"No mapped performance records are available for this player.\n";
-        else {
-            performance<<"Saved history: season and game coverage unverified.\n"
-                <<"Each row is separate; these are not current-season totals.\n\n";
-            size_t record=0;
-            for(const auto& row:rows)
-                performance<<"Record "<<++record<<": "<<screen_metric(row.at("metric").get<std::string>())<<": "
-                    <<screen_number(row.at("value"))<<" "<<row.at("unit").get<std::string>()<<"\n";
+        const auto tables=performance_tables(checkpoint.at("performance_context"));
+        if(tables.empty()) performance<<"No saved stats available for this player.\n";
+        for(const auto& table:tables) {
+            performance<<table.title<<"\nYEAR";
+            for(size_t col=1;col<table.columns.size();++col) performance<<"  "<<table.columns[col];
+            performance<<"\n";
+            for(const auto& row:table.rows) {performance<<row.label;for(const auto& value:row.values) performance<<"  "<<value;performance<<"\n";}
+            performance<<"\n";
         }
-        if(evidence.contains("missing_named_metrics") && !evidence.at("missing_named_metrics").empty()) {
-            performance<<"\nNot available in this history:\n";
-            for(const auto& metric:evidence.at("missing_named_metrics"))
-                performance<<screen_metric(metric.get<std::string>())<<"\n";
-        }
-        if(evidence.contains("unmapped_requested_metrics") && !evidence.at("unmapped_requested_metrics").empty()) {
-            performance<<"\nNot mapped from this save:\n";
-            for(const auto& metric:evidence.at("unmapped_requested_metrics"))
-                performance<<screen_metric(metric.get<std::string>())<<"\n";
-        }
-    } else performance<<"Performance evidence unavailable.\n";
-    performance<<"\nMissing observations are unknown, not zero.\n"
-        <<"Saved history does not establish promise fulfillment.\n";
+    } else performance<<"No saved stats available for this player.\n";
+    performance<<u8"Saved history. \u2014 means not recorded.\n";
     if(result.contains("signing_checkpoint")) {
         agent<<result.at("reason").get<std::string>()<<"\n";
         if(result.contains("counter") && !result.at("counter").is_null()) {
