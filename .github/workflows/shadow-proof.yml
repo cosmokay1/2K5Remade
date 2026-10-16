@@ -1,0 +1,43 @@
+name: Shadow proof
+on:
+  push:
+    paths: ['native/shadow_proof/**', '.github/workflows/shadow-proof.yml']
+  pull_request:
+    paths: ['native/shadow_proof/**', '.github/workflows/shadow-proof.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-2022]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure CPU reference
+        if: runner.os != 'Windows'
+        run: cmake -S native/shadow_proof -B build-shadow
+      - name: Configure DXR shader and Windows executable
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $compiler = Get-ChildItem "${env:ProgramFiles(x86)}/Windows Kits/10/bin/*/x64/dxc.exe" |
+            Sort-Object FullName -Descending | Select-Object -First 1
+          if (!$compiler) { throw "Windows SDK DXC compiler missing" }
+          cmake -S native/shadow_proof -B build-shadow -A x64 "-DDXC_EXECUTABLE=$($compiler.FullName)"
+      - name: Compile
+        run: cmake --build build-shadow --config Release
+      - name: Verify reference and attempt hardware proof
+        # No hardware DXR adapter is a visible skip, never a GPU proof result.
+        run: ctest --test-dir build-shadow -C Release --output-on-failure
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shadow-proof-${{ matrix.os }}
+          path: |
+            build-shadow/reference/*.ppm
+            build-shadow/gpu/*.ppm
+            build-shadow/gpu/passed.txt
+            build-shadow/Testing/Temporary/LastTest.log
+          if-no-files-found: ignore
