@@ -9374,7 +9374,7 @@ controls now. Backend-only progress is not a finished player feature.
 The final expanded Windows package passes all five protocol/navigation/render/
 handshake/held-signing fixture children with a fresh passed marker and launcher0.
 Isolated actual game validation exits0 with a fresh validated marker. Windows
-CPython tests pass:15 signing-context,10 performance-export and7 snapshot checks.
+CPython tests pass:15 signing-context,10 performance-export and5 snapshot checks.
 Both native saved-signing integration variants (ordinary and runtime-bound) pass
 against the updated service, using authored files/providers with zero paid model
 requests. This specifically exercises the real native reply-validation boundary
