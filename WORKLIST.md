@@ -196,7 +196,10 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       by MEM32(ecx+0x48), matching the pre-existing startup issue in the
       October9 worklog. Both traces are preserved; the underlying zero-input
       cause is unresolved. Source5698281 Build38817632722 and
-      Franchise38817632849 pass Windows/Ubuntu. Live game callback binding is not yet
+      Franchise38817632849 pass Windows/Ubuntu. After the Deck returned, an
+      unchanged installed-game launch through Steam progressed to movie/music/
+      vblank execution; the intermittent crash is not fixed. Isolated GDB runs
+      did not capture a reliable divide fault. Live game callback binding is not yet
       verified, and full active-franchise lifetime/write authority remain open.
       Service-side durable binding and active franchise identity remain open;
       this metadata does not authorize application or prove code compatibility.

@@ -8520,3 +8520,40 @@ installed batch and205 unchanged-save installation receipt remain preserved.
 AI/control/application grants remain off, and no inference or guest financial
 write was performed. Resolve or capture the zero-divisor initialization path
 before repeating the live namespace/signing acceptance test.
+
+### Deck returned; isolated debugger limits and post-reboot Steam execution
+
+The Deck reconnected with no game running. GDB is installed, but ptrace_scope1
+and unavailable passwordless privilege prevent a sibling attachment. A private
+startup-zero-divisor diagnostic directory copies the executable/addon/config and
+saves and uses the existing isolated validation prefix. Retail/pack asset paths
+are shared by symlink for loading; no asset mutation is part of the diagnostic.
+The installed Steam wrapper is unchanged.
+AI/provider configuration is absent from these diagnostic executions.
+
+The first debugger run followed Wine's32-bit start.exe rather than the64-bit
+game. Direct64-bit loader attempts encounter Wine trap handling: one capture
+stopped on a trace trap rather than division and is invalid; passing the initial
+loader trap terminates the loader. A final trap-aware run progressed into
+guest execution but stalled with last kernel return0x00420A77 instead of yielding
+a verified divide-fault capture. No object dump from a non-divide stop is accepted
+as evidence. The diagnostic-only child was stopped by its exact private runtime
+path; no running user game was interrupted. Logs are preserved locally/on Deck.
+This approach has not identified or fixed the zero-divisor initialization cause.
+
+Integrity checks confirm all three installed artifacts retain their5698281 batch
+hashes. All203 non-partition save/library files still match the installation
+receipt, including the configured MyNFL1 UDATA payload. Partition0.img and
+Partition5.img differ from the preboot installation hashes; their original
+modification times are October15 at22:48:19 and22:48:12 UTC, before this diagnostic
+session. Preserve those images; do not roll them back or claim all205 files remain
+unchanged after game execution. Exact differences/hashes are retained privately
+in save-change-inspection.json. No diagnostic copy replaces a user save.
+
+One subsequent launch of the unchanged installed game through the existing Steam
+entry is running as PID214192. Actual session output progresses beyond startup
+into STATE9/movie/music, vblank600 and rendered-frame timing; no crash was present
+in that observed interval. This is resumed guest execution after reboot, not a
+crash fix, complete playability or franchise connection proof. The user was asked
+to load MyNFL1 and leave an offer open without submitting for the still-pending
+read-only namespace/context check. AI/control/application remain off.
