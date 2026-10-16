@@ -1074,6 +1074,40 @@ class Ledger:
         access_check()
         return event  # In-memory session cache; durable adapter records history.
 
+    def initialize_salary_classification(self, profile, *, source, expected_revision):
+        """Add declared salary inputs without replacing contracts or actor identities."""
+        from franchise.salary_rules import VeteranMinimumProfile
+        with self._lock:
+            if not isinstance(profile, VeteranMinimumProfile) or not profile.players:
+                raise ValueError('Nonempty typed salary classification required')
+            if type(source) is not str or not source.strip():
+                raise ValueError('Salary credit-input provenance required')
+            if type(expected_revision) is not int or expected_revision != self.revision:
+                raise Rejected('Salary classification used stale franchise state')
+            floors = profile.floors()
+            if not floors.keys() <= self.registered_player_ids or floors.keys() & self._rookies.keys():
+                raise Rejected('Salary classification requires known non-rookie identities')
+            if getattr(self, '_league_year', None) is not None and profile.start_year != self._league_year:
+                raise Rejected('Salary classification differs from the current league year')
+            if ((self._rookie_pool_opening is not None and self._rookie_pool_opening.league_year != profile.start_year)
+                    or (self._last_transaction_date is not None and self._last_transaction_date.year != profile.start_year)):
+                raise Rejected('Salary classification differs from established financial chronology')
+            if profile.economy is not None and profile.economy.target_cap != self.cap:
+                raise Rejected('Salary conversion differs from the established cap scale')
+            if any(floors.get(player) != values for player, values in self._veteran_minimums.items()):
+                raise Rejected('Salary initialization cannot replace existing minimums')
+            previous = self._veteran_minimum_profile
+            if previous is not None:
+                old = {row[0]: row for row in previous.players}
+                new = {row[0]: row for row in profile.players}
+                if (previous.start_year != profile.start_year or previous.economy != profile.economy
+                        or any(new.get(player) != row for player, row in old.items())):
+                    raise Rejected('Salary initialization cannot replace existing credit inputs')
+            self._veteran_minimum_profile = profile
+            self._veteran_minimums = floors
+            self._salary_classification_source = source
+            self.revision += 1
+
     def management_context(self) -> dict:
         """Private team decision input; not exposed in player/agent prompts."""
         with self._lock:
@@ -1105,6 +1139,8 @@ class Ledger:
                     "salary_floor_profile": ({"start_year": self._veteran_minimum_profile.start_year,
                                               "rule_version": self._veteran_minimum_profile.rule_version,
                                               "source": self._veteran_minimum_profile.source,
+                                              **({'classification_source':self._salary_classification_source}
+                                                 if hasattr(self, '_salary_classification_source') else {}),
                                               **({"economy": self._veteran_minimum_profile.economy.to_dict()}
                                                  if self._veteran_minimum_profile.economy is not None else {})}
                                              if self._veteran_minimum_profile else None),

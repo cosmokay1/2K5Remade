@@ -8592,3 +8592,67 @@ actual-readonly-context-session.log, actual-readonly-context-receipt.json and
 actual-readonly-safety-receipt.json preserve the trace, validated assertions and
 zero-inference evidence. This completes the live read-only connection milestone;
 it does not establish AI-enabled negotiation or financial write authority.
+
+## October15,2026 — Grouped salary classification and accounting checks
+
+The user requested the remaining core work as one batch and selected completed
+in-game seasons for minimum-salary tiers. Added explicit game-completed-seasons-v1
+export: completed seasons equal the saved one-based career-period counter minus
+one; a zero counter stays unknown, and zero-completed-season players stay outside the
+veteran import. Annual future floors project one additional completed franchise
+season per year, without claiming those seasons have occurred. Modern minimum
+tables and the previously approved historical-dollar conversion remain unchanged.
+No hidden ratings or performance counters enter salary-floor classification.
+docs/simulation-salary-policy.md records the distinction from real NFL credits.
+
+Ledger/store initialization imports declared veteran salary inputs atomically
+across the existing league. Immutable bootstrap/actor/history/ownership/cash and
+contract balances are preserved. Each team advances one financial revision.
+Existing annual credit inputs cannot be replaced even if they produce the same
+floor. Duplicate imports are idempotent; concurrent identical requests commit
+one group. Partial group deletion/header tampering, unknown/rookie identities,
+stale revisions, mismatched chronology/economy and changed membership reject.
+An actual authored prepared guest journal blocks the import without mutation.
+Recorded classification provenance joins server negotiation accounting; the CBA
+table source is not presented as proof of real NFL service eligibility.
+
+The import CLI defaults to an SQLite-backup preview with committed WAL state,
+without running schema initialization on the original database. Applying requires
+explicit --apply. The exporter refuses to overwrite its output and records the
+actual supplied payload hash rather than mislabeling later data as the baseline.
+
+All883 offline Python tests pass in43.952s outside the sandbox for the four
+existing local-loopback checks. The earlier sandbox run's four errors were local
+socket permission failures; they are not recorded as passing. New coverage checks
+restart/idempotency/atomic failure, actor/financial preservation, prepared-work
+freeze, minimum enforcement, original-calendar conversion, unknown seasons and
+rating-independent salary inputs. No native source or generic sidecar code changed.
+
+Private .local-runtime/salary-chunk/classified.sqlite copies the existing MyNFL1
+namespace and imports1806 veterans across32 clubs.264 zero-season players remain
+for separate rookie rules. Original database hashb9b6803d remains unchanged;
+snapshot-origin verification preserves the existing bootstrap association and
+personality seed. All32 club financial snapshots are identical apart from
+revision1 to2. The captured Will Hernandez amount422/flags755105796 now returns
+eligible_preview, salaries6328000/3796000 and signing bonus6752000. Exact cap
+charges are9704000/7172000; Giants first-year roster-based room is79512000.
+The context takes0.979s locally. Separate below-floor and over-cap read-only
+requests reject before any provider/control call. Full modern opening scope is
+not inferred from these roster-based results.
+
+A second private copy tests an offline scripted acceptance, stale-proposal
+rejection before the scripted provider, durable preparation, restart inspection,
+constructed after-save comparison, settlement and identical retry. It settles
+once at revision3, first-year charges221688000, with one scripted provider call.
+The constructed after-save is comparison/test data only: no actual game memory
+or user save was edited, and this is not native application/save-reload proof.
+Private classification-receipt.json, floor-and-cap-rejections.json and
+private-recovery-receipt.json preserve the evidence.
+
+A single pinned144-file source/fixture package is prepared for isolated Windows
+tests, actual UDATA read-only context including floor/cap refusals, and both
+existing native C-client journal fixtures. It preserves the old unused inference
+budget/scope and forced missing credentials; it enables no AI, application grant
+or remote control renewal. steamdeck.local stopped resolving before transfer, so
+Windows validation and installation remain pending. The user was asked to keep
+the Deck awake; the running installed game/launcher/database were not replaced.

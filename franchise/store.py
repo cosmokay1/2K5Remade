@@ -382,8 +382,9 @@ class FranchiseStore:
             self._insert_team(db,team_id,ledger)
 
     def _insert_team(self,db,team_id,ledger):
-        if db.execute("SELECT 1 FROM events WHERE kind='calendar_anchor' LIMIT 1").fetchone():
-            raise Rejected('League membership is fixed after calendar anchoring')
+        if (db.execute("SELECT 1 FROM events WHERE kind='calendar_anchor' LIMIT 1").fetchone()
+                or db.execute("SELECT 1 FROM franchise_metadata WHERE key='salary-classification-v1'").fetchone()):
+            raise Rejected('League membership is fixed after calendar or salary initialization')
         if type(team_id) is not str or not team_id.strip():
             raise ValueError("Stable team ID required")
         config = ledger.bootstrap_config()
@@ -485,6 +486,74 @@ class FranchiseStore:
                 db.execute("INSERT INTO events(team_id,request_key,kind,payload) VALUES(?,?,'calendar_anchor',?)",
                            (team,'calendar:'+request_id,json.dumps(payload,allow_nan=False)))
             return anchor
+
+    def _salary_classification(self, db):
+        row = db.execute("SELECT value FROM franchise_metadata WHERE key='salary-classification-v1'").fetchone()
+        if row is None:
+            raise ValueError('Salary classification origin is missing')
+        batch = json.loads(row[0])
+        self._validate_salary_classification(batch)
+        teams = {row[0] for row in db.execute('SELECT id FROM teams')}
+        if teams != set(batch['expected_revisions']):
+            raise ValueError('Salary classification league coverage changed')
+        rows = db.execute("SELECT team_id,request_key,payload FROM events WHERE kind='salary_classification'").fetchall()
+        if len(rows) != len(teams) or {row[0] for row in rows} != teams:
+            raise ValueError('Partial league salary classification')
+        digest = self._checkpoint_hash(batch)
+        for team, key, serialized in rows:
+            item = json.loads(serialized)
+            if (key != 'salary-classification:' + batch['request_id'] or type(item) is not dict
+                    or set(item) != {'batch_sha256','expected_revision','posting'}
+                    or item['batch_sha256'] != digest
+                    or type(item['expected_revision']) is not int
+                    or item['expected_revision'] != batch['expected_revisions'][team]):
+                raise ValueError('Salary classification records disagree')
+        return batch
+
+    @staticmethod
+    def _validate_salary_classification(batch):
+        from franchise.salary_rules import VeteranMinimumProfile
+        if (type(batch) is not dict or set(batch) != {'format','request_id','source','profile','expected_revisions'}
+                or type(batch['format']) is not int or batch['format'] != 1
+                or any(type(batch[key]) is not str or not batch[key].strip() for key in ('request_id','source'))
+                or type(batch['expected_revisions']) is not dict or not batch['expected_revisions']
+                or any(type(team) is not str or not team.strip() or type(revision) is not int or revision < 0
+                       for team, revision in batch['expected_revisions'].items())):
+            raise ValueError('Explicit sourced salary classification and league revisions required')
+        profile = VeteranMinimumProfile.from_dict(batch['profile'])
+        if not profile.players:
+            raise ValueError('Nonempty salary classification required')
+        return profile
+
+    def initialize_salary_classification(self, *, request_id, source, profile, expected_revisions):
+        """One atomic league import; preserve immutable bootstrap, actors and financial history."""
+        batch = {'format':1,'request_id':request_id,'source':source,
+                 'profile':profile,'expected_revisions':expected_revisions}
+        batch = json.loads(json.dumps(batch, allow_nan=False))
+        parsed = self._validate_salary_classification(batch)
+        with self._connection(write=True) as db:
+            teams = {row[0] for row in db.execute('SELECT id FROM teams')}
+            if teams != set(batch['expected_revisions']):
+                raise Rejected('Salary initialization requires complete league coverage')
+            if db.execute("SELECT 1 FROM franchise_metadata WHERE key='salary-classification-v1'").fetchone():
+                previous = self._salary_classification(db)
+                if self._checkpoint_hash(previous) != self._checkpoint_hash(batch):
+                    raise Rejected('Salary classification already initialized with different inputs')
+                self._load_teams(db, tuple(sorted(teams)))
+                return previous
+            ledgers = self._load_teams(db, tuple(sorted(teams)))
+            for team, ledger in ledgers.items():
+                ledger.initialize_salary_classification(parsed, source=batch['source'],
+                    expected_revision=batch['expected_revisions'][team])
+            digest = self._checkpoint_hash(batch)
+            db.execute("INSERT INTO franchise_metadata VALUES ('salary-classification-v1',?)",
+                       (json.dumps(batch, allow_nan=False),))
+            for team, ledger in sorted(ledgers.items()):
+                payload = {'batch_sha256':digest,'expected_revision':batch['expected_revisions'][team],
+                           'posting':ledger.financial_snapshot()}
+                db.execute("INSERT INTO events(team_id,request_key,kind,payload) VALUES(?,?,'salary_classification',?)",
+                           (team,'salary-classification:'+request_id,json.dumps(payload, allow_nan=False)))
+            return batch
 
     def league_calendar(self):
         with self._connection() as db:
@@ -592,6 +661,9 @@ class FranchiseStore:
         # One read transaction may replay the same generated player for many
         # clubs. Expected origins are immutable comparisons, never live actors.
         actor_origins={}
+        if (db.execute("SELECT 1 FROM franchise_metadata WHERE key='salary-classification-v1'").fetchone()
+                or db.execute("SELECT 1 FROM events WHERE kind='salary_classification' LIMIT 1").fetchone()):
+            self._salary_classification(db)
         ledgers={team:self._load_one(db,team,actor_origins=actor_origins) for team in team_ids}
         # One fresh read transaction validates the league, without persistent cache.
         if db.execute("SELECT 1 FROM events WHERE kind IN ('year_transition','calendar_anchor','trade_out','trade_in','generation_trade_out','generation_trade_in') LIMIT 1").fetchone():
@@ -833,6 +905,11 @@ class FranchiseStore:
                         raise ValueError('Accepted proposal preview disagrees with financial replay')
             elif kind == "budget":
                 ledger.update_budget(**{key: payload[key] for key in ("cap", "roster_reserve", "expected_revision")})
+            elif kind == 'salary_classification':
+                batch = self._salary_classification(db)
+                from franchise.salary_rules import VeteranMinimumProfile
+                ledger.initialize_salary_classification(VeteranMinimumProfile.from_dict(batch['profile']),
+                    source=batch['source'],expected_revision=batch['expected_revisions'][team_id])
             elif kind == 'calendar_anchor':
                 anchor = self._calendar_anchor(db)
                 if (type(payload) is not dict or set(payload) != {'anchor','posting'}

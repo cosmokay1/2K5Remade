@@ -296,6 +296,19 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       Source4a74436 passed Windows/Ubuntu CI38692925601. A separate pinned
       MyNFL1 preflight replayed32 clubs/1693 legacy schedules with unknown cash;
       it is a roster-only projection and grants no live signing authority.
+- [x] Add a durable salary-classification import for the existing franchise.
+      User selected completed game seasons as the explicit salary-credit
+      simulation policy. Atomic imports preserve bootstrap, actors/history and
+      balances; stale/partial/conflicting imports and prepared guest work reject.
+      MyNFL1 copy imports1806 veterans across32 clubs, retaining264 zero-season
+      players for separate rookie rules. Hernandez's captured offer changes from
+      missing-classification rejection to an eligible preview with9.704M/7.172M
+      charges and79.512M roster-based first-year room. Below-floor and over-cap
+      previews reject. No live database or source save is changed.
+      All883 offline Python tests pass. Private scripted-proposal/journal restart/
+      settlement/retry checks pass on constructed after-save data, not native
+      application. A single144-file Windows service/fixture batch is prepared;
+      Deck connection is currently required to validate it before installation.
 - [ ] Complete draft, persistent stories/promises, shutdown and final delivery checks
       below. Defer broader stat mapping while the core signing flow is incomplete.
 
