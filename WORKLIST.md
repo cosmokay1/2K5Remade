@@ -75,7 +75,10 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       snapshot. Actual Windows/Deck service median1.828s→0.812s with exact replies
       unchanged except added receiving metric coverage and unchanged database
       hashes. No persistent ledger cache or schema/index changes were introduced.
-      This is isolated service evidence; installed-game timing remains to verify.
+      This is isolated service evidence. The combined update is installed on the Deck,
+      all205 save hashes are unchanged, and the new service process starts from
+      context-fast-batch against the original database. Installed-game timing
+      and Nabers receiving-page verification remain pending; AI/signing are off.
 
 - [ ] Finish held native submission through accepted proposal, guest/ledger commit
       and recovery. An opt-in source path now defers retail judgment/precommit,

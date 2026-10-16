@@ -9186,3 +9186,23 @@ not connected, so there is no runtime external-stat request or unsupported-stat
 display. The receiving mapper and faster authoritative read path are packaged
 together to avoid sending new metric names to an older UI allowlist. Normal-exit
 installation and actual live speed/receiving-page verification remain pending.
+
+
+### Combined faster-context / receiving package installed
+
+After the user confirmed Steam showed Play, the protected installer verified the
+closed runtime and installed the matching EXE/DLL above plus wrapper
+2b3d723eba8a74d3dabdfd38c5e729823b420459bf544f07cd07419c9122f47b.
+All205 save hashes remain unchanged. The private installation receipt is retained
+in context-fast-batch. Its base source_commit e45a634 plus working_tree=true
+identifies the packaging base, not a claim that e45a634 contains these changes;
+the verified source manifests correspond to committed implementation2733c99.
+
+The existing Steam entry launched successfully. Process inspection confirms the
+Windows sidecar now runs from context-fast-batch/context/python/python.exe while
+using the original salary-classification-v1/context/franchise.sqlite and usage
+budget. Startup logging advances through the game boot. AI, guest signing and
+external-history integration remain disabled. Actual offer-screen timing and
+Nabers receiving rows await the user's MyNFL1 screen transition. Build CI
+38849831676 completed successfully; Franchise AI CI38849831828 was still running
+at this check. This installation does not establish signing/save-reload acceptance.
