@@ -41,6 +41,27 @@ int main() {
         draft.amount=65535;edit={};draft.input(edit);edit.buttons=8;draft.input(edit);require(draft.amount==65535);
         draft.amount=1;edit={};draft.input(edit);edit.buttons=4;draft.input(edit);require(draft.amount==1);
         edit={};draft.input(edit);edit.buttons=8;edit.analog[7]=255;draft.input(edit);require(draft.amount==26);
+        draft.review();require(!draft.active && draft.present && draft.dirty() && draft.amount==26);
+        draft.resume();require(draft.active && draft.amount==26 && !draft.armed);
+        edit={};draft.input(edit,1000);edit.buttons=8;draft.input(edit,1010);require(draft.amount==27);
+        draft.input(edit,1359);require(draft.amount==27);
+        draft.input(edit,1360);require(draft.amount==28);
+        draft.input(edit,1450);require(draft.amount==29);
+        edit={};draft.input(edit,1500);draft.input(edit,2000);require(draft.amount==29);
+        auto current=franchise::current_contract_table(fixture["result"]);
+        require(current.rows.size()==3 && current.rows[0].label=="2026");
+        require(current.rows[0].values==std::vector<std::string>({"$1,544,000","$2,320,000","$3,864,000"}));
+        auto aged=fixture["result"];aged["player_context"]["legacy_contract"]["remaining_years"]=2;
+        current=franchise::current_contract_table(aged);
+        require(current.rows.size()==2 && current.rows[0].values[2]=="$4,640,000");
+        aged["player_context"].erase("legacy_contract");require(franchise::current_contract_table(aged).rows.empty());
+        aged["player_context"]["contract_accounting"]={{"status","active"},{"charge_scope","active_contract"},
+            {"contract",{{"elapsed_years",1},{"offer",{{"salaries",{1000000,2000000,3000000}}}}}},
+            {"annual_charges",{2500000,3500000}}};
+        current=franchise::current_contract_table(aged);
+        require(current.rows.size()==2 && current.rows[0].values==std::vector<std::string>({"$2,000,000","$500,000","$2,500,000"}));
+        aged["player_context"]["contract_accounting"]["status"]="released";
+        require(franchise::current_contract_table(aged).rows.empty());
         for(const auto* term:{"$6,328,000","$3,796,000","$6,752,000","$9,704,000","$7,172,000","$79,512,000","$16,876,000"}) require(pages[0].find(term)!=std::string::npos);
         require(pages[1].find("Record ")==std::string::npos);
         require(franchise::screen_profile(fixture["result"]["performance_context"])=="6'0\"  /  200 lb  /  Age 23 at season start");

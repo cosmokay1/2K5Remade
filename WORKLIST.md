@@ -148,6 +148,11 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       unchanged across replacement. Both startup attempts hit the known guest
       divide-by-zero before reaching the editor. Actual installed editing remains unverified;
       submission, active-player amendments and financial application remain open.
+      Follow-up source adds labelled Current contract/Your offer switching,
+      retained drafts across review/sections, held horizontal editing and saved
+      current cap tables. Eleven portable checks, seven Windows/Proton checks
+      and5,767 native/Python money cases pass; combined package is staged, with
+      actual installed navigation verification still pending.
 
 - [ ] Finish held native submission through accepted proposal, guest/ledger commit
       and recovery. An opt-in source path now defers retail judgment/precommit,

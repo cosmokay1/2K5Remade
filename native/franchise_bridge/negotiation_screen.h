@@ -2,6 +2,7 @@
 #define NFL2K5_NEGOTIATION_SCREEN_H
 #include "protocol.h"
 #include "signing_display.h"
+#include "guest_schedule.h"
 #include "../game_addon/ui.h"
 #include <array>
 #include <algorithm>
@@ -156,6 +157,37 @@ inline ScreenTable contract_table(const nlohmann::json& context) {
         }
         table.rows.push_back({"Year "+std::to_string(year+1),{screen_money(salaries[year]),
             offer.contains("guaranteed_salaries")?screen_money(offer.at("guaranteed_salaries").at(year)):u8"\u2014",bonus,charge}});
+    }
+    return table;
+}
+inline ScreenTable current_contract_table(const nlohmann::json& checkpoint) {
+    ScreenTable table{"Saved annual cap charges",{"YEAR","BASE CAP","BONUS CAP","CAP HIT"},{}};
+    const auto player=checkpoint.value("player_context",nlohmann::json::object());
+    const auto performance=checkpoint.value("performance_context",nlohmann::json::object());
+    auto label=[&](unsigned i){return performance.contains("franchise_season_year")?
+        std::to_string(performance.at("franchise_season_year").get<int>()+i):"Year "+std::to_string(i+1);};
+    if(player.contains("legacy_contract")) {
+        const auto& legacy=player.at("legacy_contract");
+        const auto years=legacy.at("original_years").get<unsigned>(),remaining=legacy.at("remaining_years").get<unsigned>();
+        if(!remaining || remaining>years) throw std::runtime_error("Invalid saved remaining term");
+        const auto rows=guest_annual_rows(legacy.at("amount_word").get<int64_t>(),legacy.at("bonus_code").get<unsigned>(),
+            legacy.at("shape_code").get<unsigned>(),years,legacy.value("game_dollar_scale",1));
+        for(unsigned i=0;i<remaining;++i) {
+            const auto& row=rows[years-remaining+i];
+            table.rows.push_back({label(i),{screen_money(row.salary),screen_money(row.bonus),screen_money(row.charge())}});
+        }
+    } else if(player.contains("contract_accounting") && !player.at("contract_accounting").is_null()) {
+        const auto& accounting=player.at("contract_accounting");
+        if(accounting.at("status")!="active" || accounting.at("charge_scope")!="active_contract") return table;
+        const auto& contract=accounting.at("contract");const auto elapsed=contract.at("elapsed_years").get<size_t>();
+        const auto& salaries=contract.at("offer").at("salaries");const auto& charges=accounting.at("annual_charges");
+        if(!charges.is_array() || elapsed>=salaries.size() || charges.size()!=salaries.size()-elapsed)
+            throw std::runtime_error("Invalid current contract schedule");
+        for(size_t i=0;i<charges.size();++i) {
+            std::string bonus=u8"\u2014";
+            if(charges[i].is_number_integer()) bonus=screen_money(charges[i].get<int64_t>()-salaries[elapsed+i].get<int64_t>());
+            table.rows.push_back({label(static_cast<unsigned>(i)),{screen_money(salaries[elapsed+i]),bonus,screen_money(charges[i])}});
+        }
     }
     return table;
 }

@@ -15,9 +15,10 @@ static bool available=true,loading=false;
 static bool editing=false,checking=false;
 static unsigned long long preview_epoch=1;
 static unsigned preview_calls;
+static uint32_t preview_amount;
 extern "C" int nfl2k5_franchise_preview_offer(unsigned long long epoch,uint32_t amount,uint32_t flags) {
     if(epoch!=preview_epoch || checking || !amount || !flags) return 0;
-    ++preview_calls;checking=true;++preview_epoch;return 1;
+    ++preview_calls;preview_amount=amount;checking=true;++preview_epoch;return 1;
 }
 extern "C" int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out) {
     *out={};if(!available) return 0;
@@ -79,9 +80,28 @@ int main(int argc,char** argv) {
             require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed) && !changed,"Unchanged screen redrew");
             editing=true;capture("editable-contract");press(0);capture("edit-offer");
             press(-1,8);capture("edit-adjusted");
+            press(3);capture("current-while-editing");
+            press(1);capture("return-to-retained-edit");
+            press(1);capture("review-retained-draft");
+            for(int i=0;i<4;++i) {press(7);capture((std::string("draft-section-")+std::to_string(i)).c_str());}
+            press(0);capture("resume-retained-draft");
             const auto before_checks=preview_calls;press(2);capture("edit-checking");
             require(preview_calls==before_checks+1,"Explicit check was not queued");
+            require(preview_amount==423,"Switching current/review/sections lost the edited amount");
             press(2);require(preview_calls==before_checks+1,"Repeated check escaped pending guard");
+            press(3);capture("current-during-check");
+            checking=false;++preview_epoch;
+            fixture["request_id"]="checked-draft-"+std::to_string(height);
+            auto& checked=fixture["result"]["offer_context"];
+            checked["amount_word"]=preview_amount;
+            checked["offer"]["salaries"]=nlohmann::json::array();checked["preview"]["contract_charges"]=nlohmann::json::array();
+            for(const auto& row:franchise::guest_annual_rows(preview_amount,4,1,2,4)) {
+                checked["offer"]["salaries"].push_back(row.salary);checked["preview"]["contract_charges"].push_back(row.charge());
+            }
+            checked["offer"]["signing_bonus"]=preview_amount*4*1000*4;
+            capture("current-after-checked-reply");
+            press(1);capture("checked-offer-return");
+            press(0);capture("unchanged-edit");press(2);capture("unchanged-checking");
             checking=false;++preview_epoch;capture("edit-checked-identical-reply");
             press(0);capture("edit-again");press(1);capture("edit-cancelled");
             require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed),"Cancel left the native screen");

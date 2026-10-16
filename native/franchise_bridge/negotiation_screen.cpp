@@ -16,9 +16,10 @@ franchise::NegotiationNavigation navigation;
 franchise::ContractDraft draft;
 unsigned long long preview_epoch;
 bool preview_enabled=false,preview_pending=false;
+bool current_contract=false,previous_y=false;
 std::string body,title,status,closed_body,paint_key,presented_body;
 std::array<std::string,4> pages;
-nlohmann::json screen_reply;
+nlohmann::json screen_reply={{"result",nlohmann::json::object()}};
 std::vector<unsigned char> pixels;
 int width,height;
 bool paint_failed=false;
@@ -36,22 +37,29 @@ bool enabled(int& port) {
 bool refresh() {
     static thread_local FranchiseNegotiationView view;
     if(!nfl2k5_franchise_negotiation_view(&view)) {
-        body.clear();closed_body.clear();presented_body.clear();opened_tick=0;navigation.reset();draft.reset();return false;
+        body.clear();closed_body.clear();presented_body.clear();opened_tick=0;navigation.reset();draft.reset();current_contract=previous_y=false;return false;
     }
     if(!std::memchr(view.response,0,sizeof(view.response)) || !std::memchr(view.summary.title,0,sizeof(view.summary.title)) ||
        !std::memchr(view.summary.offer,0,sizeof(view.summary.offer))) return false;
     const std::string next=view.response[0]?view.response:"loading";
     if(next==closed_body) return false;
     if(next!=body || title!=view.summary.title) {
+        bool completed_check=false;
         if(!opened_tick) opened_tick=GetTickCount64();
         if(!view.response[0]) {
             pages.fill("Loading verified franchise context...\n\nContract terms and performance will appear when the saved context is ready.");
             screen_reply={{"result",nlohmann::json::object()}};
         } else {
             auto parsed=franchise::parse_frame(next);
+            const auto& result=parsed.at("result");
+            const auto& prior=screen_reply.at("result");
+            completed_check=draft.waiting && result.contains("player_id") && prior.contains("player_id") &&
+                result.at("player_id")==prior.at("player_id") && title==view.summary.title;
             pages=franchise::negotiation_pages(parsed);screen_reply=std::move(parsed);
         }
-        body=next;title=view.summary.title;navigation.reset();draft.reset();presented_body.clear();paint_key.clear();paint_failed=false;
+        body=next;title=view.summary.title;
+        if(!completed_check){navigation.reset();current_contract=previous_y=false;}
+        draft.reset();presented_body.clear();paint_key.clear();paint_failed=false;
     }
     // An identical checked response still completes the mailbox round trip.
     if(draft.waiting && !view.preview_pending && view.preview_epoch!=preview_epoch) draft.reset();
@@ -69,7 +77,7 @@ bool paint(NFL2K5AddonDraw& draw) {
     if(draw.width<320 || draw.height<240 || draw.width>2048 || draw.height>2048 || draw.stride!=draw.width*4 ||
        draw.capacity!=static_cast<size_t>(draw.stride)*draw.height || !draw.pixels) return false;
     const auto key=body+"\n"+title+"\n"+status+"\n"+std::to_string(navigation.page)+":"+std::to_string(navigation.scroll[navigation.page])+":"+
-        std::to_string(draft.active)+":"+std::to_string(draft.amount)+":"+std::to_string(draft.flags)+":"+std::to_string(draft.field)+":"+std::to_string(draft.waiting)+draft.message+":"+std::to_string(preview_enabled);
+        std::to_string(draft.active)+":"+std::to_string(draft.amount)+":"+std::to_string(draft.flags)+":"+std::to_string(draft.field)+":"+std::to_string(draft.waiting)+draft.message+":"+std::to_string(preview_enabled)+":"+std::to_string(current_contract);
     if(key!=paint_key || width!=static_cast<int>(draw.width) || height!=static_cast<int>(draw.height)) {
         HDC dc=CreateCompatibleDC(nullptr);if(!dc) return false;
         BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);
@@ -145,15 +153,30 @@ bool paint(NFL2K5AddonDraw& draw) {
         const int left=px(255),right=draw.width-px(32),bottom=draw.height-px(76);
         const auto context=checkpoint.value("offer_context",nlohmann::json::object());
         const char *headings[]={"Your offer","Player stats","Personality","Agent response"};
-        text(headings[navigation.page],left,px(149),right,px(185),27,FW_BOLD,white,DT_SINGLELINE);
+        if(navigation.page==0) {
+            const char *choices[]={"Your offer","Current contract"};
+            for(unsigned i=0;i<2;++i) {
+                const int x=left+px(i*225.0f);
+                fill(x,px(145),x+px(212),px(185),current_contract==(i==1)?RGB(45,65,91):RGB(17,29,46));
+                text(choices[i],x+px(12),px(153),x+px(202),px(180),22,current_contract==(i==1)?FW_BOLD:FW_NORMAL,white,DT_SINGLELINE);
+            }
+            text("Y  Switch",left+px(470),px(155),right,px(182),18,FW_NORMAL,secondary,DT_SINGLELINE|DT_RIGHT);
+        } else text(headings[navigation.page],left,px(149),right,px(185),27,FW_BOLD,white,DT_SINGLELINE);
+        const bool drafting=navigation.page==0 && !current_contract && (draft.active || draft.dirty());
         int overflow=0,offset=0;
         if(navigation.page<2 && body!="loading") {
             std::vector<franchise::ScreenTable> tables;
             std::string summary,note;
-            if(draft.active) {
+            if(navigation.page==0 && current_contract) {
+                auto current=franchise::current_contract_table(checkpoint);
+                note=current.rows.empty()?"Current contract information is unavailable.":
+                    "Saved cap schedule. Original signing bonus cash and guarantees may be unavailable. Your offer stays separate.";
+                if(!current.rows.empty()) tables.push_back(std::move(current));
+            } else if(drafting) {
                 tables.push_back(draft.table());
                 note=draft.waiting?"Checking exact annual amounts and eligibility...":
-                    "Edit locally, then check exact annual amounts and eligibility. This does not contact the player.\nNo contract is signed.";
+                    draft.active?"Change terms, then check the exact annual breakdown. No offer is sent to the player.":
+                    "Draft retained. Check its exact annual breakdown before negotiating. No offer is sent to the player.";
                 if(!draft.message.empty()) note+="\n"+draft.message;
             } else if(navigation.page==0) {
                 auto annual=franchise::contract_table(context);
@@ -172,7 +195,7 @@ bool paint(NFL2K5AddonDraw& draw) {
                 note=u8"Saved history. \u2014 means not recorded. Separate entries are not combined.";
             }
             const int top=px(202),row_height=px(34),gap=px(22),header=px(30),section=px(30);
-            const bool preview=!draft.active && navigation.page==0 && context.contains("preview") && !context.at("preview").is_null();
+            const bool preview=!drafting && !current_contract && navigation.page==0 && context.contains("preview") && !context.at("preview").is_null();
             const auto measured_note=text(note,left,0,right-px(12),0,17,FW_NORMAL,secondary,DT_CALCRECT|DT_WORDBREAK);
             int content=summary.empty()?0:px(67);
             for(const auto& table:tables) content+=section+header+static_cast<int>(table.rows.size())*row_height+gap;
@@ -195,7 +218,7 @@ bool paint(NFL2K5AddonDraw& draw) {
             }
             for(const auto& table:tables) {
                 text(table.title,left,y,right,y+px(26),22,FW_BOLD,white,DT_SINGLELINE);y+=section;
-                const int span=right-left-px(12),first=span*(draft.active?52:navigation.page==0?15:24)/100;
+                const int span=right-left-px(12),first=span*(drafting?52:navigation.page==0?15:24)/100;
                 const int cells=static_cast<int>(table.columns.size())-1;
                 std::vector<int> columns{left,left+first};
                 for(int col=1;col<=cells;++col) columns.push_back(left+first+(span-first)*col/cells);
@@ -204,7 +227,7 @@ bool paint(NFL2K5AddonDraw& draw) {
                     text(table.columns[col],columns[col]+px(10),y+px(7),columns[col+1]-px(10),y+header-px(3),15,FW_BOLD,secondary,DT_SINGLELINE|(col?DT_RIGHT:DT_LEFT));
                 y+=header;
                 for(size_t row=0;row<table.rows.size();++row) {
-                    fill(left,y,right-px(12),y+row_height,row%2?RGB(19,33,51):RGB(16,28,44));
+                    fill(left,y,right-px(12),y+row_height,drafting && draft.active && row==draft.field?RGB(57,47,70):row%2?RGB(19,33,51):RGB(16,28,44));
                     fill(left,y+row_height-1,right-px(12),y+row_height,RGB(37,55,77));
                     const auto& values=table.rows[row];
                     text(values.label,columns[0]+px(10),y+px(7),columns[1]-px(10),y+row_height-px(3),19,FW_NORMAL,secondary,DT_SINGLELINE);
@@ -314,9 +337,11 @@ bool paint(NFL2K5AddonDraw& draw) {
         }
         fill(0,draw.height-px(53),draw.width,draw.height,RGB(15,27,43));
         fill(0,draw.height-px(54),draw.width,draw.height-px(53),RGB(42,61,84));
-        text(draft.active?"D-pad / LS  Edit terms":"D-pad / LS  Section",px(31),draw.height-px(34),px(302),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
-        text(draft.active?"X  Check offer    RT  Larger steps":preview_enabled && navigation.page==0?"A  Edit offer    RS  Scroll":"RS  Scroll    LT / RT  Section",px(323),draw.height-px(34),px(880),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
-        text(draft.active?"B  Cancel":"B  Back",draw.width-px(160),draw.height-px(34),draw.width-px(31),draw.height-px(9),18,FW_BOLD,white,DT_SINGLELINE|DT_RIGHT);
+        const bool editing=draft.active && navigation.page==0 && !current_contract;
+        text(editing?"Up/down  Field    Left/right  Adjust":"D-pad / LS  Section",px(31),draw.height-px(34),px(465),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
+        text(editing?"X  Check    RT  Larger steps":preview_enabled && navigation.page==0 && !current_contract?
+            draft.dirty()?"A  Edit    X  Check draft":"A  Edit offer    RS  Scroll":"RS  Scroll    LT / RT  Section",px(485),draw.height-px(34),draw.width-px(180),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
+        text(editing?"B  Review":navigation.page==0 && current_contract?"B  Your offer":"B  Back",draw.width-px(175),draw.height-px(34),draw.width-px(20),draw.height-px(9),18,FW_BOLD,white,DT_SINGLELINE|DT_RIGHT);
         auto *bytes=static_cast<unsigned char*>(bits);
         // GDI text does not maintain alpha; this full-screen surface is opaque.
         for(size_t i=3;i<draw.capacity;i+=4) bytes[i]=255;
@@ -349,25 +374,38 @@ extern "C" int franchise_negotiation_screen_event(const char *name,const void *d
         const auto& event=*static_cast<const NFL2K5AddonInput*>(data);
         if(event.port>=4) return 0;
         if(event.port!=static_cast<unsigned>(port)) return NFL2K5_ADDON_UI_CONSUMED;
-        if(draft.active) {
-            const int action=draft.input(event);
-            if(action==1){draft.reset();navigation.reset();}
-            if(action==2) {
-                if(nfl2k5_franchise_preview_offer(draft.epoch,draft.amount,draft.flags)) draft.waiting=true;
-                else draft.message="Context changed or terms unavailable. Cancel and retry.";
-            }
+        const bool editing=draft.active && navigation.page==0 && !current_contract;
+        const bool y=event.analog[3]>30,toggle=y && !previous_y;
+        previous_y=y;
+        if(navigation.page==0 && toggle && (editing?draft.armed:navigation.armed)) {
+            current_contract=!current_contract;navigation.reset();draft.rearm();return NFL2K5_ADDON_UI_CONSUMED;
+        }
+        auto check=[&](){
+            if(nfl2k5_franchise_preview_offer(draft.epoch,draft.amount,draft.flags)) draft.waiting=true;
+            else draft.message="Context changed or terms unavailable. Review your offer and retry.";
+        };
+        if(editing) {
+            const int action=draft.input(event,GetTickCount64());
+            if(action==1){draft.review();navigation.reset();}
+            if(action==2) check();
             return NFL2K5_ADDON_UI_CONSUMED;
         }
-        if(preview_enabled && !preview_pending && navigation.page==0 && navigation.armed &&
-           event.analog[0]>30 && navigation.previous_analog[0]<=30 && body!="loading") {
-            const auto& result=screen_reply.at("result");
-            const auto& checkpoint=result.contains("signing_checkpoint")?result.at("signing_checkpoint"):result;
-            if(checkpoint.contains("offer_context") && draft.begin(checkpoint.at("offer_context"),preview_epoch)) {
-                navigation.reset();return NFL2K5_ADDON_UI_CONSUMED;
+        if(preview_enabled && !preview_pending && navigation.page==0 && !current_contract && navigation.armed && body!="loading") {
+            if(event.analog[0]>30 && navigation.previous_analog[0]<=30) {
+                const auto& result=screen_reply.at("result");
+                const auto& checkpoint=result.contains("signing_checkpoint")?result.at("signing_checkpoint"):result;
+                if(draft.present) {draft.resume();navigation.reset();return NFL2K5_ADDON_UI_CONSUMED;}
+                if(checkpoint.contains("offer_context") && draft.begin(checkpoint.at("offer_context"),preview_epoch)) {
+                    navigation.reset();return NFL2K5_ADDON_UI_CONSUMED;
+                }
             }
+            if(draft.dirty() && event.analog[2]>30 && navigation.previous_analog[2]<=30) check();
         }
         const int result=navigation.input(event);
-        if(result==NFL2K5_ADDON_UI_BACK){closed_body=body;presented_body.clear();}
+        if(result==NFL2K5_ADDON_UI_BACK) {
+            if(navigation.page==0 && current_contract){current_contract=false;navigation.reset();draft.rearm();return NFL2K5_ADDON_UI_CONSUMED;}
+            closed_body=body;presented_body.clear();
+        }
         return result;
     } catch(...) {paint_failed=true;presented_body.clear();paint_key.clear();return 0;}
 }

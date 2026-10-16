@@ -9662,3 +9662,49 @@ The previously installed source d8e8f61 now has completed success on both
 Windows/Linux in Build38859363956 and Franchise38859363974. Those CI results
 do not close the actual startup or editor/signing/save-load gates. Private
 checks, validation, copied-run receipt and logs: .local-runtime/startup-context-v1.
+
+
+## Current contract / retained offer navigation
+
+User feedback identifies two concrete problems in the first editor: Back acted
+as cancellation, and the saved current deal was absent. The Contract section now
+shows labelled Your offer / Current contract choices, switched by Y. B from
+editing reviews rather than discards a draft; A resumes the same values/field.
+B from Current contract returns to the retained offer/editor. Drafts survive
+visits to Performance, Personality and Agent. A selected Current view also stays
+selected when its pending offer check completes, including identical-body replies.
+Player/context invalidation and leaving the native screen still discard stale
+drafts; response evidence never becomes a transaction grant.
+
+Horizontal editing repeats after350ms, then every90ms, while schedule toggles
+remain single-edge and numeric bounds remain enforced. RT keeps the existing
+larger-value modifier. Focus uses a selected-row fill and explicit footer labels.
+No additional service or inference request happens during editing/comparison.
+Only X checks accounting, and the existing one-pending/generation guards remain.
+
+Current contract renders the saved original base/bonus cap schedule and remaining
+calendar years. It does not turn fitted legacy amounts into original bonus cash
+or guarantees. Modern active agreements use their remaining salaries/charges;
+closed/assigned archives do not masquerade as current contracts. Missing data
+stays unavailable. Native original schedule math is shared with the existing
+exact-offer validator rather than reimplemented, retaining modern eligibility
+checks separately. There is no Python, protocol shape, financial mutation or
+new mod-name policy change.
+
+All11 portable CTests pass. Native/Python guest terms match5,767 cases. Seven
+isolated Windows/Proton children pass, including actual GDI rendering/controller
+flow, held signing, protocol, addon loading and bounded crash capture. The paired
+game passes --validate. Windows CPython service/saved-signing checks and the same
+5,767 monetary cases also pass. Authored render navigation proves the edited
+amount survives comparison, Review, four-section browsing and resume; both
+changed/identical check completion paths are covered. One combined visual review
+at1280x800/720 confirms the tabs, current cap table, focus and controller footer
+fit. Private source/receipts/renders: .local-runtime/contract-compare-v1. These
+are authored renderer checks; the combined navigation is not installed yet.
+
+The validated ad5dcb6 crash capture was installed after the user's normal exit,
+with all205 saves unchanged across installation. A real-Steam launch, PID244754,
+confirms capture=1 and reaches MyNFL without reproducing the startup fault. A
+read-only capture shows the franchise front-office menu. The fault is not fixed
+or captured yet. The comparison package retains this enabled capture and keeps
+AI/signing off; it will replace loaded files only after normal game/service exit.

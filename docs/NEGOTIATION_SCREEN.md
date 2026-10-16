@@ -104,7 +104,12 @@ it defaults off and requires the read-only takeover configuration above. On
 Contract, A opens the editor. D-pad/left-stick up/down selects total, years,
 bonus share or salary schedule; left/right adjusts it. Hold RT for larger value
 steps. X explicitly checks the draft and returns the service's exact annual
-table or rejection. B cancels editing without leaving the offer screen. Editing
+table or rejection. B reviews the draft without discarding it; A resumes the
+selected field. Y switches between labelled Your offer and Current contract
+views, including while editing or waiting. B from Current contract returns to
+Your offer. Held horizontal input repeats after350ms, then every90ms (except
+schedule toggles); RT retains the larger-value step. Drafts survive section
+browsing and comparison until a new player/context or screen exit. Editing
 and checking never contact a player, change their opinion, call a model, reserve
 cap room or alter the native offer/save. Actual submission remains unavailable.
 
@@ -121,7 +126,13 @@ context generation; the transport owner revalidates player, native offer,
 calendar, finances and loaded source before sending a read-only request. Screen,
 player/source changes and shutdown discard obsolete drafts/replies. Pending checks
 block repeated X requests; held controls must return to neutral before operating
-a newly opened editor or the surrounding screen. No generic addon ABI or native
+a newly opened editor or the surrounding screen. Current contract shows decoded
+saved base/bonus cap charges and their remaining calendar years, using the same
+native schedule math as offer validation. Existing modern agreements use their
+active remaining charges; released/assigned archives are not presented as current.
+Original bonus cash/protections and missing records remain explicitly unavailable.
+Checking a draft preserves the selected comparison view; it does not jump away
+from Current contract when the reply arrives. No generic addon ABI or native
 game financial entry point is added for editing.
 
 Performance uses football stat tables for Receiving (G/REC/YDS/TD), Passing

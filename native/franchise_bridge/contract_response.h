@@ -1,5 +1,6 @@
 #pragma once
 #include "protocol.h"
+#include "guest_schedule.h"
 #include <charconv>
 #include <limits>
 #include <numeric>
@@ -907,28 +908,9 @@ inline nlohmann::json exact_guest_offer(const nlohmann::json& raw,const std::str
     const unsigned years=(flags>>16)&15u, bonus=flags&15u, shape=(flags>>29)&7u;
     if(!years || bonus>10 || (bonus && years>5) || (amount*bonus)%years)
         throw std::runtime_error("Unsupported modern guest bonus allocation");
-    const int64_t average=static_cast<int64_t>(static_cast<float>(static_cast<double>(amount)*10/years));
-    const int64_t base=average-amount*bonus/years;
     nlohmann::json salaries=nlohmann::json::array(),guarantees=nlohmann::json::array();
-    for(unsigned i=0;i<years;++i) {
-        int64_t salary=base;
-        const double position=i+0.5, midpoint=years*0.5;
-        if(shape==0 || shape==7) {
-            int factor=position<midpoint?12:position>midpoint?8:10;
-            if(shape==7) factor=20-factor;
-            salary=base*factor/10;
-        } else if(shape==1 || shape==6) {
-            const float fraction=static_cast<float>(2*(position/years)-1);
-            const int direction=shape==1?-1:1;
-            salary=static_cast<int64_t>(static_cast<float>(base+direction*static_cast<double>(base/2)*fraction));
-        } else if((shape==3 || shape==4) && years>1) {
-            const double offset=position<=midpoint?position:position-midpoint;
-            const float fraction=static_cast<float>(2*offset/midpoint-1);
-            int direction=position<=midpoint?1:-1;
-            if(shape==4) direction=-direction;
-            salary=static_cast<int64_t>(static_cast<float>(base+direction*static_cast<double>(base/2)*fraction));
-        } else if(shape==5 && years>1) salary=base*(i%2==0?12:8)/10;
-        salaries.push_back(salary*1000*scale); guarantees.push_back(0);
+    for(const auto& row:guest_annual_rows(amount,bonus,shape,years,scale)) {
+        salaries.push_back(row.salary);guarantees.push_back(0);
     }
     return {{"player_id",player},{"salaries",salaries},{"signing_bonus",amount*bonus*1000*scale},{"guaranteed_salaries",guarantees}};
 }
