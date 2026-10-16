@@ -8792,3 +8792,13 @@ holdout consequences. This uses the same decision response, with no extra model
 call. All26 negotiation and34 Vertex-provider offline tests pass. Actual generated
 voice quality and in-game AI presentation remain unverified; no paid requests or
 new runtime deployment were made.
+
+The load-attempt source de1a31c918dfaae2aa5137fc9c8fc3f8d5e71ad1 now passes both
+full Windows/Linux workflows: Build38836811528 and Franchise38836811596. This
+includes the production Windows DLL invalidation/unreadable-memory fixture and
+native bridge checks; the guard remains uninstalled in the actual game.
+The later voice-instruction source84a74f0 has60 targeted local tests passing;
+its full CI remains pending at this checkpoint. Presentation inspection finds
+the existing native preview truncates reasons at140 bytes into a160-byte history
+field and clips its small display area. Complete dialogue presentation is now
+explicitly tracked rather than claimed from a prompt change.

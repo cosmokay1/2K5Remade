@@ -64,8 +64,9 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       allocation/read failures can leave the prior origin usable. Generated and
       interpreted paths emit the same invalidation without guest table access;
       old in-flight read work cannot repopulate the revoked epoch. All884 Python
-      tests and nine local native checks pass. Windows/Linux CI and actual game
-      execution remain pending; this closes an early-failure gap, not the full
+      tests and nine local native checks pass. Atde1a31c both Windows/Linux Build
+      38836811528 and Franchise38836811596 pass. Actual game execution remains
+      pending; this closes an early-failure gap, not the full
       active-franchise lifetime requirement or application authority.
 
 - [ ] Finish held native submission through accepted proposal, guest/ledger commit
@@ -777,7 +778,10 @@ invent future published NFL values: separate verified inputs from simulation pol
       or agent, consistent with remembered treatment and supported consequences.
       The existing structured reason is required for every action and uses the
       same decision request; voice instructions are now explicit. Actual in-game
-      AI response display and behavior remain unverified with AI disabled.
+      AI response display and behavior remain unverified with AI disabled. The
+      current reason preview truncates at140 bytes in a160-byte history field;
+      complete natural explanations need a readable bounded display, without
+      claiming that narration itself applied an opinion or holdout consequence.
 - [ ] Bound inference frequency; cache recorded decisions; add usage/cost telemetry. Provider context is byte-bounded and safe last-completed-call token diagnostics are captured; a thread-safe rolling per-provider request limit now rejects excess calls before the SDK. A persistent SQLite request budget now reserves each actual SDK attempt before
       submission, shares its ceiling across processes/restarts, keeps failed or
       unfinished attempts counted and records nullable token usage without prompt
