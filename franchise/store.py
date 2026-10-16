@@ -1918,6 +1918,12 @@ class FranchiseStore:
         with self._connection() as db:
             return self._preview_offer(db,team_id,self._load(db,team_id),offer,expected_revision)
 
+    def _preview_legacy_amendment(self, db, team_id, ledger, offer, expected_revision):
+        owner=db.execute('SELECT team_id FROM ownership WHERE player_id=?',(offer.player_id,)).fetchone()
+        if owner is None or owner[0] != team_id:
+            raise Rejected('Amendment requires the current owning team')
+        return ledger.preview_legacy_amendment(offer,expected_revision)
+
     def preview_draft_offer(self, team_id, offer, expected_revision):
         with self._connection() as db:
             ledger = self._load(db, team_id)

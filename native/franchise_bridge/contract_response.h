@@ -1389,9 +1389,11 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
             const auto& terms=result.at("offer_context");
             const auto format=terms.value("contract_format",std::string("original_fxg_v1"));
             const auto scale=guest_money_scale(format);
-            if (!terms.is_object() || terms.size()!=6+terms.contains("contract_format") || terms.at("amount_word")!=raw.at("amount_word") ||
+            if (!terms.is_object() || terms.size()!=6+terms.contains("contract_format")+terms.contains("amendment") || terms.at("amount_word")!=raw.at("amount_word") ||
                 terms.at("flags_word")!=raw.at("flags_word")) throw std::runtime_error("Guest offer preview changed raw terms");
             const auto outcome=terms.at("outcome").get<std::string>();
+            if(terms.contains("amendment") && outcome!="amendment_comparison")
+                throw std::runtime_error("Unexpected amendment comparison");
             if (outcome=="format_rejected") {
                 bool compatible=false;
                 try{exact_guest_offer(raw,result.at("player_id").get<std::string>(),format);compatible=true;}catch(const std::exception&){}
@@ -1419,10 +1421,73 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
                     for(size_t i=0;i<years;++i)
                         if(terms.at("preview").at("contract_charges").at(i)!=offer.at("salaries").at(i).get<int64_t>()+allocated)
                             throw std::runtime_error("Guest preview charges differ from exact modern allocation");
+                } else if(outcome=="amendment_comparison") {
+                    const auto& amendment=terms.at("amendment");
+                    if(!terms.at("preview").is_null() || !terms.at("reason").is_null() ||
+                       !context.contains("legacy_contract") || !amendment.is_object() || amendment.size()!=16 ||
+                       amendment.at("original_contract")!=context.at("legacy_contract") ||
+                       amendment.at("revision")!=result.at("financial_revision") ||
+                       amendment.at("rule")!="legacy_bonus_carry_v1" ||
+                       amendment.at("requires_player_agreement")!=true || amendment.at("settlement_authorized")!=false)
+                        throw std::runtime_error("Invalid amendment scope or authority");
+                    // Guest proposals have already passed exact integer allocation.
+                    // Recompute the comparison; never trust returned bonus debt or
+                    // accept this response as a free-agent signing grant.
+                    auto bounded=[](const nlohmann::json& value,bool negative=false)->int64_t {
+                        if(!value.is_number_integer() || value>1000000000000000LL ||
+                           value<(negative?-1000000000000000LL:0LL))
+                            throw std::runtime_error("Invalid amendment money");
+                        return value.get<int64_t>();
+                    };
+                    const auto& original=context.at("legacy_contract");
+                    if(original.value("game_dollar_scale",1)!=scale)
+                        throw std::runtime_error("Amendment money scale mismatch");
+                    auto old=guest_annual_rows(original.at("amount_word").get<int64_t>(),
+                        original.at("bonus_code").get<unsigned>(),original.at("shape_code").get<unsigned>(),
+                        original.at("original_years").get<unsigned>(),scale);
+                    const auto remaining=original.at("remaining_years").get<size_t>();
+                    old.erase(old.begin(),old.end()-remaining);
+                    const auto horizon=std::max(old.size(),static_cast<size_t>(years));
+                    for(const auto* name:{"current_charges","carried_bonus_charges","new_contract_charges",
+                                         "combined_player_charges","annual_team_charges_before","annual_team_charges_after"}) {
+                        const auto& row=amendment.at(name);
+                        if(!row.is_array() || row.empty() || row.size()>15)
+                            throw std::runtime_error("Invalid amendment charge horizon");
+                        for(const auto& amount:row) bounded(amount);
+                    }
+                    const auto& before=amendment.at("annual_team_charges_before");
+                    const auto& after=amendment.at("annual_team_charges_after");
+                    if(amendment.at("current_charges").size()!=old.size() ||
+                       amendment.at("carried_bonus_charges").size()!=old.size() ||
+                       amendment.at("new_contract_charges").size()!=years ||
+                       amendment.at("combined_player_charges").size()!=horizon ||
+                       after.size()!=std::max(horizon,before.size()))
+                        throw std::runtime_error("Amendment charge coverage mismatch");
+                    for(size_t i=0;i<after.size();++i) {
+                        const auto current=i<old.size()?old[i].charge():0;
+                        const auto carried=i<old.size()?old[i].bonus:0;
+                        const auto added=i<years?offer.at("salaries").at(i).get<int64_t>()+offer.at("signing_bonus").get<int64_t>()/years:0;
+                        const auto combined=carried+added;
+                        if(i<old.size() && (bounded(amendment.at("current_charges").at(i))!=current ||
+                           bounded(amendment.at("carried_bonus_charges").at(i))!=carried))
+                            throw std::runtime_error("Amendment removed existing bonus charges");
+                        if((i<years && bounded(amendment.at("new_contract_charges").at(i))!=added) ||
+                           (i<horizon && bounded(amendment.at("combined_player_charges").at(i))!=combined) ||
+                           bounded(after.at(i))!=(i<before.size()?bounded(before.at(i)):0)-current+combined)
+                            throw std::runtime_error("Amendment cap arithmetic mismatch");
+                    }
+                    const auto cap=bounded(amendment.at("cap")),reserved=bounded(amendment.at("reserved_cap"));
+                    const auto room=cap-bounded(after.at(0))-reserved;
+                    if(cap!=bounded(observed.at("league_cap_raw"))*1000*scale ||
+                       bounded(before.at(0))!=bounded(observed.at("payroll_raw"))*1000*scale ||
+                       bounded(amendment.at("room_before"),true)!=cap-bounded(before.at(0))-reserved ||
+                       bounded(amendment.at("room_after"),true)!=room ||
+                       amendment.at("within_modeled_cap")!=(room>=0))
+                        throw std::runtime_error("Amendment cap comparison mismatch");
                 } else if(outcome!="accounting_rejected" || !terms.at("preview").is_null())
                     throw std::runtime_error("Unknown guest offer preview outcome");
             }
-            if(outcome!="eligible_preview" && (!terms.at("reason").is_string() ||
+            if(outcome!="eligible_preview" && outcome!="amendment_comparison" && (!terms.at("reason").is_string() ||
                 terms.at("reason").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos))
                 throw std::runtime_error("Rejected guest offer needs a reason");
         } else if(result.contains("offer_context")) throw std::runtime_error("Unrequested guest offer preview");

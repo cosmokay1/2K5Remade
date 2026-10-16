@@ -157,6 +157,15 @@ int main(int argc,char** argv) {
             fixture["result"]["offer_context"]["preview"]=nullptr;
             fixture["result"]["offer_context"]["reason"]="The salary minimum has not been classified. Player classification must be resolved before an offer can be evaluated.";
             capture("ineligible-offer");
+            fixture=negotiation_screen_fixture();fixture["request_id"]="legacy-amendment"+std::to_string(height);
+            auto& amendment=fixture["result"]["offer_context"];
+            amendment["outcome"]="amendment_comparison";
+            amendment["preview"]=nullptr;
+            amendment["offer"]={{"salaries",{4708000,7060000,9412000}},{"signing_bonus",21180000},{"guaranteed_salaries",{0,0,0}}};
+            amendment["amendment"]={{"current_charges",{3864000,4640000,5412000}},
+                {"carried_bonus_charges",{2320000,2320000,2320000}},
+                {"combined_player_charges",{14088000,16440000,18792000}},{"room_after",78992000}};
+            capture("legacy-amendment");
             fixture=negotiation_screen_fixture();fixture["request_id"]="long-contract"+std::to_string(height);
             fixture["result"]["offer_context"]["offer"]={{"salaries",{1000000,1000000,1000000,1000000,1000000,1000000,1000000}},
                 {"signing_bonus",0},{"guaranteed_salaries",{0,0,0,0,0,0,0}}};

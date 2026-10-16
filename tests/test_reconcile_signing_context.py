@@ -56,6 +56,42 @@ class SigningContextTests(unittest.TestCase):
         self.assertEqual(before, self.store.load_team('49ers').financial_snapshot())
         self.assertEqual(self.inspect(), result)
 
+    def test_owned_player_comparison_preserves_bonus_and_never_grants_signing(self):
+        player=self.bindings['players'][0]['player_id']
+        members=resolve_bindings(self.bindings,self.payload)
+        store=FranchiseStore(Path(self.temporary.name)/'classified.sqlite')
+        store.create_franchise({'49ers':Ledger.from_opening(OpeningBooks(
+            legacy_contracts=legacy_contracts(self.bindings,self.payload)['49ers']),
+            cap=80500000,roster_reserve=0,max_bonus_years=5,
+            veteran_minimums={player:(1000000,)*7},
+            observed_player_ids=frozenset(p['player_id'] for p in members.values()),
+            observed_player_source='authored snapshot')},seed=self.bindings['personality_seed'])
+        observation=copy.deepcopy(self.observation)
+        observation['biography'].update(source_slot=0,first_name='Synthetic',last_name='Starter')
+        before=store.load_team('49ers').financial_snapshot()
+        result=reconcile_signing_context(self.bindings,self.payload,observation,store,
+            expected_revision=0,guest_offer={'amount_word':829,'flags_word':(1<<29)|(2<<16)|4})
+        comparison=result['offer_context']
+        self.assertEqual(comparison['outcome'],'amendment_comparison')
+        self.assertIsNone(comparison['preview']);self.assertIsNone(comparison['reason'])
+        self.assertEqual(comparison['amendment']['carried_bonus_charges'],[1658000,1658000])
+        self.assertEqual(comparison['amendment']['combined_player_charges'],[6424000,5181000])
+        self.assertFalse(comparison['amendment']['settlement_authorized'])
+        self.assertFalse(result['ai_authorized']);self.assertFalse(result['write_authorized'])
+        self.assertEqual(before,store.load_team('49ers').financial_snapshot())
+        from franchise.bridge import Bridge
+        from unittest.mock import Mock
+        provider=Mock(side_effect=AssertionError('Comparison must not grant inference'))
+        bridge=Bridge(store,provider=provider,access_check=lambda:None,
+                      guest_snapshot=(self.bindings,self.payload))
+        denied=bridge.handle(dict(protocol=1,request_id='owned-comparison',operation='negotiate_proposal',
+            observation=observation,guest_offer={'amount_word':829,'flags_word':(1<<29)|(2<<16)|4},
+            expected_revision=0,timeout_ms=5000))
+        self.assertEqual(denied['error'],'state_rejected')
+        self.assertIn('does not authorize',denied['detail'])
+        provider.assert_not_called()
+        self.assertEqual(before,store.load_team('49ers').financial_snapshot())
+
     def test_changed_live_identity_calendar_or_cap_rejects(self):
         changes = [('biography', 'source_slot', 0), ('biography', 'dob_region_raw', '000001'),
                    ('calendar', 'season_index', 23), ('calendar', 'phase_01_raw', 1),

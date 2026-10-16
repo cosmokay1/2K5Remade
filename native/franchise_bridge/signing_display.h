@@ -76,6 +76,7 @@ inline SigningDisplayText signing_display(const nlohmann::json& response) {
         if(outcome=="eligible_preview") text.offer="Offer fits the supported cap and contract rules.";
         else if(outcome=="format_rejected") text.offer="Offer cannot use the supported modern contract rules.";
         else if(outcome=="accounting_rejected") text.offer="Offer is not eligible: "+offer.at("reason").get<std::string>();
+        else if(outcome=="amendment_comparison") text.offer="Contract comparison only. Player agreement and settlement remain pending.";
         else throw std::runtime_error("Invalid offer preview");
     }
     text.history="Performance history unavailable.";

@@ -774,6 +774,41 @@ int main(int argc,char** argv) {
             {"offer",{{"player_id",std::string(32,'a')},{"salaries",{3108000,1865000}},{"signing_bonus",3316000}}},
             {"preview",{{"revision",0},{"contract_charges",{4766000,3523000}},{"room_after",5234000}}}};
         franchise::validate_result(guest_reply,guest_request);
+        auto amendment_request=guest_request;
+        amendment_request["observation"]["team"]["payroll_raw"]=4766;
+        amendment_request["observation"]["team"]["league_cap_raw"]=10000;
+        auto amendment_reply=guest_reply;
+        const nlohmann::json legacy={{"player_id",std::string(32,'a')},{"amount_word",829},{"bonus_code",4},
+            {"shape_code",1},{"original_years",2},{"remaining_years",2},{"source","authored imported schedule"}};
+        auto& amendment_player=amendment_reply["result"]["player_context"];
+        amendment_player["legacy_contract"]=legacy;amendment_player["contract_accounting"]=nullptr;
+        amendment_player["legacy_liability_scope"]="original cap schedule; cash/protections/lifecycle unverified";
+        auto& amended_terms=amendment_reply["result"]["offer_context"];
+        amended_terms["outcome"]="amendment_comparison";amended_terms["preview"]=nullptr;
+        amended_terms["amendment"]={{"revision",0},{"rule","legacy_bonus_carry_v1"},{"original_contract",legacy},
+            {"cap",10000000},{"reserved_cap",0},{"annual_team_charges_before",{4766000,3523000}},
+            {"current_charges",{4766000,3523000}},{"carried_bonus_charges",{1658000,1658000}},
+            {"new_contract_charges",{4766000,3523000}},{"combined_player_charges",{6424000,5181000}},
+            {"annual_team_charges_after",{6424000,5181000}},{"room_before",5234000},{"room_after",3576000},
+            {"within_modeled_cap",true},{"requires_player_agreement",true},{"settlement_authorized",false}};
+        franchise::validate_result(amendment_reply,amendment_request);
+        for(int scenario=0;scenario<12;++scenario) {
+            auto bad=amendment_reply;auto& terms=bad["result"]["offer_context"];auto& a=terms["amendment"];
+            if(scenario==0)a["carried_bonus_charges"][0]=0;
+            if(scenario==1)a["combined_player_charges"][0]=4766000;
+            if(scenario==2)a["annual_team_charges_after"][0]=4766000;
+            if(scenario==3)a["settlement_authorized"]=true;
+            if(scenario==4)a["requires_player_agreement"]=false;
+            if(scenario==5)a["original_contract"]["remaining_years"]=1;
+            if(scenario==6)a["room_after"]=5234000;
+            if(scenario==7)a["cap"]=20000000;
+            if(scenario==8)a["within_modeled_cap"]=false;
+            if(scenario==9)terms["outcome"]="eligible_preview";
+            if(scenario==10)a["new_contract_charges"][0]=4765000;
+            if(scenario==11)a["annual_team_charges_before"][0]=0;
+            bool rejected=false;try{franchise::validate_result(bad,amendment_request);}catch(const std::exception&){rejected=true;}
+            if(!rejected)throw std::runtime_error("Corrupt amendment comparison accepted");
+        }
         auto rejected_guest=guest_reply;
         rejected_guest["result"]["offer_context"]["outcome"]="accounting_rejected";
         rejected_guest["result"]["offer_context"]["preview"]=nullptr;

@@ -216,3 +216,27 @@ and failure states, natural-language outcomes and save/reload verification.
 Current/proposed contracts, promises, agent stance/timing, fifth-year options and
 injury evidence must join this interface as their engine paths become usable.
 Do not represent backend plumbing or disconnected controls as a finished feature.
+
+
+## Imported active-contract comparison
+
+The approved simulation rule preserves old bonus cap charges on their original
+schedule and makes a change to remaining base conditional on player agreement.
+The proposed terms table now shows known annual new-bonus allocations even when
+full accounting is unavailable. Unknown cap impact remains a dash; a known zero
+bonus displays $0. The editor shows bonus dollars as well as percentage. The
+initial terms come from the original game and are not an AI recommendation.
+
+For a classified imported player owned by the current team, the context reader
+returns an amendment_comparison instead of the free-agent ownership rejection.
+The screen compares current charges, proposed base, retained old bonus, new bonus
+and combined cap charges. Shortening the new term never drops old bonus years;
+extending it never spreads old bonus into new years. Modeled room includes the
+team's other obligations and reservations, with over-cap figures still visible.
+
+This is a full-year comparison, not settlement approval. It does not establish
+current earned salary, paid cash or imported guarantee history. Its response
+explicitly requires player agreement and denies settlement. Native validation
+recomputes the schedule and cap arithmetic and checks the observed team cap and
+payroll. Proposal/signing guards remain closed for this response until the
+separate amendment transaction, native projection and save/reload path exist.

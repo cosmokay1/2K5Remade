@@ -1360,6 +1360,51 @@ class Ledger:
                     "rookie_year_one_after": json_amount(self._rookie_year_one - scale.pool_charges(offer)[0]) if scale else None,
                     "rookie_total_after": self._rookie_total - int(sum(scale.pool_charges(offer))) if scale else None}
 
+    def preview_legacy_amendment(self, offer: Offer, expected_revision: int) -> dict:
+        """Full-year simulation comparison, conditional on player agreement.
+
+        Preserve imported bonus charges on their original schedule; replace only
+        remaining base. This is not a signing preview or settlement authority:
+        earned pay, cash payment history and guest application are unverified.
+        """
+        from franchise.legacy_contracts import original_annual_rows
+        with self._lock:
+            if type(expected_revision) is not int or expected_revision != self.revision:
+                raise Rejected('Amendment was based on stale franchise state')
+            original = self._legacy_contracts.get(offer.player_id)
+            if original is None or offer.player_id not in self._players:
+                raise Rejected('Active imported contract required for amendment comparison')
+            minimums = self._veteran_minimums.get(offer.player_id)
+            if minimums is None or len(minimums) < len(offer.salaries):
+                raise Rejected('Salary classification required for all proposed years')
+            if any(salary < minimum for salary, minimum in zip(offer.salaries, minimums)):
+                raise Rejected('Veteran amendment is below an annual minimum salary')
+            rows = original_annual_rows(original.amount_word, original.bonus_code,
+                                       original.shape_code, original.original_years)
+            remaining = rows[original.original_years-original.remaining_years:]
+            old = original.charges()
+            carried = tuple(row['allocated_bonus_dollars'] * original.game_dollar_scale for row in remaining)
+            proposed = offer.charges(self.max_bonus_years)
+            horizon = max(len(old), len(proposed))
+            after = tuple((proposed[i] if i < len(proposed) else 0) +
+                          (carried[i] if i < len(carried) else 0) for i in range(horizon))
+            updated = tuple((self._charges[i] if i < len(self._charges) else 0) -
+                            (old[i] if i < len(old) else 0) +
+                            (after[i] if i < len(after) else 0)
+                            for i in range(max(horizon, len(self._charges))))
+            room = self.cap - updated[0] - self.roster_reserve - self._draft_reserved()[0]
+            return {'revision': self.revision, 'rule': 'legacy_bonus_carry_v1',
+                    'original_contract': original.to_dict(),
+                    'cap': self.cap, 'reserved_cap': json_amount(self.roster_reserve + self._draft_reserved()[0]),
+                    'annual_team_charges_before': [json_amount(v) for v in self._charges],
+                    'current_charges': list(old), 'carried_bonus_charges': list(carried),
+                    'new_contract_charges': [json_amount(v) for v in proposed],
+                    'combined_player_charges': [json_amount(v) for v in after],
+                    'annual_team_charges_after': [json_amount(v) for v in updated],
+                    'room_before': json_amount(self.room), 'room_after': json_amount(room),
+                    'within_modeled_cap': room >= 0,
+                    'requires_player_agreement': True, 'settlement_authorized': False}
+
     def preview_return(self,offer,expected_revision,*,scope):
         from franchise.returns import PreseasonReturnScope
         with self._lock:

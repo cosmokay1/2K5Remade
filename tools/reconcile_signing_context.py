@@ -81,6 +81,18 @@ def reconcile_signing_context(bindings, payload, observation, store, *, expected
                 expected_revision=expected_revision,
                 contract_format=SOFTDRINK_CONTRACT_FORMAT if scale==4 else GUEST_CONTRACT_FORMAT,
                 preview_offer=lambda offer:store._preview_offer(db,name,ledger,offer,expected_revision))
+            if context.get('legacy_contract') is not None and offer_context['offer'] is not None:
+                from franchise.cap import Offer, Rejected
+                try:
+                    comparison=store._preview_legacy_amendment(db,name,ledger,
+                        Offer.from_dict(offer_context['offer']),expected_revision)
+                except Rejected as error:
+                    offer_context.update(outcome='accounting_rejected',preview=None,reason=str(error))
+                else:
+                    # Distinct from eligible_preview: cannot enter proposal or
+                    # saved-signing authority through the free-agent path.
+                    offer_context.update(outcome='amendment_comparison',preview=None,reason=None,
+                                         amendment=comparison)
         db.commit()
         if db.execute('PRAGMA data_version').fetchone()[0] != version or file_version() != original_file:
             raise ValueError('Financial state changed during inspection')

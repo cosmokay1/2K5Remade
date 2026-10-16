@@ -9728,3 +9728,63 @@ acceptance remains open. Capture stays enabled; AI and signing stay disabled.
 
 Fork Build38862990285 and Franchise38862990250 both completed successfully for
 source9f3daa1; these CI results are separate from the live acceptance gates.
+
+
+## Imported active-contract comparison and bonus display
+
+The user approved a simulation rule for imported contracts: retain all existing
+bonus cap charges in their original years; changing remaining base requires
+player agreement. No original bonus payment or base-guarantee history is inferred.
+The original game's initial offer and the saved current deal remain separate.
+The total signing bonus was already displayed above the table; the reported
+missing-bonus bug was the annual allocation disappearing on accounting rejection.
+Known new-bonus allocations now display independently, including explicit $0 for
+zero and exact fractions when needed; the editor also shows bonus dollars.
+
+A classified, owned imported player now receives an amendment_comparison in the
+read-only checkpoint. It subtracts the old base once, carries old bonus unchanged,
+adds the new salary/bonus schedule, and reports modeled team charges and room.
+Shorter new terms keep old bonus years; longer terms do not spread old bonus into
+added years. Salary floors, revision and owning team are checked. Over-cap results
+remain visible with within_modeled_cap=false. No preview reserves room or writes
+financial state. The separate outcome requires agreement and explicitly denies
+settlement; both native validation and the proposal bridge keep it outside the
+free-agent acceptance/signing path. A regression test verifies even an enabled
+access callback cannot turn a comparison into inference or financial mutation.
+
+The screen renders calendar-year rows for current cap, new base, old bonus, new
+bonus and combined cap, plus modeled room. Production status formatting accepts
+the new comparison response. Existing Y comparison and retained editing remain.
+The source does not yet deliver an agreed amendment, earned-pay handling, durable
+amendment settlement, guest cap projection or save/reload acceptance. These stay
+open in WORKLIST.md; this comparison is not completion of the active-player path.
+
+All924 Python regressions passed; the subsequent serialization fix and explicit
+no-inference assertion pass the targeted8 amendment/9 checkpoint tests. All11
+portable native checks pass, including12 corrupted comparison cases. Native code
+recomputes existing/new charges, matches the captured league cap/payroll and
+rejects altered carry debt, charges or authority. On a protected copy of the
+actual revision2 MyNFL1 Giants ledger, Dart's $21.18M proposed bonus allocates
+$7.06M annually, plus $2.32M of existing annual bonus, giving combined charges
+$14.088M/$16.440M/$18.792M and modeled room$78.992M versus$89.216M before.
+The source ledger and copied financial snapshot remain unchanged.
+
+Private candidate evidence lives in .local-runtime/legacy-amendment-v1. One
+batched Windows visual review at1280x800/720 shows all six comparison columns,
+bonus total, modeled room and controller footer fitting. The user has confirmed
+normal exit for protected installation after the final status-format rebuild.
+
+
+The final paired Windows game/addon rebuilt successfully; all7 isolated
+Windows/Proton checks, Windows CPython service checks (including the new owned
+comparison/no-inference case), both native saved-signing checks and5,767
+native/Python term cases pass. The actual game --validate completes with its
+fresh child marker. These are validation fixtures, not actual amendment delivery.
+After the user's normal-exit confirmation, the package installed with all205
+save hashes unchanged. It switches only the Python executable to its verified
+isolated290-file service snapshot, retaining the existing database, binding,
+budget/control settings and crash capture. AI/signing remain off. Installed EXE
+SHA256:06edfb89e190b981cd93c14540f2022ea13221042972aeec95268e54260f5573;
+addon:09c61340d256eb2d4b358bb1b819ccd2574b02266fe1305252bc871289465670.
+Live MyNFL comparison verification and the separate amendment settlement path
+remain open. Never treat amendment_comparison as eligible_preview.

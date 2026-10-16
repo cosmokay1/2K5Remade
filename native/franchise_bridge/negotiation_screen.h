@@ -141,19 +141,23 @@ inline std::vector<ScreenTable> performance_tables(const nlohmann::json& evidenc
     return tables;
 }
 inline ScreenTable contract_table(const nlohmann::json& context) {
-    ScreenTable table{"Annual breakdown",{"YEAR","BASE SALARY","GUAR. BASE","BONUS CAP","CAP HIT"},{}};
+    ScreenTable table{"Proposed annual terms",{"YEAR","BASE SALARY","GUAR. BASE","NEW BONUS","CAP HIT"},{}};
     if(!context.contains("offer") || context.at("offer").is_null()) return table;
     const auto& offer=context.at("offer");const auto& salaries=offer.at("salaries");
     const bool preview=context.contains("preview") && !context.at("preview").is_null();
     for(size_t year=0;year<salaries.size();++year) {
-        std::string bonus=u8"\u2014",charge=u8"\u2014";
+        // The proposed bonus is known even when ownership/cap validation fails.
+        // It is separate from any bonus obligations on the existing agreement.
+        const auto bonus_total=offer.at("signing_bonus").get<int64_t>();
+        const auto allocation_years=std::min<size_t>(salaries.size(),5);
+        std::string bonus=screen_money(0),charge=u8"\u2014";
+        if(year<allocation_years) {
+            if(bonus_total%allocation_years==0) bonus=screen_money(bonus_total/allocation_years);
+            else bonus=screen_money(std::to_string(bonus_total)+"/"+std::to_string(allocation_years));
+        }
         if(preview) {
             const auto& amount=context.at("preview").at("contract_charges").at(year);
             charge=amount.is_string()?"$"+amount.get<std::string>():screen_money(amount);
-            // Only display a derived bonus charge when the authoritative preview
-            // uses exact integer amounts; retain unknown for fractional charges.
-            if(amount.is_number_integer() && salaries[year].is_number_integer())
-                bonus=screen_money(amount.get<int64_t>()-salaries[year].get<int64_t>());
         }
         table.rows.push_back({"Year "+std::to_string(year+1),{screen_money(salaries[year]),
             offer.contains("guaranteed_salaries")?screen_money(offer.at("guaranteed_salaries").at(year)):u8"\u2014",bonus,charge}});
@@ -188,6 +192,25 @@ inline ScreenTable current_contract_table(const nlohmann::json& checkpoint) {
             if(charges[i].is_number_integer()) bonus=screen_money(charges[i].get<int64_t>()-salaries[elapsed+i].get<int64_t>());
             table.rows.push_back({label(static_cast<unsigned>(i)),{screen_money(salaries[elapsed+i]),bonus,screen_money(charges[i])}});
         }
+    }
+    return table;
+}
+inline ScreenTable amendment_table(const nlohmann::json& context,const nlohmann::json& performance) {
+    ScreenTable table{"If agreed: existing bonus stays",{"YEAR","CURRENT CAP","NEW BASE","OLD BONUS","NEW BONUS","TOTAL CAP"},{}};
+    if(!context.contains("amendment")) return table;
+    const auto& comparison=context.at("amendment");
+    const auto& salaries=context.at("offer").at("salaries");
+    const auto proposed=contract_table(context);
+    const auto& current=comparison.at("current_charges");
+    const auto& carried=comparison.at("carried_bonus_charges");
+    const auto& combined=comparison.at("combined_player_charges");
+    for(size_t i=0;i<combined.size();++i) {
+        const auto year=performance.contains("franchise_season_year")?
+            std::to_string(performance.at("franchise_season_year").get<int>()+i):"Year "+std::to_string(i+1);
+        table.rows.push_back({year,{i<current.size()?screen_money(current.at(i)):screen_money(0),
+            i<salaries.size()?screen_money(salaries.at(i)):screen_money(0),
+            i<carried.size()?screen_money(carried.at(i)):screen_money(0),
+            i<proposed.rows.size()?proposed.rows[i].values[2]:screen_money(0),screen_money(combined.at(i))}});
     }
     return table;
 }

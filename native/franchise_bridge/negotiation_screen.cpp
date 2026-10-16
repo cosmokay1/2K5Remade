@@ -185,17 +185,23 @@ bool paint(NFL2K5AddonDraw& draw) {
                     int64_t total=offer.at("signing_bonus").get<int64_t>();
                     for(const auto& value:offer.at("salaries")) total+=value.get<int64_t>();
                     summary=std::to_string(annual.rows.size())+" years  /  "+franchise::screen_money(total)+" total";
-                    tables.push_back(std::move(annual));
+                    tables.push_back(context.contains("amendment")?
+                        franchise::amendment_table(context,checkpoint.value("performance_context",nlohmann::json::object())):std::move(annual));
                 }
                 note=context.contains("preview") && !context.at("preview").is_null()?
-                    "Offer only. Opening liabilities remain unverified.":"Offer only. Existing contract obligations remain.";
+                    "Proposed terms only. Opening liabilities remain unverified.":
+                    "Starts from the game's offer, not a recommendation. New bonus excludes existing bonus obligations. A dash means cap impact is not validated.";
+                if(context.contains("amendment"))
+                    note="Conditional on player agreement: remaining base changes; every old bonus charge stays in its original year. Full-year comparison only; earned pay, cash and save application are not validated. Submission is off.";
                 if(context.contains("reason") && context.at("reason").is_string()) note+="\n"+context.at("reason").get<std::string>();
             } else {
                 if(checkpoint.contains("performance_context")) tables=franchise::performance_tables(checkpoint.at("performance_context"));
                 note=u8"Saved history. \u2014 means not recorded. Separate entries are not combined.";
             }
             const int top=px(202),row_height=px(34),gap=px(22),header=px(30),section=px(30);
-            const bool preview=!drafting && !current_contract && navigation.page==0 && context.contains("preview") && !context.at("preview").is_null();
+            const bool amendment=context.contains("amendment");
+            const bool preview=!drafting && !current_contract && navigation.page==0 &&
+                (amendment || (context.contains("preview") && !context.at("preview").is_null()));
             const auto measured_note=text(note,left,0,right-px(12),0,17,FW_NORMAL,secondary,DT_CALCRECT|DT_WORDBREAK);
             int content=summary.empty()?0:px(67);
             for(const auto& table:tables) content+=section+header+static_cast<int>(table.rows.size())*row_height+gap;
@@ -239,8 +245,8 @@ bool paint(NFL2K5AddonDraw& draw) {
             }
             if(preview) {
                 fill(left,y,right-px(12),y+px(48),RGB(24,44,65));
-                text("Cap room after offer",left+px(12),y+px(13),right-px(245),y+px(40),20,FW_NORMAL,secondary,DT_SINGLELINE);
-                text(franchise::screen_money(context.at("preview").at("room_after")),right-px(245),y+px(10),right-px(26),y+px(42),25,FW_BOLD,white,DT_SINGLELINE|DT_RIGHT);
+                text(amendment?"Modeled room if agreed":"Cap room after offer",left+px(12),y+px(13),right-px(245),y+px(40),20,FW_NORMAL,secondary,DT_SINGLELINE);
+                text(franchise::screen_money(context.at(amendment?"amendment":"preview").at("room_after")),right-px(245),y+px(10),right-px(26),y+px(42),25,FW_BOLD,white,DT_SINGLELINE|DT_RIGHT);
                 y+=px(62);
             }
             text(note,left,y,right-px(12),y+measured_note.bottom+px(8),17,FW_NORMAL,secondary,DT_WORDBREAK);

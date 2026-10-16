@@ -786,6 +786,17 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       unpaid bonus and other trade protections remain; supported assignments now use
       separate receiving generations when returning to a former club.
 - [ ] Implement extensions/restructures without erasing existing bonus layers.
+      Imported-contract simulation rule approved: preserve every remaining old
+      bonus charge in its original year; remaining base changes require player
+      agreement. Read-only amendment comparison now replaces the old base once,
+      adds new bonus separately, retains bonus years beyond a shorter new term,
+      checks salary floors and reports modeled room/over-cap state. It has a
+      distinct amendment_comparison outcome, not free-agent signing authority.
+      The screen shows current cap, new base, old/new bonus and combined charges.
+      Windows game/addon/service validation passes; installed after normal exit
+      with205 saves unchanged. Actual MyNFL comparison verification is pending.
+      Actual player consent, earned-pay handling, durable amendment settlement,
+      guest cap projection and save/reload reconciliation remain unchecked.
       Active players must be able to negotiate: early extensions before free
       agency, consensual pay reductions instead of release, and supported cap
       restructures. Keep these distinct from new free-agent signings. Show the

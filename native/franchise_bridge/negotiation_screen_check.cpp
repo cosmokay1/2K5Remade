@@ -116,7 +116,26 @@ int main() {
         require(annual.rows.size()==2 && annual.rows[0].values[2]=="$3,376,000" && annual.rows[1].values[3]=="$7,172,000");
         auto unpreviewed=fixture["result"]["offer_context"];unpreviewed["preview"]=nullptr;
         annual=franchise::contract_table(unpreviewed);
-        require(annual.rows.size()==2 && annual.rows[0].values[0]=="$6,328,000" && annual.rows[0].values[2]==u8"\u2014" && annual.rows[0].values[3]==u8"\u2014");
+        require(annual.rows.size()==2 && annual.rows[0].values[0]=="$6,328,000" && annual.rows[0].values[2]=="$3,376,000" && annual.rows[0].values[3]==u8"\u2014");
+        auto dart=unpreviewed;dart["offer"]["salaries"]={4708000,7060000,9412000};dart["offer"]["signing_bonus"]=21180000;dart["offer"]["guaranteed_salaries"]={0,0,0};
+        annual=franchise::contract_table(dart);
+        require(annual.rows.size()==3 && annual.rows[0].values[2]=="$7,060,000" && annual.rows[2].values[2]=="$7,060,000");
+        dart["offer"]["signing_bonus"]=0;require(franchise::contract_table(dart).rows[0].values[2]=="$0");
+        dart["offer"]["signing_bonus"]=1;require(franchise::contract_table(dart).rows[0].values[2]=="$1/3 (exact dollars)");
+        dart["offer"]["signing_bonus"]=21180000;
+        dart["amendment"]={{"current_charges",{3864000,4640000,5412000}},
+            {"carried_bonus_charges",{2320000,2320000,2320000}},
+            {"combined_player_charges",{14088000,16440000,18792000}}};
+        auto compared=franchise::amendment_table(dart,fixture["result"]["performance_context"]);
+        require(compared.rows[0].label=="2026" && compared.rows[0].values==std::vector<std::string>({
+            "$3,864,000","$4,708,000","$2,320,000","$7,060,000","$14,088,000"}));
+        dart["offer"]["salaries"]={1000000};dart["offer"]["signing_bonus"]=0;dart["offer"]["guaranteed_salaries"]={0};
+        dart["amendment"]["combined_player_charges"]={3320000,2320000,2320000};
+        compared=franchise::amendment_table(dart,fixture["result"]["performance_context"]);
+        require(compared.rows[2].values==std::vector<std::string>({"$5,412,000","$0","$2,320,000","$0","$2,320,000"}));
+        auto display_comparison=fixture;
+        display_comparison["result"]["offer_context"]["outcome"]="amendment_comparison";
+        require(franchise::signing_display(display_comparison).offer=="Contract comparison only. Player agreement and settlement remain pending.");
         auto missing=fixture;missing["result"]["performance_context"]["saved_history"]=nlohmann::json::array();
         require(franchise::negotiation_pages(missing)[1].find("No saved stats available")!=std::string::npos);
         auto proposal=fixture;proposal["result"]={{"signing_checkpoint",fixture["result"]},

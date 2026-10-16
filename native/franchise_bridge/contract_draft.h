@@ -40,7 +40,7 @@ struct ContractDraft {
     ScreenTable table()const {
         const std::array<std::string,4> labels{"Total (approx.)","Years","Signing bonus","Salary schedule"};
         const std::array<std::string,4> values{screen_money(static_cast<int64_t>(amount)*10000*scale),
-            std::to_string(years()),std::to_string(bonus()*10)+"% of total",schedule()};
+            std::to_string(years()),screen_money(static_cast<int64_t>(amount)*bonus()*1000*scale)+" ("+std::to_string(bonus()*10)+"%)",schedule()};
         ScreenTable result{active?"Edit your offer":"Your draft",{"TERM","VALUE"},{}};
         for(unsigned i=0;i<4;++i) result.rows.push_back({labels[i],{values[i]}});
         return result;

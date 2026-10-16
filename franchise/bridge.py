@@ -229,7 +229,7 @@ class Bridge:
                 checkpoint = checkpoint_reply['result']
                 inspected = checkpoint['offer_context']
                 if inspected['outcome'] != 'eligible_preview':
-                    raise Rejected(inspected['reason'])
+                    raise Rejected(inspected['reason'] or 'Amendment comparison does not authorize negotiation or settlement')
                 remaining = int((deadline-time.monotonic())*1000)
                 if remaining < 1:
                     raise TimeoutError('Signing proposal checkpoint expired')
