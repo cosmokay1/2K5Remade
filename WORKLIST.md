@@ -34,9 +34,11 @@ sparsely. Preserve unique assets, saves, ledgers and source/rollback evidence.
       overwrote nested-call arguments and the pushed guest return slot. A small
       wrapper fix and failing-before/passing-after fixture are ready; real boot
       acceptance remains required. Keep the scheduled follow-up off.
-- [ ] Support finer signing-bonus percentage adjustments end to end. The current
-      native nibble represents10% steps; do not advertise1% precision until
-      accepted terms can be represented and survive signing/save/reload exactly.
+- [ ] Support signing-bonus adjustments in1-percentage-point steps end to end.
+      Show the exact bonus amount alongside its percentage. The current native
+      nibble represents10% steps; do not advertise1% precision until accepted
+      terms can be represented and survive signing/save/reload exactly, with
+      matching annual cap charges and current-versus-proposed comparisons.
 
 The user deferred additional statistics investigation on October14. Prioritize
 native offer submission, player response, legal financial commit and save recovery.
