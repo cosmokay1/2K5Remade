@@ -120,7 +120,7 @@ Reviewed submission is a separate, default-off opt-in:
 It requires the existing successful AI handshake, remote control and budget
 configuration. Y sends only the exact checked draft from Your offer, then opens
 Agent and displays a waiting message. Editing and X checks remain read-only;
-there is no automatic request on screen open, edit or render. Native signing
+there is no automatic model request on screen open, edit or render. Native signing
 remains held even if the player accepts.
 
 The renderer only copies an epoch-bound intent. The transport owner checks the

@@ -47,14 +47,15 @@ bool refresh() {
         body.clear();closed_body.clear();presented_body.clear();opened_tick=0;navigation.reset();draft.reset();current_contract=previous_lb=previous_rb=false;return false;
     }
     if(!std::memchr(view.response,0,sizeof(view.response)) || !std::memchr(view.summary.title,0,sizeof(view.summary.title)) ||
-       !std::memchr(view.summary.offer,0,sizeof(view.summary.offer))) return false;
+       !std::memchr(view.summary.offer,0,sizeof(view.summary.offer)) || !std::memchr(view.notice,0,sizeof(view.notice))) return false;
     const std::string next=view.response[0]?view.response:"loading";
     if(next==closed_body) return false;
     if(next!=body || title!=view.summary.title) {
         bool completed_check=false,agent_reply=false;
         if(!opened_tick) opened_tick=GetTickCount64();
         if(!view.response[0]) {
-            pages.fill("Loading verified franchise context...\n\nContract terms and performance will appear when the saved context is ready.");
+            pages.fill(view.notice[0]?std::string(view.notice)+"\n\nBack out and reopen to retry loading verified context.":
+                "Loading verified franchise context...\n\nContract terms and performance will appear when the saved context is ready.");
             screen_reply={{"result",nlohmann::json::object()}};
         } else {
             auto parsed=franchise::parse_frame(next);
@@ -77,6 +78,8 @@ bool refresh() {
     }
     if(!std::memchr(view.notice,0,sizeof(view.notice))) return false;
     if(view.notice[0] && notice!=view.notice) {navigation.reset();navigation.page=3;}
+    if(!view.response[0] && view.notice[0]) pages.fill(std::string(view.notice)+
+        "\n\nBack out and reopen to retry loading verified context.");
     notice=view.notice;submit_enabled=view.submit_enabled!=0;agent_pending=view.proposal_pending!=0;
     preview_epoch=view.preview_epoch;preview_enabled=view.preview_enabled!=0;preview_pending=view.preview_pending!=0;
     status=view.summary.offer;return true;
@@ -272,7 +275,8 @@ bool paint(NFL2K5AddonDraw& draw) {
             } else if(preview) {
                 fill(left,y,right-px(12),y+px(48),RGB(24,44,65));
                 text(amendment?"Modeled room if agreed":"Cap room after offer",left+px(12),y+px(13),right-px(245),y+px(40),20,FW_NORMAL,secondary,DT_SINGLELINE);
-                text(franchise::screen_money(context.at(amendment?"amendment":"preview").at("room_after")),right-px(245),y+px(10),right-px(26),y+px(42),25,FW_BOLD,white,DT_SINGLELINE|DT_RIGHT);
+                text(draft.dirty() || draft.waiting || preview_pending || !notice.empty()?"Check draft":
+                    franchise::screen_money(context.at(amendment?"amendment":"preview").at("room_after")),right-px(245),y+px(10),right-px(26),y+px(42),25,FW_BOLD,white,DT_SINGLELINE|DT_RIGHT);
                 y+=px(62);
             }
             text(note,left,y,right-px(12),y+measured_note.bottom+px(8),17,FW_NORMAL,secondary,DT_WORDBREAK);

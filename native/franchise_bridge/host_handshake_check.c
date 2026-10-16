@@ -319,6 +319,9 @@ int main(void)
     nfl2k5_franchise_signing_context(&observation);nfl2k5_franchise_poll();
     assert(nfl2k5_franchise_negotiation_view(&full_view) && full_view.submit_enabled);
     unsigned sent=submissions;
+    assert(!nfl2k5_franchise_submission_epoch());
+    assert(nfl2k5_franchise_submit_held(&observation,1)); // Native action still held if addon rendering fails.
+    nfl2k5_franchise_signing_context(&observation);assert(submissions==sent); // No native-menu inference bypass.
     assert(!nfl2k5_franchise_send_offer(full_view.preview_epoch,reviewed_amount+1,reviewed_flags));
     assert(nfl2k5_franchise_send_offer(full_view.preview_epoch,reviewed_amount,reviewed_flags));
     assert(submissions==sent); // Renderer copies intent only.

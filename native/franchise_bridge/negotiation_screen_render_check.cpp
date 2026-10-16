@@ -29,7 +29,8 @@ extern "C" int nfl2k5_franchise_preview_offer(unsigned long long epoch,uint32_t 
 }
 extern "C" int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out) {
     *out={};if(!available) return 0;
-    if(loading) {std::strcpy(out->summary.title,"Contract negotiation");return 1;}
+    if(loading) {std::strcpy(out->summary.title,"Contract negotiation");
+        std::snprintf(out->notice,sizeof(out->notice),"%s",notice.c_str());return 1;}
     const auto response=fixture.dump();if(response.size()>=sizeof(out->response)) return 0;
     std::memcpy(out->response,response.c_str(),response.size()+1);
     out->preview_enabled=editing;out->preview_pending=checking;out->preview_epoch=preview_epoch;
@@ -85,6 +86,7 @@ int main(int argc,char** argv) {
                 png(output/(std::to_string(height)+"-"+name+".png"),1280,height,pixels);
             };
             loading=true;capture("loading");require(changed,"Loading view must render before any reply");
+            notice="Request failed. No verified context is available.";capture("loading-error");notice.clear();
             loading=false;capture("contract");require(changed,"First context needs pixels");
             require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed) && !changed,"Unchanged screen redrew");
             editing=true;capture("editable-contract");press(0);capture("edit-offer");

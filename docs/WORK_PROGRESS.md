@@ -9916,3 +9916,10 @@ build; that staged overlay predates the final fallback/retry adjustments and mus
 not be deployed. Continue source CI and refresh the complete source manifest
 before resuming any private validation. The installed cap-room-bumpers-v1 preview,
 service snapshot, database and disabled AI/signing controls remain unchanged.
+
+
+Source review also closes the original-menu fallback route in reviewed mode:
+native signing actions remain held but cannot enqueue agent dialogue if the
+replacement renderer is unavailable. Only the explicit checked addon mailbox
+can submit in this mode. The native scheduling test verifies that bypass stays
+closed. Generic addon ABI, host draw/input hooks and installed files are unchanged.
