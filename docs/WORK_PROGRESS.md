@@ -10079,3 +10079,31 @@ platform-specific extraction error is caught before Windows CI. Both variants
 pass locally. No financial or native production code changed; the validated v2
 executable/addon remain the compiled72511cd pair. Fresh source CI is required
 before treating the corrected test suite as verified on Windows.
+
+## Combined candidate: corrected CI and ray-branch tooling review
+
+Corrected source6a43f6c passes both Windows2022 and Ubuntu franchise jobs:
+https://github.com/cosmokay1/2K5Remade/actions/runs/38946818689
+Its paired Build check also succeeds:
+https://github.com/cosmokay1/2K5Remade/actions/runs/38946818632
+The formerly failing observer fixture additionally compiled with private MSVC
+and ran under the isolated Deck Proton fixture prefix. A fresh child completion
+marker and exit0 are recorded in observer-fixed-receipt.json; no installed game,
+saves or model requests were involved. Production binaries remain72511cd because
+6a43f6c changes only the regression fixture.
+
+Reviewed codex/ray-traced-shadow-proof at4cea284, including runtime484a568 and
+its private recording scripts, in response to the user's tooling suggestion.
+Its new capture code diagnoses renderer geometry and camera matrices; importing
+it would not validate cap accounting. The useful reusable path is the existing
+tools/game_test_control.py for scoped process/input/screenshot checks and Steam's
+native continuous recorder for readable test video. The ray experiment's older
+screenshot-sequence video is explicitly superseded and must not be called60FPS
+capture. No renderer changes, experimental launcher, runtime pointer or recording
+settings were imported or enabled. Use fresh current-runtime captures, exact
+cap/ledger snapshots and save/reload evidence for the eventual signing test.
+
+The combined package remains staged, not installed, and ready only for offline
+and read-only testing. Trusted live salary-clock binding and production accepted
+cap-plan issuance remain open before signing can be authorized. The scheduled
+follow-up was rechecked PAUSED.
