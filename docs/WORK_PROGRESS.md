@@ -9788,3 +9788,40 @@ SHA256:06edfb89e190b981cd93c14540f2022ea13221042972aeec95268e54260f5573;
 addon:09c61340d256eb2d4b358bb1b819ccd2574b02266fe1305252bc871289465670.
 Live MyNFL comparison verification and the separate amendment settlement path
 remain open. Never treat amendment_comparison as eligible_preview.
+
+
+## Live amendment comparison; requested cap-room and bumper refinement
+
+Read-only inspection of running PID251145 now finds a consumed Dart
+amendment_comparison in the actual MyNFL1 game log, with no logged crash or
+extra inference. Its response retains$2.32M old bonus per year, adds$7.06M new
+bonus per year, and reports$89.216M current room versus$78.992M modeled room.
+A Gamescope screenshot at1280x800 visibly shows Jaxson Dart's profile, the
+$21.18M signing bonus, all three combined cap rows and the modeled room. Capture:
+.local-runtime/game-test-control/amendment-live.png. This closes actual read-only
+comparison delivery, not edits, consent, settlement or save/reload acceptance.
+No game controls were sent during this inspection.
+
+The user requests current versus predicted cap and bumper navigation. The next
+source shows three aligned cards for current cap room, predicted cap room and
+signed change. The comparison stays visible on both contract tabs and in the
+editor; dirty/pending edits show Check draft instead of a stale forecast.
+LB selects Your offer and RB selects Current contract, using verified original
+packet mapping White=LB/Black=RB. Y no longer switches. Triggers and the editor's
+RT amount modifier remain as before. Eleven portable checks pass, including
+cap delta/stale display cases. Windows renderer tests exercise bumper browsing,
+retained drafts, pending checks and Y having no tab effect. Candidate stage:
+.local-runtime/cap-room-bumpers-v1; installed source remains6495e4d pending
+Windows validation and normal-exit installation. Service/database are unchanged.
+
+
+The cap-room/bumpers candidate now passes all7 isolated Windows/Proton checks,
+Windows service fixtures and saved-signing/native term checks, and game --validate
+with a fresh child completion marker. Source hashes match253 native files and
+the existing service stays pinned. A combined visual review of the1280x800
+predicted view and1280x720 current/unchecked view confirms all cards, headings,
+values and controller hints fit. Renders are retained in the candidate stage.
+EXE SHA256:5ccdad5510481fa8d84aee6fb3142d3d6b9651190a600ba674522b3d87690497;
+addon:a9610579c9b0daf57202d3bdddc7eea679f76aafa93ff7886e3efcfc3174f158.
+Package installation is pending the user's normal-exit confirmation. No running
+files, saves, database, control settings or provider configuration were changed.

@@ -214,6 +214,15 @@ inline ScreenTable amendment_table(const nlohmann::json& context,const nlohmann:
     }
     return table;
 }
+inline std::array<std::string,3> cap_room_comparison(const nlohmann::json& context,bool unchecked_draft) {
+    const auto& comparison=context.at("amendment");
+    const auto before=comparison.at("room_before").get<int64_t>();
+    if(unchecked_draft) return {screen_money(before),"Check draft",u8"\u2014"};
+    const auto after=comparison.at("room_after").get<int64_t>();
+    const auto change=after-before;
+    return {screen_money(before),screen_money(after),
+        change>0?"+"+screen_money(change):change<0?"-"+screen_money(-change):screen_money(0)};
+}
 inline void screen_terms(std::ostringstream& text,const nlohmann::json& offer) {
     const auto& salaries=offer.at("salaries");
     int64_t total=offer.at("signing_bonus").get<int64_t>();

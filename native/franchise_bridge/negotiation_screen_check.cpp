@@ -136,6 +136,13 @@ int main() {
         auto display_comparison=fixture;
         display_comparison["result"]["offer_context"]["outcome"]="amendment_comparison";
         require(franchise::signing_display(display_comparison).offer=="Contract comparison only. Player agreement and settlement remain pending.");
+        dart["amendment"]["room_before"]=89216000;dart["amendment"]["room_after"]=78992000;
+        require(franchise::cap_room_comparison(dart,false)==std::array<std::string,3>{"$89,216,000","$78,992,000","-$10,224,000"});
+        require(franchise::cap_room_comparison(dart,true)==std::array<std::string,3>{"$89,216,000","Check draft",u8"\u2014"});
+        dart["amendment"]["room_after"]=90000000;
+        require(franchise::cap_room_comparison(dart,false)[2]=="+$784,000");
+        dart["amendment"]["room_after"]=89216000;
+        require(franchise::cap_room_comparison(dart,false)[2]=="$0");
         auto missing=fixture;missing["result"]["performance_context"]["saved_history"]=nlohmann::json::array();
         require(franchise::negotiation_pages(missing)[1].find("No saved stats available")!=std::string::npos);
         auto proposal=fixture;proposal["result"]={{"signing_checkpoint",fixture["result"]},

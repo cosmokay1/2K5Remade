@@ -16,7 +16,7 @@ franchise::NegotiationNavigation navigation;
 franchise::ContractDraft draft;
 unsigned long long preview_epoch;
 bool preview_enabled=false,preview_pending=false;
-bool current_contract=false,previous_y=false;
+bool current_contract=false,previous_lb=false,previous_rb=false;
 std::string body,title,status,closed_body,paint_key,presented_body;
 std::array<std::string,4> pages;
 nlohmann::json screen_reply={{"result",nlohmann::json::object()}};
@@ -37,7 +37,7 @@ bool enabled(int& port) {
 bool refresh() {
     static thread_local FranchiseNegotiationView view;
     if(!nfl2k5_franchise_negotiation_view(&view)) {
-        body.clear();closed_body.clear();presented_body.clear();opened_tick=0;navigation.reset();draft.reset();current_contract=previous_y=false;return false;
+        body.clear();closed_body.clear();presented_body.clear();opened_tick=0;navigation.reset();draft.reset();current_contract=previous_lb=previous_rb=false;return false;
     }
     if(!std::memchr(view.response,0,sizeof(view.response)) || !std::memchr(view.summary.title,0,sizeof(view.summary.title)) ||
        !std::memchr(view.summary.offer,0,sizeof(view.summary.offer))) return false;
@@ -58,7 +58,7 @@ bool refresh() {
             pages=franchise::negotiation_pages(parsed);screen_reply=std::move(parsed);
         }
         body=next;title=view.summary.title;
-        if(!completed_check){navigation.reset();current_contract=previous_y=false;}
+        if(!completed_check){navigation.reset();current_contract=previous_lb=previous_rb=false;}
         draft.reset();presented_body.clear();paint_key.clear();paint_failed=false;
     }
     // An identical checked response still completes the mailbox round trip.
@@ -160,7 +160,7 @@ bool paint(NFL2K5AddonDraw& draw) {
                 fill(x,px(145),x+px(212),px(185),current_contract==(i==1)?RGB(45,65,91):RGB(17,29,46));
                 text(choices[i],x+px(12),px(153),x+px(202),px(180),22,current_contract==(i==1)?FW_BOLD:FW_NORMAL,white,DT_SINGLELINE);
             }
-            text("Y  Switch",left+px(470),px(155),right,px(182),18,FW_NORMAL,secondary,DT_SINGLELINE|DT_RIGHT);
+            text("LB / RB  Switch",left+px(470),px(155),right,px(182),18,FW_NORMAL,secondary,DT_SINGLELINE|DT_RIGHT);
         } else text(headings[navigation.page],left,px(149),right,px(185),27,FW_BOLD,white,DT_SINGLELINE);
         const bool drafting=navigation.page==0 && !current_contract && (draft.active || draft.dirty());
         int overflow=0,offset=0;
@@ -200,12 +200,12 @@ bool paint(NFL2K5AddonDraw& draw) {
             }
             const int top=px(202),row_height=px(34),gap=px(22),header=px(30),section=px(30);
             const bool amendment=context.contains("amendment");
-            const bool preview=!drafting && !current_contract && navigation.page==0 &&
-                (amendment || (context.contains("preview") && !context.at("preview").is_null()));
+            const bool preview=navigation.page==0 && (amendment || (!drafting && !current_contract &&
+                context.contains("preview") && !context.at("preview").is_null()));
             const auto measured_note=text(note,left,0,right-px(12),0,17,FW_NORMAL,secondary,DT_CALCRECT|DT_WORDBREAK);
             int content=summary.empty()?0:px(67);
             for(const auto& table:tables) content+=section+header+static_cast<int>(table.rows.size())*row_height+gap;
-            if(preview) content+=px(62);
+            if(preview) content+=px(amendment?78:62);
             content+=static_cast<int>(measured_note.bottom)+px(14);
             if(tables.empty()) content+=px(64);
             overflow=std::max(0,content-(bottom-top));
@@ -243,7 +243,18 @@ bool paint(NFL2K5AddonDraw& draw) {
                 }
                 y+=gap;
             }
-            if(preview) {
+            if(preview && amendment) {
+                const auto values=franchise::cap_room_comparison(context,draft.dirty() || draft.waiting || preview_pending);
+                const char* labels[]={"CURRENT CAP ROOM","PREDICTED CAP ROOM","CHANGE"};
+                const int cell=(right-left-px(12))/3;
+                for(size_t i=0;i<values.size();++i) {
+                    const int x=left+static_cast<int>(i)*cell;
+                    fill(x,y,x+cell-px(6),y+px(64),RGB(24,44,65));
+                    text(labels[i],x+px(12),y+px(8),x+cell-px(16),y+px(29),15,FW_BOLD,secondary,DT_SINGLELINE);
+                    text(values[i],x+px(12),y+px(32),x+cell-px(16),y+px(58),23,FW_BOLD,white,DT_SINGLELINE);
+                }
+                y+=px(78);
+            } else if(preview) {
                 fill(left,y,right-px(12),y+px(48),RGB(24,44,65));
                 text(amendment?"Modeled room if agreed":"Cap room after offer",left+px(12),y+px(13),right-px(245),y+px(40),20,FW_NORMAL,secondary,DT_SINGLELINE);
                 text(franchise::screen_money(context.at(amendment?"amendment":"preview").at("room_after")),right-px(245),y+px(10),right-px(26),y+px(42),25,FW_BOLD,white,DT_SINGLELINE|DT_RIGHT);
@@ -381,10 +392,13 @@ extern "C" int franchise_negotiation_screen_event(const char *name,const void *d
         if(event.port>=4) return 0;
         if(event.port!=static_cast<unsigned>(port)) return NFL2K5_ADDON_UI_CONSUMED;
         const bool editing=draft.active && navigation.page==0 && !current_contract;
-        const bool y=event.analog[3]>30,toggle=y && !previous_y;
-        previous_y=y;
-        if(navigation.page==0 && toggle && (editing?draft.armed:navigation.armed)) {
-            current_contract=!current_contract;navigation.reset();draft.rearm();return NFL2K5_ADDON_UI_CONSUMED;
+        // Original Xbox packet order: Black=RB, White=LB. Triggers remain
+        // section navigation and the editor's larger-step modifier.
+        const bool lb=event.analog[5]>30,rb=event.analog[4]>30;
+        const bool left=lb && !previous_lb,right=rb && !previous_rb;
+        previous_lb=lb;previous_rb=rb;
+        if(navigation.page==0 && lb!=rb && (left || right) && (editing?draft.armed:navigation.armed)) {
+            current_contract=right;navigation.reset();draft.rearm();return NFL2K5_ADDON_UI_CONSUMED;
         }
         auto check=[&](){
             if(nfl2k5_franchise_preview_offer(draft.epoch,draft.amount,draft.flags)) draft.waiting=true;

@@ -105,7 +105,7 @@ Contract, A opens the editor. D-pad/left-stick up/down selects total, years,
 bonus share or salary schedule; left/right adjusts it. Hold RT for larger value
 steps. X explicitly checks the draft and returns the service's exact annual
 table or rejection. B reviews the draft without discarding it; A resumes the
-selected field. Y switches between labelled Your offer and Current contract
+selected field. LB selects Your offer and RB selects Current contract on the labelled
 views, including while editing or waiting. B from Current contract returns to
 Your offer. Held horizontal input repeats after350ms, then every90ms (except
 schedule toggles); RT retains the larger-value step. Drafts survive section
@@ -240,3 +240,12 @@ explicitly requires player agreement and denies settlement. Native validation
 recomputes the schedule and cap arithmetic and checks the observed team cap and
 payroll. Proposal/signing guards remain closed for this response until the
 separate amendment transaction, native projection and save/reload path exist.
+
+
+The active-contract comparison shows current cap room, predicted cap room and
+signed change together, including while viewing the saved current deal. Local
+unchecked edits and pending checks replace predicted room/change with Check draft
+and a dash, retaining the verified current figure. They never reuse an old
+forecast as the result of edited terms. Bumpers select contract tabs (LB=offer,
+RB=current); Y no longer switches tabs. Triggers retain section navigation and
+RT retains the editor's larger-step modifier.

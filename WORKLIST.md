@@ -794,7 +794,9 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       distinct amendment_comparison outcome, not free-agent signing authority.
       The screen shows current cap, new base, old/new bonus and combined charges.
       Windows game/addon/service validation passes; installed after normal exit
-      with205 saves unchanged. Actual MyNFL comparison verification is pending.
+      with205 saves unchanged. Actual MyNFL1 Dart comparison receipt and screenshot
+      now verify old/new bonus charges and modeled room; editing and transactions
+      remain separate acceptance gates.
       Actual player consent, earned-pay handling, durable amendment settlement,
       guest cap projection and save/reload reconciliation remain unchecked.
       Active players must be able to negotiate: early extensions before free

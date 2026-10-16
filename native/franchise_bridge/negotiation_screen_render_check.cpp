@@ -80,8 +80,9 @@ int main(int argc,char** argv) {
             require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed) && !changed,"Unchanged screen redrew");
             editing=true;capture("editable-contract");press(0);capture("edit-offer");
             press(-1,8);capture("edit-adjusted");
-            press(3);capture("current-while-editing");
-            press(1);capture("return-to-retained-edit");
+            press(3);require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed) && !changed,"Y still switches contract tabs");
+            press(4);capture("current-while-editing");
+            press(5);capture("return-to-retained-edit");
             press(1);capture("review-retained-draft");
             for(int i=0;i<4;++i) {press(7);capture((std::string("draft-section-")+std::to_string(i)).c_str());}
             press(0);capture("resume-retained-draft");
@@ -89,7 +90,7 @@ int main(int argc,char** argv) {
             require(preview_calls==before_checks+1,"Explicit check was not queued");
             require(preview_amount==423,"Switching current/review/sections lost the edited amount");
             press(2);require(preview_calls==before_checks+1,"Repeated check escaped pending guard");
-            press(3);capture("current-during-check");
+            press(4);capture("current-during-check");
             checking=false;++preview_epoch;
             fixture["request_id"]="checked-draft-"+std::to_string(height);
             auto& checked=fixture["result"]["offer_context"];
@@ -164,8 +165,11 @@ int main(int argc,char** argv) {
             amendment["offer"]={{"salaries",{4708000,7060000,9412000}},{"signing_bonus",21180000},{"guaranteed_salaries",{0,0,0}}};
             amendment["amendment"]={{"current_charges",{3864000,4640000,5412000}},
                 {"carried_bonus_charges",{2320000,2320000,2320000}},
-                {"combined_player_charges",{14088000,16440000,18792000}},{"room_after",78992000}};
+                {"combined_player_charges",{14088000,16440000,18792000}},{"room_before",89216000},{"room_after",78992000}};
             capture("legacy-amendment");
+            editing=true;capture("legacy-edit-enabled");press(0);press(-1,8);capture("legacy-unchecked-edit");
+            press(4);capture("legacy-current-unchecked-edit");press(5);capture("legacy-retained-unchecked-edit");
+            editing=false;
             fixture=negotiation_screen_fixture();fixture["request_id"]="long-contract"+std::to_string(height);
             fixture["result"]["offer_context"]["offer"]={{"salaries",{1000000,1000000,1000000,1000000,1000000,1000000,1000000}},
                 {"signing_bonus",0},{"guaranteed_salaries",{0,0,0,0,0,0,0}}};
