@@ -316,7 +316,10 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       personality/source/database with zero model attempts. After confirmed
       normal exit, the launcher configuration is installed with all205 current
       save hashes unchanged; the executable/addon and disabled AI mode are
-      preserved. Actual revision2 in-game context consumption remains to verify.
+      preserved. Actual revision2 in-game context is now consumed while the
+      Hernandez offer stays open: eligible preview, unchanged personality and
+      source/bindings/database hashes, zero model attempts. Native signing and
+      save/reload remain unverified; this read-only milestone grants no writes.
 - [ ] Complete draft, persistent stories/promises, shutdown and final delivery checks
       below. Defer broader stat mapping while the core signing flow is incomplete.
 

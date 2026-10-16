@@ -8720,3 +8720,28 @@ volume4061331925/index00945220. Held negotiation mode remains0 and guest commits
 are unavailable. This launch reached the franchise load checkpoint without the
 previous startup divide fault; that intermittent fault is not declared fixed.
 The user was asked to leave Hernandez's offer open for revision2 context proof.
+
+### Actual revision2 offer context consumed in the game
+
+The user opened Hernandez's offer. The running game consumed its handshake and
+read-only signing-context response game-sign-context-320-88618836-1 while the
+screen remained open. It identifies Giants/player2dd58d0c9bd54e758ae5d9907056d726,
+slot2371, financial revision2, and returns eligible_preview for raw amount422 /
+flags755105796. Cap charges are9704000/7172000, first-year team charges221688000
+and roster-based room79512000. The accounting and initialized player context
+exactly match the isolated Windows preflight. The game additionally requested
+performance context; its saved-history source matches the same payload/slot,
+and absent history remains explicitly absent rather than zero performance.
+
+Read-only verification confirms unchanged source payload4c8c31b4f400e251,
+bindings98087909746c5743 and database8f64df7947ce77ef hashes. Personality and
+relationships are preserved, inference attempts remain0, credentials remain
+absent, and both AI/write authorization are false. Private
+actual-revision2-context-session.log, actual-revision2-context-reply.json and
+actual-revision2-context-receipt.json preserve this actual game evidence.
+
+This completes the salary-classification read-only integration batch. The
+matching-checkpoint scope still does not establish full active-franchise
+lifetime or complete opening/non-roster/rookie obligations. Native controlled
+signing, financial reconciliation and save/reload remain required before AI
+application; no user offer was submitted by this verification.
