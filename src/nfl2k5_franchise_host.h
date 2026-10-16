@@ -50,6 +50,8 @@ int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out);
 /* Queue one explicitly checked draft against the displayed context. No guest
  * mutation, player contact, model request or transaction authority. */
 int nfl2k5_franchise_preview_offer(unsigned long long epoch, uint32_t amount, uint32_t flags);
+/* Addon-private intent only; owner revalidates the exact reviewed draft. */
+int nfl2k5_franchise_send_offer(unsigned long long epoch, uint32_t amount, uint32_t flags);
 #ifdef __cplusplus
 }
 #endif

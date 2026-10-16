@@ -12,12 +12,19 @@
 static FranchiseHostClient *franchise_client;
 static volatile LONG franchise_owner_thread;
 static volatile LONG franchise_foreign_sign_logged;
-static int hello_pending, hello_failed;
+static int hello_pending, hello_failed, readonly_fallback;
 static int context_enabled, hello_consumed, context_pending;
 static int signing_active, context_sent;
 static int saved_performance;
 static int inspect_guest_offer;
 static int proposal_requested, proposal_sent, proposal_pending;
+/* Owner-only retry of the same dialogue after a service error. Rechecking the
+ * draft does not turn a lost reply into a second paid/relationship event. */
+static char retry_proposal[4096];
+static int retry_available,retry_amendment;
+static uint32_t retry_amount,retry_flags;
+static uint64_t retry_source_epoch;
+static FranchiseSigningObservation retry_observation;
 static int journal_enabled, journal_pending, journal_locked;
 static volatile LONG completion_failed;
 static unsigned long long journal_next_check;
@@ -56,7 +63,10 @@ static char display_response[65536];
 static int display_loading;
 static int display_valid;
 /* Guarded by display_lock. Only the transport owner consumes the mailbox. */
-static int draft_enabled, draft_pending;
+static int draft_enabled, draft_pending, screen_submit_enabled, draft_proposal, draft_amendment;
+static int display_offer_kind;
+static uint32_t checked_amount,checked_flags;
+static char display_notice[256];
 static unsigned long long draft_epoch;
 static uint32_t draft_amount,draft_flags;
 static FranchiseSigningObservation display_observation,draft_observation;
@@ -65,7 +75,7 @@ static void clear_display(void) {
     memset(&display,0,sizeof(display));
     memset(display_response,0,sizeof(display_response));
     display_valid=0;display_loading=0;
-    draft_pending=0;++draft_epoch;
+    draft_pending=draft_proposal=draft_amendment=display_offer_kind=0;display_notice[0]=0;++draft_epoch;
     ReleaseSRWLockExclusive(&display_lock);
 }
 int nfl2k5_franchise_display(FranchiseSigningDisplay *out) {
@@ -89,6 +99,9 @@ int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out) {
             out->preview_epoch=draft_epoch;
             out->preview_enabled=draft_enabled;
             out->preview_pending=draft_pending!=0;
+            out->submit_enabled=screen_submit_enabled && display_offer_kind && !draft_pending;
+            out->proposal_pending=draft_pending && draft_proposal;
+            memcpy(out->notice,display_notice,sizeof(out->notice));
         } else {
             snprintf(out->summary.title,sizeof(out->summary.title),"Contract negotiation");
             snprintf(out->summary.offer,sizeof(out->summary.offer),"Loading verified franchise context...");
@@ -97,20 +110,28 @@ int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out) {
     ReleaseSRWLockShared(&display_lock);
     return available;
 }
-int nfl2k5_franchise_preview_offer(unsigned long long epoch,uint32_t amount,uint32_t flags) {
+static int queue_draft(unsigned long long epoch,uint32_t amount,uint32_t flags,int proposal) {
     int accepted=0;
     const uint32_t mask=0xe00f000fu;
     const unsigned years=(flags>>16)&15u,bonus=flags&15u,shape=flags>>29;
     AcquireSRWLockExclusive(&display_lock);
     if(draft_enabled && display_valid && display_response[0] && !draft_pending &&
+       (!proposal || (screen_submit_enabled && display_offer_kind && amount==checked_amount && flags==checked_flags)) &&
        epoch && epoch==draft_epoch && amount && amount<=65535 && years && years<=7 && bonus<=10 &&
        (shape==1 || shape==2 || shape==(display_observation.offer_flags>>29)) &&
        (flags&~mask)==(display_observation.offer_flags&~mask)) {
         draft_amount=amount;draft_flags=flags;draft_observation=display_observation;
-        draft_pending=1;++draft_epoch;accepted=1;
+        draft_pending=1;draft_proposal=proposal;draft_amendment=proposal && display_offer_kind==2;
+        display_offer_kind=0;display_notice[0]=0;++draft_epoch;accepted=1;
     }
     ReleaseSRWLockExclusive(&display_lock);
     return accepted;
+}
+int nfl2k5_franchise_preview_offer(unsigned long long epoch,uint32_t amount,uint32_t flags) {
+    return queue_draft(epoch,amount,flags,0);
+}
+int nfl2k5_franchise_send_offer(unsigned long long epoch,uint32_t amount,uint32_t flags) {
+    return queue_draft(epoch,amount,flags,1);
 }
 /* Called under display_lock only after a successful formatter/transport check.
  * Never clip a frame: all data or no replacement view. */
@@ -143,17 +164,17 @@ static int positive_limit(const wchar_t *text, unsigned long long *value)
 void nfl2k5_franchise_stop(void)
 {
     clear_display();
-    AcquireSRWLockExclusive(&display_lock);draft_enabled=0;ReleaseSRWLockExclusive(&display_lock);
+    AcquireSRWLockExclusive(&display_lock);draft_enabled=screen_submit_enabled=0;ReleaseSRWLockExclusive(&display_lock);
     InterlockedExchange(&franchise_owner_thread, 0);
     InterlockedExchange(&franchise_foreign_sign_logged, 0);
-    hello_pending = hello_failed = 0;
+    hello_pending = hello_failed = readonly_fallback = 0;
     context_enabled = hello_consumed = context_pending = 0;
     saved_performance = 0;
     inspect_guest_offer = 0;
     AcquireSRWLockExclusive(&submission_lock);
     submission_enabled=submission_active=submission_pending=0;++submission_epoch;
     ReleaseSRWLockExclusive(&submission_lock);
-    proposal_requested=proposal_sent=proposal_pending=0;
+    proposal_requested=proposal_sent=proposal_pending=0;retry_available=0;retry_proposal[0]=0;
     journal_enabled=journal_pending=journal_locked=0;
     InterlockedExchange(&completion_failed,0);
     journal_next_check=0;journal_last_reply[0]=0;
@@ -183,7 +204,7 @@ void nfl2k5_franchise_on_fsm(uint32_t descriptor, int push)
         ++screen_epoch;
         submission_screen(active);
         context_sent=observation_valid=observation_fresh=0;
-        proposal_requested=proposal_sent=0;
+        proposal_requested=proposal_sent=0;retry_available=0;
     }
     signing_active=active;
     if(active) {
@@ -259,17 +280,25 @@ void nfl2k5_franchise_poll(void)
                 (unsigned long long)(GetTickCount64()-context_queued_tick),(unsigned long long)max_context_poll_gap);
             context_pending = 0;
             const int was_proposal=proposal_pending;proposal_pending=0;
+            if(was_proposal) retry_available=franchise_host_reply_failed(franchise_client);
             int current=signing_active && observation_valid && observation_fresh && requested_source_current() &&
                 screen_epoch==requested_epoch && same_observation(&observed,&requested);
             // A late preview must not replace the waiting state of an intent
             // already consumed while this read-only request was outstanding.
             if(current && (was_proposal || !proposal_requested)) {
                 FranchiseSigningDisplay next={0};
-                if(franchise_host_signing_display(response,&next)==FRANCHISE_HOST_OK) {
+                if(franchise_host_reply_failed(franchise_client)) {
+                    AcquireSRWLockExclusive(&display_lock);
+                    display_offer_kind=0;draft_pending=draft_proposal=draft_amendment=0;++draft_epoch;
+                    snprintf(display_notice,sizeof(display_notice),"Request failed. No contract applied. Check the draft before retrying.");
+                    ReleaseSRWLockExclusive(&display_lock);
+                } else if(franchise_host_signing_display(response,&next)==FRANCHISE_HOST_OK) {
                     snprintf(next.title,sizeof(next.title),"%s %s",observed.first_name,observed.last_name);
                     AcquireSRWLockExclusive(&display_lock); display=next; display_valid=1;
                     copy_display_response(response);display_observation=requested;
-                    draft_pending=0;++draft_epoch;ReleaseSRWLockExclusive(&display_lock);
+                    display_offer_kind=was_proposal?0:franchise_host_reviewed_offer(franchise_client,&checked_amount,&checked_flags);
+                    display_notice[0]=0;draft_pending=draft_proposal=draft_amendment=0;++draft_epoch;
+                    ReleaseSRWLockExclusive(&display_lock);
                 } else clear_display();
             } else if(!current) clear_display();
             /* Changed terms retain the debounce; unreadable or new-screen
@@ -307,6 +336,17 @@ void nfl2k5_franchise_poll(void)
             /* Receipt is not authorization. Native submit still rejects AI without
              * a validated hello grant; the service rechecks remote control per call. */
             fprintf(stderr, "[FRANCHISE] Franchise handshake reply consumed.\n");
+            if(franchise_host_reply_failed(franchise_client) && screen_submit_enabled) {
+                // A disabled AI handshake may still permit read-only inspection.
+                // Never retry hello or renew control automatically.
+                char digest[65],binding[256];NFL2K5AddonImageIdentity image;
+                if(readonly_fallback || !nfl2k5_franchise_read_image(digest) || !addon_image_identity(&image,digest)) goto failed;
+                const int length=snprintf(binding,sizeof(binding),
+                    "{\"protocol\":1,\"request_id\":\"game-sign-observe\",\"operation\":\"bind_runtime\",\"loaded_image_sha256\":\"%s\"}",image.sha256);
+                if(length<=0 || (size_t)length>=sizeof(binding) ||
+                   franchise_host_submit(franchise_client,binding,(size_t)length)!=FRANCHISE_HOST_OK) goto failed;
+                readonly_fallback=hello_pending=1;
+            }
         }
     }
     if(journal_enabled && journal_locked && !journal_pending && GetTickCount64()>=journal_next_check) {
@@ -409,19 +449,25 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
         AcquireSRWLockExclusive(&display_lock);
         display_loading=preview && !wcscmp(preview,L"1");
         ReleaseSRWLockExclusive(&display_lock);
-        proposal_requested=proposal_sent=0;
+        proposal_requested=proposal_sent=0;retry_available=0;
     }
     observation_fresh=1;
     if(journal_locked) return; /* Still sample freshness; never queue another offer. */
     consume_submission(o);
     /* The displayed snapshot must still describe the same live player, money,
      * calendar and native draft. An obsolete UI intent is simply discarded. */
-    uint32_t preview_amount=0,preview_flags=0;
+    uint32_t preview_amount=0,preview_flags=0;int reviewed_proposal=0,reviewed_amendment=0;
     AcquireSRWLockExclusive(&display_lock);
     if(draft_pending==1 && !context_pending) {
-        if(draft_enabled && !proposal_requested && !proposal_sent && same_observation(o,&draft_observation)) {
+        uint32_t amount=0,flags=0;
+        const int kind=franchise_host_reviewed_offer(franchise_client,&amount,&flags);
+        if(draft_enabled && !proposal_requested && same_observation(o,&draft_observation) &&
+           (!draft_proposal || (screen_submit_enabled && kind==(draft_amendment?2:1) && amount==draft_amount && flags==draft_flags))) {
             preview_amount=draft_amount;preview_flags=draft_flags;draft_pending=2;context_sent=0;
-        } else {draft_pending=0;++draft_epoch;}
+            reviewed_proposal=draft_proposal;reviewed_amendment=draft_amendment;
+            if(reviewed_proposal) {proposal_requested=1;proposal_sent=0;}
+        } else {draft_pending=draft_proposal=draft_amendment=0;display_offer_kind=0;++draft_epoch;
+            snprintf(display_notice,sizeof(display_notice),"Offer context changed. Check your draft before sending.");}
     }
     ReleaseSRWLockExclusive(&display_lock);
     AcquireSRWLockExclusive(&display_lock); display_valid=display.title[0]!=0; ReleaseSRWLockExclusive(&display_lock);
@@ -441,7 +487,7 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
     const int proposing=proposal_requested && !proposal_sent;
     int length = snprintf(request,sizeof(request),
         "{\"protocol\":1,\"request_id\":\"game-sign-%s-%lu-%llu-%u\",\"operation\":\"%s\","
-        "%s%s\"expected_revision\":%llu,\"timeout_ms\":10000,\"observation\":{"
+        "%s%s%s\"expected_revision\":%llu,\"timeout_ms\":10000,\"observation\":{"
         "\"biography\":{\"source_slot\":%u,\"first_name\":\"%s\",\"last_name\":\"%s\","
         "\"pbp_photo_raw\":\"%s\",\"dob_region_raw\":\"%s\"},"
         "\"team\":{\"table_index\":%u,\"table_mode\":2,\"payroll_raw\":%u,\"league_cap_raw\":%u,"
@@ -450,9 +496,19 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
         "\"step_04_raw\":%u,\"step_05_raw\":%u,\"counter_08_raw\":%u}}}",
         proposing ? "proposal" : "context",(unsigned long)GetCurrentProcessId(),request_session,++context_sequence,
         proposing ? "negotiate_proposal" : "signing_context",saved_performance && !proposing ? "\"performance_format\":\"saved_history_v1\"," : "",
-        offer_field,context_revision,o->slot,o->first_name,o->last_name,o->photo,o->dob,
+        offer_field,reviewed_proposal && reviewed_amendment ? "\"amendment_rule\":\"legacy_bonus_carry_v1\"," : "",context_revision,o->slot,o->first_name,o->last_name,o->photo,o->dob,
         o->team_index,o->payroll,o->cap,o->team_flag,o->accumulator,o->calendar[5],2004u+o->calendar[5],
         o->calendar[0],o->calendar[1],o->calendar[3],o->calendar[4],o->calendar[6]);
+    if(proposing && reviewed_proposal && retry_available && retry_source_epoch==source_epoch &&
+       retry_amendment==reviewed_amendment && retry_amount==preview_amount && retry_flags==preview_flags &&
+       same_observation(&retry_observation,o)) {
+        memcpy(request,retry_proposal,sizeof(request));length=(int)strlen(request);
+    }
+    if(proposing && length>0 && (size_t)length<sizeof(request)) {
+        memcpy(retry_proposal,request,(size_t)length+1);retry_available=0;
+        retry_observation=*o;retry_source_epoch=source_epoch;retry_amount=preview_amount;
+        retry_flags=preview_flags;retry_amendment=reviewed_amendment;
+    }
     if (length <= 0 || (size_t)length >= sizeof(request) ||
         franchise_host_submit(franchise_client,request,(size_t)length) != FRANCHISE_HOST_OK) {
         hello_failed = 1;
@@ -527,12 +583,16 @@ int nfl2k5_franchise_start(void)
     const wchar_t *screen_preview=_wgetenv(L"NFL2K5_FRANCHISE_SCREEN_PREVIEW");
     if(screen_preview && *screen_preview && wcscmp(screen_preview,L"0") && wcscmp(screen_preview,L"1")) return 0;
     const int preview_enabled=screen_preview && !wcscmp(screen_preview,L"1");
-    // Inspection cannot silently become paid inference or native application.
-    if(preview_enabled && (hold_enabled || prepare_enabled || !inspect_context || !offer_enabled || !inspect_performance)) return 0;
+    const wchar_t *screen_submit=_wgetenv(L"NFL2K5_FRANCHISE_SCREEN_SUBMIT");
+    if(screen_submit && *screen_submit && wcscmp(screen_submit,L"0") && wcscmp(screen_submit,L"1")) return 0;
+    const int submit_enabled=screen_submit && !wcscmp(screen_submit,L"1");
+    // Preview alone cannot silently become inference or native application.
+    if(submit_enabled && (!preview_enabled || !hold_enabled || prepare_enabled)) return 0;
+    if(preview_enabled && ((hold_enabled && !submit_enabled) || prepare_enabled || !inspect_context || !offer_enabled || !inspect_performance)) return 0;
     const wchar_t *screen_edit=_wgetenv(L"NFL2K5_FRANCHISE_SCREEN_EDIT");
     if(screen_edit && *screen_edit && wcscmp(screen_edit,L"0") && wcscmp(screen_edit,L"1")) return 0;
     const int edit_enabled=screen_edit && !wcscmp(screen_edit,L"1");
-    if(edit_enabled && !preview_enabled) return 0;
+    if((edit_enabled && !preview_enabled) || (submit_enabled && !edit_enabled)) return 0;
     const wchar_t *budget_database = _wgetenv(L"NFL2K5_FRANCHISE_AI_BUDGET_DATABASE");
     const wchar_t *budget_scope = _wgetenv(L"NFL2K5_FRANCHISE_AI_BUDGET_SCOPE");
     const wchar_t *budget_limit = _wgetenv(L"NFL2K5_FRANCHISE_AI_REQUEST_LIMIT");
@@ -564,16 +624,16 @@ int nfl2k5_franchise_start(void)
         nfl2k5_franchise_stop();
         return 0;
     }
-    hello_pending = hello_failed = 0;
+    hello_pending = hello_failed = readonly_fallback = 0;
     hello_consumed = context_pending = 0;
     context_enabled = inspect_context;
     saved_performance = inspect_performance;
     inspect_guest_offer = offer_enabled;
-    AcquireSRWLockExclusive(&display_lock);draft_enabled=edit_enabled;draft_pending=0;++draft_epoch;ReleaseSRWLockExclusive(&display_lock);
+    AcquireSRWLockExclusive(&display_lock);draft_enabled=edit_enabled;screen_submit_enabled=submit_enabled;draft_pending=0;++draft_epoch;ReleaseSRWLockExclusive(&display_lock);
     AcquireSRWLockExclusive(&submission_lock);
     submission_enabled=hold_enabled;submission_active=submission_pending=0;++submission_epoch;
     ReleaseSRWLockExclusive(&submission_lock);
-    proposal_requested=proposal_sent=proposal_pending=0;
+    proposal_requested=proposal_sent=proposal_pending=0;retry_available=0;retry_proposal[0]=0;
     journal_enabled=prepare_enabled;journal_pending=journal_locked=0;
     InterlockedExchange(&completion_failed,0);
     journal_next_check=0;journal_last_reply[0]=0;

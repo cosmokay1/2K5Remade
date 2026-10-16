@@ -15,7 +15,8 @@ std::mutex screen_lock;
 franchise::NegotiationNavigation navigation;
 franchise::ContractDraft draft;
 unsigned long long preview_epoch;
-bool preview_enabled=false,preview_pending=false;
+bool preview_enabled=false,preview_pending=false,submit_enabled=false,agent_pending=false;
+std::string notice;
 bool current_contract=false,previous_lb=false,previous_rb=false;
 std::string body,title,status,closed_body,paint_key,presented_body;
 std::array<std::string,4> pages;
@@ -28,10 +29,16 @@ bool enabled(int& port) {
     const char *mode=std::getenv("NFL2K5_FRANCHISE_SCREEN_PREVIEW");
     const char *configured=std::getenv("NFL2K5_FRANCHISE_SCREEN_PORT");
     if(!mode || std::strcmp(mode,"1") || !configured || std::strlen(configured)!=1 || *configured<'0' || *configured>'3') return false;
-    for(const char *key:{"NFL2K5_FRANCHISE_NEGOTIATION","NFL2K5_FRANCHISE_GUEST_SIGNING"}) {
-        const char *value=std::getenv(key);
-        if(value && std::strcmp(value,"0") && *value) return false;
-    }
+    const char *submit=std::getenv("NFL2K5_FRANCHISE_SCREEN_SUBMIT");
+    const char *negotiate=std::getenv("NFL2K5_FRANCHISE_NEGOTIATION");
+    const char *signing=std::getenv("NFL2K5_FRANCHISE_GUEST_SIGNING");
+    const bool sending=submit && !std::strcmp(submit,"1");
+    if(submit && *submit && std::strcmp(submit,"0") && !sending) return false;
+    if(signing && *signing && std::strcmp(signing,"0")) return false;
+    if(sending) {
+        const char *edit=std::getenv("NFL2K5_FRANCHISE_SCREEN_EDIT");
+        if(!negotiate || std::strcmp(negotiate,"1") || !edit || std::strcmp(edit,"1")) return false;
+    } else if(negotiate && *negotiate && std::strcmp(negotiate,"0")) return false;
     port=*configured-'0';return true;
 }
 bool refresh() {
@@ -44,7 +51,7 @@ bool refresh() {
     const std::string next=view.response[0]?view.response:"loading";
     if(next==closed_body) return false;
     if(next!=body || title!=view.summary.title) {
-        bool completed_check=false;
+        bool completed_check=false,agent_reply=false;
         if(!opened_tick) opened_tick=GetTickCount64();
         if(!view.response[0]) {
             pages.fill("Loading verified franchise context...\n\nContract terms and performance will appear when the saved context is ready.");
@@ -55,14 +62,22 @@ bool refresh() {
             const auto& prior=screen_reply.at("result");
             completed_check=draft.waiting && result.contains("player_id") && prior.contains("player_id") &&
                 result.at("player_id")==prior.at("player_id") && title==view.summary.title;
+            agent_reply=agent_pending && result.contains("signing_checkpoint");
             pages=franchise::negotiation_pages(parsed);screen_reply=std::move(parsed);
         }
         body=next;title=view.summary.title;
         if(!completed_check){navigation.reset();current_contract=previous_lb=previous_rb=false;}
+        if(agent_reply) navigation.page=3;
         draft.reset();presented_body.clear();paint_key.clear();paint_failed=false;
     }
     // An identical checked response still completes the mailbox round trip.
-    if(draft.waiting && !view.preview_pending && view.preview_epoch!=preview_epoch) draft.reset();
+    if(draft.waiting && !view.preview_pending && view.preview_epoch!=preview_epoch) {
+        if(view.notice[0]) {draft.waiting=false;draft.epoch=view.preview_epoch;draft.rearm();}
+        else draft.reset();
+    }
+    if(!std::memchr(view.notice,0,sizeof(view.notice))) return false;
+    if(view.notice[0] && notice!=view.notice) {navigation.reset();navigation.page=3;}
+    notice=view.notice;submit_enabled=view.submit_enabled!=0;agent_pending=view.proposal_pending!=0;
     preview_epoch=view.preview_epoch;preview_enabled=view.preview_enabled!=0;preview_pending=view.preview_pending!=0;
     status=view.summary.offer;return true;
 }
@@ -77,7 +92,7 @@ bool paint(NFL2K5AddonDraw& draw) {
     if(draw.width<320 || draw.height<240 || draw.width>2048 || draw.height>2048 || draw.stride!=draw.width*4 ||
        draw.capacity!=static_cast<size_t>(draw.stride)*draw.height || !draw.pixels) return false;
     const auto key=body+"\n"+title+"\n"+status+"\n"+std::to_string(navigation.page)+":"+std::to_string(navigation.scroll[navigation.page])+":"+
-        std::to_string(draft.active)+":"+std::to_string(draft.amount)+":"+std::to_string(draft.flags)+":"+std::to_string(draft.field)+":"+std::to_string(draft.waiting)+draft.message+":"+std::to_string(preview_enabled)+":"+std::to_string(current_contract);
+        std::to_string(draft.active)+":"+std::to_string(draft.amount)+":"+std::to_string(draft.flags)+":"+std::to_string(draft.field)+":"+std::to_string(draft.waiting)+draft.message+":"+std::to_string(preview_enabled)+":"+std::to_string(current_contract)+":"+std::to_string(submit_enabled)+":"+std::to_string(agent_pending)+notice;
     if(key!=paint_key || width!=static_cast<int>(draw.width) || height!=static_cast<int>(draw.height)) {
         HDC dc=CreateCompatibleDC(nullptr);if(!dc) return false;
         BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);
@@ -244,7 +259,7 @@ bool paint(NFL2K5AddonDraw& draw) {
                 y+=gap;
             }
             if(preview && amendment) {
-                const auto values=franchise::cap_room_comparison(context,draft.dirty() || draft.waiting || preview_pending);
+                const auto values=franchise::cap_room_comparison(context,draft.dirty() || draft.waiting || preview_pending || !notice.empty());
                 const char* labels[]={"CURRENT CAP ROOM","PREDICTED CAP ROOM","CHANGE"};
                 const int cell=(right-left-px(12))/3;
                 for(size_t i=0;i<values.size();++i) {
@@ -272,7 +287,9 @@ bool paint(NFL2K5AddonDraw& draw) {
         } else if(navigation.page==3 && body!="loading") {
             const int top=px(205),message_left=left+px(20),message_right=right-px(20);
             const int bubble_width=(message_right-message_left)*86/100;
-            const auto messages=franchise::screen_conversation(screen_reply,pages[3]);
+            auto messages=franchise::screen_conversation(screen_reply,pages[3]);
+            if(agent_pending) messages.push_back({"System","Waiting for the agent. No contract has been applied.",false});
+            if(!notice.empty()) messages.push_back({"System",notice,false});
             std::vector<int> heights;
             int content=0;
             for(const auto& message:messages) {
@@ -287,7 +304,7 @@ bool paint(NFL2K5AddonDraw& draw) {
             offset=std::min(px(static_cast<float>(navigation.scroll[3])),overflow);
             int y=top+std::max(0,viewport-content)-offset;
             SaveDC(dc);IntersectClipRect(dc,left,top,right,bottom);
-            if(messages.empty()) text("No conversation yet.\nOffer submission is currently off.",message_left,bottom-px(78),message_right,bottom,21,FW_NORMAL,secondary,DT_WORDBREAK);
+            if(messages.empty()) text(submit_enabled?"No conversation yet.\nReview your checked offer, then press Y to send it.":"No conversation yet.\nOffer submission is currently off.",message_left,bottom-px(78),message_right,bottom,21,FW_NORMAL,secondary,DT_WORDBREAK);
             for(size_t i=0;i<messages.size();++i) {
                 const auto& message=messages[i];
                 const int x=message.outgoing?message_right-bubble_width:message_left;
@@ -357,7 +374,7 @@ bool paint(NFL2K5AddonDraw& draw) {
         const bool editing=draft.active && navigation.page==0 && !current_contract;
         text(editing?"Up/down  Field    Left/right  Adjust":"D-pad / LS  Section",px(31),draw.height-px(34),px(465),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
         text(editing?"X  Check    RT  Larger steps":preview_enabled && navigation.page==0 && !current_contract?
-            draft.dirty()?"A  Edit    X  Check draft":"A  Edit offer    RS  Scroll":"RS  Scroll    LT / RT  Section",px(485),draw.height-px(34),draw.width-px(180),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
+            draft.dirty() || !notice.empty()?"A  Edit    X  Check draft":submit_enabled?"A  Edit    Y  Send offer":"A  Edit offer    RS  Scroll":"RS  Scroll    LT / RT  Section",px(485),draw.height-px(34),draw.width-px(180),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
         text(editing?"B  Review":navigation.page==0 && current_contract?"B  Your offer":"B  Back",draw.width-px(175),draw.height-px(34),draw.width-px(20),draw.height-px(9),18,FW_BOLD,white,DT_SINGLELINE|DT_RIGHT);
         auto *bytes=static_cast<unsigned char*>(bits);
         // GDI text does not maintain alpha; this full-screen surface is opaque.
@@ -400,7 +417,12 @@ extern "C" int franchise_negotiation_screen_event(const char *name,const void *d
         if(navigation.page==0 && lb!=rb && (left || right) && (editing?draft.armed:navigation.armed)) {
             current_contract=right;navigation.reset();draft.rearm();return NFL2K5_ADDON_UI_CONSUMED;
         }
+        auto checked_context=[&]() -> const nlohmann::json& {
+            const auto& result=screen_reply.at("result");
+            return (result.contains("signing_checkpoint")?result.at("signing_checkpoint"):result).at("offer_context");
+        };
         auto check=[&](){
+            if(!draft.present) {if(!draft.begin(checked_context(),preview_epoch)) return;draft.review();}
             if(nfl2k5_franchise_preview_offer(draft.epoch,draft.amount,draft.flags)) draft.waiting=true;
             else draft.message="Context changed or terms unavailable. Review your offer and retry.";
         };
@@ -419,7 +441,15 @@ extern "C" int franchise_negotiation_screen_event(const char *name,const void *d
                     navigation.reset();return NFL2K5_ADDON_UI_CONSUMED;
                 }
             }
-            if(draft.dirty() && event.analog[2]>30 && navigation.previous_analog[2]<=30) check();
+            if(event.analog[2]>30 && navigation.previous_analog[2]<=30) check();
+            if(submit_enabled && !draft.dirty() && !draft.waiting && notice.empty() &&
+               event.analog[3]>30 && navigation.previous_analog[3]<=30) {
+                if(!draft.present) {if(!draft.begin(checked_context(),preview_epoch)) return NFL2K5_ADDON_UI_CONSUMED;draft.review();}
+                if(nfl2k5_franchise_send_offer(preview_epoch,draft.amount,draft.flags)) {
+                    draft.waiting=true;agent_pending=true;submit_enabled=false;navigation.reset();navigation.page=3;
+                } else draft.message="Offer context changed. Check the draft before sending.";
+                return NFL2K5_ADDON_UI_CONSUMED;
+            }
         }
         const int result=navigation.input(event);
         if(result==NFL2K5_ADDON_UI_BACK) {

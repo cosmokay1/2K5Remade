@@ -10,7 +10,7 @@
 #include <iterator>
 using Client=std::unique_ptr<FranchiseHostClient,decltype(&franchise_host_destroy)>;
 static void require(bool value) {if(!value) throw std::runtime_error("Native saved-signing invariant failed");}
-static nlohmann::json receive(FranchiseHostClient* client) {
+static nlohmann::json receive(FranchiseHostClient* client,bool emit=true) {
     int ready=0;const auto started=GetTickCount64();
     while(!ready) {
         require(franchise_host_ready(client,&ready)==FRANCHISE_HOST_OK);
@@ -22,13 +22,13 @@ static nlohmann::json receive(FranchiseHostClient* client) {
     require(franchise_host_check_saved(client)==FRANCHISE_HOST_BUSY);
     std::vector<char> bytes(length);
     require(franchise_host_take(client,bytes.data(),bytes.size(),&length)==FRANCHISE_HOST_OK);
-    const std::string response(bytes.data());std::cout<<response<<std::endl;
+    const std::string response(bytes.data());if(emit) std::cout<<response<<std::endl;
     return franchise::parse_frame(response);
 }
-static nlohmann::json submit(FranchiseHostClient* client,const nlohmann::json& request) {
+static nlohmann::json submit(FranchiseHostClient* client,const nlohmann::json& request,bool emit=true) {
     const auto bytes=request.dump();
     require(franchise_host_submit(client,bytes.data(),bytes.size())==FRANCHISE_HOST_OK);
-    return receive(client);
+    return receive(client,emit);
 }
 int wmain(int argc,wchar_t** argv) {
     try {
@@ -64,8 +64,17 @@ int wmain(int argc,wchar_t** argv) {
             require(franchise_host_loaded_payload_matches(client.get(),different.c_str())==FRANCHISE_HOST_INVALID_ARGUMENT);
         }
         std::ifstream input{std::filesystem::path(argv[3])};nlohmann::json proposal;input>>proposal;
+        unsigned int amount=0,flags=0;
+        require(!franchise_host_reviewed_offer(client.get(),&amount,&flags));
+        auto checked=proposal;checked["operation"]="signing_context";
+        checked["request_id"]="native-checked-draft";checked["performance_format"]="saved_history_v1";
+        checked.erase("promise_goals");checked.erase("amendment_rule");
+        require(submit(client.get(),checked,false).at("error").is_null());
+        require(franchise_host_reviewed_offer(client.get(),&amount,&flags)==1);
+        require(amount==proposal.at("guest_offer").at("amount_word") && flags==proposal.at("guest_offer").at("flags_word"));
         const auto accepted=submit(client.get(),proposal);
         require(accepted.at("error").is_null() && accepted.at("result").at("outcome")=="accepted_proposal");
+        require(!franchise_host_reviewed_offer(client.get(),&amount,&flags)); // Agreement is not reusable UI permission.
         require(franchise_host_check_saved(client.get())==FRANCHISE_HOST_NOT_READY); // No implicit preparation.
         std::ifstream financial{std::filesystem::path(argv[6]),std::ios::binary};
         require(financial.good());

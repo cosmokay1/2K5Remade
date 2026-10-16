@@ -85,8 +85,9 @@ The preview defaults off. It requires `NFL2K5_FRANCHISE_SCREEN_PREVIEW=1` and an
 explicit `NFL2K5_FRANCHISE_SCREEN_PORT=0` through `3`. The configured port controls
 the view; other ports cannot operate the covered original menu. The current Deck
 will use an explicitly configured port during private testing, not an inferred
-team/controller assignment. Negotiation and guest signing must both be off;
-conflicting modes reject service startup. The game shim holds native signing
+team/controller assignment. Preview normally requires negotiation and guest signing
+to be off; the explicit reviewed-submission configuration below is the only
+negotiation exception. Conflicting modes reject service startup. The game shim holds native signing
 throughout preview mode, including missing/disabled addon and failed rendering.
 
 Contract, Performance, Personality and Agent sections use a navy/crimson franchise layout and
@@ -111,7 +112,36 @@ Your offer. Held horizontal input repeats after350ms, then every90ms (except
 schedule toggles); RT retains the larger-value step. Drafts survive section
 browsing and comparison until a new player/context or screen exit. Editing
 and checking never contact a player, change their opinion, call a model, reserve
-cap room or alter the native offer/save. Actual submission remains unavailable.
+cap room or alter the native offer/save.
+
+Reviewed submission is a separate, default-off opt-in:
+`NFL2K5_FRANCHISE_SCREEN_SUBMIT=1`, `SCREEN_PREVIEW=1`, `SCREEN_EDIT=1`,
+`NEGOTIATION=1`, `GUEST_SIGNING=0` (all use the `NFL2K5_FRANCHISE_` prefix).
+It requires the existing successful AI handshake, remote control and budget
+configuration. Y sends only the exact checked draft from Your offer, then opens
+Agent and displays a waiting message. Editing and X checks remain read-only;
+there is no automatic request on screen open, edit or render. Native signing
+remains held even if the player accepts.
+
+The renderer only copies an epoch-bound intent. The transport owner checks the
+current observation, loaded source, checked amount/flags and local grant again
+before submitting. Imported amendments explicitly select legacy_bonus_carry_v1;
+free agents retain their existing proposal path. Pending presses cannot queue a
+second request. Every completed agent response consumes the send capability;
+checking the next draft is required before another submission.
+
+A service error preserves the draft/context for browsing, removes send authority
+and stale predicted cap, and adds a System message on Agent. X rechecks the draft
+without contacting the player. Sending the same unchanged checked terms after a
+lost/error reply reuses the original dialogue request, so durable replay cannot
+apply the opinion effect or call the model twice. Changed terms, player, source
+or a successful reply end that retry scope. Transport failure still holds
+signing and requires service recovery. A denied initial AI handshake falls back
+once to read-only bind_runtime; it never retries hello or renews AI control.
+
+This source path does not enable guest signing, settle a live amendment or prove
+saved cap enforcement. The private installed preview keeps submission off until
+the combined candidate and financial application gates are validated.
 
 The initial editor supports one through seven years, bonus shares in ten-percent
 steps and the calibrated Balanced/Descending schedules. An existing schedule can

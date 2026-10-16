@@ -17,6 +17,9 @@ struct FranchiseHostClient {
     bool cached = false;
     bool ai_granted = false;
     bool journal_capable = false;
+    bool reply_failed = false;
+    int offer_kind=0;
+    unsigned int offer_amount=0,offer_flags=0;
     std::string request;
     franchise::SavedSigningJournal candidate, journal;
     std::string operation;
@@ -184,6 +187,15 @@ extern "C" FranchiseHostStatus franchise_host_check_saved(FranchiseHostClient* c
     } catch(...) {client->ai_granted=false;client->loaded_payload.clear();return FRANCHISE_HOST_SERVICE_FAILURE;}
 }
 
+extern "C" int franchise_host_reviewed_offer(FranchiseHostClient* client,unsigned int* amount,unsigned int* flags) {
+    if(!client || !amount || !flags || client->owner!=GetCurrentThreadId() ||
+       !client->ai_granted || client->pending || client->cached) return 0;
+    *amount=client->offer_amount;*flags=client->offer_flags;return client->offer_kind;
+}
+extern "C" int franchise_host_reply_failed(FranchiseHostClient* client) {
+    return !client || client->owner!=GetCurrentThreadId() || client->reply_failed;
+}
+
 extern "C" FranchiseHostStatus franchise_host_ready(FranchiseHostClient* client, int* ready_out) {
     if (!ready_out) return FRANCHISE_HOST_INVALID_ARGUMENT;
     *ready_out = 0;
@@ -205,6 +217,21 @@ extern "C" FranchiseHostStatus franchise_host_take(FranchiseHostClient* client, 
             client->pending = false;
             client->reply = client->transport->take();
             const auto response = franchise::parse_frame(client->reply); // Already transport-validated.
+            client->offer_kind=0;
+            client->reply_failed=!response.at("error").is_null();
+            if(!client->reply_failed && client->operation=="signing_context") {
+                const auto& result=response.at("result");
+                if(result.contains("offer_context")) {
+                    const auto& terms=result.at("offer_context");
+                    if(terms.at("outcome")=="eligible_preview") client->offer_kind=1;
+                    else if(terms.at("outcome")=="amendment_comparison" && terms.at("amendment").at("within_modeled_cap")==true)
+                        client->offer_kind=2;
+                    if(client->offer_kind) {
+                        client->offer_amount=terms.at("amount_word").get<unsigned int>();
+                        client->offer_flags=terms.at("flags_word").get<unsigned int>();
+                    }
+                }
+            }
             if (client->operation == "hello" || client->operation == "bind_runtime") {
                 client->ai_granted = client->operation=="hello" && response.at("error").is_null() &&
                     response.at("result").at("ai_enabled").is_boolean() && response.at("result").at("ai_enabled") == true;

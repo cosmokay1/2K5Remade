@@ -16,6 +16,13 @@ static bool editing=false,checking=false;
 static unsigned long long preview_epoch=1;
 static unsigned preview_calls;
 static uint32_t preview_amount;
+static bool submitting=false,agent_waiting=false;
+static unsigned submit_calls;
+static std::string notice;
+extern "C" int nfl2k5_franchise_send_offer(unsigned long long epoch,uint32_t amount,uint32_t flags) {
+    if(!submitting || checking || epoch!=preview_epoch || !amount || !flags) return 0;
+    ++submit_calls;checking=agent_waiting=true;++preview_epoch;return 1;
+}
 extern "C" int nfl2k5_franchise_preview_offer(unsigned long long epoch,uint32_t amount,uint32_t flags) {
     if(epoch!=preview_epoch || checking || !amount || !flags) return 0;
     ++preview_calls;preview_amount=amount;checking=true;++preview_epoch;return 1;
@@ -26,6 +33,8 @@ extern "C" int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out) 
     const auto response=fixture.dump();if(response.size()>=sizeof(out->response)) return 0;
     std::memcpy(out->response,response.c_str(),response.size()+1);
     out->preview_enabled=editing;out->preview_pending=checking;out->preview_epoch=preview_epoch;
+    out->submit_enabled=submitting && !checking;out->proposal_pending=agent_waiting;
+    std::snprintf(out->notice,sizeof(out->notice),"%s",notice.c_str());
     std::strcpy(out->summary.title,"Authored Player");
     std::strcpy(out->summary.offer,"Read-only preview. Contract application is held.");return 1;
 }
@@ -175,6 +184,31 @@ int main(int argc,char** argv) {
                 {"signing_bonus",0},{"guaranteed_salaries",{0,0,0,0,0,0,0}}};
             fixture["result"]["offer_context"]["preview"]={{"contract_charges",{1000000,1000000,1000000,1000000,1000000,1000000,1000000}},{"room_after",10000000}};
             capture("long-contract-top");for(int i=0;i<20;++i)press(-1,2);capture("long-contract-bottom");
+            // One reviewed submission, no held-button retries, recoverable service
+            // error, read-only recheck, then an actual attributed reply.
+            fixture=negotiation_screen_fixture();fixture["request_id"]="send-reviewed-"+std::to_string(height);
+            _putenv_s("NFL2K5_FRANCHISE_SCREEN_EDIT","1");
+            _putenv_s("NFL2K5_FRANCHISE_SCREEN_SUBMIT","1");
+            _putenv_s("NFL2K5_FRANCHISE_NEGOTIATION","1");
+            editing=submitting=true;capture("send-reviewed");
+            const auto sends=submit_calls;press(3);capture("agent-waiting");
+            require(submit_calls==sends+1,"Reviewed Y submission was not queued once");
+            press(3);require(submit_calls==sends+1,"Pending agent submission repeated");
+            checking=agent_waiting=submitting=false;notice="Request failed. No contract applied. Check the draft before retrying.";++preview_epoch;
+            capture("agent-error-retained-draft");
+            press(6);press(6);press(6);capture("error-contract-retained");
+            const auto checks=preview_calls;press(2);capture("error-readonly-recheck");
+            require(preview_calls==checks+1 && submit_calls==sends+1,"Error retry bypassed fresh draft check");
+            notice.clear();checking=false;submitting=true;++preview_epoch;
+            fixture["request_id"]="rechecked-send-"+std::to_string(height);capture("rechecked-send");
+            press(3);require(submit_calls==sends+2,"Rechecked offer could not be sent");
+            checking=agent_waiting=submitting=false;++preview_epoch;
+            const auto agent_checkpoint=fixture.at("result");
+            fixture["result"]={{"signing_checkpoint",agent_checkpoint},{"offer",agent_checkpoint.at("offer_context").at("offer")},
+                {"counter",nullptr},{"reason","We need more guaranteed money before discussing an extension."}};
+            capture("agent-reply-after-send");
+            _putenv_s("NFL2K5_FRANCHISE_SCREEN_SUBMIT","0");_putenv_s("NFL2K5_FRANCHISE_NEGOTIATION","0");
+            editing=false;
             // A failed paint cannot keep invisible input ownership.
             NFL2K5AddonDraw bad{1280,static_cast<uint32_t>(height),1,0,nullptr,1,0};
             require(!franchise_negotiation_screen_event(NFL2K5_ADDON_UI_DRAW,&bad,sizeof(bad)),"Malformed surface accepted");

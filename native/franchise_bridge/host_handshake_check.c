@@ -11,6 +11,12 @@ static char owned;
 static unsigned submissions, takes;
 static int ready_value;
 static DWORD owner;
+static int reviewed_kind,reply_failed;
+static unsigned reviewed_amount,reviewed_flags;
+int franchise_host_reviewed_offer(FranchiseHostClient *c,unsigned int *amount,unsigned int *flags) {
+    (void)c;assert(GetCurrentThreadId()==owner);*amount=reviewed_amount;*flags=reviewed_flags;return reviewed_kind;
+}
+int franchise_host_reply_failed(FranchiseHostClient *c){(void)c;return reply_failed;}
 static char last_request[4096];
 /* Near the transport limit, includes UTF-8 and data the compact display omits.
  * This fixture exercises ownership/framing, not the separate protocol parser. */
@@ -63,7 +69,7 @@ FranchiseHostStatus franchise_host_submit(FranchiseHostClient *client, const cha
 {
     assert(client == (FranchiseHostClient *)&owned && GetCurrentThreadId() == owner);
     assert(size == strlen(bytes) && (strstr(bytes, "\"operation\":\"hello\"") || strstr(bytes,"\"operation\":\"bind_runtime\"") ||
-        strstr(bytes, "\"operation\":\"signing_context\"")));
+        strstr(bytes, "\"operation\":\"signing_context\"") || strstr(bytes,"\"operation\":\"negotiate_proposal\"")));
     assert(!memchr(bytes, '\n', size) && !memchr(bytes, '\r', size));
     ++submissions;
     assert(size < sizeof(last_request)); memcpy(last_request,bytes,size+1);
@@ -298,5 +304,60 @@ int main(void)
     _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_EDIT",L"bad");assert(!nfl2k5_franchise_start());
     _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_EDIT",L"0");
     _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_PREVIEW",L"bad");assert(!nfl2k5_franchise_start());
+    _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_PREVIEW",L"1");
+    _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_SUBMIT",L"1");
+    _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_EDIT",L"1");
+    _wputenv_s(L"NFL2K5_FRANCHISE_NEGOTIATION",L"0");
+    assert(!nfl2k5_franchise_start()); // Explicit UI mode still requires controlled negotiation.
+    _wputenv_s(L"NFL2K5_FRANCHISE_NEGOTIATION",L"1");
+    _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SIGNING",L"1");
+    assert(!nfl2k5_franchise_start()); // Reviewed screen never enables native writes.
+    _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SIGNING",L"0");
+    reviewed_kind=2;reviewed_amount=observation.offer_amount;reviewed_flags=observation.offer_flags;
+    assert(nfl2k5_franchise_start());
+    nfl2k5_franchise_on_fsm(0x557B2C,1);nfl2k5_franchise_poll();
+    nfl2k5_franchise_signing_context(&observation);nfl2k5_franchise_poll();
+    assert(nfl2k5_franchise_negotiation_view(&full_view) && full_view.submit_enabled);
+    unsigned sent=submissions;
+    assert(!nfl2k5_franchise_send_offer(full_view.preview_epoch,reviewed_amount+1,reviewed_flags));
+    assert(nfl2k5_franchise_send_offer(full_view.preview_epoch,reviewed_amount,reviewed_flags));
+    assert(submissions==sent); // Renderer copies intent only.
+    assert(!nfl2k5_franchise_send_offer(full_view.preview_epoch,reviewed_amount,reviewed_flags));
+    assert(nfl2k5_franchise_negotiation_view(&full_view) && full_view.proposal_pending && !full_view.submit_enabled);
+    nfl2k5_franchise_signing_context(&observation);
+    assert(submissions==sent+1 && strstr(last_request,"\"operation\":\"negotiate_proposal\""));
+    assert(strstr(last_request,"\"amendment_rule\":\"legacy_bonus_carry_v1\""));
+    char failed_proposal[4096];strcpy(failed_proposal,last_request);
+    reply_failed=1;nfl2k5_franchise_poll();reply_failed=0;reviewed_kind=0;
+    assert(nfl2k5_franchise_negotiation_view(&full_view) && full_view.response[0] && full_view.notice[0]);
+    assert(!full_view.submit_enabled && !full_view.proposal_pending && !full_view.preview_pending);
+    assert(!nfl2k5_franchise_send_offer(full_view.preview_epoch,reviewed_amount,reviewed_flags));
+    // Read-only recheck recovers without reopening or resending a negotiation.
+    assert(nfl2k5_franchise_preview_offer(full_view.preview_epoch,reviewed_amount,reviewed_flags));
+    nfl2k5_franchise_signing_context(&observation);reviewed_kind=2;nfl2k5_franchise_poll();
+    assert(nfl2k5_franchise_negotiation_view(&full_view) && full_view.submit_enabled && !full_view.notice[0]);
+    assert(nfl2k5_franchise_send_offer(full_view.preview_epoch,reviewed_amount,reviewed_flags));
+    nfl2k5_franchise_signing_context(&observation);
+    assert(!strcmp(last_request,failed_proposal)); // Same durable dialogue ID, not another agent contact.
+    nfl2k5_franchise_poll();
+    assert(nfl2k5_franchise_negotiation_view(&full_view) && !full_view.submit_enabled);
+    assert(nfl2k5_franchise_preview_offer(full_view.preview_epoch,reviewed_amount,reviewed_flags));
+    nfl2k5_franchise_signing_context(&observation);nfl2k5_franchise_poll();
+    assert(nfl2k5_franchise_negotiation_view(&full_view) && full_view.submit_enabled);
+    assert(nfl2k5_franchise_send_offer(full_view.preview_epoch,reviewed_amount,reviewed_flags));
+    reviewed_kind=0;sent=submissions;nfl2k5_franchise_signing_context(&observation);
+    assert(submissions==sent); // Owner rejects a grant revoked after the UI queued intent.
+    assert(nfl2k5_franchise_negotiation_view(&full_view) && !full_view.submit_enabled && full_view.notice[0]);
+    nfl2k5_franchise_on_fsm(0,0);nfl2k5_franchise_stop();
+    reviewed_kind=0;reply_failed=1;
+    assert(nfl2k5_franchise_start());nfl2k5_franchise_on_fsm(0x557B2C,1);
+    const unsigned before_fallback=submissions;nfl2k5_franchise_poll();
+    assert(submissions==before_fallback+1 && strstr(last_request,"\"operation\":\"bind_runtime\""));
+    reply_failed=0;nfl2k5_franchise_poll();
+    nfl2k5_franchise_signing_context(&observation);nfl2k5_franchise_poll();
+    assert(nfl2k5_franchise_negotiation_view(&full_view) && full_view.preview_enabled && !full_view.submit_enabled);
+    sent=submissions;nfl2k5_franchise_poll();assert(submissions==sent); // No AI reauthorization loop.
+    nfl2k5_franchise_stop();
+    _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_SUBMIT",L"bad");assert(!nfl2k5_franchise_start());
     return 0;
 }

@@ -32,6 +32,8 @@ FranchiseHostStatus franchise_host_submit(FranchiseHostClient* c,const char* byt
     require(GetCurrentThreadId()==owner && !c->pending);submitted=franchise::parse_frame(std::string(bytes,length));
     require(submitted.at("protocol")==1);++submissions;c->pending=true;return FRANCHISE_HOST_OK;
 }
+int franchise_host_reviewed_offer(FranchiseHostClient*,unsigned int*,unsigned int*){return 0;}
+int franchise_host_reply_failed(FranchiseHostClient*){return 0;}
 FranchiseHostStatus franchise_host_ready(FranchiseHostClient*,int* out) { require(GetCurrentThreadId()==owner);*out=ready;return FRANCHISE_HOST_OK; }
 static bool image_available=true;
 static bool source_matches=true,payload_matches=true,path_matches=true;static unsigned path_checks;static uint64_t source_epoch=1;

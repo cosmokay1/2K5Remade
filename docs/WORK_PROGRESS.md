@@ -9879,3 +9879,40 @@ recovery, native supplemental cap enforcement with a validated team/year source,
 sourced earned-pay timing, then one controlled apply/reconcile/save/reload test.
 Do not silently turn agent acceptance into native signing while any of those
 financial gates is unresolved.
+
+
+## Reviewed offer submission and recoverable agent replies — source candidate
+
+The prior84c5a5b game build check passes. Its franchise matrix exposed one Windows
+cleanup error: sqlite3's transaction context did not close the connection in the
+new tamper test. The test now uses contextlib.closing around the transaction;
+this changes no accounting behavior. The full local948-test suite passes again
+in28.273s. Native protocol/asset-free tests had passed in that Windows run.
+
+The combined addon candidate adds SCREEN_SUBMIT as a separate explicit opt-in,
+requiring preview/edit/controlled negotiation on and guest signing off. Y sends
+only a checked, unchanged reviewed offer, opens Agent and shows a pending state.
+The owner revalidates native observation, source epoch, exact checked raw terms
+and local handshake grant. Imported amendments and free-agent proposals remain
+separate. Completed dialogue consumes send permission; no render/edit or default
+preview makes a model request. Service errors retain the draft and last known
+context, remove prediction/send authority and show a System notice. X performs a
+fresh read-only recheck. Same-terms retries after a lost/error reply retain the
+original dialogue ID; changed terms/source/player or success end that scope.
+The initial denied AI hello falls back once to read-only binding without retrying
+or renewing AI authorization. Native application stays held.
+
+Authored Windows tests now cover explicit-mode conflicts, exact/stale terms,
+pending duplicates, owner-time revocation, amendment routing, retained error,
+recheck, stable retry identity and read-only disabled-control fallback. Renderer
+fixtures cover reviewed send/wait/error/recheck/agent reply at1280x800/720. The
+actual C client saved-signing test also queries the consumed checked capability
+and verifies that an acceptance cannot reuse it. All11 portable checks pass;
+Windows execution of this new candidate is pending.
+
+An isolated compiler overlay was staged in reviewed-agent-submit-v1, without
+changing the installed runtime or saves. The Deck stopped resolving during the
+build; that staged overlay predates the final fallback/retry adjustments and must
+not be deployed. Continue source CI and refresh the complete source manifest
+before resuming any private validation. The installed cap-room-bumpers-v1 preview,
+service snapshot, database and disabled AI/signing controls remain unchanged.

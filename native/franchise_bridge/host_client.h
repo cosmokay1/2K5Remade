@@ -36,6 +36,8 @@ typedef struct FranchiseNegotiationView {
     /* Addon-private read-only draft mailbox, not part of the generic host ABI. */
     unsigned long long preview_epoch;
     int preview_enabled, preview_pending;
+    int submit_enabled, proposal_pending;
+    char notice[256];
 } FranchiseNegotiationView;
 
 /* Format an already transport-validated read-only context; no I/O or grant. */
@@ -70,6 +72,12 @@ FranchiseHostStatus franchise_host_submit(FranchiseHostClient* client, const cha
  * This is neither an atomic live read nor a guest write grant. */
 FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient* client,
     const void* finance_state, size_t finance_size, const void* identity_state, size_t identity_size);
+/* Owner only: last consumed checked draft, with current local hello grant.
+ * kind is 1 for a free agent or 2 for an imported amendment; zero is unavailable.
+ * This is a UI submission capability, never native application authority. */
+int franchise_host_reviewed_offer(FranchiseHostClient* client, unsigned int* amount,unsigned int* flags);
+/* Last consumed service error; no provider/private error text is exposed. */
+int franchise_host_reply_failed(FranchiseHostClient* client);
 /* Owner only; copy/hash completed live snapshots for the existing journal.
  * No transport wait or guest writes. May record while a status request is busy;
  * the next idle check must compare these hashes before any saved confirmation.

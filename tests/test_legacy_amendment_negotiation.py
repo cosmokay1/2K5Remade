@@ -1,5 +1,6 @@
 """One offline agent/consent/settlement/reopen loop; never a game application."""
 from pathlib import Path
+from contextlib import closing
 import copy
 import json
 import sqlite3
@@ -120,7 +121,7 @@ class LegacyAmendmentNegotiationTests(unittest.TestCase):
 
     def test_replay_rejects_tampered_bonus_debt_and_source_proposal(self):
         self.propose();self.settle()
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db,db:
             key,payload=db.execute("SELECT id,payload FROM events WHERE kind='legacy_amendment'").fetchone()
             payload=json.loads(payload);payload['agreement']['carried_bonus_charges'][0]=0
             db.execute('UPDATE events SET payload=? WHERE id=?',(json.dumps(payload),key))
