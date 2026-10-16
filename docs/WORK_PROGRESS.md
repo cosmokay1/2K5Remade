@@ -10277,6 +10277,14 @@ MSVC fixture in the existing build tree, with no new asset/runtime copies.
 Actual boot, negotiation and signing/save/reload are still required; diagnostic
 runs which reached the offer screen do not by themselves prove a startup fix.
 
+Fork CI also passed on both Windows and Ubuntu (Franchise engine run
+38959692144; build-check run38959692110). The focused upstream draft is
+BeyondTomrrow/2K5Remade#7, containing only the patch wrappers, authored C
+regression and asset-free CI registration. It remains a draft pending actual
+Deck startup evidence. The private Windows rebuild reuses the active compiler
+tree and paired isolated runtime; production saves and the original ledger
+remain protected.
+
 Also retained the user's request for smaller bonus percentage increments. The
 current packed guest format is10% per nibble step; finer values require lossless
 native/signing/save support and are not represented by a cosmetic slider change.
