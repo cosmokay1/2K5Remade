@@ -8696,3 +8696,27 @@ are isolated Windows checks, not updated callbacks in the running game. A guarde
 installer is staged to back up and atomically replace only the launcher after
 normal exit, preserving all current save hashes and the executable/addon. The
 current game remains running; no live package replacement has occurred.
+
+### Salary classification package installed after normal exit
+
+The user confirmed normal exit. The guarded installer completed successfully:
+only the launcher configuration changed, selecting the separately validated
+revision2 context. All205 current save hashes matched before/after installation;
+the executable and addon hashes are unchanged. The previous launcher is backed
+up under salary-classification-v1/installed-before-salary-classification.
+Private installation-receipt.json preserves the complete save manifest. AI and
+guest application remain disabled, credentials remain unavailable, and the
+existing unused inference budget/scope is preserved.
+
+At03391e7899cb278349470dbc622e9767f7c1205e both final CI workflows completed
+successfully: Build38835081734 and Franchise38835081779, including Windows and
+Ubuntu. This supersedes the failed Windows handle-cleanup run. Actual revision2
+game callback consumption and native signing/save-load proof remain pending.
+
+The existing Steam entry then starts game PID215039 and the new staged sidecar
+PID215081. The log confirms the expected SOFTDRINK image f67e6fc1cb76c9ea and
+the same720044-byte MyNFL1 payload4c8c31b4f400e251, read fully at epoch1 from
+volume4061331925/index00945220. Held negotiation mode remains0 and guest commits
+are unavailable. This launch reached the franchise load checkpoint without the
+previous startup divide fault; that intermittent fault is not declared fixed.
+The user was asked to leave Hernandez's offer open for revision2 context proof.
