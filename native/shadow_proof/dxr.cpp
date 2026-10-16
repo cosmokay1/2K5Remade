@@ -1,5 +1,6 @@
 // Standalone, asset-free GPU correctness proof. No game hooks or software fallback.
 #include "scene.h"
+#include "../../external/xboxrecomp/src/kernel/nv2a_shadow_live.h"
 #include <windows.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -86,21 +87,31 @@ struct Gpu {
     }
 };
 int main(int argc,char** argv) {
-    if(argc!=3){std::cerr<<"Usage: shadow_dxr shadow.cso output-directory\n";return 1;}
+    if(argc==3 && std::string(argv[1])=="--stop") {
+        const std::string name=std::string(argv[2])+"-stop";
+        HANDLE stop=OpenEventA(EVENT_MODIFY_STATE,FALSE,name.c_str());
+        if(!stop)return 1;const bool ok=SetEvent(stop)!=0;CloseHandle(stop);return ok?0:1;
+    }
+    const bool resume=argc==6 && std::string(argv[3])=="--resume-live";
+    const bool live=resume || (argc==6 && (std::string(argv[3])=="--live" || std::string(argv[3])=="--live-check"));
+    if(argc!=3 && !(argc==4 && std::string(argv[3])=="--box") && !live){std::cerr<<"Usage: shadow_dxr shadow.cso output-directory [--box | --live[-check] mapping-name seconds]\n";return 1;}
     try {
         const std::filesystem::path directory=argv[2];std::filesystem::create_directories(directory);
         // A skipped/failed attempt must never leave an earlier success receipt.
         std::filesystem::remove(directory/"passed.txt");
+        if(live)std::filesystem::remove(directory/"live-passed.txt");
         Gpu gpu;
         if(!gpu.open()){std::cout<<"UNSUPPORTED: no hardware adapter exposes DXR 1.1 + Shader Model 6.5. GPU proof NOT run.\n";return 77;}
         std::ifstream shader_file(argv[1],std::ios::binary);
         const std::vector<char> shader((std::istreambuf_iterator<char>(shader_file)),{});
         if(shader.empty()) throw std::runtime_error("Missing compiled DXR compute shader");
-        auto mesh=gpu.upload(vertices.data(),sizeof(vertices));
+        const bool box=argc>=4;
+        const std::vector<Vec> mesh_vertices=box?box_vertices():std::vector<Vec>(vertices.begin(),vertices.end());
+        auto mesh=gpu.upload(mesh_vertices.data(),mesh_vertices.size()*sizeof(Vec));
         D3D12_RAYTRACING_GEOMETRY_DESC geometry{};geometry.Type=D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
         geometry.Flags=D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
         geometry.Triangles.VertexBuffer={mesh->GetGPUVirtualAddress(),sizeof(Vec)};
-        geometry.Triangles.VertexCount=static_cast<UINT>(vertices.size());geometry.Triangles.VertexFormat=DXGI_FORMAT_R32G32B32_FLOAT;
+        geometry.Triangles.VertexCount=static_cast<UINT>(mesh_vertices.size());geometry.Triangles.VertexFormat=DXGI_FORMAT_R32G32B32_FLOAT;
         D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS bottom{};
         bottom.Type=D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
         bottom.DescsLayout=D3D12_ELEMENTS_LAYOUT_ARRAY;bottom.NumDescs=1;bottom.pGeometryDescs=&geometry;
@@ -145,11 +156,44 @@ int main(int argc,char** argv) {
         struct Settings {Vec light;uint32_t mask;};
         const Settings cases[]={{{-2,6,-2},1},{{2,6,-2},1},{{-2,6,-2},0}};
         const char* names[]={"left","right","unoccluded"};
-        for(unsigned test=0;test<3;++test) {
+        HANDLE mapping=nullptr,mutex=nullptr,stop=nullptr,producer=nullptr;
+        ShadowLiveFrame* shared=nullptr;
+        unsigned duration=0,published=0,checked=0;
+        ULONGLONG started=GetTickCount64(),next=started;
+        if(live) {
+            duration=static_cast<unsigned>(std::stoul(argv[5]));
+            if(duration<1 || duration>600 || std::strlen(argv[4])>120)throw std::runtime_error("Live test limited to 1..600 seconds");
+            const std::string name=argv[4];
+            producer=CreateMutexA(nullptr,FALSE,(name+"-producer").c_str());
+            if(!producer)throw std::runtime_error("Producer lease creation failed");
+            const auto ownership=WaitForSingleObject(producer,0);
+            if(ownership!=WAIT_OBJECT_0 && ownership!=WAIT_ABANDONED)throw std::runtime_error("Producer already active");
+            mapping=CreateFileMappingA(INVALID_HANDLE_VALUE,nullptr,PAGE_READWRITE,0,sizeof(ShadowLiveFrame),name.c_str());
+            if(!mapping || (GetLastError()==ERROR_ALREADY_EXISTS && !resume))throw std::runtime_error("Fresh local mapping required");
+            shared=static_cast<ShadowLiveFrame*>(MapViewOfFile(mapping,FILE_MAP_ALL_ACCESS,0,0,sizeof(ShadowLiveFrame)));
+            mutex=CreateMutexA(nullptr,FALSE,(name+"-mutex").c_str());stop=CreateEventA(nullptr,TRUE,FALSE,(name+"-stop").c_str());
+            if(!shared || !mutex || !stop)throw std::runtime_error("Live transport creation failed");
+            if(resume) {
+                if(WaitForSingleObject(mutex,0)!=WAIT_OBJECT_0)throw std::runtime_error("Resume requires idle transport");
+                const bool stale=shared->magic==SHADOW_LIVE_MAGIC && GetTickCount64()>shared->tick+2000;
+                published=shared->sequence;ReleaseMutex(mutex);
+                if(!stale)throw std::runtime_error("Resume requires a stale, stopped producer");
+                ResetEvent(stop);
+            } else std::memset(shared,0,sizeof(*shared));
+            std::cout<<std::unitbuf<<"LIVE ready; 15Hz target; bounded "<<duration<<" seconds\n";
+        }
+        for(unsigned test=0;live || test<3;++test) {
+            Settings settings=cases[live?0:test];
+            if(live) {
+                if(WaitForSingleObject(stop,0)==WAIT_OBJECT_0 || GetTickCount64()-started>=duration*1000ull)break;
+                const auto now=GetTickCount64();if(now<next)Sleep(static_cast<DWORD>(next-now));
+                const float phase=static_cast<float>(GetTickCount64()-started)*.0008f;
+                settings.light={2.2f*std::sin(phase),6,-2};settings.mask=1;
+            }
             gpu.commands->SetPipelineState(state.Get());gpu.commands->SetComputeRootSignature(root.Get());
             gpu.commands->SetComputeRootShaderResourceView(0,tlas->GetGPUVirtualAddress());
             gpu.commands->SetComputeRootUnorderedAccessView(1,output->GetGPUVirtualAddress());
-            gpu.commands->SetComputeRoot32BitConstants(2,4,&cases[test],0);
+            gpu.commands->SetComputeRoot32BitConstants(2,4,&settings,0);
             gpu.commands->Dispatch(size/8,size/8,1);
             gpu.transition(output.Get(),D3D12_RESOURCE_STATE_UNORDERED_ACCESS,D3D12_RESOURCE_STATE_COPY_SOURCE);
             gpu.commands->CopyResource(readback.Get(),output.Get());
@@ -158,11 +202,33 @@ int main(int argc,char** argv) {
             void* mapped=nullptr;D3D12_RANGE range{0,bytes};check(readback->Map(0,&range,&mapped),"Readback map");
             std::vector<uint32_t> actual(size*size);std::memcpy(actual.data(),mapped,bytes);
             D3D12_RANGE no_write{0,0};readback->Unmap(0,&no_write);
-            const auto expected=reference(cases[test].light,cases[test].mask!=0);
-            image(directory/(std::string("gpu-")+names[test]+".ppm"),actual);
-            unsigned mismatches=0;for(size_t pixel=0;pixel<actual.size();++pixel) mismatches+=actual[pixel]!=expected[pixel];
-            std::cout<<names[test]<<": "<<mismatches<<" mismatched pixels of "<<actual.size()<<"\n";
-            if(mismatches) throw std::runtime_error("GPU/reference disagreement; proof failed");
+            const bool verify=!live || std::string(argv[3])=="--live-check";
+            if(verify) {
+                const auto expected=reference(settings.light,settings.mask!=0,box);
+                unsigned mismatches=0;for(size_t pixel=0;pixel<actual.size();++pixel)mismatches+=actual[pixel]!=expected[pixel];
+                if(mismatches)throw std::runtime_error("GPU/reference disagreement: "+std::to_string(mismatches)+" pixels; proof failed");
+                ++checked;
+                if(!live)std::cout<<names[test]<<": 0 mismatched pixels of "<<actual.size()<<"\n";
+            }
+            if(live) {
+                if(WaitForSingleObject(mutex,0)==WAIT_OBJECT_0) {
+                    std::memcpy(shared->mask,actual.data(),bytes);shared->light[0]=settings.light.x;shared->light[1]=settings.light.y;shared->light[2]=settings.light.z;
+                    shared->tick=GetTickCount64();shared->sequence=++published;shared->magic=SHADOW_LIVE_MAGIC;ReleaseMutex(mutex);
+                }
+                if(published && published%15==0)std::cout<<"LIVE frame="<<published<<" light_x="<<settings.light.x<<" elapsed_ms="<<GetTickCount64()-started<<"\n";
+                next=std::max(next+67,GetTickCount64());
+            } else {
+                image(directory/(std::string("gpu-")+names[test]+".ppm"),actual);
+                if(box) {std::ofstream raw(directory/(std::string("box-")+names[test]+".mask"),std::ios::binary);
+                    raw.write(reinterpret_cast<const char*>(actual.data()),bytes);if(!raw)throw std::runtime_error("Mask export failed");}
+            }
+        }
+        if(live) {
+            if(!published || (std::string(argv[3])=="--live-check" && !checked))throw std::runtime_error("No live frames completed");
+            std::cout<<"LIVE completed; published="<<published<<" checked="<<checked<<" elapsed_ms="<<GetTickCount64()-started<<"\n";
+            UnmapViewOfFile(shared);CloseHandle(mapping);CloseHandle(mutex);CloseHandle(stop);ReleaseMutex(producer);CloseHandle(producer);
+            std::ofstream receipt(directory/"live-passed.txt");receipt<<"published="<<published<<" checked="<<checked<<"\n";
+            if(!receipt)throw std::runtime_error("Live receipt failed");return 0;
         }
         std::ofstream receipt(directory/"passed.txt");receipt<<"DXR 1.1: all three shadow masks match the CPU reference exactly.\n";
         if(!receipt) throw std::runtime_error("Could not write completion receipt");

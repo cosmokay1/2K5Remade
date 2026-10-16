@@ -6,6 +6,13 @@ int main(int argc,char** argv) {
         using namespace shadow_proof;
         const Vec left{-2,6,-2},right{2,6,-2};
         const auto a=reference(left),b=reference(right),clear=reference(left,false);
+        if(box_vertices().size()!=36 || !box_hit({0,0,0},{0,1,0},2) ||
+           box_hit({2,0,0},{0,1,0},2) || box_hit({0,0,0},{1,0,0},2) || box_hit({0,0,0},{0,1,0},.01f))
+            throw std::runtime_error("Closed box segment regression");
+        const auto box_left=reference(left,true,true),box_right=reference(right,true,true);
+        if(box_left==a || !std::count(box_left.begin(),box_left.end(),1u))throw std::runtime_error("Box must have its own nonempty shadow");
+        for(unsigned y=0;y<size;++y)for(unsigned x=0;x<size;++x)
+            if(box_left[y*size+x]!=box_right[y*size+(size-1-x)])throw std::runtime_error("Box symmetry regression");
         const auto count=std::count(a.begin(),a.end(),1u);
         if(count<100 || count>size*size/4 || a==b || std::count(clear.begin(),clear.end(),1u))
             throw std::runtime_error("Missing shadow, unmoving shadow or failed unoccluded control");

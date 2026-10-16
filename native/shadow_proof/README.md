@@ -82,3 +82,78 @@ and [DXR1.1 inline-raytracing overview](https://devblogs.microsoft.com/directx/d
 All test geometry and source in this directory are authored for this fork; no
 game assets or external sample implementation are included. Existing repository
 provenance and licensing notices continue to apply.
+
+## Isolated in-engine experiment
+
+`shadow_dxr shadow.cso output-directory --box` traces a closed box instead of the
+original plate. The box spans X/Z ±0.73m and Y 0.07–1.47m. It exports three raw
+256×256 little-endian uint32 masks, checks every pixel against a separate AABB
+segment test, and writes completion only after all three comparisons pass.
+The original plate experiment is unchanged when `--box` is omitted.
+
+The experimental runtime overlay in `nv2a_gpu_shadow_box.inc.c` is disabled by
+default. `RECOMP_SHADOW_BOX` names the verified `box-left.mask`. It projects a
+matching blue box and ground shadow at X=0, Z=2000cm, using the live c0–c3 camera.
+F8 cycles box/shadow, box only, and off. All custom D3D11 bindings invalidate the
+normal renderer's state cache so subsequent game draws restore their state.
+
+This deliberately uses a **precomputed hardware ray-traced mask for a fixed box
+and light**. It does not ray-trace players, stadium geometry or changing lights,
+and is not a real-time DXR renderer. The mask should be generated and verified on
+the target hardware before testing. It is an integration experiment, not a
+production graphics option or a franchise addon.
+
+Receiver selection uses the captured world-space Y=0 full-field dimensions and
+depth-test convention, never a texture/memory address or mod name. Only that
+known coordinate convention is supported. This experimental predicate still
+needs broader camera/stadium validation; unsupported geometry is skipped.
+Use a disposable portable runtime, no franchise addon, copied/read-only assets,
+AI/signing disabled, and an isolated Proton prefix. Do not install over a running
+game or replace a user's runtime merely to obtain a capture.
+
+`RECOMP_SHADOW_CAPTURE` optionally names a new absolute output prefix. Create
+`<prefix>.request` while the field is visible. One bounded frame produces a
+JSONL draw/sample record and a presented-target PPM. Existing output is refused.
+The CPU vertex-transform path is forced for that capture frame only. Run
+`python3 tools/analyze_shadow_capture.py <prefix>.jsonl` to inspect candidate
+planes and camera matches. A planar match alone does not validate a 3D box;
+the analyzer also checks off-plane samples. Depth testing without depth writes
+is valid for the captured field. Geometry behind/crossing the camera is retained
+for matrix checks rather than discarded solely by W sign.
+
+## Moving-light experiment
+
+`shadow_dxr shadow.cso output-directory --live-check Local\unique-name 8` keeps
+the DXR device, pipeline and acceleration structures loaded, moves the point
+light sinusoidally along X, and checks every completed mask against the analytic
+box reference. The bounded duration is 1–600 seconds. `--live` uses the same GPU
+path without recurring CPU correctness comparisons. `--stop Local\unique-name`
+signals that producer to exit. Fresh mapping names prevent an old producer from
+being mistaken for a new session.
+
+Set `RECOMP_SHADOW_LIVE=Local\unique-name` alongside `RECOMP_SHADOW_BOX` in the
+isolated game process. A Windows shared-memory block and zero-timeout mutex
+transfer completed masks from the worker. D3D12 fence waits stay in the worker;
+the game copies a fresh completed mask and updates its D3D11 texture. A busy
+producer is skipped, and an absent/stale producer hides the shadow after two
+seconds. The box and F8 controls continue to work. This uses a measured CPU
+readback/copy/upload path, **not shared D3D11/D3D12 GPU resources**.
+
+The target is one update every67ms, approximately15Hz. Logs distinguish worker
+publication counts from game-consumed sequences and measure render-thread CPU
+copy/upload time. Those timings do not measure total GPU cost. Player/stadium
+ray tracing, animated geometry, moving-box acceleration-structure updates and
+production graphics settings remain outside this experiment.
+
+On the tested Deck, the compute worker must use the **same X display and Proton
+prefix** as the game, while disabling `ENABLE_GAMESCOPE_WSI` and removing its
+Steam overlay `LD_PRELOAD`/Gamescope presentation variables. Giving the worker
+Gamescope's presentation layer produced a black compositor view even while the
+game consumed masks. Moving it to a different X display in the same Wine session
+caused an X11 window teardown error. These were launch-environment failures;
+neither is hidden as a passing graphics test.
+
+`--resume-live` explicitly resumes an already stopped, stale graphics transport
+for testing, preserving its sequence counter. It requires exclusive producer
+ownership and a transport older than two seconds; ordinary `--live` still
+requires a fresh mapping. This does not enable any AI/franchise controls.

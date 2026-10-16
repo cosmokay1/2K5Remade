@@ -1,9 +1,9 @@
 name: Shadow proof
 on:
   push:
-    paths: ['native/shadow_proof/**', '.github/workflows/shadow-proof.yml']
+    paths: ['native/shadow_proof/**', 'external/xboxrecomp', 'tools/analyze_shadow_capture.py', 'tests/test_shadow_capture.py', '.github/workflows/shadow-proof.yml']
   pull_request:
-    paths: ['native/shadow_proof/**', '.github/workflows/shadow-proof.yml']
+    paths: ['native/shadow_proof/**', 'external/xboxrecomp', 'tools/analyze_shadow_capture.py', 'tests/test_shadow_capture.py', '.github/workflows/shadow-proof.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -15,6 +15,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Fetch pinned renderer capture helper
+        if: runner.os == 'Windows'
+        run: git submodule update --init external/xboxrecomp
+      - name: Verify capture parsing and projection validation
+        run: python -m unittest discover -s tests -p test_shadow_capture.py -v
       - name: Configure CPU reference
         if: runner.os != 'Windows'
         run: cmake -S native/shadow_proof -B build-shadow
