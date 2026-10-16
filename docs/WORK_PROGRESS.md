@@ -10157,3 +10157,15 @@ the actual dispatcher and checks register preservation and rejected contexts.
 Private Windows game/addon compilation is in progress under the approved offline
 toolchain in live-clock-signing-v1. No paid inference or control activation has
 occurred. This is source/fixture evidence, not real signing/playability proof.
+
+### Windows transport fixture linkage correction
+
+Source345344b passed Ubuntu CI; Windows exposed missing symbols in three
+transport-only fixtures after the C host gained application/cap recovery calls.
+The actual Windows DLL/host implementation compiled; the fixtures lacked an
+explicit unavailable cap publisher and the held-transport mock's new C entrypoints.
+These fixtures now supply denial-only stubs, retaining the tests' no-game-memory
+scope and all original scheduling/held-signing assertions. The held observation
+also carries an authored descriptor sample so the newly required journal clock
+can be serialized. This correction changes fixture linkage, not production
+signing or accounting behavior. Corrected Windows CI remains required.

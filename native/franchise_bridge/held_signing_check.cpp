@@ -62,6 +62,12 @@ FranchiseHostStatus franchise_host_observe_completed(FranchiseHostClient *client
     require(GetCurrentThreadId()==owner && client && finance && size && identity && identity_size);
     ++completed_observations;return FRANCHISE_HOST_OK;
 }
+/* This scheduling fixture does not supply application authority or cap recovery. */
+FranchiseHostStatus franchise_host_restore_cap(FranchiseHostClient*,unsigned long long,const char*,const void*,size_t,const void*,size_t){return FRANCHISE_HOST_NOT_READY;}
+int franchise_host_take_restored_cap(FranchiseHostClient*,struct FranchiseCapEnforcement*){return 0;}
+FranchiseHostStatus franchise_host_authorize_accepted(FranchiseHostClient*,const void*,size_t,const void*,size_t){return FRANCHISE_HOST_NOT_READY;}
+int franchise_host_application(FranchiseHostClient*,unsigned,unsigned,unsigned long long,const void*,size_t,const void*,size_t,struct FranchiseCapEnforcement*){return 0;}
+int franchise_host_application_terms(FranchiseHostClient*,unsigned long long,unsigned*,unsigned*){return 0;}
 FranchiseHostStatus franchise_host_check_saved(FranchiseHostClient* c) {
     require(GetCurrentThreadId()==owner && !c->pending);++saved_checks;
     const std::string request=R"({"protocol":1,"request_id":"authored-status","operation":"guest_signing_status"})";
@@ -112,7 +118,7 @@ int main(int argc,char** argv) {
         require(nfl2k5_franchise_start()==1);
         nfl2k5_franchise_on_fsm(0x557B2C,1);require(submissions==1 && submitted["operation"]=="hello");
         ready=true;nfl2k5_franchise_poll();
-        FranchiseSigningObservation observation={};
+        FranchiseSigningObservation observation={};std::memset(observation.salary_descriptor,'0',32);
         observation.offer_amount=829;observation.offer_flags=(1u<<29)|(2u<<16)|4u;
         std::strcpy(observation.first_name,"Authored");std::strcpy(observation.last_name,"Receiver");
         std::strcpy(observation.photo,"00000000");std::strcpy(observation.dob,"000000");
