@@ -10243,3 +10243,40 @@ retains its approved fixed expiry; it was not extended. The scheduled task stays
 PAUSED. Actual salary-clock capture and signing/save/reload proof remain blocked
 by the startup failure. The cleanup remains effective: the Deck still reports
 about28GiB free after these test launches.
+
+## Startup repair candidate: nested calls inside register-local patch blocks
+
+Further analysis located the actual mod-added caller at guest014DFB41 (return
+014DFB46), not the older rendering return words also present higher in the raw
+stack. Its menu-audio path validates the stream descriptor, builds a stack-backed
+range through003CAD20, then calls the original245480/3CAD50 duration helpers.
+A raw guest stack window is not a native call-chain reconstruction.
+
+Found a concrete ABI defect in the existing patch wrapper. A register-local
+function enters a GENPATCH block by publishing locals and switching aliases to
+globals. PACK_MENU_MUSIC_PLAYER then sets EDX0 and pushes its synthetic return
+before RECOMP_ABI_CALL. That macro republished suspended locals, discarding both
+the changed argument and the pushed return slot. Its callee consequently used
+the wrong stack frame. Other nested calls in global patch blocks shared this
+problem.
+
+The wrapper now saves its RECOMP_REGS_OUT macro and makes that outward sync a
+no-op only while the block owns the globals. It restores the original macro at
+block exit. Inward sync remains active, including generated goto exits. No guest
+arithmetic, divisor, asset or save value is substituted. The temporary main and
+private addon stack probes are removed from the production rebuild.
+
+The authored C regression includes the real production ABI and patch headers.
+Unfixed headers exit2 on the nested-call/return-slot case; fixed headers pass
+normal/conditional execution, nested calls, resumed locals, goto and early return.
+The fixture has a standalone CMake target and joins the franchise CTest suite.
+Local972 Python regressions and14 portable native checks pass. Four loopback
+HTTP/TLS fixtures initially lacked sandbox bind permission and pass in the
+approved rerun. The Deck is rebuilding the paired Windows game/addon and new
+MSVC fixture in the existing build tree, with no new asset/runtime copies.
+Actual boot, negotiation and signing/save/reload are still required; diagnostic
+runs which reached the offer screen do not by themselves prove a startup fix.
+
+Also retained the user's request for smaller bonus percentage increments. The
+current packed guest format is10% per nibble step; finer values require lossless
+native/signing/save support and are not represented by a cosmetic slider change.

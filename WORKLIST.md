@@ -29,6 +29,15 @@ sparsely. Preserve unique assets, saves, ledgers and source/rollback evidence.
 
 ## Current priority — core franchise negotiation
 
+- [ ] Verify the startup repair on the Deck, then complete one actual negotiation
+      and signing/save/reload test. The register-local patch wrapper previously
+      overwrote nested-call arguments and the pushed guest return slot. A small
+      wrapper fix and failing-before/passing-after fixture are ready; real boot
+      acceptance remains required. Keep the scheduled follow-up off.
+- [ ] Support finer signing-bonus percentage adjustments end to end. The current
+      native nibble represents10% steps; do not advertise1% precision until
+      accepted terms can be represented and survive signing/save/reload exactly.
+
 The user deferred additional statistics investigation on October14. Prioritize
 native offer submission, player response, legal financial commit and save recovery.
 Use one addon/application pipeline for vanilla Remade and compatible mod packs;
