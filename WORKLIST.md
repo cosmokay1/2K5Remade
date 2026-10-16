@@ -53,6 +53,12 @@ and deadlines; injury assessments need actual injury/availability evidence.
 Unavailable data stays explicit. Avoid shipping backend-only milestones as a
 finished player feature, or adding disconnected placeholder controls.
 
+**Current live-test blocker:** the installed contract-editor package hit the
+pre-existing SOFTDRINK startup divide-by-zero twice (`sub_003CAD50`, host
+`0x1423CDB9F`). Both logs are preserved. Stop repeated launches and investigate
+initialization before asking for another franchise-screen test; isolated checks
+do not establish actual editor or signing acceptance.
+
 Windows + Proton is the Deck delivery priority. Defer further native Linux port
 work unless a concrete Proton limitation requires it; retain existing fixes.
 
@@ -129,8 +135,9 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       repeated checks and changed player/native terms/source. Both supported
       dollar scales use the same editor. Eleven portable checks, six isolated
       Windows/Proton checks and game --validate pass; authored renders fit both
-      Deck resolutions. The opt-in private package is staged separately from
-      the installed read-only game. Actual installed editing remains unverified;
+      Deck resolutions. The opt-in private package is installed with all205 saves
+      unchanged across replacement. Both startup attempts hit the known guest
+      divide-by-zero before reaching the editor. Actual installed editing remains unverified;
       submission, active-player amendments and financial application remain open.
 
 - [ ] Finish held native submission through accepted proposal, guest/ledger commit

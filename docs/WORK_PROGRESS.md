@@ -9583,3 +9583,42 @@ socket access resolves all four without source changes. The staged wrapper
 enables only local draft checking, retaining negotiation/signing=0, the same
 service/database and existing test-input path. The game is still running at
 PID238610, so installation has not been attempted; a normal exit is requested.
+
+
+### Protected installation; actual editor test blocked by startup
+
+The user confirmed Steam shows Play. The guarded installer independently verified
+game/service exit,250 compiler-source hashes, the existing service source hashes,
+package/validation receipts and previous installed hashes, then backed up and
+replaced the game/addon/wrapper. All205 saves were unchanged across replacement.
+Installed EXE SHA256c0de7dcdac4de607397a71f42d9907a2f3640adcfa99302e76070386a1263379;
+addon SHA2569c347ba9a603eddec498dcee4aabc31d7a2ba7ffa140cdbbdbd6646824ceae02;
+wrapper SHA2562786a237b199697af6943481e80325fd86c105cdd0daf38617652a171383b994.
+These are the validated d8e8f61 source overlay artifacts, not a newly authorized
+AI/guest-signing configuration.
+
+The same Steam entry launched PID242381 and rendered the opening NFL license
+frame. It then exited before the menu test with exception0xC0000094 at
+host0x1423CDB9F. One unchanged retry hit the identical exception/address/registers.
+The existing source/worklog identifies this failure class as the intermittent
+SOFTDRINK sub_003CAD50 stream/audio divisor at object+0x48; it already occurred
+before this editor. This is not evidence of its initialization cause or a fix.
+Both full session logs and first launch log are preserved under contract-editor-v2.
+No button packet was queued because the driver found no running game; the queue
+is empty. Further launches/menu testing stopped. Actual installed editing and
+negotiation acceptance remain unverified.
+
+Source d8e8f61 is committed and pushed. Build38859363956 passes Windows/Linux.
+Franchise38859363974's Ubuntu job passes; Windows is still running at this
+checkpoint. The isolated Windows/Proton/editor/service checks above all pass.
+
+Read-only disassembly of the exact installed EXE confirms0x1423CDB9F is div rcx
+with its divisor loaded from guest object+0x48, matching the generated
+sub_003CAD50 sequence. No fabricated divisor, exception suppression or gameplay
+patch is applied. The initialization fault remains the next actual-execution
+blocker rather than being hidden by another automatic launch.
+
+Post-failure integrity verification matches the installed package and unchanged
+franchise database. All203 nonpartition save files remain unchanged; Partition0
+and5 differ following ordinary startup, and are preserved. Both game and owned
+service are stopped. No new franchise reply/model request/signing was reached.
