@@ -9708,3 +9708,23 @@ confirms capture=1 and reaches MyNFL without reproducing the startup fault. A
 read-only capture shows the franchise front-office menu. The fault is not fixed
 or captured yet. The comparison package retains this enabled capture and keeps
 AI/signing off; it will replace loaded files only after normal game/service exit.
+
+
+## Current/Offer package installed
+
+After the user confirmed normal exit, contract-compare-v1 installed with game and
+service checks before each replacement. All205 save hashes remained unchanged;
+existing service source/database and disabled AI/signing flags were preserved.
+The installation receipt is retained in .local-runtime/contract-compare-v1.
+Installed EXE SHA256 is7918ba987d64fecc1d7343976a597c5b2f59a6782bc9803359887d593557ae68;
+addon SHA256 is7c7f1a2ea4843181b92be1b4260e2a3018ec1f6c9fa475e1bdfbbf3fad9a97c0.
+
+A launch through the existing Steam entry created PID247005 and progressed to
+movie/music execution and vblank600 without a fresh divide fault in the observed
+startup log. No automated menu input was sent. This is one healthy startup, not a
+crash repair or verified live Current/Offer flow. The new screen still needs
+actual MyNFL navigation verification, and accepted-deal financial/save-load
+acceptance remains open. Capture stays enabled; AI and signing stay disabled.
+
+Fork Build38862990285 and Franchise38862990250 both completed successfully for
+source9f3daa1; these CI results are separate from the live acceptance gates.

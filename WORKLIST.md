@@ -66,7 +66,9 @@ Seven isolated Windows/Proton checks and the diagnostic game --validate pass.
 One bounded run on copied runtime/saves/prefix also reached movie/audio/vblank
 execution, with all205 original saves and installed files unchanged. No actual
 failing object snapshot or initialization repair has been verified. The new
-Current/Offer UX package retains the capture and awaits normal exit for installation.
+Current/Offer UX package is installed after normal exit with all205 saves unchanged.
+Its first real-Steam launch reaches movie/music execution without a fresh fault;
+actual MyNFL Current/Offer navigation remains to be verified.
 
 Windows + Proton is the Deck delivery priority. Defer further native Linux port
 work unless a concrete Proton limitation requires it; retain existing fixes.
