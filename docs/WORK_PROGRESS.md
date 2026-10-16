@@ -8802,3 +8802,54 @@ its full CI remains pending at this checkpoint. Presentation inspection finds
 the existing native preview truncates reasons at140 bytes into a160-byte history
 field and clips its small display area. Complete dialogue presentation is now
 explicitly tracked rather than claimed from a prompt change.
+
+### Durable offer reactions for negotiation
+
+The user asked to continue toward negotiation. Application still lacks verified
+active-franchise lifecycle and a production issuer, so no native writes were
+enabled. This batch implements a concrete negotiation behavior: a typed offended
+reaction on a rejection/counter now records a bounded team-specific respect loss
+alongside the natural-language decision. The engine, not the model, derives the
+0.05/clamped/six-decimal offer-reaction-v1 effect. It is an authored simulation
+policy, not a real NFL rule. Ordinary bargaining is neutral; accepted offers
+cannot be offended, and better later terms do not automatically repair respect.
+
+The dialogue and an explicit offer_reaction marker commit in one SQLite write
+transaction. Replay derives the actor effect and requires the matching adjacent
+marker. Missing/orphaned/altered effects reject; old readers encounter the unknown
+event kind and fail instead of silently dropping the new behavior. Prepared guest
+work retains its existing write freeze. Remote shutdown and an injected failure
+between the two inserts leave neither dialogue nor an opinion change. Request
+retries/restart apply nothing twice, and the generic relationship API cannot
+reapply the same respect consequence. Personality, cash, cap, contracts and
+financial revision remain unchanged; same-player history IDs guard concurrent
+negotiations. In-memory examples now retain and validate their bound actors too.
+
+Captured negative replay required a compatibility fix: the decision's original
+relationship evidence may precede its own persisted reaction, while a fresh
+checkpoint correctly returns the changed opinion. Such non-authorizing replies
+retain historical evidence; identity, personality, performance and financial
+revision still match. Acceptances retain complete current-actor matching and
+superseded proposals cannot settle. Native validation checks the bounded effect
+and refuses malformed claims; opinion metadata grants no application authority.
+
+Private opinion-rehearsal.sqlite copies the classified MyNFL1 namespace without
+rewriting its source. An offline scripted first rejection changes Hernandez's
+respect0.50 to0.45. The next larger offer receives0.45; its neutral reaction does
+not restore it. A restarted captured-request retry preserves the original decision
+with the current0.45 checkpoint and no additional scripted call. Original
+personality, financial snapshot, source DB, bindings and game save hashes are
+unchanged. Two scripted provider calls, zero paid requests; this is not actual
+game AI execution. Private opinion-rehearsal-receipt.json preserves the evidence.
+
+All895 Python regressions pass in46.652s before the last injected-write-failure
+case; all10 focused reaction tests now pass, along with13 captured-context tests
+and nine local native CTests. Final full-suite/Windows CI evidence follows.
+Native application, game dialogue rendering, approach limits/verified game-time
+cooldowns, extension talks and holdout participation remain unfinished. The
+running Deck/game, installed package and disabled AI/control state are unchanged.
+
+Final frozen-source validation passes all896 Python tests in43.017s, including
+the injected second-insert rollback and captured historical-reply regressions.
+All nine local native CTests pass. Cross-platform CI and actual Windows/game
+execution of this reaction feature remain pending; no live inference was used.

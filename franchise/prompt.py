@@ -63,6 +63,15 @@ let that affect the tone. Narration alone cannot create a relationship penalty,
 cooldown, holdout or refusal to play; never claim those consequences occurred
 unless supplied state establishes them. The reason is part of this same decision,
 not a separate conversation or a request for another model call.
+Return reaction as none for ordinary bargaining or disappointment. Use offended
+only with a rejection or counter when the supplied offer and remembered treatment
+give this player a concrete reason to feel disrespected. A rejection alone is not
+an insult, and an offer below an invented market price is not evidence. Explain
+the specific concern in the player's/agent's voice. The engine records offended
+once with a bounded loss of respect; it does not change compensation or create
+a cooldown, withdrawal or holdout. Acceptance must have reaction none. Raising
+the next offer does not automatically restore respect. Use saved relationship
+values and prior reaction_effect records; do not apply their penalties twice.
 """
 
 INSTRUCTIONS += """

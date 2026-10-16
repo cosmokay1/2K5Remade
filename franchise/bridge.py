@@ -251,9 +251,14 @@ class Bridge:
                 reply = self.handle(normalized)
                 if reply['error'] is None:
                     evidence = reply['result']['evidence']
-                    if any(json.dumps(evidence[key],sort_keys=True,allow_nan=False) !=
+                    # Recalled rejections/counters retain their original opinion
+                    # evidence. Their own recorded reaction may have changed the
+                    # current actor; they grant no signing authority. Acceptance
+                    # still requires the complete current actor checkpoint.
+                    actor_fields = ('personality','relationships','performance') if reply['result']['action']=='accept' else ('personality','performance')
+                    if evidence['financial_revision'] != request['expected_revision'] or any(json.dumps(evidence[key],sort_keys=True,allow_nan=False) !=
                            json.dumps(normalized[key],sort_keys=True,allow_nan=False)
-                           for key in ('personality','relationships','performance')):
+                           for key in actor_fields):
                         raise Rejected('Recorded proposal evidence differs from captured signing checkpoint')
                     reply['result']['signing_checkpoint'] = checkpoint
                     if len(json.dumps(reply,allow_nan=False).encode('utf-8'))+1 > 65536:

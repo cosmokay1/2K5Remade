@@ -962,6 +962,36 @@ int main(int argc,char** argv) {
         auto declined=captured_reply;
         declined["result"]["action"]="reject";declined["result"]["outcome"]="player_rejected";
         declined["result"].erase("proposal_preview");
+        auto offended=declined;
+        offended["result"]["signing_checkpoint"]["player_context"]["relationships"]["respect"]=0.5;
+        offended["result"]["evidence"]["relationships"]["respect"]=0.5;
+        offended["result"]["reaction"]="offended";
+        offended["result"]["reaction_effect"]={{"policy","offer-reaction-v1"},{"relationship","respect"},{"before",0.5},{"after",0.45}};
+        franchise::validate_result(offended,captured_request);
+        auto recalled_offense=offended;
+        recalled_offense["result"]["signing_checkpoint"]["player_context"]["relationships"]["respect"]=0.45;
+        franchise::validate_result(recalled_offense,captured_request);
+        auto stale_acceptance=captured_reply;
+        stale_acceptance["result"]["signing_checkpoint"]["player_context"]["relationships"]["respect"]=0.45;
+        stale_acceptance["result"]["evidence"]["relationships"]["respect"]=0.5;
+        bool stale_acceptance_rejected=false;
+        try{franchise::validate_result(stale_acceptance,captured_request);}catch(const std::exception&){stale_acceptance_rejected=true;}
+        if(!stale_acceptance_rejected) throw std::runtime_error("Changed opinion reused a captured acceptance");
+        if(!franchise::saved_signing_prepare(captured_request,offended).is_null())
+            throw std::runtime_error("Opinion consequence authorized signing");
+        for(int scenario=0;scenario<7;++scenario) {
+            auto bad=offended;
+            if(scenario==0) bad["result"]["reaction_effect"]["after"]=0.1;
+            if(scenario==1) bad["result"]["reaction_effect"]["before"]=0.6;
+            if(scenario==2) bad["result"]["reaction_effect"]["relationship"]="trust";
+            if(scenario==3) bad["result"]["reaction"]="none";
+            if(scenario==4) bad["result"].erase("reaction");
+            if(scenario==5) bad["result"]["reaction_effect"]["policy"]="invented";
+            if(scenario==6) bad["result"]["reaction_effect"]["extra"]=true;
+            bool rejected=false;
+            try{franchise::validate_result(bad,captured_request);}catch(const std::exception&){rejected=true;}
+            if(!rejected) throw std::runtime_error("Contradictory negotiation opinion effect accepted");
+        }
         if(!franchise::saved_signing_prepare(captured_request,declined).is_null() ||
            !franchise::saved_signing_prepare(captured_request,nlohmann::json{{"error","ai_disabled"}}).is_null() ||
            !franchise::saved_signing_prepare(proposal_request,proposal_reply).is_null())

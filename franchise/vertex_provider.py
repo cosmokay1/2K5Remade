@@ -13,6 +13,7 @@ VERTEX_SCHEMA = {
     "properties": {
         "action": {"type": "STRING", "enum": ["accept", "reject", "counter"]},
         "reason": {"type": "STRING"},
+        "reaction": {"type": "STRING", "enum": ["none", "offended"]},
         "salaries": {"type": "ARRAY", "nullable": True, "items": {"type": "INTEGER"}},
         "signing_bonus": {"type": "INTEGER", "nullable": True},
         "promise_goals": {"type":"ARRAY", "nullable":True, "items":{"type":"OBJECT",
@@ -22,7 +23,7 @@ VERTEX_SCHEMA = {
             "required":["goal_id","metric","target","importance","window","source"]}},
         "guaranteed_salaries": {"type": "ARRAY", "nullable": True, "items": {"type": "INTEGER"}},
     },
-    "required": ["action", "reason", "salaries", "signing_bonus", "guaranteed_salaries", "promise_goals"],
+    "required": ["action", "reason", "salaries", "signing_bonus", "guaranteed_salaries", "promise_goals", "reaction"],
 }
 
 

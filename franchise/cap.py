@@ -150,6 +150,7 @@ class Ledger:
         self._generation_by_player = {}
         self._active_generation_ids = {}
         self._cash = None
+        self._actors = {}
         if type(max_bonus_years) is not int or not 1 <= max_bonus_years <= 5:
             raise ValueError("Bonus allocation limit must be between one and five years")
         self._max_bonus_years = max_bonus_years
@@ -1186,7 +1187,16 @@ class Ledger:
 
     def bind_actor(self, player_id, personality, relationships, *, access_check):
         self.negotiation_context(player_id)  # Require a registered player.
-        return {"personality": personality, "relationships": relationships}
+        import copy
+        from franchise.negotiation import validate_performance
+        if type(personality) is not dict or type(relationships) is not dict:
+            raise ValueError('Actor fields must be JSON objects')
+        declared = {'personality': personality, 'relationships': relationships}
+        validate_performance(declared)
+        json.dumps(declared, allow_nan=False)
+        with self._lock:
+            actor = self._actors.setdefault(player_id, copy.deepcopy(declared))
+            return copy.deepcopy(actor)
 
     def validate_scouting_personality(self, player_id, personality):
         self.negotiation_context(player_id)
@@ -1203,7 +1213,10 @@ class Ledger:
         return []
 
     def record_negotiation(self, event: dict, *, access_check):
-        access_check()  # In-memory sessions retain their own dialogue.
+        from franchise.negotiation_reactions import apply_reaction
+        with self._lock:
+            access_check()  # In-memory sessions retain their own dialogue.
+            apply_reaction(self._actors.get(event['offer']['player_id']), event)
         return event
 
     def recalled_negotiation(self, request_id: str, offer: Offer):

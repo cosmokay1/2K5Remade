@@ -11,12 +11,13 @@ DECISION_SCHEMA = {
     "properties": {
         "action": {"type": "string", "enum": ["accept", "reject", "counter"]},
         "reason": {"type": "string"},
+        "reaction": {"type": "string", "enum": ["none", "offended"]},
         "salaries": {"type": ["array", "null"], "items": {"type": "integer"}},
         "signing_bonus": {"type": ["integer", "null"]},
         "promise_goals": {"type": ["array", "null"], "items": GOAL_SCHEMA},
         "guaranteed_salaries": {"type": ["array", "null"], "items": {"type": "integer"}},
     },
-    "required": ["action", "reason", "salaries", "signing_bonus", "guaranteed_salaries", "promise_goals"],
+    "required": ["action", "reason", "salaries", "signing_bonus", "guaranteed_salaries", "promise_goals", "reaction"],
 }
 
 
@@ -26,17 +27,21 @@ class Decision:
     reason: str
     counter: Offer | None
     counter_promises: tuple = ()
+    reaction: str = 'none'
 
     @classmethod
     def parse(cls, text: str, player_id: str):
         data = json.loads(text)
-        required = set(DECISION_SCHEMA["required"])
-        if type(data) is not dict or set(data) not in (required, required - {"guaranteed_salaries"}, required - {"promise_goals"}, required - {"guaranteed_salaries", "promise_goals"}):
+        required = {"action", "reason", "salaries", "signing_bonus"}
+        if type(data) is not dict or not required <= set(data) or set(data) - required - {"guaranteed_salaries", "promise_goals", "reaction"}:
             raise ValueError("Unexpected model decision fields")
         if data["action"] not in ("accept", "reject", "counter"):
             raise ValueError("Unknown negotiation action")
         if type(data["reason"]) is not str or not data["reason"].strip():
             raise ValueError("Decision must include a reason")
+        reaction = data.get('reaction', 'none')
+        if reaction not in ('none', 'offended') or (reaction == 'offended' and data['action'] == 'accept'):
+            raise ValueError('Only a rejection or counter can record an offended reaction')
         counter = None
         counter_promises = ()
         if data["action"] == "counter":
@@ -50,7 +55,7 @@ class Decision:
                 counter_promises = goals_from_list(data["promise_goals"])
         elif data["salaries"] is not None or data["signing_bonus"] is not None or data.get("guaranteed_salaries") is not None or data.get("promise_goals") is not None:
             raise ValueError("Accept/reject cannot silently change offered terms")
-        return cls(data["action"], data["reason"], counter, counter_promises)
+        return cls(data["action"], data["reason"], counter, counter_promises, reaction)
 
 
 class Negotiation:
@@ -186,6 +191,11 @@ class Negotiation:
                      **({'return_scope':return_scope} if return_scope is not None else {}),
                      **({'observed_efficiency': json.loads(self._efficiency)} if self._efficiency is not None else {})},
                  "history_request_ids": [entry["request_id"] for entry in context["history"]]}
+        if 'reaction' in json.loads(response):
+            event['reaction'] = decision.reaction
+        if decision.reaction != 'none':
+            from franchise.negotiation_reactions import reaction_effect
+            event['reaction_effect'] = reaction_effect(refreshed['relationships'], decision.reaction)
         if proposed or decision.counter_promises:
             event["promise_goals"] = proposed
             event["counter_promises"] = [asdict(goal) for goal in decision.counter_promises] if decision.action == "counter" else None

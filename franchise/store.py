@@ -686,8 +686,11 @@ class FranchiseStore:
         efficiency_cache = {}  # Keep only the last derivation within this chronological read.
         actor_origins={} if actor_origins is None else actor_origins
         actor_posting=actor_registered=None
+        pending_reaction = None
         for event_id, kind, serialized in db.execute("SELECT id, kind, payload FROM events WHERE team_id=? AND (? IS NULL OR id<=?) ORDER BY id", (team_id,through_event_id,through_event_id)):
             payload = json.loads(serialized)
+            if pending_reaction is not None and kind != 'offer_reaction':
+                raise ValueError('Recorded negotiation is missing its atomic opinion effect')
             if kind != 'actor':
                 actor_posting=actor_registered=None
             if kind == "sign":
@@ -860,7 +863,7 @@ class FranchiseStore:
                 if identity in relationship_sources:
                     raise ValueError("Relationship consequence already applied")
                 relationship_sources.add(identity)
-                self._relationship_source(db, team_id, payload["player_id"], payload["source_request_id"], before_revision=ledger.revision, before_event_id=event_id)
+                self._relationship_source(db, team_id, payload["player_id"], payload["source_request_id"], before_revision=ledger.revision, before_event_id=event_id, relationship=payload['relationship'])
                 actor = ledger._actors.get(payload["player_id"])
                 self._apply_relationship(actor, payload["relationship"], payload["delta"])
                 if actor != payload["actor_after"]:
@@ -903,6 +906,17 @@ class FranchiseStore:
                     preview = ledger.preview_offer(Offer.from_dict(event['offer']), event['evidence']['financial_revision'])
                     if self._checkpoint_hash(preview) != self._checkpoint_hash(event['proposal_preview']):
                         raise ValueError('Accepted proposal preview disagrees with financial replay')
+                if payload['event'].get('reaction', 'none') != 'none':
+                    pending_reaction = payload['event']
+            elif kind == 'offer_reaction':
+                # An explicit kind makes old engines refuse this new behavior,
+                # rather than silently replaying the actor without its effect.
+                if (pending_reaction is None or set(payload) != {'source_request_id','posting'}
+                        or payload['source_request_id'] != pending_reaction['request_id']):
+                    raise ValueError('Unbound negotiation opinion effect')
+                from franchise.negotiation_reactions import apply_reaction
+                apply_reaction(ledger._actors.get(pending_reaction['offer']['player_id']), pending_reaction)
+                pending_reaction = None
             elif kind == "budget":
                 ledger.update_budget(**{key: payload[key] for key in ("cap", "roster_reserve", "expected_revision")})
             elif kind == 'salary_classification':
@@ -982,6 +996,8 @@ class FranchiseStore:
             posting=actor_posting if kind=='actor' else ledger.financial_snapshot()
             if payload.get("posting") != posting:
                 raise ValueError("Recorded financial posting disagrees with replay")
+        if pending_reaction is not None:
+            raise ValueError('Recorded negotiation is missing its atomic opinion effect')
         if origin is not None and set(ledger._actors) != ledger.registered_player_ids:
             raise ValueError('Initialized player personality coverage is incomplete')
         if through_event_id is not None:
@@ -2170,7 +2186,7 @@ class FranchiseStore:
         actor["relationships"][key] = round(max(0, min(1, score + delta)), 6)
 
     @staticmethod
-    def _relationship_source(db, team, player, request, *, before_revision, before_event_id=None):
+    def _relationship_source(db, team, player, request, *, before_revision, before_event_id=None, relationship=None):
         for event_id, kind, serialized in db.execute("SELECT id,kind,payload FROM events WHERE team_id=? AND request_key IN (?, ?, ?)",
                 (team, "sign:" + request, "dialogue:" + request, "promise-score:" + request)):
             if before_event_id is not None and event_id >= before_event_id:
@@ -2184,6 +2200,8 @@ class FranchiseStore:
                 continue
             event = data.get("story") if kind in ("sign","return_sign") else data["event"]
             if event is not None and event["offer"]["player_id"] == player and data["posting"]["revision"] <= before_revision:
+                if relationship is not None and event.get('reaction_effect', {}).get('relationship') == relationship:
+                    raise Rejected('Relationship consequence already applied by negotiation reaction')
                 return
         raise Rejected("Recorded negotiation consequence required")
 
@@ -2215,7 +2233,7 @@ class FranchiseStore:
                 previous = json.loads(serialized)
                 if all(previous[field] == payload[field] for field in ("player_id", "relationship", "source_request_id")):
                     raise Rejected("Relationship consequence already applied")
-            self._relationship_source(db, team, player, source_request_id, before_revision=ledger.revision)
+            self._relationship_source(db, team, player, source_request_id, before_revision=ledger.revision, relationship=relationship)
             actor = ledger._actors.get(player)
             self._apply_relationship(actor, relationship, delta)
             ledger.revision += 1
@@ -2410,10 +2428,14 @@ class FranchiseStore:
         Offer.from_dict(data)
         counter = event.get("counter")
         decision = Decision.parse(json.dumps({"action": event["action"], "reason": event["reason"],
+            **({'reaction': event['reaction']} if 'reaction' in event else {}),
             "salaries": counter["salaries"] if counter else None,
             "signing_bonus": counter["signing_bonus"] if counter else None,
             "guaranteed_salaries": counter.get("guaranteed_salaries") if counter else None,
             **({"promise_goals": event["counter_promises"] if counter else None} if "counter_promises" in event else {})}), data["player_id"])
+        from franchise.negotiation_reactions import apply_reaction
+        import copy
+        apply_reaction(copy.deepcopy(event.get('evidence')), event)
         expected = {"counter": "counteroffer", "reject": "player_rejected", "accept": "accounting_rejected"}
         if event['outcome'] == 'accepted_proposal':
             if (event.get('decision_mode') != 'proposal' or 'evidence' not in event
@@ -2470,11 +2492,17 @@ class FranchiseStore:
                 if self._checkpoint_hash(preview) != self._checkpoint_hash(event['proposal_preview']):
                     raise Rejected('Accepted proposal preview changed before recording')
             self._check_history(db, team_id, event["offer"]["player_id"], event)
+            from franchise.negotiation_reactions import apply_reaction
+            apply_reaction(ledger._actors.get(event['offer']['player_id']), event)
             payload = {"event": event, "posting": ledger.financial_snapshot()}
-            if 'return_scope' in event or event['outcome'] == 'accepted_proposal':
+            if 'return_scope' in event or event['outcome'] == 'accepted_proposal' or event.get('reaction', 'none') != 'none':
                 access_check()
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'dialogue', ?)",
                        (team_id, key, json.dumps(payload, allow_nan=False)))
+            if event.get('reaction', 'none') != 'none':
+                db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'offer_reaction', ?)",
+                    (team_id,'offer-reaction:'+event['request_id'],json.dumps(dict(
+                        source_request_id=event['request_id'],posting=ledger.financial_snapshot()),allow_nan=False)))
             return event
 
     @staticmethod

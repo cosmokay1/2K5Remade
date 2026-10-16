@@ -774,6 +774,15 @@ invent future published NFL values: separate verified inputs from simulation pol
       toward a holdout, with actual participation effects and resolution required
       before claiming holdout gameplay. Do not use wall time or invented market
       value/hidden ratings to manufacture these states.
+- [x] Persist a bounded opinion reaction to a bad offer in the same decision call.
+      Structured offended rejection/counter responses now atomically reduce saved
+      respect under an explicit authored policy; neutral bargaining and raising
+      the offer do not erase it. Restart/retry, stale concurrent history, shutdown,
+      failed inserts, missing markers and duplicate consequences are checked.
+      Current and historical captured negative responses stay distinct; acceptance
+      retains the current actor check. Private MyNFL1 scripted rehearsal passes
+      with unchanged finances/source saves and no paid requests. Not installed;
+      actual game AI behavior remains unverified. See docs/negotiation-reactions.md.
 - [ ] Present each accept/reject/counter as concise natural speech from the player
       or agent, consistent with remembered treatment and supported consequences.
       The existing structured reason is required for every action and uses the

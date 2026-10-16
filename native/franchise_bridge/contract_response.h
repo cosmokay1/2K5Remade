@@ -996,8 +996,9 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         const auto& checkpoint=checkpoint_reply.at("result");
         const auto& inspected=checkpoint.at("offer_context");
         if(inspected.at("outcome")!="eligible_preview" ||
+            result.at("evidence").at("financial_revision")!=request.at("expected_revision") ||
             result.at("evidence").at("personality")!=checkpoint.at("player_context").at("personality") ||
-            result.at("evidence").at("relationships")!=checkpoint.at("player_context").at("relationships") ||
+            (result.at("action")=="accept" && result.at("evidence").at("relationships")!=checkpoint.at("player_context").at("relationships")) ||
             result.at("evidence").at("performance")!=checkpoint.at("performance_context"))
             throw std::runtime_error("Captured proposal source or eligibility mismatch");
         auto normalized=request;
@@ -1719,6 +1720,26 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
         if (action != (outcome == "player_rejected" ? "reject" : "accept") || !result.at("counter").is_null())
             throw std::runtime_error("Invalid rejection decision");
     } else throw std::runtime_error("Unknown decision outcome");
+    if(result.contains("reaction") || result.contains("reaction_effect")) {
+        const auto reaction=result.at("reaction").get<std::string>();
+        if(reaction=="none") {
+            if(result.contains("reaction_effect")) throw std::runtime_error("Neutral reply changed player opinion");
+        } else if(reaction=="offended" && action!="accept" && operation!="manual_sign") {
+            const auto& effect=result.at("reaction_effect");
+            const auto& before=result.at("evidence").at("relationships").at("respect");
+            if(!effect.is_object() || effect.size()!=4 || effect.at("policy")!="offer-reaction-v1" ||
+               effect.at("relationship")!="respect" || !before.is_number() || !effect.at("before").is_number() ||
+               !effect.at("after").is_number() || effect.at("before").dump()!=before.dump())
+                throw std::runtime_error("Invalid negotiation reaction source");
+            const double score=before.get<double>();
+            const double after=effect.at("after").get<double>();
+            /* Allow only the service's six-decimal normalization of this
+             * nonfinancial score, including halfway rounding differences. */
+            if(!std::isfinite(score) || !std::isfinite(after) || score<0 || score>1 || after<0 || after>1 ||
+               std::abs(after-std::max(0.0,score-0.05))>0.000000500001)
+                throw std::runtime_error("Negotiation reaction exceeded its bounded policy");
+        } else throw std::runtime_error("Unsupported negotiation reaction");
+    }
     if (operation == "manual_sign" && outcome != "signed") throw std::runtime_error("Manual result is not a signing");
 }
 }

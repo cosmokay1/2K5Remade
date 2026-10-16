@@ -151,6 +151,45 @@ class SigningContextBridgeTests(unittest.TestCase):
         self.assertEqual(bridge.store.load_team('49ers').financial_snapshot(), before)
         self.assertEqual(len(calls), 1)
 
+    def test_captured_reaction_retry_keeps_old_evidence_and_fresh_changed_opinion(self):
+        calls=[]
+        def provider(context):
+            calls.append(context)
+            return json.dumps(dict(action='reject', reason='Please take our concerns seriously.',
+                salaries=None, signing_bonus=None, reaction='offended' if len(calls)==1 else 'none'))
+        bridge=self.classified_bridge(provider)
+        request=self.captured_proposal()
+        before=bridge.store.load_team('49ers').financial_snapshot()
+        first=bridge.handle(request)
+        self.assertIsNone(first['error'])
+        from franchise.store import FranchiseStore
+        reopened=Bridge(FranchiseStore(bridge.store.path),provider=provider,
+            access_check=lambda:None,guest_snapshot=bridge.guest_snapshot)
+        retry=reopened.handle(request)
+        self.assertIsNone(retry['error'])
+        self.assertEqual(retry['result']['evidence'],first['result']['evidence'])
+        self.assertEqual(retry['result']['reaction_effect'],first['result']['reaction_effect'])
+        self.assertEqual(retry['result']['signing_checkpoint']['player_context']['relationships']['respect'],0.45)
+        self.assertEqual(len(calls),1)
+        request={**request,'request_id':'improved','guest_offer':{**request['guest_offer'],'amount_word':830}}
+        self.assertIsNone(reopened.handle(request)['error'])
+        self.assertEqual(calls[-1]['relationships']['respect'],0.45)
+        self.assertEqual(bridge.store.load_team('49ers').financial_snapshot(),before)
+
+    def test_recalled_acceptance_cannot_ignore_changed_opinion(self):
+        calls=[]
+        def provider(context):
+            calls.append(context)
+            return json.dumps(dict(action='accept' if len(calls)==1 else 'reject',
+                reason='Response to the actual terms.',salaries=None,signing_bonus=None,
+                reaction='none' if len(calls)==1 else 'offended'))
+        bridge=self.classified_bridge(provider)
+        request=self.captured_proposal()
+        self.assertEqual(bridge.handle(request)['result']['outcome'],'accepted_proposal')
+        self.assertIsNone(bridge.handle({**request,'request_id':'later-rejected-offer'})['error'])
+        self.assertEqual(bridge.handle(request)['error'],'state_rejected')
+        self.assertEqual(len(calls),2)
+
     def test_captured_proposal_rejects_overridden_actor_source_terms_and_revision(self):
         import copy
         bridge = self.classified_bridge(self.provider)
