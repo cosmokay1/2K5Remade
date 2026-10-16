@@ -53,20 +53,20 @@ and deadlines; injury assessments need actual injury/availability evidence.
 Unavailable data stays explicit. Avoid shipping backend-only milestones as a
 finished player feature, or adding disconnected placeholder controls.
 
-**Current live-test blocker:** the installed contract-editor package hit the
-pre-existing SOFTDRINK startup divide-by-zero twice (`sub_003CAD50`, host
-`0x1423CDB9F`). Both logs are preserved. Stop repeated launches and investigate
-initialization before asking for another franchise-screen test; isolated checks
-do not establish actual editor or signing acceptance.
+**Current live-test blocker:** the intermittent SOFTDRINK startup divide-by-zero
+remains unresolved (`sub_003CAD50`; the earlier editor EXE faulted at
+`0x1423CDB9F`). Both failed-launch logs are preserved. The opt-in bounded Windows
+capture is now installed after a protected normal exit; all205 saves were
+unchanged across that installation. A subsequent real-Steam launch reached MyNFL
+with capture=1 and no fault. That healthy launch is not a repair or stable-boot
+acceptance. Do not interrupt the user's running franchise for startup trials.
+See [startup diagnostics](docs/STARTUP_CRASH_DIAGNOSTICS.md).
 
-An opt-in bounded Windows crash-context capture now has an authored memory-safety
-CTest. Seven isolated Windows/Proton checks and the diagnostic game --validate
-pass. One bounded run on copied runtime/saves/prefix reached movie/audio/vblank
-execution without reproducing the fault; all205 original saves and installed
-files remained unchanged. The diagnostic was stopped after50 seconds. The
-capture is not installed in the user's runtime and no actual divide-fault object
-snapshot or initialization fix has been verified. See
-[startup diagnostics](docs/STARTUP_CRASH_DIAGNOSTICS.md).
+Seven isolated Windows/Proton checks and the diagnostic game --validate pass.
+One bounded run on copied runtime/saves/prefix also reached movie/audio/vblank
+execution, with all205 original saves and installed files unchanged. No actual
+failing object snapshot or initialization repair has been verified. The new
+Current/Offer UX package retains the capture and awaits normal exit for installation.
 
 Windows + Proton is the Deck delivery priority. Defer further native Linux port
 work unless a concrete Proton limitation requires it; retain existing fixes.
