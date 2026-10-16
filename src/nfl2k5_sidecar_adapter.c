@@ -22,6 +22,8 @@
 static uint64_t reported_save_read,reported_load_epoch;
 static uint32_t reported_load_phase;
 static int reported_image;
+static FranchiseApplicationDispatch application_dispatch;
+static uint32_t signing_object;
 #ifdef _WIN32
 #include "source_binding_win.h"
 static SRWLOCK save_read_lock=SRWLOCK_INIT;
@@ -29,6 +31,7 @@ static void cap_reset(void);
 static FranchiseSaveRead save_read;
 static FranchiseLoadRead load_read;
 static void save_read_reset(void) {
+    signing_object=0;memset(&application_dispatch,0,sizeof(application_dispatch));
     AcquireSRWLockExclusive(&save_read_lock);
     memset(&save_read,0,sizeof(save_read));memset(&load_read,0,sizeof(load_read));
     reported_save_read=reported_load_epoch=0;reported_load_phase=0;reported_image=0;
@@ -40,7 +43,8 @@ static int save_read_copy(FranchiseSaveRead *out) {
     return out->sequence!=0;
 }
 #else
-static void save_read_reset(void) {reported_save_read=reported_load_epoch=0;reported_load_phase=0;reported_image=0;}
+static void save_read_reset(void) {
+    signing_object=0;memset(&application_dispatch,0,sizeof(application_dispatch));reported_save_read=reported_load_epoch=0;reported_load_phase=0;reported_image=0;}
 static int save_read_copy(FranchiseSaveRead *out) {memset(out,0,sizeof(*out));return 0;}
 
 #endif
@@ -59,9 +63,11 @@ static NFL2K5AddonHost adapter_host;
 static SRWLOCK cap_lock=SRWLOCK_INIT;
 static FranchiseCapEnforcement cap_plans[32];
 static uint32_t cap_armed;
+static uint32_t cap_refresh=UINT32_MAX;
+static volatile LONG cap_logged;
 static void cap_reset(void) {
     AcquireSRWLockExclusive(&cap_lock);
-    cap_armed=0;memset(cap_plans,0,sizeof(cap_plans));
+    cap_armed=0;cap_refresh=UINT32_MAX;InterlockedExchange(&cap_logged,0);memset(cap_plans,0,sizeof(cap_plans));
     ReleaseSRWLockExclusive(&cap_lock);
 }
 #endif
@@ -193,6 +199,9 @@ static bool signing_screen_observation(FranchiseSigningObservation *out, uint32_
         !signing_screen_read(team+0x19Cu,&accumulator,sizeof(accumulator)) ||
         !signing_screen_read(context+0x0Cu,&offer_amount,sizeof(offer_amount)) ||
         !signing_screen_read(context+8u,&observation.offer_flags,sizeof(observation.offer_flags))) return false;
+    unsigned char descriptor[16];
+    if(observation.calendar[0]<16 && signing_screen_read(0x515140u+16u*observation.calendar[0],descriptor,sizeof(descriptor)))
+        for(unsigned i=0;i<16;++i) snprintf(observation.salary_descriptor+2*i,3,"%02x",descriptor[i]);
     observation.accumulator=accumulator;
     observation.offer_amount=offer_amount;
     snprintf(observation.photo,sizeof(observation.photo),"%02x%02x%02x%02x",
@@ -489,8 +498,8 @@ int nfl2k5_franchise_source_path_matches(uint64_t epoch) {
 extern int franchise_negotiation_screen_event(const char *name,const void *data,size_t size);
 #endif
 /* Only the application coordinator may publish accepted cap evidence. This
- * function never issues a signing grant or changes guest memory. No production
- * issuer calls it yet; preview/proposal replies cannot arm it. */
+ * function never issues a signing grant or changes guest memory. Preview or
+ * proposal replies cannot arm it; accepted issuance and saved recovery can. */
 int nfl2k5_franchise_publish_cap(const FranchiseCapEnforcement *plan) {
 #ifdef _WIN32
     char digest[65];uint64_t epoch=0;
@@ -498,7 +507,7 @@ int nfl2k5_franchise_publish_cap(const FranchiseCapEnforcement *plan) {
        plan->team_index>=32 || plan->enforced_payroll>INT32_MAX-1u ||
        !franchise_cap_state_matches(&plan->expected,&plan->expected)) return 0;
     AcquireSRWLockExclusive(&cap_lock);
-    cap_plans[plan->team_index]=*plan;cap_armed|=1u<<plan->team_index;
+    cap_plans[plan->team_index]=*plan;cap_armed|=1u<<plan->team_index;cap_refresh=plan->team_index;InterlockedAnd(&cap_logged,(LONG)~(1u<<plan->team_index));
     ReleaseSRWLockExclusive(&cap_lock);return 1;
 #else
     (void)plan;return 0;
@@ -520,6 +529,9 @@ static int cap_payroll_reply(const FranchiseCapPayrollEvent *event) {
          * only checks the cached loaded epoch and the guarded live state. */
         if(nfl2k5_franchise_read_loaded_source(digest,&epoch) && franchise_finance_capture(&adapter_host,&live))
             result=franchise_cap_enforced_payroll(&cap_plans[i],&live,epoch,i,event->computed);
+        if(!(InterlockedOr(&cap_logged,(LONG)(1u<<i))&(LONG)(1u<<i)))
+            fprintf(stderr,"[FRANCHISE-CAP] epoch=%llu team=%u computed=%u enforced=%u scope=guarded_payroll\n",
+                (unsigned long long)epoch,i,event->computed,result);
         ReleaseSRWLockShared(&cap_lock);
         return result>=INT32_MAX ? -1 : (int)(result+1u);
     }
@@ -568,11 +580,16 @@ static int addon_event(const char *name,const void *data,size_t size) {
         FranchiseSignGateEvent event;memcpy(&event,data,sizeof(event));
         if((event.stage!=FRANCHISE_SIGN_JUDGMENT && event.stage!=FRANCHISE_SIGN_PRECOMMIT) ||
            !franchise_pending_signing_clear(&adapter_host,event.context)) return 1;
-        return 0; /* Clear queues never authorize application. No issuer yet. */
+        FranchiseSigningObservation observation;
+        if(!signing_object || event.context!=application_dispatch.context ||
+           !signing_screen_observation(&observation,event.context) ||
+           !nfl2k5_franchise_application_selected(&observation,1)) return 1;
+        return nfl2k5_franchise_application_at(event.stage,event.context) ? FRANCHISE_SIGN_APPLICATION_AUTHORIZED : 1;
     }
     if(!strcmp(name,FRANCHISE_SIGN_COMPLETED_EVENT) && size==sizeof(uint32_t)) {
         uint32_t context;memcpy(&context,data,sizeof(context));
-        return context ? nfl2k5_franchise_completed() : 0;
+        const int completed=context ? nfl2k5_franchise_completed() : 0;
+        memset(&application_dispatch,0,sizeof(application_dispatch));return completed;
     }
     if(!strcmp(name,FRANCHISE_SIGN_GATE_EVENT) && size==sizeof(FranchiseSignGateEvent)) {
         FranchiseSignGateEvent event;memcpy(&event,data,sizeof(event));
@@ -585,6 +602,8 @@ static int addon_event(const char *name,const void *data,size_t size) {
     }
     if(!strcmp(name,FRANCHISE_FSM_EVENT) && size==sizeof(FranchiseFSMEvent)) {
         FranchiseFSMEvent event;memcpy(&event,data,sizeof(event));
+        if(event.push && event.descriptor==0x00557B2Cu) {signing_object=event.object;memset(&application_dispatch,0,sizeof(application_dispatch));}
+        if(!event.push && event.object==signing_object) {signing_object=0;memset(&application_dispatch,0,sizeof(application_dispatch));}
         nfl2k5_diag_fsm(event.object,event.descriptor,event.push!=0);return 1;
     }
     if(!strcmp(name,FRANCHISE_SIGNING_EVENT) && size==sizeof(FranchiseSigningEvent)) {
@@ -594,6 +613,22 @@ static int addon_event(const char *name,const void *data,size_t size) {
     return 0;
 }
 static int addon_snapshot(const char *name,void *out,size_t capacity) {
+#ifdef _WIN32
+    if(name && out && !strcmp(name,FRANCHISE_CAP_REFRESH) && capacity==sizeof(uint32_t)) {
+        AcquireSRWLockExclusive(&cap_lock);uint32_t index=cap_refresh;cap_refresh=UINT32_MAX;ReleaseSRWLockExclusive(&cap_lock);
+        if(index>=32) return 0;memcpy(out,&index,sizeof(index));return 1;
+    }
+#endif
+    if(name && out && !strcmp(name,FRANCHISE_APPLICATION_DISPATCH) && capacity==sizeof(FranchiseApplicationDispatch)) {
+        FranchiseSigningObservation observation;uint32_t context;
+        memset(out,0,capacity);
+        if(!signing_object || !signing_screen_read(0xCB8C34u,&context,4) ||
+           !signing_screen_observation(&observation,context) || !nfl2k5_franchise_application_selected(&observation,0) ||
+           !franchise_pending_signing_clear(&adapter_host,context) ||
+           !nfl2k5_franchise_application_terms(&application_dispatch.amount,&application_dispatch.flags)) return 0;
+        application_dispatch.context=context;application_dispatch.object=signing_object;
+        memcpy(out,&application_dispatch,sizeof(application_dispatch));return 1;
+    }
 #ifdef _WIN32
     if(name && out && !strcmp(name,FRANCHISE_SOURCE_MATCH_SNAPSHOT) && capacity==sizeof(FranchiseSourceMatch)) {
         loaded_source_copy(out);return 1;

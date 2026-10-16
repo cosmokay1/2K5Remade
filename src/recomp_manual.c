@@ -11,6 +11,49 @@
 #include "nfl2k5_broadcast.h"
 #include "nfl2k5_presentation.h"
 
+/* Fixed interactive signing dispatch only. The addon supplies an accepted,
+ * short-lived command; judgment/precommit still require its exact one-use
+ * authorization. There is no arbitrary guest-call or addon memory-write API. */
+#ifdef NFL2K5_FRANCHISE_NATIVE_APPLICATION
+static int nfl2k5_qb_read(uint32_t,void *,size_t);
+int nfl2k5_franchise_dispatch_native(uint32_t context,uint32_t object,uint32_t amount,uint32_t flags)
+{
+    static RECOMP_TLS int dispatching;
+    unsigned char stack_probe[64],context_probe[16];
+    uint32_t selected,team=0;const int cap_only=!context && !object && !amount && flags<32;
+    if(dispatching || !xbox_ggl_current_serial() || g_esp<0x10040u ||
+       !nfl2k5_qb_read(g_esp-64u,stack_probe,sizeof(stack_probe))) return 0;
+    if(cap_only) {
+        if(!nfl2k5_qb_read(0xE5786Cu+4u*flags,&team,4) || !team || !nfl2k5_qb_read(team,stack_probe,4)) return 0;
+    } else if(!context || !object || !amount || amount>65535 || !nfl2k5_qb_read(0xCB8C34u,&selected,4) || selected!=context ||
+       !nfl2k5_qb_read(context,context_probe,sizeof(context_probe)) || !nfl2k5_qb_read(object,stack_probe,4)) return 0;
+    uint32_t save_eax=g_eax,save_ebx=g_ebx,save_ecx=g_ecx,save_edx=g_edx;
+    uint32_t save_esi=g_esi,save_edi=g_edi,save_ebp=g_ebp,save_esp=g_esp,save_seh=g_seh_ebp;
+    int save_top=g_fp_top,save_cmp=g_fp_cmp,save_df=g_df;
+    uint16_t save_cc=g_fp_cc,save_control=g_fp_control_word;
+    double save_fp[8];memcpy(save_fp,g_fp_stack,sizeof(save_fp));
+    RecompXmm save_xmm[8]={g_xmm0,g_xmm1,g_xmm2,g_xmm3,g_xmm4,g_xmm5,g_xmm6,g_xmm7};
+    dispatching=1;
+    if(cap_only) {
+        g_ecx=team;PUSH32(g_esp,0u);RECOMP_ABI_CALL(0x000C3F00u,sub_000C3F00);
+    } else {
+        MEM16(context+0xCu)=(uint16_t)amount;MEM32(context+8u)=flags;
+        g_ecx=object;
+        PUSH32(g_esp,0u); /* The fixed routine has no stack arguments. */
+        RECOMP_ABI_CALL(0x003478A0u,sub_003478A0);
+    }
+    const int valid=g_esp==save_esp;
+    g_eax=save_eax;g_ebx=save_ebx;g_ecx=save_ecx;g_edx=save_edx;
+    g_esi=save_esi;g_edi=save_edi;g_ebp=save_ebp;g_esp=save_esp;g_seh_ebp=save_seh;g_df=save_df;
+    memcpy(g_fp_stack,save_fp,sizeof(save_fp));g_fp_top=save_top;g_fp_cmp=save_cmp;g_fp_cc=save_cc;g_fp_control_word=save_control;
+    g_xmm0=save_xmm[0];g_xmm1=save_xmm[1];g_xmm2=save_xmm[2];g_xmm3=save_xmm[3];
+    g_xmm4=save_xmm[4];g_xmm5=save_xmm[5];g_xmm6=save_xmm[6];g_xmm7=save_xmm[7];
+    dispatching=0;
+    fprintf(stderr,"[FRANCHISE] fixed_signing_dispatch context=%08X abi=%s saved_proof=pending\n",context,valid?"matched":"failed");
+    return valid;
+}
+#endif
+
 /* FOX samples the same current-match player accessor as Gamecast, but from
  * normal guest execution rather than the Gamecast renderer. The scope-zero
  * descriptor at 543B38 calls 003216C0 -> 000CB240; scope 11 is season data.

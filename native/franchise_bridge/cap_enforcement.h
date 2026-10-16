@@ -40,8 +40,8 @@ static uint32_t franchise_cap_enforced_payroll(const FranchiseCapEnforcement *pl
     return plan->enforced_payroll;
 }
 /* The production issuer must publish the complete accepted after-state before
- * allowing native mutation. It must rebind after save/load; current issuer is
- * intentionally absent, so production plans remain unarmed. */
+ * allowing native mutation. Saved recovery must rebind the exact recorded
+ * after-state on a new load epoch; that never grants another signing. */
 #ifdef __cplusplus
 extern "C" {
 #endif

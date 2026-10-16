@@ -6,16 +6,19 @@
 #include "load_read.h"
 /* Raw payroll query at the existing native recomputation/store. Zero means no
  * active cap binding; positive encodes payroll+1; negative holds cap room. */
+#define FRANCHISE_CAP_REFRESH "franchise.cap-refresh.v1"
 #define FRANCHISE_CAP_PAYROLL_EVENT "franchise.cap-payroll.v1"
 typedef struct FranchiseCapPayrollEvent { uint32_t team,computed; } FranchiseCapPayrollEvent;
 #define FRANCHISE_FSM_EVENT "franchise.fsm.v1"
 #define FRANCHISE_SIGN_SUBMIT_EVENT "franchise.sign-submit.v1"
 #define FRANCHISE_SIGN_GATE_EVENT "franchise.sign-gate.v2"
-/* Separate from legacy hold replies. Current production addon issues no grant.
+/* Separate from legacy hold replies. Only a prepared, controlled application grants.
  * Stage1 validates a prepared application; stage2 consumes its authorization.
  * Both require exact context, current control and an uninterrupted commit plan. */
 #define FRANCHISE_SIGN_APPLICATION_EVENT "franchise.sign-application.v1"
 #define FRANCHISE_SIGN_APPLICATION_AUTHORIZED 2
+#define FRANCHISE_APPLICATION_DISPATCH "franchise.application-dispatch.v1"
+typedef struct FranchiseApplicationDispatch { uint32_t context,object,amount,flags; } FranchiseApplicationDispatch;
 /* One-use notification after an authorized native success; payload uint32_t
  * context. Reply is ignored. This is neither saved proof nor a grant. */
 #define FRANCHISE_SIGN_COMPLETED_EVENT "franchise.sign-completed.v1"

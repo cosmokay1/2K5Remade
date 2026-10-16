@@ -35,7 +35,8 @@ static int controlled_signing_requested(void) {
 }
 static int application_requested(void) {
     const char *mode=getenv("NFL2K5_FRANCHISE_GUEST_SIGNING");
-    return !screen_preview_requested() && controlled_signing_requested() && mode && !strcmp(mode,"1");
+    const char *negotiate=getenv("NFL2K5_FRANCHISE_NEGOTIATION");
+    return negotiate && !strcmp(negotiate,"1") && mode && !strcmp(mode,"1");
 }
 #ifdef NFL2K5_FRANCHISE_CLIENT
 #include "../game_addon/loader.h"
@@ -51,7 +52,24 @@ static _Thread_local uint64_t accepted_guest_serial;
 #endif
 int nfl2k5_franchise_start(void) { held_signing_context=accepted_signing_context=applying_signing_context=0; return nfl2k5_addon_start(); }
 void nfl2k5_franchise_stop(void) { held_signing_context=accepted_signing_context=applying_signing_context=0; nfl2k5_addon_stop(); }
-void nfl2k5_franchise_guest_poll(void) { nfl2k5_addon_poll(); }
+#ifdef NFL2K5_FRANCHISE_NATIVE_APPLICATION
+extern int nfl2k5_franchise_dispatch_native(uint32_t,uint32_t,uint32_t,uint32_t);
+#endif
+void nfl2k5_franchise_guest_poll(void) {
+    nfl2k5_addon_poll();
+    #ifdef NFL2K5_FRANCHISE_NATIVE_APPLICATION
+    if(application_requested()) {
+        FranchiseApplicationDispatch command={0};
+        if(nfl2k5_addon_snapshot(FRANCHISE_APPLICATION_DISPATCH,&command,sizeof(command)))
+            nfl2k5_franchise_dispatch_native(command.context,command.object,command.amount,command.flags);
+    }
+    if(controlled_signing_requested()) {
+        uint32_t index=UINT32_MAX;
+        if(nfl2k5_addon_snapshot(FRANCHISE_CAP_REFRESH,&index,sizeof(index)) && index<32)
+            nfl2k5_franchise_dispatch_native(0,0,0,index);
+    }
+    #endif
+}
 int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out) {
     if(!out) return 0;
     /* Older addons and unavailable snapshots must never leave stale UI data. */

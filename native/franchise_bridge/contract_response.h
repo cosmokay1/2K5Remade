@@ -918,7 +918,7 @@ inline nlohmann::json exact_guest_offer(const nlohmann::json& raw,const std::str
 // agent text. Repeated amendments need a newly reconciled native checkpoint.
 inline void validate_legacy_amendment(const nlohmann::json& amendment,const nlohmann::json& offer,
                                       const nlohmann::json& revision,int scale) {
-    if(!amendment.is_object() || amendment.size()!=16 ||
+    if(!amendment.is_object() || amendment.size()!=16+amendment.contains("earned_pay") ||
        amendment.at("rule")!="legacy_bonus_carry_v1" || amendment.at("revision")!=revision ||
        amendment.at("requires_player_agreement")!=true || amendment.at("settlement_authorized")!=false)
         throw std::runtime_error("Invalid noncommitting amendment basis");
@@ -928,11 +928,31 @@ inline void validate_legacy_amendment(const nlohmann::json& amendment,const nloh
        original.at("player_id")!=offer.at("player_id") || !original.at("source").is_string() ||
        original.at("source").get<std::string>().find_first_not_of(" \t\r\n")==std::string::npos)
         throw std::runtime_error("Amendment original identity or source mismatch");
-    auto bounded=[](const nlohmann::json& value,bool negative=false)->int64_t {
+    int64_t periods=1,elapsed=0;
+    if(amendment.contains("earned_pay")) {
+        const auto& earned=amendment.at("earned_pay");const auto& scope=earned.at("scope");
+        if(!earned.is_object() || earned.size()!=3 || !scope.is_object() || scope.size()!=4 ||
+           !scope.at("source").is_string() || scope.at("source").get<std::string>().empty())
+            throw std::runtime_error("Invalid bound salary clock");
+        for(const auto* key:{"league_year","elapsed_periods","total_periods"}) integer_money(scope.at(key));
+        periods=scope.at("total_periods").get<int64_t>();elapsed=scope.at("elapsed_periods").get<int64_t>();
+        if(periods<1 || periods>366 || elapsed>periods || scope.at("league_year")<1900 || scope.at("league_year")>9999)
+            throw std::runtime_error("Invalid earned salary period range");
+    }
+    // Compare exact rational dollars in the salary clock's common denominator.
+    // Bounds keep every product below INT64_MAX; no floats or rounding.
+    auto bounded=[periods](const nlohmann::json& value,bool negative=false)->int64_t {
+        if(value.is_string()) {
+            exact_money(value);const auto text=value.get<std::string>();const auto slash=text.find('/');
+            const auto numerator=std::stoll(text.substr(0,slash)),denominator=std::stoll(text.substr(slash+1));
+            if(numerator>1000000000000000LL || denominator>366 || periods%denominator)
+                throw std::runtime_error("Unrepresentable earned salary amount");
+            return numerator*(periods/denominator);
+        }
         if(!value.is_number_integer() || value>1000000000000000LL ||
            value<(negative?-1000000000000000LL:0LL))
             throw std::runtime_error("Invalid amendment money");
-        return value.get<int64_t>();
+        return value.get<int64_t>()*periods;
     };
     const auto years=offer.at("salaries").size();
     if(years==0 || years>7 || (offer.at("signing_bonus")!=0 && years>5))
@@ -970,10 +990,19 @@ inline void validate_legacy_amendment(const nlohmann::json& amendment,const nloh
        amendment.at("combined_player_charges").size()!=horizon ||
        after.size()!=std::max(horizon,before.size()))
         throw std::runtime_error("Amendment charge coverage mismatch");
+    int64_t earned_base=0,remaining_base=0;
+    if(amendment.contains("earned_pay")) {
+        const auto& earned=amendment.at("earned_pay");
+        earned_base=(old[0].charge()-old[0].bonus)*elapsed;
+        remaining_base=offer.at("salaries").at(0).get<int64_t>()*(periods-elapsed);
+        if(bounded(earned.at("earned_base_obligation"))!=earned_base ||
+           bounded(earned.at("remaining_base_commitment"))!=remaining_base)
+            throw std::runtime_error("Earned salary obligation changed");
+    }
     for(size_t i=0;i<after.size();++i) {
-        const auto current=i<old.size()?old[i].charge():0;
-        const auto carried=i<old.size()?old[i].bonus:0;
-        const auto added=i<years?offer.at("salaries").at(i).get<int64_t>()+offer.at("signing_bonus").get<int64_t>()/years:0;
+        const auto current=i<old.size()?old[i].charge()*periods:0;
+        const auto carried=i<old.size()?old[i].bonus*periods:0;
+        const auto added=i<years?((i==0 && amendment.contains("earned_pay")) ? earned_base+remaining_base : offer.at("salaries").at(i).get<int64_t>()*periods)+offer.at("signing_bonus").get<int64_t>()/years*periods:0;
         const auto combined=carried+added;
         if(i<old.size() && (bounded(amendment.at("current_charges").at(i))!=current ||
            bounded(amendment.at("carried_bonus_charges").at(i))!=carried))
@@ -994,6 +1023,50 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
     if (!response["error"].is_null()) return;
     const auto& result = response["result"];
     auto operation = request.at("operation").get<std::string>();
+    if(operation=="guest_cap_restore") {
+        if(!result.is_object() || result.size()!=3 || result.at("request_id")!=request.at("request_id") ||
+           result.at("loaded_payload_sha256")!=request.at("loaded_payload_sha256"))
+            throw std::runtime_error("Invalid loaded cap recovery response");
+        const auto& plan=result.at("cap_plan");
+        if(plan.is_null()) return;
+        if(!plan.is_object() || plan.size()!=8 || plan.at("format")!="native-cap-restore-v1" ||
+           plan.at("source_epoch")!=request.at("source_epoch") ||
+           plan.at("identity_sha256")!=request.at("live_identity_sha256") ||
+           !plan.at("canonical_payrolls").is_array() || plan.at("canonical_payrolls").size()!=32)
+            throw std::runtime_error("Invalid restored cap binding");
+        for(const auto* key:{"source_epoch","team_index","native_payroll_raw","enforced_payroll_raw"}) integer_money(plan.at(key));
+        if(plan.at("source_epoch")==0 || plan.at("team_index")>=32 || plan.at("native_payroll_raw")>=2147483647 || plan.at("enforced_payroll_raw")>=2147483647)
+            throw std::runtime_error("Invalid restored cap bounds");
+        for(const auto& value:plan.at("canonical_payrolls")){integer_money(value);if(value>=2147483647)throw std::runtime_error("Invalid restored payroll");}
+        const auto hash=plan.at("finance_sha256").get<std::string>();
+        if(hash.size()!=64 || hash.find_first_not_of("0123456789abcdef")!=std::string::npos)throw std::runtime_error("Invalid restored cap hash");
+        return;
+    }
+    if(operation=="guest_signing_authorize") {
+        const auto& plan=result.at("application_plan");
+        if(!result.is_object() || result.size()!=2 || result.at("request_id")!=request.at("request_id") ||
+           !plan.is_object() || plan.size()!=13 || plan.at("format")!="native-signing-permit-v1" ||
+           plan.at("journal_request_id")!=request.at("journal_request_id") || plan.at("valid_for_ms")!=5000 ||
+           plan.at("before_finance_sha256")!=request.at("live_finance_sha256") ||
+           plan.at("identity_sha256")!=request.at("live_identity_sha256"))
+            throw std::runtime_error("Invalid native signing issuance");
+        for(const auto* key:{"source_epoch","source_slot","team_index","native_payroll_raw","enforced_payroll_raw"}) integer_money(plan.at(key));
+        if(plan.at("source_epoch")==0 || plan.at("team_index")>=32 || plan.at("source_slot")>=5198 ||
+           plan.at("native_payroll_raw")>=2147483647 || plan.at("enforced_payroll_raw")>=2147483647 ||
+           !plan.at("finance_changes").is_array() || plan.at("finance_changes").empty() || plan.at("finance_changes").size()>32)
+            throw std::runtime_error("Invalid native signing bounds");
+        const auto hash=plan.at("after_finance_sha256").get<std::string>();
+        if(hash.size()!=64 || hash.find_first_not_of("0123456789abcdef")!=std::string::npos)
+            throw std::runtime_error("Invalid native signing target hash");
+        int64_t previous=-1;
+        for(const auto& row:plan.at("finance_changes")) {
+            if(!row.is_array() || row.size()!=2) throw std::runtime_error("Invalid native signing delta");
+            integer_money(row[0]);integer_money(row[1]);
+            if(row[0]<=previous || row[0]>57610 || row[1]>255) throw std::runtime_error("Invalid native signing delta bounds");
+            previous=row[0].get<int64_t>();
+        }
+        return;
+    }
     if(operation=="guest_signing_status" || operation=="guest_signing_confirm") {
         auto hex=[](const nlohmann::json& value,size_t size) {
             if(!value.is_string()) return false;
@@ -1062,8 +1135,18 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
             (result.at("action")=="accept" && result.at("evidence").at("relationships")!=checkpoint.at("player_context").at("relationships")) ||
             result.at("evidence").at("performance")!=checkpoint.at("performance_context"))
             throw std::runtime_error("Captured proposal source or eligibility mismatch");
+        if(amendment && request.contains("salary_clock")) {
+            const auto& calendar=request.at("observation").at("calendar");const auto& scope=inspected.at("amendment").at("earned_pay").at("scope");
+            const auto phase=calendar.at("phase_01_raw").get<int64_t>();
+            const int64_t horizon=phase==8?18:4,progress=calendar.at("step_05_raw").get<int64_t>();
+            const auto elapsed=phase==7?0:phase==8?progress:18;
+            if((phase!=7 && phase!=8 && phase!=9) || calendar.at("step_04_raw")!=horizon || progress<0 || progress>horizon ||
+               scope.at("elapsed_periods")!=elapsed || scope.at("total_periods")!=18)
+                throw std::runtime_error("Captured salary clock differs from live scheduler");
+        }
         auto normalized=request;
-        normalized.erase("observation");normalized.erase("guest_offer");
+        normalized.erase("observation");normalized.erase("guest_offer");normalized.erase("salary_clock");
+        if(amendment && request.contains("salary_clock")) normalized["amendment_scope"]=inspected.at("amendment").at("earned_pay").at("scope");
         normalized["team_id"]=checkpoint.at("team_id");
         normalized["offer"]=inspected.at("offer");
         normalized["contract_format"]=inspected.value("contract_format",std::string("original_fxg_v1"));
@@ -1503,7 +1586,7 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
                 } else if(outcome=="amendment_comparison") {
                     const auto& amendment=terms.at("amendment");
                     if(!terms.at("preview").is_null() || !terms.at("reason").is_null() ||
-                       !context.contains("legacy_contract") || !amendment.is_object() || amendment.size()!=16 ||
+                       !context.contains("legacy_contract") || !amendment.is_object() || amendment.size()!=16+amendment.contains("earned_pay") ||
                        amendment.at("original_contract")!=context.at("legacy_contract") ||
                        amendment.at("revision")!=result.at("financial_revision") ||
                        amendment.at("rule")!="legacy_bonus_carry_v1" ||
@@ -1749,6 +1832,8 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
             basis.at("original_contract").value("game_dollar_scale",1);
         if(scale!=1 && scale!=4) throw std::runtime_error("Unsupported amendment money scale");
         validate_legacy_amendment(basis,canonical_offer(request.at("offer")),request.at("expected_revision"),scale);
+        if(request.contains("amendment_scope") && basis.at("earned_pay").at("scope")!=request.at("amendment_scope"))
+            throw std::runtime_error("Amendment changed bound salary clock");
         if(basis.at("within_modeled_cap")!=true) throw std::runtime_error("Over-cap amendment reached agent");
         if(result.at("action")=="accept" && result.at("outcome")=="accepted_amendment_proposal" && result.at("proposal_preview")!=basis)
             throw std::runtime_error("Accepted amendment changed its checked basis");

@@ -10107,3 +10107,53 @@ The combined package remains staged, not installed, and ready only for offline
 and read-only testing. Trusted live salary-clock binding and production accepted
 cap-plan issuance remain open before signing can be authorized. The scheduled
 follow-up was rechecked PAUSED.
+
+## Live salary clock and imported-amendment application candidate
+
+The experimental upstream Linux merge was abandoned at the user's instruction;
+root remains based on b25bd2d and runtime ea4a0ee. No Linux migration, runtime
+merge, installed game replacement or save modification was performed. The
+scheduled follow-up remains PAUSED.
+
+Current source connects a captured scheduler descriptor and decoded-source epoch
+to the exact pinned calendar before preview, provider consent and settlement.
+Only inspected preseason/regular-season/postseason descriptors are supported.
+Completed regular-season progress supplies the simulation's18 salary periods;
+preseason owes zero earned base and postseason preserves all18 periods. These
+are simulation obligations, not claimed cash payments. Calendar or descriptor
+mismatch holds the operation instead of guessing from a roster or mod name.
+
+An accepted imported amendment can now reserve the existing durable saved-signing
+journal using a separate format2 intent. The reservation freezes competing store
+writes, preserves accepted terms, salary scope, source bytes, revision and old
+bonus schedules, and settles ledger plus saved proof in the same transaction.
+Original free-agent format1 journals remain separate and compatible. Native
+issuance currently supports the first imported amendment, not a new general
+free-agent signing grant or repeated native amendments without reconciliation.
+
+A separate authorization request rechecks current remote control and unchanged
+saved/live finances. Issuance is recorded once; lost/expired authorizations do not
+automatically rearm. The native five-second deadline starts before sending that
+request. Judgment and precommit compare the exact before-state, identity, source
+epoch and context; the existing shim additionally requires the same uninterrupted
+guest-lock acquisition. Precommit consumes once and publishes the guarded cap
+after-state. The game dispatches only its fixed existing interactive signing
+routine and payroll recomputation, preserving guest registers/FPU/XMM state.
+No arbitrary guest-call endpoint or generic addon memory-write capability is added.
+
+Saved recovery verifies the retained-debt target and rebinds cap enforcement on a
+new load epoch without enabling AI or granting another signing. Strict original
+payroll readers still reject altered payroll by default: the amendment journal
+verifies the enforced saved word, then normalizes only that cached payroll in a
+private comparison copy to reuse those readers. Files are never rewritten by
+this normalization. Unknown saves, rollback after settlement, unrelated changes
+and multiple unreconciled amendment checkpoints remain held.
+
+Local evidence at this checkpoint:971 Python regressions,13 portable native
+checks and56 actual offline Bridge/native amendment reply cases passed, including an actual Bridge issuance regression. The authored fixture covers
+reservation/restart, one-use issuance, exact saved cap settlement, once-only
+ledger replay and cap-only reload recovery. The fixed dispatch fixture compiles
+the actual dispatcher and checks register preservation and rejected contexts.
+Private Windows game/addon compilation is in progress under the approved offline
+toolchain in live-clock-signing-v1. No paid inference or control activation has
+occurred. This is source/fixture evidence, not real signing/playability proof.

@@ -84,6 +84,23 @@ int franchise_host_reply_failed(FranchiseHostClient* client);
  * Repeating identical data is allowed; changing it requires explicit recovery. */
 FranchiseHostStatus franchise_host_observe_completed(FranchiseHostClient* client,
     const void* finance_state, size_t finance_size, const void* identity_state, size_t identity_size);
+struct FranchiseCapEnforcement;
+/* Saved debt recovery is independent of AI permission and never issues a signing permit. */
+FranchiseHostStatus franchise_host_restore_cap(FranchiseHostClient *client,unsigned long long epoch,const char *payload,
+    const void *finance,size_t finance_size,const void *identity,size_t identity_size);
+int franchise_host_take_restored_cap(FranchiseHostClient *client,struct FranchiseCapEnforcement *cap);
+/* One-use application issuance. Remote control is rechecked by the service;
+ * the five-second deadline starts before transport submission. No guest writes. */
+FranchiseHostStatus franchise_host_authorize_accepted(FranchiseHostClient *client,
+    const void *finance,size_t finance_size,const void *identity,size_t identity_size);
+struct FranchiseCapEnforcement;
+/* Owner/guest-lock caller only. Validate immutable before-state and current epoch.
+ * Stage2 consumes once and returns the exact cap after-state for publication. */
+int franchise_host_application(FranchiseHostClient *client,unsigned stage,unsigned context,
+    unsigned long long source_epoch,const void *finance,size_t finance_size,
+    const void *identity,size_t identity_size,struct FranchiseCapEnforcement *cap);
+int franchise_host_application_terms(FranchiseHostClient *client,unsigned long long source_epoch,
+    unsigned *amount,unsigned *flags);
 /* Queue a read-only saved-state check for the prepared journal. Only a validated
  * candidate after-save plus the existing hello grant can queue confirmation;
  * the server rechecks current authority and bytes. NOT_READY means no journal or

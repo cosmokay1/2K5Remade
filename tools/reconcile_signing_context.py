@@ -16,7 +16,7 @@ from tools.inspect_franchise_cap import inspect_cap
 from tools.inspect_franchise_save import TEAMS
 
 
-def reconcile_signing_context(bindings, payload, observation, store, *, expected_revision,guest_offer=None):
+def reconcile_signing_context(bindings, payload, observation, store, *, expected_revision,guest_offer=None,amendment_scope=None):
     if type(expected_revision) is not int or expected_revision < 0:
         raise ValueError('Explicit nonnegative financial revision required')
     if type(observation) is not dict or set(observation) != {'biography', 'team', 'calendar'}:
@@ -85,7 +85,7 @@ def reconcile_signing_context(bindings, payload, observation, store, *, expected
                 from franchise.cap import Offer, Rejected
                 try:
                     comparison=store._preview_legacy_amendment(db,name,ledger,
-                        Offer.from_dict(offer_context['offer']),expected_revision)
+                        Offer.from_dict(offer_context['offer']),expected_revision,scope=amendment_scope)
                 except Rejected as error:
                     offer_context.update(outcome='accounting_rejected',preview=None,reason=str(error))
                 else:

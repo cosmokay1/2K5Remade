@@ -37,6 +37,12 @@ FranchiseHostStatus franchise_host_prepare_accepted(FranchiseHostClient *client,
 FranchiseHostStatus franchise_host_observe_completed(FranchiseHostClient *client,const void *finance,size_t size,const void *identity,size_t identity_size) {
     (void)client;(void)finance;(void)size;(void)identity;(void)identity_size;return FRANCHISE_HOST_SERVICE_FAILURE;
 }
+int nfl2k5_franchise_publish_cap(const struct FranchiseCapEnforcement *p){(void)p;assert(0);return 0;}
+FranchiseHostStatus franchise_host_authorize_accepted(FranchiseHostClient *c,const void *f,size_t n,const void *i,size_t m){(void)c;(void)f;(void)n;(void)i;(void)m;assert(0);return FRANCHISE_HOST_NOT_READY;}
+int franchise_host_application(FranchiseHostClient *c,unsigned s,unsigned x,unsigned long long e,const void *f,size_t n,const void *i,size_t m,struct FranchiseCapEnforcement *p){(void)c;(void)s;(void)x;(void)e;(void)f;(void)n;(void)i;(void)m;(void)p;assert(0);return 0;}
+int franchise_host_application_terms(FranchiseHostClient *c,unsigned long long e,unsigned *a,unsigned *f){(void)c;(void)e;(void)a;(void)f;return 0;}
+FranchiseHostStatus franchise_host_restore_cap(FranchiseHostClient *c,unsigned long long e,const char *p,const void *f,size_t n,const void *i,size_t m){(void)c;(void)e;(void)p;(void)f;(void)n;(void)i;(void)m;assert(0);return FRANCHISE_HOST_NOT_READY;}
+int franchise_host_take_restored_cap(FranchiseHostClient *c,struct FranchiseCapEnforcement *p){(void)c;(void)p;return 0;}
 FranchiseHostStatus franchise_host_check_saved(FranchiseHostClient *client) {
     (void)client;assert(0);return FRANCHISE_HOST_SERVICE_FAILURE;
 }
@@ -311,7 +317,8 @@ int main(void)
     assert(!nfl2k5_franchise_start()); // Explicit UI mode still requires controlled negotiation.
     _wputenv_s(L"NFL2K5_FRANCHISE_NEGOTIATION",L"1");
     _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SIGNING",L"1");
-    assert(!nfl2k5_franchise_start()); // Reviewed screen never enables native writes.
+    assert(nfl2k5_franchise_start()); // Explicit application mode starts without granting any signing.
+    nfl2k5_franchise_stop();
     _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SIGNING",L"0");
     reviewed_kind=2;reviewed_amount=observation.offer_amount;reviewed_flags=observation.offer_flags;
     assert(nfl2k5_franchise_start());

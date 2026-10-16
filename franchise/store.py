@@ -1981,7 +1981,7 @@ class FranchiseStore:
             {'history_request_ids':proposal['history_request_ids']+[proposal_request_id]},before_event_id=before_event_id)
         return proposal
 
-    def commit_accepted_amendment(self,team_id,proposal_request_id,request_id,expected_revision,*,scope,access_check):
+    def commit_accepted_amendment(self,team_id,proposal_request_id,request_id,expected_revision,*,scope,access_check,_db=None):
         """Engine-only consent/cap settlement; never authorizes guest/save writes."""
         from franchise.legacy_amendments import FullYearAmendmentScope,InSeasonAmendmentScope,amendment_scope_from_dict
         if (not isinstance(scope,(FullYearAmendmentScope,InSeasonAmendmentScope)) or any(type(v) is not str or not v.strip() for v in (proposal_request_id,request_id))
@@ -1990,35 +1990,39 @@ class FranchiseStore:
         def check():
             if access_check() is False:
                 raise Rejected('Amendment access check denied settlement')
-        with self._connection(write=True) as db:
-            check();ledger=self._load(db,team_id);key='legacy-amendment:'+request_id
-            previous=db.execute("SELECT payload FROM events WHERE team_id=? AND kind='legacy_amendment' AND request_key=?",(team_id,key)).fetchone()
-            if previous:
-                payload=json.loads(previous[0])
-                if (payload['proposal_request_id']!=proposal_request_id or payload['expected_revision']!=expected_revision
-                        or self._checkpoint_hash(payload['scope'])!=self._checkpoint_hash(scope.to_dict())):
-                    raise Rejected('Amendment settlement retry changed its source')
-                return {**payload['agreement'],'guest_write_authorized':False}
-            if db.execute('SELECT 1 FROM events WHERE team_id=? AND request_key=?',(team_id,'sign:'+request_id)).fetchone():
-                raise Rejected('Settlement request already belongs to a signing')
-            proposal=self._accepted_amendment(db,team_id,proposal_request_id)
-            if proposal['evidence']['financial_revision']!=expected_revision:
-                raise Rejected('Amendment settlement changed its accepted revision')
-            offer=Offer.from_dict(proposal['offer'])
-            comparison=self._preview_legacy_amendment(db,team_id,ledger,offer,expected_revision,scope=scope)
-            if self._checkpoint_hash(comparison)!=self._checkpoint_hash(proposal['proposal_preview']):
-                raise Rejected('Accepted amendment no longer matches current finances')
-            before=ledger.financial_snapshot();source='accepted-agent:'+proposal_request_id
-            agreement=ledger.apply_legacy_amendment(request_id,offer,expected_revision,
-                proposal_request_id=proposal_request_id,source=source,scope=scope)
-            self._remember_amendment_promises(ledger,request_id,proposal)
-            check()
-            payload=dict(request_id=request_id,proposal_request_id=proposal_request_id,expected_revision=expected_revision,
-                source=source,scope=scope.to_dict(),proposal_sha256=self._checkpoint_hash(proposal),before=before,comparison=comparison,
-                agreement=agreement.to_dict(),posting=ledger.financial_snapshot())
-            db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,'legacy_amendment',?)",
-                       (team_id,key,json.dumps(payload,allow_nan=False)))
-            return {**agreement.to_dict(),'guest_write_authorized':False}
+        if _db is None:
+            with self._connection(write=True) as db:
+                return self.commit_accepted_amendment(team_id,proposal_request_id,request_id,expected_revision,
+                    scope=scope,access_check=access_check,_db=db)
+        db=_db
+        check();ledger=self._load(db,team_id);key='legacy-amendment:'+request_id
+        previous=db.execute("SELECT payload FROM events WHERE team_id=? AND kind='legacy_amendment' AND request_key=?",(team_id,key)).fetchone()
+        if previous:
+            payload=json.loads(previous[0])
+            if (payload['proposal_request_id']!=proposal_request_id or payload['expected_revision']!=expected_revision
+                    or self._checkpoint_hash(payload['scope'])!=self._checkpoint_hash(scope.to_dict())):
+                raise Rejected('Amendment settlement retry changed its source')
+            return {**payload['agreement'],'guest_write_authorized':False}
+        if db.execute('SELECT 1 FROM events WHERE team_id=? AND request_key=?',(team_id,'sign:'+request_id)).fetchone():
+            raise Rejected('Settlement request already belongs to a signing')
+        proposal=self._accepted_amendment(db,team_id,proposal_request_id)
+        if proposal['evidence']['financial_revision']!=expected_revision:
+            raise Rejected('Amendment settlement changed its accepted revision')
+        offer=Offer.from_dict(proposal['offer'])
+        comparison=self._preview_legacy_amendment(db,team_id,ledger,offer,expected_revision,scope=scope)
+        if self._checkpoint_hash(comparison)!=self._checkpoint_hash(proposal['proposal_preview']):
+            raise Rejected('Accepted amendment no longer matches current finances')
+        before=ledger.financial_snapshot();source='accepted-agent:'+proposal_request_id
+        agreement=ledger.apply_legacy_amendment(request_id,offer,expected_revision,
+            proposal_request_id=proposal_request_id,source=source,scope=scope)
+        self._remember_amendment_promises(ledger,request_id,proposal)
+        check()
+        payload=dict(request_id=request_id,proposal_request_id=proposal_request_id,expected_revision=expected_revision,
+            source=source,scope=scope.to_dict(),proposal_sha256=self._checkpoint_hash(proposal),before=before,comparison=comparison,
+            agreement=agreement.to_dict(),posting=ledger.financial_snapshot())
+        db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,'legacy_amendment',?)",
+                   (team_id,key,json.dumps(payload,allow_nan=False)))
+        return {**agreement.to_dict(),'guest_write_authorized':False}
 
     def preview_draft_offer(self, team_id, offer, expected_revision):
         with self._connection() as db:

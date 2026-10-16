@@ -46,7 +46,7 @@ class Bridge:
                 return self._reply(request_id, error="protocol_mismatch")
             operation = request.get("operation")
             if self.runtime_image is not None and not self.runtime_verified and operation in (
-                    'negotiate', 'negotiate_proposal', 'guest_signing_prepare', 'guest_signing_confirm'):
+                    'negotiate', 'negotiate_proposal', 'guest_signing_prepare', 'guest_signing_confirm', 'guest_signing_authorize'):
                 raise AccessDisabled('Verified runtime handshake required')
             compact='receipt_format' in request
             if compact:
@@ -96,13 +96,26 @@ class Bridge:
                 if self.guest_snapshot is not None:
                     operations.append('signing_context')
                 if self.guest_signing_reader is not None:
-                    operations.extend(('guest_signing_prepare','guest_signing_confirm','guest_signing_status'))
+                    operations.extend(('guest_signing_prepare','guest_signing_confirm','guest_signing_status','guest_signing_authorize'))
                 result = {"ai_enabled": True, "operations": operations}
                 if binding is not None:
                     result['runtime_binding'] = binding
                 self.runtime_verified = binding is not None
                 return self._reply(request_id, result=result)
-            if operation in ('guest_signing_prepare','guest_signing_confirm','guest_signing_status'):
+            if operation=='guest_cap_restore':
+                fields={'protocol','request_id','operation','source_epoch','loaded_payload_sha256',
+                        'live_finance_sha256','live_identity_sha256','finance_payrolls'}
+                if set(request)!=fields or self.guest_signing_reader is None:
+                    raise ValueError('Configured saved recovery and complete live cap checkpoint required')
+                from franchise.guest_application import restore_cap
+                payload=self.guest_signing_reader()
+                result=restore_cap(self.store,request_id,payload,source_epoch=request['source_epoch'],
+                    loaded_payload_sha256=request['loaded_payload_sha256'],finance_payrolls=request['finance_payrolls'],
+                    live_projection={'finance':request['live_finance_sha256'],'identity':request['live_identity_sha256']},
+                    connection_check=self.connection_check)
+                self._require_frame(request_id,result)
+                return self._reply(request_id,result=result)
+            if operation in ('guest_signing_prepare','guest_signing_confirm','guest_signing_status','guest_signing_authorize'):
                 from franchise import guest_signing
                 import hashlib
                 if self.guest_signing_reader is None:
@@ -115,6 +128,9 @@ class Bridge:
                     if operation=='guest_signing_confirm': fields|={'expected_after_sha256'}
                     elif 'live_finance_sha256' in request or 'live_identity_sha256' in request:
                         fields|={'live_finance_sha256','live_identity_sha256'}
+                amendment='salary_clock' in request
+                if amendment and operation=='guest_signing_prepare': fields|={'salary_clock','observation'}
+                if operation=='guest_signing_authorize': fields|={'live_finance_sha256','live_identity_sha256'}
                 if set(request)!=fields:
                     raise ValueError('Complete saved-signing request required; paths and save bytes are server-owned')
                 timeout=request['timeout_ms']
@@ -142,7 +158,11 @@ class Bridge:
                     if self.guest_signing_reader()!=payload:
                         raise Rejected('Saved payload changed during journal coordination')
                     local()
-                if operation=='guest_signing_status':
+                if operation=='guest_signing_authorize':
+                    from franchise.guest_application import authorize
+                    result=authorize(self.store,request_id,request['journal_request_id'],payload,access_check=guarded,
+                        live_projection={'finance':request['live_finance_sha256'],'identity':request['live_identity_sha256']})
+                elif operation=='guest_signing_status':
                     projection=({'finance':request['live_finance_sha256'],'identity':request['live_identity_sha256']}
                                 if 'live_finance_sha256' in request else None)
                     status=guest_signing.inspect(self.store,request['journal_request_id'],payload,live_projection=projection)
@@ -159,10 +179,13 @@ class Bridge:
                         raise Rejected('Current save differs from the captured before-save')
                     result=dict(request_id=request_id,state='prepared',before_payload_sha256=digest,write_authorized=False)
                     self._require_frame(request_id,result) # Before reserving the league journal.
-                    result=guest_signing.prepare(self.store,request['team_id'],request['proposal_request_id'],request_id,
+                    from franchise.guest_application import prepare_amendment
+                    prepare=prepare_amendment if amendment else guest_signing.prepare
+                    result=prepare(self.store,request['team_id'],request['proposal_request_id'],request_id,
                         bindings=self.guest_snapshot[0],before_payload=payload,guest_offer=request['guest_offer'],
                         expected_before_sha256=digest,expected_revision=request['expected_revision'],access_check=guarded,
-                        live_projection={'finance':request['live_finance_sha256'],'identity':request['live_identity_sha256']})
+                        live_projection={'finance':request['live_finance_sha256'],'identity':request['live_identity_sha256']},
+                        **({'observation':request['observation'],'salary_clock':request['salary_clock']} if amendment else {}))
                 else:
                     if digest!=request['expected_after_sha256']:
                         raise Rejected('Current save differs from the submitted after-save')
@@ -176,7 +199,7 @@ class Bridge:
                 return self._reply(request_id,result=result)
             if operation == 'signing_context':
                 fields = {'protocol', 'request_id', 'operation', 'observation', 'expected_revision', 'timeout_ms'}
-                optional = {'performance_format', 'guest_offer'}
+                optional = {'performance_format', 'guest_offer', 'salary_clock'}
                 if not fields <= set(request) or set(request) - fields - optional:
                     raise ValueError('Complete signing checkpoint request required')
                 if 'performance_format' in request and request['performance_format'] != 'saved_history_v1':
@@ -193,9 +216,13 @@ class Bridge:
                     if 'guest_offer' in request and (type(request['guest_offer']) is not dict or
                             set(request['guest_offer'])!={'amount_word','flags_word'}):
                         raise ValueError('Complete raw guest offer required')
+                    scope=None
+                    if 'salary_clock' in request:
+                        from franchise.salary_clock import bind_salary_clock
+                        scope=bind_salary_clock(*self.guest_snapshot,request['observation'],request['salary_clock'])
                     result = reconcile_signing_context(*self.guest_snapshot, request['observation'],
                         self.store, expected_revision=request['expected_revision'],
-                        **({'guest_offer':request['guest_offer']} if 'guest_offer' in request else {}))
+                        **({'guest_offer':request['guest_offer']} if 'guest_offer' in request else {}),amendment_scope=scope)
                     if 'performance_format' in request:
                         from tools.export_player_performance import saved_player_performance
                         performance = saved_player_performance(*self.guest_snapshot, result['source_slot'])
@@ -212,7 +239,7 @@ class Bridge:
             if operation == 'negotiate_proposal' and 'observation' in request:
                 fields = {'protocol', 'request_id', 'operation', 'observation', 'guest_offer',
                           'expected_revision', 'timeout_ms'}
-                optional=set(request)&{'promise_goals','amendment_rule'}
+                optional=set(request)&{'promise_goals','amendment_rule','salary_clock'}
                 if set(request) != fields|optional:
                     raise ValueError('Complete captured signing proposal required')
                 amendment_rule=request.get('amendment_rule')
@@ -229,6 +256,7 @@ class Bridge:
                     raise AccessDisabled('AI control denied proposal')
                 checkpoint_request = {key: request[key] for key in fields}
                 checkpoint_request.update(operation='signing_context', performance_format='saved_history_v1')
+                if 'salary_clock' in request: checkpoint_request['salary_clock']=request['salary_clock']
                 checkpoint_reply = self.handle(checkpoint_request)
                 if checkpoint_reply['error'] is not None:
                     return checkpoint_reply
@@ -248,6 +276,9 @@ class Bridge:
                     performance=checkpoint['performance_context'], contract_format=inspected.get('contract_format','original_fxg_v1'))
                 if amendment_rule is not None:
                     normalized['amendment_rule']=amendment_rule
+                    if 'salary_clock' in request:
+                        from franchise.salary_clock import bind_salary_clock
+                        normalized['amendment_scope']=bind_salary_clock(*self.guest_snapshot,request['observation'],request['salary_clock']).to_dict()
                 if 'promise_goals' in request:
                     normalized['promise_goals'] = request['promise_goals']
                 reply = self.handle(normalized)
@@ -508,6 +539,9 @@ class Bridge:
                 if operation!='negotiate_proposal' or request['amendment_rule']!=RULE or 'return_scope' in request:
                     raise ValueError('Separate supported amendment proposal required')
                 fields|={'amendment_rule'}
+            if 'amendment_scope' in request:
+                if 'amendment_rule' not in request: raise ValueError('Amendment salary clock requires amendment rule')
+                fields.add('amendment_scope')
             if "return_scope" in request:
                 fields |= {"return_scope"}
                 if operation == 'negotiate_proposal':
@@ -535,7 +569,9 @@ class Bridge:
             if type(data) is not dict or set(data) not in ({"player_id", "salaries", "signing_bonus"}, {"player_id", "salaries", "signing_bonus", "guaranteed_salaries"}) or type(data["salaries"]) is not list:
                 raise ValueError("Complete offer required")
             offer = Offer.from_dict(data)
-            ledger = StoredLedger(self.store, request["team_id"],return_scope=return_scope,amendment_rule=request.get('amendment_rule'))
+            from franchise.legacy_amendments import amendment_scope_from_dict
+            ledger = StoredLedger(self.store, request["team_id"],return_scope=return_scope,amendment_rule=request.get('amendment_rule'),
+                amendment_scope=amendment_scope_from_dict(request['amendment_scope']) if 'amendment_scope' in request else None)
             if operation == "preview":
                 # AI-off clients retain cap enforcement and manual previews.
                 local_access()

@@ -34,7 +34,8 @@ bool enabled(int& port) {
     const char *signing=std::getenv("NFL2K5_FRANCHISE_GUEST_SIGNING");
     const bool sending=submit && !std::strcmp(submit,"1");
     if(submit && *submit && std::strcmp(submit,"0") && !sending) return false;
-    if(signing && *signing && std::strcmp(signing,"0")) return false;
+    if(signing && *signing && std::strcmp(signing,"0") && std::strcmp(signing,"1")) return false;
+    if(signing && !std::strcmp(signing,"1") && !sending) return false;
     if(sending) {
         const char *edit=std::getenv("NFL2K5_FRANCHISE_SCREEN_EDIT");
         if(!negotiate || std::strcmp(negotiate,"1") || !edit || std::strcmp(edit,"1")) return false;
@@ -214,7 +215,7 @@ bool paint(NFL2K5AddonDraw& draw) {
                     "Proposed terms only. Opening liabilities remain unverified.":
                     "Starts from the game's offer, not a recommendation. New bonus excludes existing bonus obligations. A dash means cap impact is not validated.";
                 if(context.contains("amendment"))
-                    note="Conditional on player agreement: remaining base changes; every old bonus charge stays in its original year. Full-year comparison only; earned pay, cash and save application are not validated. Submission is off.";
+                    note="Requires player agreement. Existing bonus charges stay in their original years; a bound salary clock preserves earned base. This preview applies no contract.";
                 if(context.contains("reason") && context.at("reason").is_string()) note+="\n"+context.at("reason").get<std::string>();
             } else {
                 if(checkpoint.contains("performance_context")) tables=franchise::performance_tables(checkpoint.at("performance_context"));

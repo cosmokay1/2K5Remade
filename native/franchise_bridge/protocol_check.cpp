@@ -29,10 +29,12 @@ int main(int argc,char** argv) {
                 const auto sample=franchise::parse_frame(line);bool valid=false;
                 try {
                     franchise::validate_result(sample.at("response"),sample.at("request"));
-                    const auto text=franchise::signing_display(sample.at("response"));
-                    if(text.history.find("Reason: ")!=0 ||
-                       !franchise::saved_signing_prepare(sample.at("request"),sample.at("response")).is_null())
-                        throw std::runtime_error("Amendment explanation or held journal mismatch");
+                    if(sample.at("request").contains("observation")) {
+                        const auto text=franchise::signing_display(sample.at("response"));
+                        const auto preparation=franchise::saved_signing_prepare(sample.at("request"),sample.at("response"));
+                        if(text.history.find("Reason: ")!=0 || (!preparation.is_null())!=sample.value("journal_preparation",false))
+                            throw std::runtime_error("Amendment explanation or captured journal mismatch");
+                    }
                     valid=true;
                 } catch(const std::exception&) {}
                 if(valid!=sample.at("valid").get<bool>())

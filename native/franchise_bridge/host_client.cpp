@@ -2,6 +2,7 @@
 #include "pipe_client.h"
 #include "signing_display.h"
 #include "saved_signing.h"
+#include "native_application.h"
 #include "finance_state.h"
 #include "identity_state.h"
 #include <bcrypt.h>
@@ -23,6 +24,11 @@ struct FranchiseHostClient {
     std::string request;
     franchise::SavedSigningJournal candidate, journal;
     std::string operation;
+    franchise::NativeApplication application;
+    FranchiseFinanceSnapshot application_before{};
+    ULONGLONG application_submitted=0;
+    FranchiseCapEnforcement restored_cap{};
+    bool restored_cap_ready=false;
 };
 static std::string signing_state_sha256(const unsigned char* bytes,size_t size) {
     BCRYPT_ALG_HANDLE algorithm=nullptr;unsigned char digest[32];
@@ -114,7 +120,7 @@ extern "C" FranchiseHostStatus franchise_host_submit(FranchiseHostClient* client
             !request.at("operation").is_string() || request.at("operation").get<std::string>().empty()) return FRANCHISE_HOST_INVALID_ARGUMENT;
         operation = request.at("operation").get<std::string>();
     } catch (...) { return FRANCHISE_HOST_INVALID_ARGUMENT; }
-    const bool journal_write=operation=="guest_signing_prepare" || operation=="guest_signing_confirm";
+    const bool journal_write=operation=="guest_signing_prepare" || operation=="guest_signing_confirm" || operation=="guest_signing_authorize";
     if ((operation == "negotiate" || operation == "negotiate_proposal" || journal_write) && !client->ai_granted)
         return FRANCHISE_HOST_SERVICE_FAILURE;
     if(journal_write && !client->journal_capable)
@@ -247,6 +253,24 @@ extern "C" FranchiseHostStatus franchise_host_take(FranchiseHostClient* client, 
             }
             if (response.at("error") == "ai_disabled") client->ai_granted = false;
             const auto request=franchise::parse_frame(client->request);
+            if(client->operation=="guest_cap_restore" && response.at("error").is_null()) {
+                client->restored_cap_ready=false;
+                const auto& plan=response.at("result").at("cap_plan");
+                if(!plan.is_null()) {
+                    FranchiseCapEnforcement cap{};cap.expected=client->application_before;
+                    cap.source_epoch=plan.at("source_epoch").get<uint64_t>();cap.team_index=plan.at("team_index").get<uint32_t>();
+                    cap.native_payroll=plan.at("native_payroll_raw").get<uint32_t>();cap.enforced_payroll=plan.at("enforced_payroll_raw").get<uint32_t>();
+                    for(unsigned i=0;i<32;++i)finance_put32(cap.expected.bytes+48+12*i,plan.at("canonical_payrolls")[i].get<uint32_t>());
+                    if(signing_state_sha256(cap.expected.bytes,cap.expected.size)!=plan.at("finance_sha256"))
+                        throw std::runtime_error("Restored cap differs from the loaded live state");
+                    client->restored_cap=cap;client->restored_cap_ready=true;
+                }
+                client->loaded_payload=response.at("result").at("loaded_payload_sha256").get<std::string>();
+            }
+            if(client->operation=="guest_signing_authorize" && response.at("error").is_null()) {
+                client->application=franchise::NativeApplication::capture(request,response,client->journal.preparation,
+                    client->application_before,client->application_submitted,signing_state_sha256);
+            }
             client->journal.consume(request,response);
             client->candidate=franchise::SavedSigningJournal::capture(request,response);
             client->cached = true;
@@ -269,4 +293,61 @@ extern "C" FranchiseHostStatus franchise_host_loaded_payload_matches(FranchiseHo
     if(client->loaded_payload.size()!=64)return FRANCHISE_HOST_NOT_READY;
     for(size_t i=0;i<64;++i)if(!sha256[i] || client->loaded_payload[i]!=sha256[i])return FRANCHISE_HOST_INVALID_ARGUMENT;
     return sha256[64]==0 ? FRANCHISE_HOST_OK : FRANCHISE_HOST_INVALID_ARGUMENT;
+}
+
+extern "C" FranchiseHostStatus franchise_host_authorize_accepted(FranchiseHostClient* client,
+    const void* finance,size_t size,const void* identity,size_t identity_size) {
+    if(!client || client->owner!=GetCurrentThreadId() || !valid_signing_images(finance,size,identity,identity_size)) return FRANCHISE_HOST_INVALID_ARGUMENT;
+    if(!client->ai_granted || !client->journal.prepared || client->journal.preparation.is_null() ||
+       !client->journal.preparation.contains("salary_clock")) return FRANCHISE_HOST_NOT_READY;
+    if(client->pending || client->cached) return FRANCHISE_HOST_BUSY;
+    try {
+        const auto id=client->journal.preparation.at("request_id").get<std::string>();
+        const nlohmann::json request={{"protocol",1},{"request_id",id+"-authorize"},{"operation","guest_signing_authorize"},
+            {"journal_request_id",id},{"timeout_ms",5000},
+            {"live_finance_sha256",signing_state_sha256(static_cast<const unsigned char*>(finance),size)},
+            {"live_identity_sha256",signing_state_sha256(static_cast<const unsigned char*>(identity),identity_size)}};
+        client->application={};client->application_before={};client->application_before.size=static_cast<uint32_t>(size);
+        std::memcpy(client->application_before.bytes,finance,size);
+        client->application_submitted=GetTickCount64();const auto text=request.dump();
+        return franchise_host_submit(client,text.data(),text.size());
+    } catch(...) {client->ai_granted=false;client->application={};return FRANCHISE_HOST_SERVICE_FAILURE;}
+}
+extern "C" int franchise_host_application(FranchiseHostClient* client,unsigned stage,unsigned context,
+    unsigned long long epoch,const void* finance,size_t size,const void* identity,size_t identity_size,FranchiseCapEnforcement* cap) {
+    if(!client || !cap || client->owner!=GetCurrentThreadId() || !client->ai_granted ||
+       !valid_signing_images(finance,size,identity,identity_size)) return 0;
+    try {
+        FranchiseFinanceSnapshot live{};live.size=static_cast<uint32_t>(size);std::memcpy(live.bytes,finance,size);
+        if(!client->application.check(stage,context,epoch,GetTickCount64(),live,identity,identity_size,signing_state_sha256)) return 0;
+        *cap=client->application.cap;return 1;
+    } catch(...) {client->ai_granted=false;client->application.consumed=true;return 0;}
+}
+extern "C" int franchise_host_application_terms(FranchiseHostClient* client,unsigned long long epoch,unsigned* amount,unsigned* flags) {
+    if(!client || !amount || !flags || client->owner!=GetCurrentThreadId() || !client->ai_granted ||
+       client->pending || client->cached || !client->application.fresh(GetTickCount64(),epoch) || client->application.dispatched) return 0;
+    client->application.dispatched=true;*amount=client->application.amount;*flags=client->application.flags;return 1;
+}
+
+extern "C" FranchiseHostStatus franchise_host_restore_cap(FranchiseHostClient* client,unsigned long long epoch,const char *payload,
+    const void* finance,size_t size,const void* identity,size_t identity_size) {
+    if(!client || client->owner!=GetCurrentThreadId() || !epoch || !payload || std::strlen(payload)!=64 ||
+       !valid_signing_images(finance,size,identity,identity_size)) return FRANCHISE_HOST_INVALID_ARGUMENT;
+    if(client->pending || client->cached) return FRANCHISE_HOST_BUSY;
+    try {
+        nlohmann::json payrolls=nlohmann::json::array();const auto* bytes=static_cast<const unsigned char*>(finance);
+        for(unsigned i=0;i<32;++i)payrolls.push_back(finance_get32(bytes+48+12*i));
+        const nlohmann::json request={{"protocol",1},{"request_id","game-cap-restore-"+std::to_string(epoch)},
+            {"operation","guest_cap_restore"},{"source_epoch",epoch},{"loaded_payload_sha256",payload},
+            {"live_finance_sha256",signing_state_sha256(bytes,size)},
+            {"live_identity_sha256",signing_state_sha256(static_cast<const unsigned char*>(identity),identity_size)},
+            {"finance_payrolls",payrolls}};
+        client->application={};client->application_before={};client->application_before.size=static_cast<uint32_t>(size);
+        std::memcpy(client->application_before.bytes,finance,size);client->restored_cap_ready=false;
+        const auto text=request.dump();return franchise_host_submit(client,text.data(),text.size());
+    } catch(...){return FRANCHISE_HOST_SERVICE_FAILURE;}
+}
+extern "C" int franchise_host_take_restored_cap(FranchiseHostClient* client,FranchiseCapEnforcement *cap) {
+    if(!client || !cap || client->owner!=GetCurrentThreadId() || !client->restored_cap_ready)return 0;
+    *cap=client->restored_cap;client->restored_cap_ready=false;return 1;
 }

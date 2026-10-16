@@ -31,11 +31,11 @@ def _access(check):
         raise Rejected('Required authorization/quiescence check did not succeed')
 
 
-def _before_books(store,db,bindings,payload,offer,guest_offer,team_id):
+def _before_books(store,db,bindings,payload,offer,guest_offer,team_id,*,owned=False):
     members=resolve_bindings(bindings,payload)
     player=[p for p in members.values() if p['player_id']==offer.player_id]
-    if len(player)!=1 or player[0]['team']!='free_agents':
-        raise Rejected('Bound free-agent candidate required')
+    if len(player)!=1 or player[0]['team']!=(team_id if owned else 'free_agents'):
+        raise Rejected('Bound candidate with matching saved ownership required')
     scale=binding_money_scale(bindings)
     contract_format=SOFTDRINK_CONTRACT_FORMAT if scale==4 else GUEST_CONTRACT_FORMAT
     if type(guest_offer) is not dict or set(guest_offer)!={'amount_word','flags_word'}:
@@ -87,6 +87,9 @@ def _read(store,db,request_id):
     if row is None: raise Rejected('Unknown guest signing journal')
     team,state,serialized,before,after,confirmation=row
     intent=json.loads(serialized)
+    if intent.get('format')==2:
+        from franchise.guest_application import read_amendment
+        return read_amendment(store,db,request_id)
     fields={'format','request_id','team_id','proposal_request_id','expected_revision','proposal_sha256',
             'bindings','bindings_sha256','before_payload_sha256','guest_offer','offer','contract_format'}
     if (type(intent) is not dict or set(intent)!=fields or intent['format']!=1
@@ -197,6 +200,11 @@ def settle(store,request_id,after_payload,*,access_check,receipt_check=None):
     """Confirm saved effects and atomically commit ledger plus journal outcome."""
     if receipt_check is not None and not callable(receipt_check):
         raise ValueError('Callable receipt check required')
+    with store._connection() as db:
+        row=db.execute('SELECT intent FROM guest_signings WHERE request_id=?',(request_id,)).fetchone()
+    if row and json.loads(row[0]).get('format')==2:
+        from franchise.guest_application import settle_amendment
+        return settle_amendment(store,request_id,after_payload,access_check=access_check,receipt_check=receipt_check)
     with store._connection(write=True,guest_recovery=True) as db:
         _access(access_check)
         intent,state,before,after,proof=_read(store,db,request_id)
@@ -242,9 +250,13 @@ def inspect(store,request_id,current_payload,*,live_projection=None):
         candidate=None
         if state=='prepared' and position=='unrecognized':
             try:
-                candidate=confirm_saved_signing(intent['bindings'],before,current_payload,
-                    expected_before_sha256=intent['before_payload_sha256'],offer=Offer.from_dict(intent['offer']),
-                    guest_offer=intent['guest_offer'],team_id=intent['team_id'])
+                if intent['format']==2:
+                    from franchise.guest_application import confirm_amendment
+                    candidate=confirm_amendment(intent,before,current_payload)
+                else:
+                    candidate=confirm_saved_signing(intent['bindings'],before,current_payload,
+                        expected_before_sha256=intent['before_payload_sha256'],offer=Offer.from_dict(intent['offer']),
+                        guest_offer=intent['guest_offer'],team_id=intent['team_id'])
             except ValueError:
                 pass
             else:
@@ -257,7 +269,11 @@ def inspect(store,request_id,current_payload,*,live_projection=None):
             if state=='cancelled':
                 raise Rejected('Cancelled signing cannot validate a live application')
             from tools.franchise_offer_state import expected_signed_state
-            target=expected_signed_state(intent['bindings'],before,
-                offer=Offer.from_dict(intent['offer']),guest_offer=intent['guest_offer'],team_id=intent['team_id'])
+            if intent['format']==2:
+                from franchise.guest_application import amendment_target
+                finance,identity,_=amendment_target(intent,before);target=(finance,identity)
+            else:
+                target=expected_signed_state(intent['bindings'],before,
+                    offer=Offer.from_dict(intent['offer']),guest_offer=intent['guest_offer'],team_id=intent['team_id'])
             result['live_application_matches']=tuple(live_projection[k] for k in ('finance','identity'))==tuple(_hash(v) for v in target)
         return result

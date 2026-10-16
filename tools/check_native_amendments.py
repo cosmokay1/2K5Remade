@@ -66,6 +66,41 @@ def corpus():
                     samples.append(dict(request=request,response=bad,valid=False))
                 bad=copy.deepcopy(response);bad['result']['decision_mode']='proposal'
                 samples.append(dict(request=request,response=bad,valid=False))
+    # The normalized engine boundary also carries exact earned salary periods.
+    # Authored scopes exercise zero, partial and completed periods at both scales.
+    from franchise.legacy_amendments import InSeasonAmendmentScope
+    for scale in (1,4):
+        for elapsed in (0,8,18):
+            with tempfile.TemporaryDirectory() as directory:
+                store=FranchiseStore(Path(directory)/'earned.sqlite');player='earned-player'
+                from franchise.legacy_contracts import LegacyContract
+                ledger=Ledger.from_opening(OpeningBooks(legacy_contracts=(LegacyContract(player,829,4,1,2,2,'authored',scale),)),
+                    cap=80500000*scale,roster_reserve=0,max_bonus_years=5,veteran_minimums={player:(1000000*scale,)*7})
+                store.create_team('a',ledger)
+                from franchise.guest_contracts import GuestContractTerms
+                offer=GuestContractTerms(600,0,2,3).to_offer(player,contract_format='softdrink_fxg_v1' if scale==4 else 'original_fxg_v1')
+                request=dict(protocol=1,request_id='earned',operation='negotiate_proposal',team_id='a',offer=offer.to_dict(),
+                    expected_revision=0,timeout_ms=5000,personality={},relationships={},performance={},amendment_rule=RULE,
+                    amendment_scope=InSeasonAmendmentScope(2026,elapsed,18,'authored simulation clock').to_dict(),
+                    contract_format='softdrink_fxg_v1' if scale==4 else 'original_fxg_v1')
+                bridge=Bridge(store,provider=lambda _:json.dumps(dict(action='accept',reason='We agree to these terms.',salaries=None,signing_bonus=None)),access_check=lambda:True)
+                response=bridge.handle(request)
+                if response['error'] is not None:raise AssertionError(response)
+                samples.append(dict(request=request,response=response,valid=True))
+                bad=copy.deepcopy(response);bad['result']['amendment_basis']['earned_pay']['earned_base_obligation']=1
+                samples.append(dict(request=request,response=bad,valid=False))
+    from test_guest_amendment_application import GuestAmendmentApplicationTests
+    fixture=GuestAmendmentApplicationTests();fixture.setUp()
+    try:
+        request=dict(protocol=1,request_id='captured-clock',operation='negotiate_proposal',
+            observation=fixture.observation,salary_clock=fixture.clock,guest_offer=fixture.offer_raw,
+            expected_revision=fixture.revision,timeout_ms=5000,amendment_rule=RULE)
+        response=fixture.bridge.handle(request)
+        if response['error'] is not None:raise AssertionError(response)
+        samples.append(dict(request=request,response=response,valid=True,journal_preparation=True))
+        bad=copy.deepcopy(response);bad['result']['signing_checkpoint']['offer_context']['amendment']['earned_pay']['scope']['elapsed_periods']=1
+        samples.append(dict(request=request,response=bad,valid=False))
+    finally:fixture.doCleanups()
     return samples
 
 

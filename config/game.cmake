@@ -39,6 +39,8 @@ if(NFL2K5_FRANCHISE_CLIENT)
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:NFL2K5>/addons/franchise"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:franchise_game_addon>" "$<TARGET_FILE_DIR:NFL2K5>/addons/franchise/franchise-addon.dll")
   target_compile_definitions(NFL2K5 PRIVATE NFL2K5_FRANCHISE_CLIENT)
+  set_property(SOURCE native/franchise_bridge/game_addon_adapter.c src/recomp_manual.c
+    APPEND PROPERTY COMPILE_DEFINITIONS NFL2K5_FRANCHISE_NATIVE_APPLICATION)
 endif()
 # The XBE the generated code came from (empty: retail). A pack build runs that
 # XBE and finds its installed pack by this hash (src/main.c).

@@ -695,14 +695,17 @@ validated. Current source milestone:
       packed contract stores one bonus schedule; replacing it loses old debt.
       Source now includes the original payroll-store callback in compiled and
       interpreter paths, exact native-accumulator deduplication and an epoch/state
-      guard. The production issuer must still publish accepted cap plans and
-      verify real signing/save/reload; no preview or proposal arms them.
+      guard. The source issuer now publishes accepted cap plans at a one-use,
+      same-guest-lock precommit boundary. Actual signing/save/reload verification
+      remains open; no preview or proposal arms a plan.
 - [x] Implement exact engine earned-pay proration, bind salary-period scope before
       provider/consent, retain earned obligations through repeated renegotiation,
       and verify durable replay without claiming historical cash payments.
 - [ ] Bind supported live salary-clock evidence before applying the scoped engine
-      agreement. Pinned phase-descriptor evidence identifies MyNFL1's saved phase
-      as preseason, but does not attest a fresh live clock or authorize writes.
+      agreement. Source now binds captured descriptor/epoch/calendar evidence to18
+      simulation salary periods before preview and agent consent. Authored wire,
+      exact-proration and native issuance tests pass; fresh Deck capture and
+      real application/save/reload evidence remain required.
 - [ ] Deliver one validated private package and verify an actual legal signing,
       ledger reconciliation and save/reload under fresh authorized AI control.
 
@@ -717,6 +720,15 @@ source/fixture validation; current
 private game remains the cap-room/bumpers preview with AI/signing off. The native
 validator supports the first imported comparison only; repeated engine agreements
 require a newly reconciled native checkpoint before game delivery.
+
+Current live-clock/signing candidate: source now includes captured salary-period
+binding, durable imported-amendment preparation, a separate five-second one-use
+native authorization, same-lock judgment/precommit checks, fixed native dispatch
+and cap-only saved recovery.971 Python tests,13 portable native checks and56
+offline Bridge/native response cases pass locally. The private Windows candidate
+is building in live-clock-signing-v1; actual Deck negotiation, signing and reload
+are still unverified. Experimental upstream Linux changes were not adopted; the
+working Proton runtime and installed saves remain unchanged. The scheduler is off.
 
 ## Current blockers
 

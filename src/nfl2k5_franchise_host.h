@@ -16,12 +16,17 @@ void nfl2k5_franchise_poll(void);
 /* Successful native callback: sample on the owner, queue read-only comparison.
  * Wrong-thread/unreadable/unbound completion stops automatic coordination. */
 int nfl2k5_franchise_completed(void);
+/* App-private commit boundary; no transport or filesystem work in this call. */
+int nfl2k5_franchise_application_at(unsigned stage,uint32_t context);
+int nfl2k5_franchise_application_terms(uint32_t *amount,uint32_t *flags);
 typedef struct {
     uint32_t slot, team_index, payroll, cap, team_flag, accumulator;
     uint32_t offer_amount, offer_flags;
     uint32_t calendar[7]; /* phase1, phase2, team count, step4, step5, season, counter */
     char first_name[151], last_name[151], photo[9], dob[7];
+    char salary_descriptor[33]; /* captured phase descriptor, never a grant */
 } FranchiseSigningObservation;
+int nfl2k5_franchise_application_selected(const FranchiseSigningObservation *observation,int applying);
 /* Optional pinned-snapshot inspection only; never a transaction or AI grant. */
 int nfl2k5_franchise_context_enabled(void);
 /* Immutable loader metadata; source file and post-patch load image differ. */
@@ -35,7 +40,7 @@ struct FranchiseFinanceSnapshot;
 int nfl2k5_franchise_read_finance(struct FranchiseFinanceSnapshot *out);
 struct FranchiseIdentitySnapshot;
 int nfl2k5_franchise_read_identity(const struct FranchiseFinanceSnapshot *finance,struct FranchiseIdentitySnapshot *out);
-/* Explicit opt-in proposal mode always defers native writes; no commit grant. */
+/* A proposal is never a commit grant. Accepted terms need separate one-use issuance. */
 /* Any callback thread may copy a captured intent; only the owner consumes it. */
 unsigned long long nfl2k5_franchise_submission_epoch(void);
 int nfl2k5_franchise_submit_held(const FranchiseSigningObservation *observation, unsigned long long epoch);

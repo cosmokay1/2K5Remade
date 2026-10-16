@@ -25,6 +25,9 @@ int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out){(void)out;r
 int nfl2k5_franchise_display(FranchiseSigningDisplay* out){memset(out,0,sizeof(*out));return 0;}
 unsigned long long nfl2k5_franchise_submission_epoch(void){++epochs;return enabled?7:0;}
 int nfl2k5_franchise_completed(void){++completions;return 1;}
+int nfl2k5_franchise_application_at(unsigned s,uint32_t c){(void)s;(void)c;return 0;}
+int nfl2k5_franchise_application_terms(uint32_t *a,uint32_t *f){(void)a;(void)f;return 0;}
+int nfl2k5_franchise_application_selected(const FranchiseSigningObservation *o,int a){(void)o;(void)a;return 0;}
 int nfl2k5_franchise_submit_held(const FranchiseSigningObservation* o,unsigned long long epoch){
     ++submits;submitted_observation=o;submitted_epoch=epoch;return enabled;
 }

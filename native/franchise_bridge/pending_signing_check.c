@@ -25,6 +25,9 @@ int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out){(void)out;r
 int nfl2k5_franchise_display(FranchiseSigningDisplay *out){(void)out;return 0;}
 unsigned long long nfl2k5_franchise_submission_epoch(void){return 0;}
 int nfl2k5_franchise_completed(void){return 0;}
+int nfl2k5_franchise_application_at(unsigned s,uint32_t c){(void)s;(void)c;return 0;}
+int nfl2k5_franchise_application_terms(uint32_t *a,uint32_t *f){(void)a;(void)f;return 0;}
+int nfl2k5_franchise_application_selected(const FranchiseSigningObservation *o,int a){(void)o;(void)a;return 0;}
 int nfl2k5_franchise_submit_held(const FranchiseSigningObservation *o,unsigned long long e){(void)o;(void)e;++submissions;return 1;}
 extern const NFL2K5AddonAPI *nfl2k5_addon_query(uint32_t abi);
 static void put(uint32_t a,uint32_t v){finance_put32(memory+a,v);}
@@ -32,7 +35,7 @@ static int expect(const NFL2K5AddonHost *host,const NFL2K5AddonAPI *api,int clea
     const FranchiseSignGateEvent event={FRANCHISE_SIGN_JUDGMENT,0x11000};
     if(franchise_pending_signing_clear(host,event.context)!=clear) return 0;
     /* Even a clear result is NOT an application authorization. */
-    return api->event(FRANCHISE_SIGN_APPLICATION_EVENT,&event,sizeof(event))==(clear?0:1);
+    return api->event(FRANCHISE_SIGN_APPLICATION_EVENT,&event,sizeof(event))==1;
 }
 int main(void) {
     memory=calloc(1,0x1000000u);if(!memory)return 1;
