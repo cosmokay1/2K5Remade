@@ -53,3 +53,10 @@ cgroups. This is not a sandbox or Windows job-object equivalence.
 Linux process checks exercise exact argv, repeated requests, malformed/mismatched/
 oversized replies, dead/stalled peers, timeout/abort, descriptor inheritance,
 normal descendant cleanup and abrupt-parent death. They run without Proton.
+
+## License and credit
+
+Created by [Cosmo Kay](https://github.com/cosmokay1). Licensed under the
+[MIT License](LICENSE). Preserve the copyright and permission notice in copies
+or substantial portions. See [NOTICE.md](NOTICE.md) for provenance and third-party
+attribution. Community improvements are welcome through issues and pull requests.

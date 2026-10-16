@@ -160,7 +160,7 @@ requires a fresh mapping. This does not enable any AI/franchise controls.
 
 ## Reusable tooling
 
-Native Steam recording is now maintained independently in the private
+Native Steam recording is now maintained independently in the public MIT-licensed
 [steam-capture-tools](https://github.com/cosmokay1/steam-capture-tools) repository
 (initial extraction `c4f6c9a`). It takes a Steam game ID, bounded duration and
 recovery receipt; it contains no 2K5 assets, runtime paths or franchise policy.
