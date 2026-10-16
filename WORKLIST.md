@@ -80,6 +80,13 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       context-fast-batch against the original database. Installed-game timing
       and Nabers receiving-page verification remain pending; AI/signing are off.
 
+- [x] Align native reply validation with the three mapped receiving-history
+      metrics. The installed service reply reproduced the old validator failure
+      (`Invalid missing history metric`); corrected validation accepts that exact
+      reply. Authored tests cover absent history, present receiving rows, signed
+      receiving yards and rejection of the wrong unit. All11 local native checks
+      pass; private Windows rebuilding/live confirmation remain pending.
+
 - [ ] Finish held native submission through accepted proposal, guest/ledger commit
       and recovery. An opt-in source path now defers retail judgment/precommit,
       queues one captured proposal (including a bounded cross-thread submit handoff)

@@ -817,10 +817,41 @@ int main(int argc,char** argv) {
         performance_reply["result"]["performance_context"]={{"player_id",std::string(32,'a')},{"source",history_source},
             {"saved_display_year",2004},{"history_present",true},{"saved_history",{history,sacks}},
             {"excluded_entries",{{"deleted",0},{"unknown_bit30",0},{"unmapped_code",0},{"negative_count",0}}},
-            {"missing_named_metrics",{"games","rush_attempts","rushing_yards","rushing_touchdowns","pass_attempts","passing_yards","passing_touchdowns","interceptions_thrown"}},
+            {"missing_named_metrics",{"games","rush_attempts","rushing_yards","rushing_touchdowns","pass_attempts","passing_yards","passing_touchdowns","interceptions_thrown","receptions","receiving_yards","receiving_touchdowns"}},
             {"unmapped_requested_metrics",{"tackles","targets","pressures","qb_hits"}},
             {"scope","Saved historical counters only; calendar years are candidates. Raw modes are not played/CPU/fast-sim coverage. Entries are not summed and missing metrics are not zero. No current-week, salary-credit or promise-goal attribution."}};
         franchise::validate_result(performance_reply,performance_request);
+        // The service includes every supported metric in either present rows or
+        // missing coverage. Validate receiving support at the transport boundary,
+        // including players with no saved history, before rendering the screen.
+        auto no_history_reply=performance_reply;
+        auto& no_history=no_history_reply["result"]["performance_context"];
+        no_history["history_present"]=false;
+        no_history["saved_history"]=nlohmann::json::array();
+        no_history["missing_named_metrics"].push_back("completions");
+        no_history["missing_named_metrics"].push_back("sacks");
+        franchise::validate_result(no_history_reply,performance_request);
+        auto receiving_reply=performance_reply;
+        auto& receiving=receiving_reply["result"]["performance_context"];
+        receiving["saved_history"]=nlohmann::json::array();
+        receiving["missing_named_metrics"]=no_history["missing_named_metrics"];
+        for (const auto& metric:{"receptions","receiving_yards","receiving_touchdowns"}) {
+            auto row=history;
+            row["metric"]=metric;
+            row["unit"]=std::string(metric)=="receiving_yards"?"yards":"count";
+            row["value"]=std::string(metric)=="receiving_yards"?-4:2;
+            row["source"]=history_source+":entry:"+std::to_string(receiving["saved_history"].size());
+            receiving["saved_history"].push_back(row);
+            auto& missing=receiving["missing_named_metrics"];
+            for (auto it=missing.begin();it!=missing.end();++it) if(*it==metric) {missing.erase(it);break;}
+        }
+        franchise::validate_result(receiving_reply,performance_request);
+        auto invalid_receiving=receiving_reply;
+        invalid_receiving["result"]["performance_context"]["saved_history"][0]["unit"]="yards";
+        bool invalid_receiving_rejected=false;
+        try {franchise::validate_result(invalid_receiving,performance_request);}
+        catch(const std::exception&) {invalid_receiving_rejected=true;}
+        if(!invalid_receiving_rejected) throw std::runtime_error("Receiving count with yards unit accepted");
         auto captured_request=guest_request;
         captured_request["operation"]="negotiate_proposal";
         captured_request["request_id"]="captured-proposal";

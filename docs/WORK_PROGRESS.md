@@ -9206,3 +9206,26 @@ external-history integration remain disabled. Actual offer-screen timing and
 Nabers receiving rows await the user's MyNFL1 screen transition. Build CI
 38849831676 completed successfully; Franchise AI CI38849831828 was still running
 at this check. This installation does not establish signing/save-reload acceptance.
+
+
+### Receiving protocol mismatch reproduced and corrected
+
+The user reported being ejected from the negotiation preview after installation.
+Live logs show the game continues running, hello is consumed, then the host marks
+the transport unavailable and clears its display. The service process disappears
+after that failure. The renderer allowlist was updated for receiving history, but
+the independent native contract-response validator still supported only the old
+ten history metrics. Every new service reply names receptions, receiving_yards
+and receiving_touchdowns either as rows or missing coverage, so even Hernandez's
+empty-history response is rejected. Host validation aborts its owned peer; this
+is not evidence of a Python crash or model request.
+
+A temporary C++ harness using the exact isolated Deck Windows service reply
+reproduces `Invalid missing history metric` with the old committed validator,
+then accepts the same bytes with the corrected units map. The new authored
+protocol tests cover all13 missing metrics for empty history, present receiving
+rows with signed yards, and wrong-unit rejection. All11 local native CTests
+pass. The earlier Franchise AI CI38849831828 failed in the Windows native
+saved-signing integration step; the Python-only checks had not exercised this
+application validation boundary. Private Windows rebuilding and deployment are
+pending; no running game files have been replaced during diagnosis.

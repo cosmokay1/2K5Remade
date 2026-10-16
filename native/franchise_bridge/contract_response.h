@@ -1458,7 +1458,8 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
             const std::map<std::string,std::string> units={{"games","count"},{"rush_attempts","count"},
                 {"rushing_yards","yards"},{"rushing_touchdowns","count"},{"pass_attempts","count"},
                 {"completions","count"},{"passing_yards","yards"},{"passing_touchdowns","count"},
-                {"interceptions_thrown","count"},{"sacks","sacks"}};
+                {"interceptions_thrown","count"},{"sacks","sacks"},
+                {"receptions","count"},{"receiving_yards","yards"},{"receiving_touchdowns","count"}};
             const auto& rows=evidence.at("saved_history");
             if (!rows.is_array() || (!evidence.at("history_present").get<bool>() && !rows.empty()))
                 throw std::runtime_error("Invalid saved history presence");
