@@ -38,8 +38,9 @@ load-image digest at hello, echoes the configured registry/snapshot identity and
 holds AI/journal writes until that connection matches. An explicit persisted
 registry/database association now audits seed, actor origins/coverage and initial
 ownership, and normalizes v1/v2 identity without rewriting journal intents.
-Runtime verifies its namespace/bootstrap fingerprint. Active guest-franchise
-binding, broader live migration and actual game handshake remain open.
+Runtime verifies its namespace/bootstrap fingerprint. Actual MyNFL1 read-only
+handshake/context consumption is verified. Full active guest-franchise lifetime,
+broader live migration and AI-enabled signing authority remain open.
 
 Windows + Proton is the Deck delivery priority. Defer further native Linux port
 work unless a concrete Proton limitation requires it; retain existing fixes.
@@ -49,6 +50,15 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       improved1.552s→0.366s, all32-club replay takes4.130s, and isolated read-only
       service execution improved6.755s→4.029s with exact replies unchanged.
       Actual game callback delivery and full transaction deadlines remain unverified.
+
+- [x] Verify actual read-only source/namespace connection with AI disabled.
+      On installed5698281, the user left Will Hernandez's MyNFL1 offer open;
+      the game consumed bind_runtime and the preserved Giants/player context
+      without navigating away. Native file identity and all720044 decoded bytes
+      match the configured UDATA source. Model attempts remain0, credentials are
+      unavailable, and source/registry/database hashes are unchanged. AI/write
+      flags are false; offer preview refuses unresolved contract classification.
+      This does not verify full lifecycle invalidation or signing/save-reload.
 
 - [ ] Finish held native submission through accepted proposal, guest/ledger commit
       and recovery. An opt-in source path now defers retail judgment/precommit,
@@ -179,9 +189,9 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       Source23946c9 is now privately installed after normal exit, with all205
       save hashes unchanged; the existing Steam entry is running. Actual file
       identity selects UDATA's MyNFL1 and its payload matches the existing2070-player,
-      32-team registry/database association in a copied preflight. Live configured
-      source/namespace handshake, full lifecycle invalidation and production
-      financial authority remain open.
+      32-team registry/database association in a copied preflight. The live
+      read-only connection is verified below; full lifecycle invalidation and
+      production financial authority remain open.
       A new read-only bind_runtime handshake now verifies/echoes the same
       namespace while explicitly denying AI and journal grants. Native observation
       mode uses it; AI negotiation still requires hello and fresh remote access.
@@ -199,19 +209,21 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       Franchise38817632849 pass Windows/Ubuntu. After the Deck returned, an
       unchanged installed-game launch through Steam progressed to movie/music/
       vblank execution; the intermittent crash is not fixed. Isolated GDB runs
-      did not capture a reliable divide fault. Live game callback binding is not yet
-      verified, and full active-franchise lifetime/write authority remain open.
-      Service-side durable binding and active franchise identity remain open;
-      this metadata does not authorize application or prove code compatibility.
+      did not capture a reliable divide fault. Actual MyNFL1 read-only handshake
+      and preserved Will Hernandez/Giants context consumption now pass with the
+      offer held open. Source, registry and copied database remain unchanged;
+      persisted model attempts0. Full active-franchise lifetime/write authority
+      remain open; the offer still rejects missing contract classification.
       The actual Windows game/DLL build now passes isolated --validate and the
       game-built DLL identity/reload fixture under Proton. Real game-boot delivery
-      delivery remains unverified. Service handshake consumption now validates
+      and read-only context consumption are verified. Service handshake consumption validates
       explicit expected load-image data without a version whitelist; native
       validation requires the exact echo. A session match grants no application
-      permit or active guest-franchise identity. Actual game handshake remains open.
+      permit or full active guest-franchise lifetime proof. Enabled AI handshake
+      and actual financial signing/save-reload remain open.
       Guard source7a39913 passes Windows/Ubuntu Franchise38781544199 and
       Build38781544176, actual private Windows/Proton queue/DLL checks and
-      isolated full-game --validate. The installed runtime remains unchanged.
+      isolated full-game --validate. Those queue checks grant no production writes.
       Source7b536c2 passes actual Windows/Proton protocol, owner-host, adapter
       and client/sidecar live-before-save/completion/settlement/restart fixtures
       with authored data, plus isolated full-game --validate. Build38779416490

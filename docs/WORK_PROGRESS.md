@@ -8557,3 +8557,38 @@ in that observed interval. This is resumed guest execution after reboot, not a
 crash fix, complete playability or franchise connection proof. The user was asked
 to load MyNFL1 and leave an offer open without submitting for the still-pending
 read-only namespace/context check. AI/control/application remain off.
+
+### Actual MyNFL1 read-only binding and player context consumed
+
+The user confirmed MyNFL1's player offer open. On the actual installed5698281
+game, the live trace records the expectedf67e6fc1 load-image digest, all720044
+MyNFL1 bytes with payload4c8c31b4, and decoded phase3/stage4 at epoch1. Native
+volume4061331925/index00000000:00945220 selects the configured UDATA container.
+Will Hernandez is observed at slot2371, with Giants table index15. Without any
+navigation away, the game logs Franchise handshake reply consumed followed by
+the complete read-only signing-context reply. This exercises the production
+native consumed-binding/source-path gates, not an authored C-client fixture.
+
+The reply identifies existing player2dd58d0c9bd54e758ae5d9907056d726, Giants and
+financial revision1. Its personality and initial relationships match the existing
+registry seed's initial_actor output exactly. The configured namespace is
+b8d2e88dbe2d4c96804a8c2dff050e19; native consumption validates the four-field
+runtime binding rather than logging the raw wire echo. The response reports
+ai_authorized=false and write_authorized=false. Observed calendar values remain
+raw2004/season0; the registry's logical2026 mapping is explicit configuration,
+not proven by the raw display year. History is absent for this player; missing
+targets/pressures/QB hits are not treated as zero or used to satisfy promises.
+
+The captured offer decodes to salaries6328000/3796000 and signing bonus6752000,
+but preview returns accounting_rejected because contract classification is
+missing. Do not weaken that refusal to enable inference/signing. Full opening
+liabilities, modern salary/rookie classification and production application remain
+unfinished, as do complete active-franchise lifecycle and actual signing/reload.
+
+A read-only query of the configured usage database confirms zero model attempts;
+forced-missing credentials remain absent. Actual source hash is unchanged and
+registry/database file hashes match the local staged copies exactly. Private
+actual-readonly-context-session.log, actual-readonly-context-receipt.json and
+actual-readonly-safety-receipt.json preserve the trace, validated assertions and
+zero-inference evidence. This completes the live read-only connection milestone;
+it does not establish AI-enabled negotiation or financial write authority.
