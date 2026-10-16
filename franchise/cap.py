@@ -127,6 +127,8 @@ class Ledger:
         self._contracts = {item.offer.player_id: item.offer for item in opening_books.contracts} if opening_books else {}
         self._active_contracts = {item.offer.player_id: item for item in opening_books.contracts} if opening_books else {}
         self._legacy_contracts = {item.player_id: item for item in opening_books.legacy_contracts} if opening_books else {}
+        self._legacy_amendments = {}
+        self._legacy_amendment_requests = {}
         if type(observed_player_ids) is not frozenset or any(type(p) is not str or not p.strip() for p in observed_player_ids):
             raise ValueError('Immutable observed player identities required')
         if observed_player_ids:
@@ -1225,6 +1227,8 @@ class Ledger:
     def financial_snapshot(self) -> dict:
         with self._lock:
             return {"revision": self.revision, "cap": self.cap,
+                    **({'legacy_amendments':{player:agreement.to_dict() for player,agreement in sorted(self._legacy_amendments.items())}}
+                       if self._legacy_amendments else {}),
                     **({'legacy_schedule_count':len(self._legacy_contracts),
                         'legacy_schedule_sha256':hashlib.sha256(json.dumps(
                             [self._legacy_contracts[key].to_dict() for key in sorted(self._legacy_contracts)],
@@ -1384,6 +1388,9 @@ class Ledger:
             remaining = rows[original.original_years-original.remaining_years:]
             old = original.charges()
             carried = tuple(row['allocated_bonus_dollars'] * original.game_dollar_scale for row in remaining)
+            previous=self._legacy_amendments.get(offer.player_id)
+            if previous is not None:
+                old,carried=previous.charges(),previous.bonus_charges()
             proposed = offer.charges(self.max_bonus_years)
             horizon = max(len(old), len(proposed))
             after = tuple((proposed[i] if i < len(proposed) else 0) +
@@ -1397,13 +1404,44 @@ class Ledger:
                     'original_contract': original.to_dict(),
                     'cap': self.cap, 'reserved_cap': json_amount(self.roster_reserve + self._draft_reserved()[0]),
                     'annual_team_charges_before': [json_amount(v) for v in self._charges],
-                    'current_charges': list(old), 'carried_bonus_charges': list(carried),
+                    'current_charges': [json_amount(v) for v in old], 'carried_bonus_charges': [json_amount(v) for v in carried],
                     'new_contract_charges': [json_amount(v) for v in proposed],
                     'combined_player_charges': [json_amount(v) for v in after],
                     'annual_team_charges_after': [json_amount(v) for v in updated],
                     'room_before': json_amount(self.room), 'room_after': json_amount(room),
                     'within_modeled_cap': room >= 0,
                     'requires_player_agreement': True, 'settlement_authorized': False}
+
+    def apply_legacy_amendment(self,request_id,offer,expected_revision,*,proposal_request_id,source,scope):
+        """Engine-only full-year agreement; the Store must verify saved consent.
+
+        Ownership remains unchanged. Historical cash is not marked paid and no
+        guest state is changed. Legacy lifecycle gates remain in force.
+        """
+        from franchise.legacy_amendments import LegacyAmendment
+        from franchise.books import parse_amount
+        with self._lock:
+            if type(expected_revision) is not int:
+                raise Rejected('Explicit amendment financial revision required')
+            prior=self._legacy_amendment_requests.get(request_id)
+            if prior is not None:
+                if (prior.offer!=offer or prior.proposal_request_id!=proposal_request_id or prior.source!=source
+                        or prior.scope!=scope or self._requests[request_id].revision!=expected_revision+1):
+                    raise Rejected('Amendment request reused with different terms')
+                return prior
+            if request_id in self._requests:
+                raise Rejected('Request already used for another financial operation')
+            preview=self.preview_legacy_amendment(offer,expected_revision)
+            if not preview['within_modeled_cap']:
+                raise Rejected('Amendment exceeds available cap room')
+            agreement=LegacyAmendment(request_id,proposal_request_id,offer,
+                tuple(parse_amount(v) for v in preview['carried_bonus_charges']),source,scope,self.max_bonus_years)
+            self._charges=tuple(parse_amount(v) for v in preview['annual_team_charges_after'])
+            self._legacy_amendments[offer.player_id]=agreement
+            self._legacy_amendment_requests[request_id]=agreement
+            self.revision+=1
+            self._requests[request_id]=Signing(request_id,offer,agreement.charges(),self.revision)
+            return agreement
 
     def preview_return(self,offer,expected_revision,*,scope):
         from franchise.returns import PreseasonReturnScope
@@ -1524,6 +1562,8 @@ class Ledger:
     def _sign(self, request_id: str, offer: Offer, expected_revision: int) -> Signing:
         if not isinstance(request_id, str) or not request_id.strip():
             raise Rejected("A request ID is required")
+        if request_id in self._legacy_amendment_requests:
+            raise Rejected('Request belongs to an amendment, not a new signing')
         prior = self._requests.get(request_id)
         if prior is not None:
             if prior.offer != offer:

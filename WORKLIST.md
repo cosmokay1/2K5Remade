@@ -664,6 +664,39 @@ gates for execution. Independent work must directly reduce those integration
 steps, rather than expand the already substantial standalone engine.
 
 
+## Batched delivery — active-player negotiation path
+
+Deliver coherent negotiation packages; do not ask for a game exit for each UI
+refinement. Keep the installed preview usable until the combined candidate is
+validated. Current source milestone:
+
+- [x] Add explicit imported-contract agent proposals with attributed accept,
+      reject and counter explanations; preserve free-agent signing semantics.
+- [x] Record accepted amendments with consent/history/revision checks, retained
+      old bonus debt, subsequent new bonus layers, agreed promises and exact
+      restart replay. Lowball opinion effects and retries remain once-only.
+- [x] Validate actual offline Python Bridge replies in native code at both
+      money scales, including corrupt debt/authority rejection and preventing
+      amendment acceptance from entering the free-agent saved-signing journal.
+- [x] Verify authored saved native amendment effects independently; report the
+      supplemental bonus charges that native payroll cannot represent. These
+      checks never authorize writes or assert native cap enforcement.
+- [ ] Wire explicit addon offer submission and recoverable agent errors into
+      the reviewed draft flow; retain current context/source/control checks.
+- [ ] Enforce retained bonus obligations in native cap calculations and verify
+      correct team/year behavior through signing and save/reload. The existing
+      packed contract stores one bonus schedule; replacing it loses old debt.
+- [ ] Establish sourced zero-earned-base timing for the supported full-year
+      amendment scope, or implement earned-pay proration before in-season apply.
+- [ ] Deliver one validated private package and verify an actual legal signing,
+      ledger reconciliation and save/reload under fresh authorized AI control.
+
+Evidence:948 Python tests,11 portable native checks and42 actual offline Bridge
+reply/native validation cases pass. This is source/fixture validation; current
+private game remains the cap-room/bumpers preview with AI/signing off. The native
+validator supports the first imported comparison only; repeated engine agreements
+require a newly reconciled native checkpoint before game delivery.
+
 ## Current blockers
 
 | ID | Input / status | What it blocks | Independent work that continues |

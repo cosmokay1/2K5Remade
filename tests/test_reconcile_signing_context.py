@@ -91,6 +91,30 @@ class SigningContextTests(unittest.TestCase):
         self.assertIn('does not authorize',denied['detail'])
         provider.assert_not_called()
         self.assertEqual(before,store.load_team('49ers').financial_snapshot())
+        # Explicit amendment mode still requires a fresh remote grant; a read
+        # comparison alone never opts the player into agent negotiation.
+        from franchise.legacy_amendments import RULE
+        request=dict(protocol=1,request_id='owned-agent',operation='negotiate_proposal',
+            observation=observation,guest_offer={'amount_word':829,'flags_word':(1<<29)|(2<<16)|4},
+            expected_revision=0,timeout_ms=5000,amendment_rule=RULE)
+        bridge.access_check=lambda:False
+        self.assertEqual(bridge.handle(request)['error'],'ai_disabled');provider.assert_not_called()
+        bridge.access_check=lambda:None
+        provider.side_effect=None;provider.return_value=json.dumps(dict(action='accept',
+            reason='The bonus and term make this work for us.',salaries=None,signing_bonus=None))
+        accepted=bridge.handle(request)
+        self.assertIsNone(accepted['error'])
+        self.assertEqual(accepted['result']['outcome'],'accepted_amendment_proposal')
+        self.assertEqual(accepted['result']['amendment_basis'],comparison['amendment'])
+        self.assertEqual(accepted['result']['signing_checkpoint']['offer_context'],comparison)
+        self.assertFalse(accepted['result']['signing_checkpoint']['write_authorized'])
+        retried=bridge.handle(request)
+        self.assertIsNone(retried['error'])
+        first=copy.deepcopy(accepted['result']);again=copy.deepcopy(retried['result'])
+        first.pop('signing_checkpoint');again.pop('signing_checkpoint')
+        self.assertEqual(first,again);provider.assert_called_once()
+        self.assertEqual(retried['result']['signing_checkpoint']['player_context']['negotiation_history_total'],1)
+        self.assertEqual(before,store.load_team('49ers').financial_snapshot())
 
     def test_changed_live_identity_calendar_or_cap_rejects(self):
         changes = [('biography', 'source_slot', 0), ('biography', 'dob_region_raw', '000001'),

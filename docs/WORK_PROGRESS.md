@@ -9825,3 +9825,57 @@ EXE SHA256:5ccdad5510481fa8d84aee6fb3142d3d6b9651190a600ba674522b3d87690497;
 addon:a9610579c9b0daf57202d3bdddc7eea679f76aafa93ff7886e3efcfc3174f158.
 Package installation is pending the user's normal-exit confirmation. No running
 files, saves, database, control settings or provider configuration were changed.
+
+
+After the user's normal-exit confirmation, cap-room-bumpers-v1 installed with
+all205 save hashes unchanged. Service snapshot/database, wrapper and AI/signing
+flags remain unchanged. The installed candidate was launched through the existing
+Steam entry for read-only menu verification; actual bumper/retained-draft checks
+are separate from the already-passing Windows authored fixtures.
+
+
+## Combined active-contract negotiation, consent and saved-effects milestone
+
+The user requests larger coherent deliveries. This batch advances the active
+contract loop across engine, bridge, native validation, explanations and saved
+financial readback, without another partial private installation.
+
+Explicit legacy_bonus_carry_v1 proposals now route captured owned-player context
+to the agent. Accepted_amendment_proposal remains distinct from free-agent
+accepted_proposal. The durable engine settlement verifies recorded consent,
+current ownership/revision/history, affordability and final access; it carries
+original bonus debt in its original years and adds every later bonus layer.
+Remaining base changes only through consent. Agreed promises and lowball respect
+effects survive restart without repeating on retries. New cash commitment excludes
+old bonus debt; historical paid cash and base guarantees remain unknown. Typed
+full-year scope requires sourced zero earned base and rejects unsupported earned
+pay. This is engine settlement, not a guest-write permit.
+
+Native validation recomputes the first imported amendment's cap arithmetic for
+submitted terms and eligible counters; accepted dialogue cannot enter the
+free-agent saved-signing journal. Captured reasons format as agent explanations
+with application explicitly held. There is no new automatic inference trigger or
+new native submission control in this batch. Repeated engine amendments remain
+held at the native boundary until checkpoint rebasing is implemented.
+
+New expected_amended_state and confirm_saved_amendment inspect authored isolated
+owned-player native effects without mutating saves. They preserve ownership and
+unrelated fields, reject changed identities/terms/payroll, and expose retained
+team bonus charges separately. An authored amendment produces native $2M annual
+payroll while combined ledger charges are $3.658M/$3.658M/$2M. This proves the
+native one-schedule limitation in the fixture; it does not prove real native cap
+enforcement. The verifier always reports cap_enforcement_verified=False and
+write_authorized=False. An unchanged native contract cannot prove a new agreement.
+
+Validation:948 Python tests pass in26.734s; all11 portable native CTests pass.
+The new tools.check_native_amendments validates42 actual offline Bridge
+accept/reject/counter/replay and corrupt-response cases in the native validator
+at1:1 and4:1 money scales. It is added to the existing Windows/Linux CI matrix.
+No paid model requests, cloud changes, live signing, database edits or private
+installation occurred. The cap-room-bumpers-v1 install remains current.
+
+Remaining combined-game gates: explicit reviewed-draft agent submission/error
+recovery, native supplemental cap enforcement with a validated team/year source,
+sourced earned-pay timing, then one controlled apply/reconcile/save/reload test.
+Do not silently turn agent acceptance into native signing while any of those
+financial gates is unresolved.

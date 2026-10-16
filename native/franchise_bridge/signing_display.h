@@ -43,7 +43,8 @@ inline SigningDisplayText signing_display(const nlohmann::json& response) {
         auto checkpoint=response;checkpoint["result"]=result.at("signing_checkpoint");
         auto text=signing_display(checkpoint);
         const auto outcome=result.at("outcome").get<std::string>();
-        if(outcome=="accepted_proposal") text.offer="Player accepts the proposal. Signing remains held.";
+        if(outcome=="accepted_amendment_proposal") text.offer="Agent agrees to the amendment. Application remains held.";
+        else if(outcome=="accepted_proposal") text.offer="Player accepts the proposal. Signing remains held.";
         else if(outcome=="counteroffer") {
             const auto& counter=result.at("counter");
             long double total=counter.at("signing_bonus").get<int64_t>();

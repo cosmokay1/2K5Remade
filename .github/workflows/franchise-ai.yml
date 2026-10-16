@@ -28,6 +28,8 @@ jobs:
         run: |
           cmake -S native/franchise_bridge -B build-franchise-bridge
           cmake --build build-franchise-bridge --config Release
+      - name: Check agent amendment replies across Python and native code
+        run: python -m tools.check_native_amendments build-franchise-bridge
       - name: Execute native protocol boundary checks
         run: ctest --test-dir build-franchise-bridge -C Release --output-on-failure
       - name: Retain authored negotiation screen captures

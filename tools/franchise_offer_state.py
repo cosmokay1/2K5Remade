@@ -73,3 +73,41 @@ def expected_signed_state(bindings, payload: bytes, *, offer, guest_offer, team_
         raise ValueError('Exact representable native payroll required')
     struct.pack_into('<I', finance, payroll_offset, payroll + int(charge))
     return bytes(finance), saved_identity_state(payload)
+
+
+def expected_amended_state(bindings,payload: bytes,*,offer,guest_offer,team_id):
+    """Expected native owned-player effects, with supplemental debt kept separate.
+
+    The native packed contract cannot hold multiple bonus schedules. This image
+    describes its new terms only; it is never a cap-enforcement or write permit.
+    """
+    from franchise.cap import Offer
+    from franchise.guest_contracts import GuestContractTerms,GUEST_CONTRACT_FORMAT,SOFTDRINK_CONTRACT_FORMAT
+    from tools.franchise_snapshot_bindings import resolve_bindings,binding_money_scale
+    from tools.export_legacy_contracts import legacy_contracts
+    from tools.inspect_franchise_save import TEAMS
+    if not isinstance(offer,Offer) or team_id not in TEAMS:
+        raise ValueError('Typed accepted amendment and supported team required')
+    if type(guest_offer) is not dict or set(guest_offer)!={'amount_word','flags_word'}:
+        raise ValueError('Complete captured guest amendment required')
+    scale=binding_money_scale(bindings)
+    terms=GuestContractTerms.from_context(**guest_offer)
+    if terms.to_offer(offer.player_id,contract_format=SOFTDRINK_CONTRACT_FORMAT if scale==4 else GUEST_CONTRACT_FORMAT)!=offer:
+        raise ValueError('Captured terms differ from accepted amendment')
+    members=resolve_bindings(bindings,payload)
+    slots=[slot for slot,p in members.items() if p['player_id']==offer.player_id and p['team']==team_id]
+    if len(slots)!=1:
+        raise ValueError('Bound current owning team required for amendment')
+    original=next(c for c in legacy_contracts(bindings,payload)[team_id] if c.player_id==offer.player_id)
+    finance=bytearray(saved_finance_state(payload));record=FINANCE_HEADER+slots[0]*FINANCE_RECORD
+    packed=struct.unpack_from('<I',finance,record+3)[0]
+    replacement=(terms.years<<24)|(terms.bonus_code<<20)|(terms.shape_code<<16)|terms.years
+    finance[record]&=0xF7
+    struct.pack_into('<HI',finance,record+1,terms.amount_word,(packed&~0x0FF7000F)|replacement)
+    payroll_offset=48+12*TEAMS.index(team_id)
+    payroll=struct.unpack_from('<I',finance,payroll_offset)[0]
+    delta=(offer.charges(5)[0]-original.charges()[0])/(1000*scale)
+    if delta.denominator!=1 or not 0<=payroll+delta<=0xffffffff:
+        raise ValueError('Exact representable amended native payroll required')
+    struct.pack_into('<I',finance,payroll_offset,payroll+int(delta))
+    return bytes(finance),saved_identity_state(payload)

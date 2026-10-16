@@ -23,6 +23,26 @@ int main(int argc,char** argv) {
             std::cout<<"Native/Python guest terms matched "<<count<<" cases\n";
             return 0;
         }
+        if(argc==2 && std::string(argv[1])=="--amendment-replies") {
+            std::string line;size_t count=0;
+            while(std::getline(std::cin,line)) {
+                const auto sample=franchise::parse_frame(line);bool valid=false;
+                try {
+                    franchise::validate_result(sample.at("response"),sample.at("request"));
+                    const auto text=franchise::signing_display(sample.at("response"));
+                    if(text.history.find("Reason: ")!=0 ||
+                       !franchise::saved_signing_prepare(sample.at("request"),sample.at("response")).is_null())
+                        throw std::runtime_error("Amendment explanation or held journal mismatch");
+                    valid=true;
+                } catch(const std::exception&) {}
+                if(valid!=sample.at("valid").get<bool>())
+                    throw std::runtime_error("Native/Python amendment response mismatch at case "+std::to_string(count));
+                ++count;
+            }
+            if(!count) throw std::runtime_error("Empty amendment reply corpus");
+            std::cout<<"Native/Python amendment replies matched "<<count<<" cases\n";
+            return 0;
+        }
         if(argc!=1) throw std::runtime_error("Unsupported protocol-check arguments");
         // A load-image hello must receive an exact bound echo before a local AI grant.
         nlohmann::json hello_request={{"operation","hello"},{"loaded_image_sha256",std::string(64,'a')}};
@@ -809,6 +829,49 @@ int main(int argc,char** argv) {
             bool rejected=false;try{franchise::validate_result(bad,amendment_request);}catch(const std::exception&){rejected=true;}
             if(!rejected)throw std::runtime_error("Corrupt amendment comparison accepted");
         }
+        auto amendment_proposal_request=proposal_request;
+        amendment_proposal_request["amendment_rule"]="legacy_bonus_carry_v1";
+        amendment_proposal_request["offer"]=amended_terms.at("offer");
+        amendment_proposal_request["contract_format"]="original_fxg_v1";
+        auto amendment_proposal_reply=proposal_reply;
+        auto& agreement=amendment_proposal_reply["result"];
+        agreement["offer"]=amendment_proposal_request.at("offer");
+        agreement["contract_format"]="original_fxg_v1";
+        agreement["guest_offer"]=amendment_request.at("guest_offer");agreement["guest_counter"]=nullptr;
+        agreement["decision_mode"]="amendment_proposal";agreement["outcome"]="accepted_amendment_proposal";
+        agreement["amendment_rule"]="legacy_bonus_carry_v1";
+        agreement["amendment_basis"]=amended_terms.at("amendment");
+        agreement["proposal_preview"]=agreement.at("amendment_basis");
+        agreement["reason"]="The upfront pay and remaining term work for us.";
+        franchise::validate_result(amendment_proposal_reply,amendment_proposal_request);
+        for(int scenario=0;scenario<11;++scenario) {
+            auto bad=amendment_proposal_reply;auto req=amendment_proposal_request;auto& a=bad["result"];
+            if(scenario==0)req.erase("amendment_rule");
+            if(scenario==1)a["decision_mode"]="proposal";
+            if(scenario==2)a["outcome"]="accepted_proposal";
+            if(scenario==3)a["charges"]={6424000,5181000};
+            if(scenario==4)a["amendment_basis"]["carried_bonus_charges"][0]=0;
+            if(scenario==5)a["proposal_preview"]["room_after"]=5234000;
+            if(scenario==6)a["amendment_basis"]["original_contract"]["player_id"]="other";
+            if(scenario==7)a["amendment_basis"]["original_contract"]["remaining_years"]=0;
+            if(scenario==8)a["amendment_basis"]["original_contract"]["shape_code"]=4294967297ULL;
+            if(scenario==9)req["operation"]="negotiate";
+            if(scenario==10)a["amendment_rule"]="unknown";
+            bool rejected=false;try{franchise::validate_result(bad,req);}catch(const std::exception&){rejected=true;}
+            if(!rejected)throw std::runtime_error("Amendment proposal escaped its explicit held scope");
+        }
+        auto amendment_counter=amendment_proposal_reply;
+        auto& counter_result=amendment_counter["result"];
+        counter_result["action"]="counter";counter_result["outcome"]="counteroffer";
+        counter_result.erase("proposal_preview");counter_result["counter"]=counter_result.at("offer");
+        counter_result["guest_counter"]=counter_result.at("guest_offer");
+        counter_result["counter_validation"]={{"status","eligible"},{"preview",counter_result.at("amendment_basis")}};
+        franchise::validate_result(amendment_counter,amendment_proposal_request);
+        auto corrupt_counter=amendment_counter;
+        corrupt_counter["result"]["counter_validation"]["preview"]["carried_bonus_charges"][0]=0;
+        bool corrupt_counter_rejected=false;
+        try{franchise::validate_result(corrupt_counter,amendment_proposal_request);}catch(const std::exception&){corrupt_counter_rejected=true;}
+        if(!corrupt_counter_rejected)throw std::runtime_error("Amendment counter discarded bonus debt");
         auto rejected_guest=guest_reply;
         rejected_guest["result"]["offer_context"]["outcome"]="accounting_rejected";
         rejected_guest["result"]["offer_context"]["preview"]=nullptr;
@@ -866,6 +929,27 @@ int main(int argc,char** argv) {
         no_history["missing_named_metrics"].push_back("completions");
         no_history["missing_named_metrics"].push_back("sacks");
         franchise::validate_result(no_history_reply,performance_request);
+        auto captured_amendment_request=amendment_request;
+        captured_amendment_request["operation"]="negotiate_proposal";
+        captured_amendment_request["request_id"]="one";
+        captured_amendment_request["observation"]["calendar"]=performance_request.at("observation").at("calendar");
+        captured_amendment_request["amendment_rule"]="legacy_bonus_carry_v1";
+        auto captured_amendment_reply=amendment_proposal_reply;
+        auto amendment_checkpoint=amendment_reply.at("result");
+        amendment_checkpoint["performance_context"]=no_history_reply.at("result").at("performance_context");
+        amendment_checkpoint["player_context"]["personality"]={{"money",0.5},{"security",0.7},{"playing_time",0.8},{"winning",0.6},{"loyalty",0.3}};
+        captured_amendment_reply["result"]["signing_checkpoint"]=amendment_checkpoint;
+        captured_amendment_reply["result"]["evidence"]={{"financial_revision",0},
+            {"personality",amendment_checkpoint.at("player_context").at("personality")},
+            {"relationships",amendment_checkpoint.at("player_context").at("relationships")},
+            {"performance",amendment_checkpoint.at("performance_context")}};
+        franchise::validate_result(captured_amendment_reply,captured_amendment_request);
+        if(!franchise::saved_signing_prepare(captured_amendment_request,captured_amendment_reply).is_null())
+            throw std::runtime_error("Amendment acceptance entered free-agent save journal");
+        const auto amendment_text=franchise::signing_display(captured_amendment_reply);
+        if(amendment_text.offer.find("Application remains held")==std::string::npos ||
+           amendment_text.history.find("upfront pay")==std::string::npos)
+            throw std::runtime_error("Accepted amendment lost its explanation or held status");
         auto receiving_reply=performance_reply;
         auto& receiving=receiving_reply["result"]["performance_context"];
         receiving["saved_history"]=nlohmann::json::array();

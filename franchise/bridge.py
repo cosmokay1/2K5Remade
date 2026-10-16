@@ -212,8 +212,14 @@ class Bridge:
             if operation == 'negotiate_proposal' and 'observation' in request:
                 fields = {'protocol', 'request_id', 'operation', 'observation', 'guest_offer',
                           'expected_revision', 'timeout_ms'}
-                if set(request) not in (fields, fields | {'promise_goals'}):
+                optional=set(request)&{'promise_goals','amendment_rule'}
+                if set(request) != fields|optional:
                     raise ValueError('Complete captured signing proposal required')
+                amendment_rule=request.get('amendment_rule')
+                if 'amendment_rule' in request:
+                    from franchise.legacy_amendments import RULE
+                    if amendment_rule!=RULE:
+                        raise ValueError('Supported imported amendment rule required')
                 timeout = request['timeout_ms']
                 if type(timeout) is not int or not 1 <= timeout <= 60000:
                     raise ValueError('Bounded signing proposal timeout required')
@@ -228,7 +234,8 @@ class Bridge:
                     return checkpoint_reply
                 checkpoint = checkpoint_reply['result']
                 inspected = checkpoint['offer_context']
-                if inspected['outcome'] != 'eligible_preview':
+                expected_outcome='amendment_comparison' if amendment_rule is not None else 'eligible_preview'
+                if inspected['outcome'] != expected_outcome:
                     raise Rejected(inspected['reason'] or 'Amendment comparison does not authorize negotiation or settlement')
                 remaining = int((deadline-time.monotonic())*1000)
                 if remaining < 1:
@@ -239,6 +246,8 @@ class Bridge:
                     expected_revision=request['expected_revision'], timeout_ms=remaining,
                     personality=actor['personality'], relationships=actor['relationships'],
                     performance=checkpoint['performance_context'], contract_format=inspected.get('contract_format','original_fxg_v1'))
+                if amendment_rule is not None:
+                    normalized['amendment_rule']=amendment_rule
                 if 'promise_goals' in request:
                     normalized['promise_goals'] = request['promise_goals']
                 reply = self.handle(normalized)
@@ -494,6 +503,11 @@ class Bridge:
                 if operation != 'negotiate_proposal':
                     raise ValueError('Supported guest proposal contract format required')
                 fields |= {'contract_format'}
+            if 'amendment_rule' in request:
+                from franchise.legacy_amendments import RULE
+                if operation!='negotiate_proposal' or request['amendment_rule']!=RULE or 'return_scope' in request:
+                    raise ValueError('Separate supported amendment proposal required')
+                fields|={'amendment_rule'}
             if "return_scope" in request:
                 fields |= {"return_scope"}
                 if operation == 'negotiate_proposal':
@@ -521,7 +535,7 @@ class Bridge:
             if type(data) is not dict or set(data) not in ({"player_id", "salaries", "signing_bonus"}, {"player_id", "salaries", "signing_bonus", "guaranteed_salaries"}) or type(data["salaries"]) is not list:
                 raise ValueError("Complete offer required")
             offer = Offer.from_dict(data)
-            ledger = StoredLedger(self.store, request["team_id"],return_scope=return_scope)
+            ledger = StoredLedger(self.store, request["team_id"],return_scope=return_scope,amendment_rule=request.get('amendment_rule'))
             if operation == "preview":
                 # AI-off clients retain cap enforcement and manual previews.
                 local_access()

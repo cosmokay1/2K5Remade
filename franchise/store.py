@@ -694,7 +694,30 @@ class FranchiseStore:
                 raise ValueError('Recorded negotiation is missing its atomic opinion effect')
             if kind != 'actor':
                 actor_posting=actor_registered=None
-            if kind == "sign":
+            if kind == 'legacy_amendment':
+                from franchise.legacy_amendments import FullYearAmendmentScope
+                fields={'request_id','proposal_request_id','expected_revision','source','proposal_sha256',
+                        'before','comparison','agreement','posting','scope'}
+                if type(payload) is not dict or set(payload)!=fields:
+                    raise ValueError('Complete imported amendment settlement required')
+                proposal=self._accepted_amendment(db,team_id,payload['proposal_request_id'],before_event_id=event_id)
+                if (payload['source']!='accepted-agent:'+payload['proposal_request_id'] or
+                    self._checkpoint_hash(proposal)!=payload['proposal_sha256'] or
+                    self._checkpoint_hash(payload['before'])!=self._checkpoint_hash(ledger.financial_snapshot()) or
+                    payload['expected_revision']!=proposal['evidence']['financial_revision']):
+                    raise ValueError('Amendment settlement changed its accepted source')
+                comparison=ledger.preview_legacy_amendment(Offer.from_dict(proposal['offer']),payload['expected_revision'])
+                if (self._checkpoint_hash(comparison)!=self._checkpoint_hash(payload['comparison']) or
+                    self._checkpoint_hash(comparison)!=self._checkpoint_hash(proposal['proposal_preview'])):
+                    raise ValueError('Amendment comparison changed before settlement')
+                agreement=ledger.apply_legacy_amendment(payload['request_id'],Offer.from_dict(proposal['offer']),
+                    payload['expected_revision'],proposal_request_id=payload['proposal_request_id'],source=payload['source'],
+                    scope=FullYearAmendmentScope.from_dict(payload['scope']))
+                self._remember_amendment_promises(ledger,payload['request_id'],proposal)
+                if (self._checkpoint_hash(agreement.to_dict())!=self._checkpoint_hash(payload['agreement']) or
+                    self._checkpoint_hash(ledger.financial_snapshot())!=self._checkpoint_hash(payload['posting'])):
+                    raise ValueError('Amendment agreement or posting disagrees with replay')
+            elif kind == "sign":
                 if 'proposal_request_id' in payload:
                     expected=self._settlement_story(db,team_id,payload['proposal_request_id'],payload['request_id'],before_event_id=event_id)
                     if (self._checkpoint_hash(expected)!=self._checkpoint_hash(payload['story'])
@@ -902,6 +925,13 @@ class FranchiseStore:
                 ledger._scouting.append(payload["event"])
             elif kind == "dialogue":
                 self._validate_dialogue(payload["event"], efficiency_cache=efficiency_cache)
+                if payload['event'].get('amendment_rule') is not None:
+                    event=payload['event']
+                    comparison=ledger.preview_legacy_amendment(Offer.from_dict(event['offer']),event['evidence']['financial_revision'])
+                    if self._checkpoint_hash(comparison)!=self._checkpoint_hash(event['amendment_basis']):
+                        raise ValueError('Amendment opinion changed its observed basis')
+                    if event['outcome']=='accepted_amendment_proposal' and not comparison['within_modeled_cap']:
+                        raise ValueError('Accepted amendment is over the modeled cap')
                 if payload['event']['outcome'] == 'accepted_proposal':
                     event = payload['event']
                     preview = ledger.preview_offer(Offer.from_dict(event['offer']), event['evidence']['financial_revision'])
@@ -1924,6 +1954,68 @@ class FranchiseStore:
             raise Rejected('Amendment requires the current owning team')
         return ledger.preview_legacy_amendment(offer,expected_revision)
 
+    def preview_legacy_amendment(self,team_id,offer,expected_revision):
+        with self._connection() as db:
+            result=self._preview_legacy_amendment(db,team_id,self._load(db,team_id),offer,expected_revision)
+            if not result['within_modeled_cap']:
+                raise Rejected('Amendment exceeds available cap room')
+            return result
+
+    def _accepted_amendment(self,db,team_id,proposal_request_id,*,before_event_id=None):
+        row=db.execute("SELECT payload FROM events WHERE team_id=? AND kind='dialogue' AND request_key=? "
+                       "AND (? IS NULL OR id<?)",(team_id,'dialogue:'+proposal_request_id,before_event_id,before_event_id)).fetchone()
+        if row is None:
+            raise Rejected('Recorded accepted amendment proposal required')
+        proposal=json.loads(row[0])['event'];self._validate_dialogue(proposal)
+        if proposal['outcome']!='accepted_amendment_proposal':
+            raise Rejected('Only accepted amendment proposals can settle')
+        if db.execute("SELECT 1 FROM events WHERE team_id=? AND kind='legacy_amendment' "
+                      "AND json_extract(payload,'$.proposal_request_id')=? AND (? IS NULL OR id<?)",
+                      (team_id,proposal_request_id,before_event_id,before_event_id)).fetchone():
+            raise Rejected('Amendment proposal already settled')
+        self._check_history(db,team_id,proposal['offer']['player_id'],
+            {'history_request_ids':proposal['history_request_ids']+[proposal_request_id]},before_event_id=before_event_id)
+        return proposal
+
+    def commit_accepted_amendment(self,team_id,proposal_request_id,request_id,expected_revision,*,scope,access_check):
+        """Engine-only consent/cap settlement; never authorizes guest/save writes."""
+        from franchise.legacy_amendments import FullYearAmendmentScope
+        if (not isinstance(scope,FullYearAmendmentScope) or any(type(v) is not str or not v.strip() for v in (proposal_request_id,request_id))
+                or proposal_request_id==request_id or not callable(access_check) or type(expected_revision) is not int):
+            raise ValueError('Distinct amendment IDs, explicit revision and current access required')
+        def check():
+            if access_check() is False:
+                raise Rejected('Amendment access check denied settlement')
+        with self._connection(write=True) as db:
+            check();ledger=self._load(db,team_id);key='legacy-amendment:'+request_id
+            previous=db.execute("SELECT payload FROM events WHERE team_id=? AND kind='legacy_amendment' AND request_key=?",(team_id,key)).fetchone()
+            if previous:
+                payload=json.loads(previous[0])
+                if (payload['proposal_request_id']!=proposal_request_id or payload['expected_revision']!=expected_revision
+                        or self._checkpoint_hash(payload['scope'])!=self._checkpoint_hash(scope.to_dict())):
+                    raise Rejected('Amendment settlement retry changed its source')
+                return {**payload['agreement'],'guest_write_authorized':False}
+            if db.execute('SELECT 1 FROM events WHERE team_id=? AND request_key=?',(team_id,'sign:'+request_id)).fetchone():
+                raise Rejected('Settlement request already belongs to a signing')
+            proposal=self._accepted_amendment(db,team_id,proposal_request_id)
+            if proposal['evidence']['financial_revision']!=expected_revision:
+                raise Rejected('Amendment settlement changed its accepted revision')
+            offer=Offer.from_dict(proposal['offer'])
+            comparison=self._preview_legacy_amendment(db,team_id,ledger,offer,expected_revision)
+            if self._checkpoint_hash(comparison)!=self._checkpoint_hash(proposal['proposal_preview']):
+                raise Rejected('Accepted amendment no longer matches current finances')
+            before=ledger.financial_snapshot();source='accepted-agent:'+proposal_request_id
+            agreement=ledger.apply_legacy_amendment(request_id,offer,expected_revision,
+                proposal_request_id=proposal_request_id,source=source,scope=scope)
+            self._remember_amendment_promises(ledger,request_id,proposal)
+            check()
+            payload=dict(request_id=request_id,proposal_request_id=proposal_request_id,expected_revision=expected_revision,
+                source=source,scope=scope.to_dict(),proposal_sha256=self._checkpoint_hash(proposal),before=before,comparison=comparison,
+                agreement=agreement.to_dict(),posting=ledger.financial_snapshot())
+            db.execute("INSERT INTO events (team_id,request_key,kind,payload) VALUES (?,?,'legacy_amendment',?)",
+                       (team_id,key,json.dumps(payload,allow_nan=False)))
+            return {**agreement.to_dict(),'guest_write_authorized':False}
+
     def preview_draft_offer(self, team_id, offer, expected_revision):
         with self._connection() as db:
             ledger = self._load(db, team_id)
@@ -2252,6 +2344,11 @@ class FranchiseStore:
             return actor
 
     @staticmethod
+    def _remember_amendment_promises(ledger,request_id,proposal):
+        FranchiseStore._remember_promises(ledger,dict(request_id=request_id,offer=proposal['offer'],
+            story={**proposal,'outcome':'signed'}))
+
+    @staticmethod
     def _remember_promises(ledger,payload):
         story = payload['story']
         if story is None or not story.get('promise_goals'):
@@ -2410,7 +2507,7 @@ class FranchiseStore:
         if 'contract_format' in event:
             from franchise.guest_contracts import guest_money_scale, guest_offer_encoding
             guest_money_scale(event['contract_format'])
-            if event.get('decision_mode') != 'proposal':
+            if event.get('decision_mode') not in ('proposal','amendment_proposal'):
                 raise ValueError('Invalid guest proposal contract format')
             if FranchiseStore._checkpoint_hash(event.get('guest_offer')) != FranchiseStore._checkpoint_hash(
                     guest_offer_encoding(Offer.from_dict(event['offer']), contract_format=event['contract_format'])):
@@ -2428,7 +2525,7 @@ class FranchiseStore:
         elif 'guest_offer' in event or 'guest_counter' in event:
             raise ValueError('Guest encoding requires explicit contract format')
         if type(event) is not dict or event.get("outcome") not in {
-                "counteroffer", "player_rejected", "accounting_rejected", "accepted_proposal"}:
+                "counteroffer", "player_rejected", "accounting_rejected", "accepted_proposal", "accepted_amendment_proposal"}:
             raise ValueError("Noncommitted negotiation event required")
         if type(event.get("request_id")) is not str or not event["request_id"].strip():
             raise ValueError("Negotiation request ID required")
@@ -2446,26 +2543,40 @@ class FranchiseStore:
         import copy
         apply_reaction(copy.deepcopy(event.get('evidence')), event)
         expected = {"counter": "counteroffer", "reject": "player_rejected", "accept": "accounting_rejected"}
-        if event['outcome'] == 'accepted_proposal':
-            if (event.get('decision_mode') != 'proposal' or 'evidence' not in event
+        amendment=event.get('amendment_rule') is not None
+        if amendment:
+            from franchise.legacy_amendments import RULE
+            if (event['amendment_rule']!=RULE or event.get('decision_mode')!='amendment_proposal'
+                    or type(event.get('amendment_basis')) is not dict or 'evidence' not in event
+                    or event['amendment_basis'].get('revision')!=event['evidence']['financial_revision']
+                    or event['amendment_basis'].get('settlement_authorized') is not False
+                    or event['amendment_basis'].get('requires_player_agreement') is not True):
+                raise ValueError('Bound noncommitting amendment evidence required')
+        elif 'amendment_basis' in event or event.get('decision_mode')=='amendment_proposal':
+            raise ValueError('Amendment mode requires explicit supported rule')
+        accepted='accepted_amendment_proposal' if amendment else 'accepted_proposal'
+        if event['outcome'] in ('accepted_proposal','accepted_amendment_proposal'):
+            if (event['outcome']!=accepted or event.get('decision_mode') != ('amendment_proposal' if amendment else 'proposal') or 'evidence' not in event
                     or type(event.get('proposal_preview')) is not dict or 'return_scope' in event
                     or type(event['proposal_preview'].get('revision')) is not int
                     or event['proposal_preview']['revision'] != event['evidence']['financial_revision']
                     or 'charges' in event):
                 raise ValueError('Noncommitting proposal evidence required')
-            expected['accept'] = 'accepted_proposal'
+            if amendment and FranchiseStore._checkpoint_hash(event['proposal_preview'])!=FranchiseStore._checkpoint_hash(event['amendment_basis']):
+                raise ValueError('Accepted amendment changed its observed comparison')
+            expected['accept'] = accepted
         if event["outcome"] != expected[decision.action] or (counter and counter["player_id"] != data["player_id"]):
             raise ValueError("Dialogue decision and outcome disagree")
 
     @staticmethod
-    def _check_history(db, team_id, player_id, event):
+    def _check_history(db, team_id, player_id, event, *, before_event_id=None):
         expected = event.get("history_request_ids")
         if expected is None:  # Historical/manual callers without model context.
             return
         if type(expected) is not list or any(type(key) is not str for key in expected):
             raise ValueError("Invalid negotiation history revision")
         actual = []
-        for kind, serialized in db.execute("SELECT kind, payload FROM events WHERE team_id=? AND kind IN ('sign', 'return_sign', 'dialogue') ORDER BY id", (team_id,)):
+        for kind, serialized in db.execute("SELECT kind, payload FROM events WHERE team_id=? AND kind IN ('sign', 'return_sign', 'dialogue') AND (? IS NULL OR id<?) ORDER BY id", (team_id,before_event_id,before_event_id)):
             payload = json.loads(serialized)
             previous = payload["event"] if kind == "dialogue" else payload.get("story")
             if previous is not None and previous["offer"]["player_id"] == player_id:
@@ -2500,11 +2611,17 @@ class FranchiseStore:
                 preview = ledger.preview_offer(offer, event['evidence']['financial_revision'])
                 if self._checkpoint_hash(preview) != self._checkpoint_hash(event['proposal_preview']):
                     raise Rejected('Accepted proposal preview changed before recording')
+            if event.get('amendment_rule') is not None:
+                preview=self._preview_legacy_amendment(db,team_id,ledger,Offer.from_dict(event['offer']),event['evidence']['financial_revision'])
+                if self._checkpoint_hash(preview)!=self._checkpoint_hash(event['amendment_basis']):
+                    raise Rejected('Amendment opinion used different financial evidence')
+                if event['outcome']=='accepted_amendment_proposal' and not preview['within_modeled_cap']:
+                    raise Rejected('Accepted amendment exceeds available cap room')
             self._check_history(db, team_id, event["offer"]["player_id"], event)
             from franchise.negotiation_reactions import apply_reaction
             apply_reaction(ledger._actors.get(event['offer']['player_id']), event)
             payload = {"event": event, "posting": ledger.financial_snapshot()}
-            if 'return_scope' in event or event['outcome'] == 'accepted_proposal' or event.get('reaction', 'none') != 'none':
+            if 'return_scope' in event or event['outcome'] in ('accepted_proposal','accepted_amendment_proposal') or event.get('reaction', 'none') != 'none':
                 access_check()
             db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'dialogue', ?)",
                        (team_id, key, json.dumps(payload, allow_nan=False)))
@@ -2776,8 +2893,12 @@ class FranchiseStore:
 
 class StoredLedger:
     """Negotiation-facing view; every operation reads current durable state."""
-    def __init__(self, store: FranchiseStore, team_id: str, *, return_scope=None):
+    def __init__(self, store: FranchiseStore, team_id: str, *, return_scope=None,amendment_rule=None):
         self.store, self.team_id = store, team_id
+        from franchise.legacy_amendments import RULE
+        if amendment_rule is not None and (amendment_rule!=RULE or return_scope is not None):
+            raise ValueError('Separate supported imported amendment mode required')
+        self.amendment_rule=amendment_rule
         if return_scope is not None:
             from franchise.returns import PreseasonReturnScope
             if not isinstance(return_scope,PreseasonReturnScope):
@@ -2815,6 +2936,8 @@ class StoredLedger:
         return self.store.preview_draft_offer(self.team_id, offer, expected_revision)
 
     def preview_offer(self, offer, expected_revision):
+        if self.amendment_rule is not None:
+            return self.store.preview_legacy_amendment(self.team_id,offer,expected_revision)
         if self.return_scope is not None:
             return self.store.preview_return(self.team_id,offer,expected_revision,scope=self.return_scope)
         return self.store.preview_offer(self.team_id, offer, expected_revision)

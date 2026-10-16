@@ -72,7 +72,10 @@ class Negotiation:
         self._contract_format = contract_format
         if not callable(access_check):
             raise ValueError("An access handshake is required")
-        self._access_check = access_check
+        def checked_access():
+            if access_check() is False:
+                raise Rejected('AI control denied negotiation')
+        self._access_check = checked_access
         self._access_check()
         from franchise.performance import PerformanceEvidence
         if type(performance) is dict and 'player_id' in performance and performance['player_id'] != player_id:
@@ -93,6 +96,11 @@ class Negotiation:
         validate_performance({"personality": personality, "performance": performance,
                               "relationships": relationships})
         self.ledger = ledger
+        self._amendment_rule=getattr(ledger,'amendment_rule',None)
+        if self._amendment_rule is not None:
+            from franchise.legacy_amendments import RULE
+            if self._amendment_rule!=RULE or not proposal_only:
+                raise ValueError('Imported amendment requires explicit proposal-only mode')
         self.player_id = player_id
         actor = ledger.bind_actor(player_id, personality, relationships,
                                   access_check=self._access_check)
@@ -150,8 +158,14 @@ class Negotiation:
         actor = json.loads(self._actor)
         refreshed = self.ledger.bind_actor(self.player_id, actor["personality"], actor["relationships"], access_check=self._access_check)
         refreshed, snapshot = self.ledger.negotiation_inputs(self.player_id, refreshed)
-        if snapshot["current_contract_owned"]:
+        if snapshot["current_contract_owned"] and self._amendment_rule is None:
             raise ValueError("Player is currently signed; extensions are unsupported")
+        amendment_basis=None
+        if self._amendment_rule is not None:
+            if not snapshot['current_contract_owned']:
+                raise Rejected('Amendment requires a currently owned imported player')
+            amendment_basis=self.ledger.preview_offer(offer,snapshot['revision'])
+            snapshot={**snapshot,'amendment_comparison':amendment_basis}
         if snapshot.get('classification_pending'):
             raise Rejected('Observed player salary classification is unavailable; no inference submitted')
         if self._proposal_only and return_scope is not None:
@@ -166,7 +180,9 @@ class Negotiation:
                    **({'return_scope':return_scope} if return_scope is not None else {}),
                    **({'observed_efficiency': json.loads(self._efficiency)} if self._efficiency is not None else {})}
         if self._proposal_only:
-            context['decision_mode'] = 'proposal'
+            context['decision_mode'] = 'amendment_proposal' if self._amendment_rule else 'proposal'
+        if self._amendment_rule:
+            context['amendment_rule']=self._amendment_rule
         if self._contract_format is not None:
             context['contract_format'] = self._contract_format
             context['guest_offer'] = guest_offer
@@ -200,7 +216,9 @@ class Negotiation:
             event["promise_goals"] = proposed
             event["counter_promises"] = [asdict(goal) for goal in decision.counter_promises] if decision.action == "counter" else None
         if self._proposal_only:
-            event['decision_mode'] = 'proposal'
+            event['decision_mode'] = 'amendment_proposal' if self._amendment_rule else 'proposal'
+        if self._amendment_rule:
+            event.update(amendment_rule=self._amendment_rule,amendment_basis=amendment_basis)
         if self._contract_format is not None:
             event.update(contract_format=self._contract_format, guest_offer=guest_offer, guest_counter=None)
         if decision.action == 'accept' and self._proposal_only:
@@ -210,7 +228,7 @@ class Negotiation:
                 event['outcome'] = 'accounting_rejected'
                 event['accounting_reason'] = str(exc)
             else:
-                event['outcome'] = 'accepted_proposal'
+                event['outcome'] = 'accepted_amendment_proposal' if self._amendment_rule else 'accepted_proposal'
                 event['proposal_preview'] = preview
         elif decision.action == "accept":
             try:
@@ -248,11 +266,13 @@ class Negotiation:
         return json.loads(json.dumps(event))
 
     def _check_recalled_mode(self, event, offer, expected_revision):
+        if event.get('amendment_rule')!=self._amendment_rule:
+            raise Rejected('Negotiation request already used in a different amendment mode')
         if event.get('contract_format') != self._contract_format:
             raise Rejected('Negotiation request already used with a different contract format')
-        if (event.get('decision_mode') == 'proposal') != self._proposal_only:
+        if (event.get('decision_mode') in ('proposal','amendment_proposal')) != self._proposal_only:
             raise Rejected('Negotiation request already used in a different commit mode')
-        if self._proposal_only and event['outcome'] == 'accepted_proposal':
+        if self._proposal_only and event['outcome'] in ('accepted_proposal','accepted_amendment_proposal'):
             # Historical agreement is not permission to commit. Recheck cap,
             # minimums, ownership and revision without submitting another model.
             preview = self.ledger.preview_offer(offer, expected_revision)
