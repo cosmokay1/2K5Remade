@@ -99,6 +99,31 @@ stay unknown, never zero; a rejected offer keeps its available terms visible.
 Long tables scroll with the right stick. The cap-room figure is shown only when
 an authoritative supported preview exists, retaining its opening-liability caveat.
 
+`NFL2K5_FRANCHISE_SCREEN_EDIT=1` additionally enables local contract drafting;
+it defaults off and requires the read-only takeover configuration above. On
+Contract, A opens the editor. D-pad/left-stick up/down selects total, years,
+bonus share or salary schedule; left/right adjusts it. Hold RT for larger value
+steps. X explicitly checks the draft and returns the service's exact annual
+table or rejection. B cancels editing without leaving the offer screen. Editing
+and checking never contact a player, change their opinion, call a model, reserve
+cap room or alter the native offer/save. Actual submission remains unavailable.
+
+The initial editor supports one through seven years, bonus shares in ten-percent
+steps and the calibrated Balanced/Descending schedules. An existing schedule can
+be retained without inventing a name for it. The displayed editable total is
+approximate because the native salary schedule rounds annual amounts; the checked
+table remains authoritative. Unsupported bonus allocation and accounting rules
+still reject through the service, and a rejected draft can be edited again.
+Both supported dollar scales use the same format-driven editor.
+
+Only one check can be pending. The UI queues copied terms against its displayed
+context generation; the transport owner revalidates player, native offer,
+calendar, finances and loaded source before sending a read-only request. Screen,
+player/source changes and shutdown discard obsolete drafts/replies. Pending checks
+block repeated X requests; held controls must return to neutral before operating
+a newly opened editor or the surrounding screen. No generic addon ABI or native
+game financial entry point is added for editing.
+
 Performance uses football stat tables for Receiving (G/REC/YDS/TD), Passing
 (G/CMP/ATT/YDS/TD/INT), Rushing (G/ATT/YDS/TD) and mapped Defense (G/SCK).
 Only categories with observed values are shown; games-only evidence has an

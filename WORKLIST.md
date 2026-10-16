@@ -121,6 +121,18 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       is verified. Updated Performance-table navigation/rendering remains to
       verify in the installed game.
 
+- [x] Add addon-owned contract drafting and an explicit read-only accounting
+      check. A opens the editor; D-pad/left stick edits value, years, bonus share
+      and calibrated schedule; RT permits larger value steps, X checks and B
+      cancels. Checked exact annual amounts/rejections return through the existing
+      service. Context generations and the owner-thread mailbox reject replay,
+      repeated checks and changed player/native terms/source. Both supported
+      dollar scales use the same editor. Eleven portable checks, six isolated
+      Windows/Proton checks and game --validate pass; authored renders fit both
+      Deck resolutions. The opt-in private package is staged separately from
+      the installed read-only game. Actual installed editing remains unverified;
+      submission, active-player amendments and financial application remain open.
+
 - [ ] Finish held native submission through accepted proposal, guest/ledger commit
       and recovery. An opt-in source path now defers retail judgment/precommit,
       queues one captured proposal (including a bounded cross-thread submit handoff)

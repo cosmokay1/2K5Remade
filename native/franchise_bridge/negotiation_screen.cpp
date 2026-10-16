@@ -1,6 +1,7 @@
 /* Read-only native replacement view. UI rendering/navigation live in the addon;
  * the game's two optional UI hooks know no franchise rules. */
 #include "negotiation_screen.h"
+#include "contract_draft.h"
 #include "../../src/nfl2k5_franchise_host.h"
 #include <windows.h>
 #include <cmath>
@@ -12,6 +13,9 @@
 namespace {
 std::mutex screen_lock;
 franchise::NegotiationNavigation navigation;
+franchise::ContractDraft draft;
+unsigned long long preview_epoch;
+bool preview_enabled=false,preview_pending=false;
 std::string body,title,status,closed_body,paint_key,presented_body;
 std::array<std::string,4> pages;
 nlohmann::json screen_reply;
@@ -32,7 +36,7 @@ bool enabled(int& port) {
 bool refresh() {
     static thread_local FranchiseNegotiationView view;
     if(!nfl2k5_franchise_negotiation_view(&view)) {
-        body.clear();closed_body.clear();presented_body.clear();opened_tick=0;navigation.reset();return false;
+        body.clear();closed_body.clear();presented_body.clear();opened_tick=0;navigation.reset();draft.reset();return false;
     }
     if(!std::memchr(view.response,0,sizeof(view.response)) || !std::memchr(view.summary.title,0,sizeof(view.summary.title)) ||
        !std::memchr(view.summary.offer,0,sizeof(view.summary.offer))) return false;
@@ -47,8 +51,11 @@ bool refresh() {
             auto parsed=franchise::parse_frame(next);
             pages=franchise::negotiation_pages(parsed);screen_reply=std::move(parsed);
         }
-        body=next;title=view.summary.title;navigation.reset();presented_body.clear();paint_key.clear();paint_failed=false;
+        body=next;title=view.summary.title;navigation.reset();draft.reset();presented_body.clear();paint_key.clear();paint_failed=false;
     }
+    // An identical checked response still completes the mailbox round trip.
+    if(draft.waiting && !view.preview_pending && view.preview_epoch!=preview_epoch) draft.reset();
+    preview_epoch=view.preview_epoch;preview_enabled=view.preview_enabled!=0;preview_pending=view.preview_pending!=0;
     status=view.summary.offer;return true;
 }
 std::wstring wide(const std::string& text) {
@@ -61,7 +68,8 @@ std::wstring wide(const std::string& text) {
 bool paint(NFL2K5AddonDraw& draw) {
     if(draw.width<320 || draw.height<240 || draw.width>2048 || draw.height>2048 || draw.stride!=draw.width*4 ||
        draw.capacity!=static_cast<size_t>(draw.stride)*draw.height || !draw.pixels) return false;
-    const auto key=body+"\n"+title+"\n"+status+"\n"+std::to_string(navigation.page)+":"+std::to_string(navigation.scroll[navigation.page]);
+    const auto key=body+"\n"+title+"\n"+status+"\n"+std::to_string(navigation.page)+":"+std::to_string(navigation.scroll[navigation.page])+":"+
+        std::to_string(draft.active)+":"+std::to_string(draft.amount)+":"+std::to_string(draft.flags)+":"+std::to_string(draft.field)+":"+std::to_string(draft.waiting)+draft.message+":"+std::to_string(preview_enabled);
     if(key!=paint_key || width!=static_cast<int>(draw.width) || height!=static_cast<int>(draw.height)) {
         HDC dc=CreateCompatibleDC(nullptr);if(!dc) return false;
         BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);
@@ -142,7 +150,12 @@ bool paint(NFL2K5AddonDraw& draw) {
         if(navigation.page<2 && body!="loading") {
             std::vector<franchise::ScreenTable> tables;
             std::string summary,note;
-            if(navigation.page==0) {
+            if(draft.active) {
+                tables.push_back(draft.table());
+                note=draft.waiting?"Checking exact annual amounts and eligibility...":
+                    "Edit locally, then check exact annual amounts and eligibility. This does not contact the player.\nNo contract is signed.";
+                if(!draft.message.empty()) note+="\n"+draft.message;
+            } else if(navigation.page==0) {
                 auto annual=franchise::contract_table(context);
                 if(!annual.rows.empty()) {
                     const auto& offer=context.at("offer");
@@ -159,7 +172,7 @@ bool paint(NFL2K5AddonDraw& draw) {
                 note=u8"Saved history. \u2014 means not recorded. Separate entries are not combined.";
             }
             const int top=px(202),row_height=px(34),gap=px(22),header=px(30),section=px(30);
-            const bool preview=navigation.page==0 && context.contains("preview") && !context.at("preview").is_null();
+            const bool preview=!draft.active && navigation.page==0 && context.contains("preview") && !context.at("preview").is_null();
             const auto measured_note=text(note,left,0,right-px(12),0,17,FW_NORMAL,secondary,DT_CALCRECT|DT_WORDBREAK);
             int content=summary.empty()?0:px(67);
             for(const auto& table:tables) content+=section+header+static_cast<int>(table.rows.size())*row_height+gap;
@@ -182,7 +195,7 @@ bool paint(NFL2K5AddonDraw& draw) {
             }
             for(const auto& table:tables) {
                 text(table.title,left,y,right,y+px(26),22,FW_BOLD,white,DT_SINGLELINE);y+=section;
-                const int span=right-left-px(12),first=span*(navigation.page==0?15:24)/100;
+                const int span=right-left-px(12),first=span*(draft.active?52:navigation.page==0?15:24)/100;
                 const int cells=static_cast<int>(table.columns.size())-1;
                 std::vector<int> columns{left,left+first};
                 for(int col=1;col<=cells;++col) columns.push_back(left+first+(span-first)*col/cells);
@@ -301,9 +314,9 @@ bool paint(NFL2K5AddonDraw& draw) {
         }
         fill(0,draw.height-px(53),draw.width,draw.height,RGB(15,27,43));
         fill(0,draw.height-px(54),draw.width,draw.height-px(53),RGB(42,61,84));
-        text("D-pad / LS  Section",px(31),draw.height-px(34),px(302),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
-        text("RS  Scroll    LT / RT  Section",px(323),draw.height-px(34),px(800),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
-        text("B  Back",draw.width-px(138),draw.height-px(34),draw.width-px(31),draw.height-px(9),18,FW_BOLD,white,DT_SINGLELINE|DT_RIGHT);
+        text(draft.active?"D-pad / LS  Edit terms":"D-pad / LS  Section",px(31),draw.height-px(34),px(302),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
+        text(draft.active?"X  Check offer    RT  Larger steps":preview_enabled && navigation.page==0?"A  Edit offer    RS  Scroll":"RS  Scroll    LT / RT  Section",px(323),draw.height-px(34),px(880),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
+        text(draft.active?"B  Cancel":"B  Back",draw.width-px(160),draw.height-px(34),draw.width-px(31),draw.height-px(9),18,FW_BOLD,white,DT_SINGLELINE|DT_RIGHT);
         auto *bytes=static_cast<unsigned char*>(bits);
         // GDI text does not maintain alpha; this full-screen surface is opaque.
         for(size_t i=3;i<draw.capacity;i+=4) bytes[i]=255;
@@ -336,6 +349,23 @@ extern "C" int franchise_negotiation_screen_event(const char *name,const void *d
         const auto& event=*static_cast<const NFL2K5AddonInput*>(data);
         if(event.port>=4) return 0;
         if(event.port!=static_cast<unsigned>(port)) return NFL2K5_ADDON_UI_CONSUMED;
+        if(draft.active) {
+            const int action=draft.input(event);
+            if(action==1){draft.reset();navigation.reset();}
+            if(action==2) {
+                if(nfl2k5_franchise_preview_offer(draft.epoch,draft.amount,draft.flags)) draft.waiting=true;
+                else draft.message="Context changed or terms unavailable. Cancel and retry.";
+            }
+            return NFL2K5_ADDON_UI_CONSUMED;
+        }
+        if(preview_enabled && !preview_pending && navigation.page==0 && navigation.armed &&
+           event.analog[0]>30 && navigation.previous_analog[0]<=30 && body!="loading") {
+            const auto& result=screen_reply.at("result");
+            const auto& checkpoint=result.contains("signing_checkpoint")?result.at("signing_checkpoint"):result;
+            if(checkpoint.contains("offer_context") && draft.begin(checkpoint.at("offer_context"),preview_epoch)) {
+                navigation.reset();return NFL2K5_ADDON_UI_CONSUMED;
+            }
+        }
         const int result=navigation.input(event);
         if(result==NFL2K5_ADDON_UI_BACK){closed_body=body;presented_body.clear();}
         return result;

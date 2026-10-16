@@ -47,6 +47,9 @@ int nfl2k5_franchise_display(FranchiseSigningDisplay *out);
  * and clears output while waiting, hidden, invalidated or no reply is available.
  * A successful snapshot is evidence only, never an input or commit permit. */
 int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out);
+/* Queue one explicitly checked draft against the displayed context. No guest
+ * mutation, player contact, model request or transaction authority. */
+int nfl2k5_franchise_preview_offer(unsigned long long epoch, uint32_t amount, uint32_t flags);
 #ifdef __cplusplus
 }
 #endif

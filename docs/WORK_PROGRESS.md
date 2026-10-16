@@ -9505,3 +9505,81 @@ bars, sender labels and bubbles fit without footer/sidebar overlap. Private
 receipts/captures: .local-runtime/personality-conversation. These are authored
 renderer previews, not installed-game AI conversations. Installed runtime/saves
 remain unchanged; no Discord message was sent.
+
+
+## Installed personality/conversation package and contract-editor work
+
+The combined55b95df Windows game/addon/preview wrapper was installed after the
+user's normal exit and process checks. All205 save hashes were unchanged across
+replacement. The250-file editor stage is separate from that installed package;
+no editor has been deployed yet. The55b95df package verifies249 compiler-source
+files,289 unchanged service files, six isolated Windows/Proton checks, game
+--validate and the existing offline service/save-recovery fixtures. CI Build
+38855813263 and Franchise38855813349 pass for55b95df. Private receipts:
+.local-runtime/negotiation-ui-55b95df. Actual game captures verify Dart's
+Personality icons/details/neutral bars and the Agent empty conversation. The
+updated installed Performance-table layout remains unverified.
+
+The first launch faulted early with0xC0000005 at0x6FFFFCC73A5F, before guest
+register initialization. One unchanged retry booted and reached Dart's screens.
+The first-launch logs are preserved in the private stage; this does not resolve
+the intermittent startup failure.
+
+Dart's current offer_context decodes a $21.18M nominal signing bonus, while
+annual bonus/cap charges remain unavailable because the accounting preview
+rejects an already-owned player. Dashes must not be treated as zero. The saved
+legacy schedule does not establish original bonus cash/protection authority.
+Active-player extensions/restructures remain required, not a reason to silently
+remove the ownership check or erase existing bonus layers.
+
+
+## Addon contract editor and explicit read-only offer checks
+
+The franchise addon now owns a local draft editor, with a separate opt-in
+SCREEN_EDIT flag requiring the existing read-only takeover configuration. A
+opens the draft; vertical D-pad/left-stick selects a field and horizontal input
+changes it. RT increases value steps, X explicitly checks terms, and B cancels
+without leaking Back into the native menu. Values are bounded to representable
+terms; the initial editor exposes one through seven years, ten-percent bonus
+steps and calibrated Balanced/Descending schedules. An existing different
+schedule is retained under a neutral label. Original and scaled dollar formats
+share the same editor. The editable total is approximate; checked annual salary
+and cap amounts still come only from exact service decoding/accounting. Rejected
+drafts remain editable, including the original format's implicit default.
+
+A bounded addon-private mailbox copies terms against the displayed generation.
+The UI/foreign callback performs no transport or guest access. The owner checks
+the complete original observation and loaded source before forwarding the local
+draft as signing_context, not negotiate_proposal. Duplicate/replayed intents,
+reserved flag edits and obsolete player/screen/source state are rejected or
+discarded. New replies finish the pending state even if their body is identical.
+No generic host ABI, native financial entry point, original menu mutation, actor
+contact, opinion change, AI request or signing permit is introduced. Existing
+active-player rejection and legacy obligations remain intact; supporting actual
+extensions/restructures and accepted application is still required.
+
+All11 portable CTests and six isolated Windows/Proton checks pass; the Windows
+game also passes --validate with a fresh child completion marker. The first
+Windows run exposed an incorrect test assumption: a changed player correctly
+shows the read-only loading view, rather than no view. The corrected test checks
+that response/preview authority are absent and the stale draft was not sent.
+New Windows checks also queue a draft from a foreign callback and assert owner-
+only sending, exact edited fields, generation replay rejection and cancellation
+on a player change. Existing held-signing tests still pass. Actual renderer
+fixtures cover entry, editing, checking, duplicate checks, identical-response
+completion and Cancel; visual review at1280x800/720 confirms fit. Windows CPython
+service fixtures and both ordinary/runtime-bound native saved-signing checks
+pass offline with zero model calls. Private evidence: .local-runtime/contract-editor-v2.
+
+Read-only post-launch verification of the installed55b95df package matches all
+three installed file hashes, the unchanged revision2 database and203 nonpartition
+save files. Partition0/5 images changed during normal game runtime; no other save
+file changed, and the capture reports no transport failure. The editor package
+is staged separately, not installed or demonstrated in an actual franchise yet.
+
+The complete915-test Python regression suite passes in180.782s. Its first sandbox
+run completed with four loopback-server PermissionErrors; rerunning with local
+socket access resolves all four without source changes. The staged wrapper
+enables only local draft checking, retaining negotiation/signing=0, the same
+service/database and existing test-input path. The game is still running at
+PID238610, so installation has not been attempted; a normal exit is requested.

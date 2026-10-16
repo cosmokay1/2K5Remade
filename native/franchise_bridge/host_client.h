@@ -33,6 +33,9 @@ typedef struct FranchiseSigningDisplay {
 typedef struct FranchiseNegotiationView {
     FranchiseSigningDisplay summary;
     char response[65536];
+    /* Addon-private read-only draft mailbox, not part of the generic host ABI. */
+    unsigned long long preview_epoch;
+    int preview_enabled, preview_pending;
 } FranchiseNegotiationView;
 
 /* Format an already transport-validated read-only context; no I/O or grant. */

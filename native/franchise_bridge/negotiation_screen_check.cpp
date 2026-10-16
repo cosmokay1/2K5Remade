@@ -1,4 +1,5 @@
 #include "negotiation_screen_fixture.h"
+#include "contract_draft.h"
 #include <cstdio>
 #include <stdexcept>
 static void require(bool ok){if(!ok) throw std::runtime_error("Negotiation screen model failed");}
@@ -7,6 +8,39 @@ int main() {
         require(franchise::screen_money(-12345)=="$-12,345");
         require(franchise::screen_money("3316000/3")=="$3316000/3 (exact dollars)");
         auto fixture=negotiation_screen_fixture();auto pages=franchise::negotiation_pages(fixture);
+        franchise::ContractDraft draft;
+        require(draft.begin(fixture["result"]["offer_context"],1));
+        require(draft.amount==422 && draft.years()==2 && draft.bonus()==4 && draft.schedule()=="Descending");
+        require(draft.table().rows[0].values[0]=="$16,880,000");
+        NFL2K5AddonInput edit{};edit.buttons=8;
+        draft.input(edit);require(draft.amount==422); // Entry quarantines held controls.
+        edit={};draft.input(edit);edit.buttons=8;draft.input(edit);require(draft.amount==423);
+        draft.input(edit);require(draft.amount==423); // No repeated edits from a held key.
+        edit={};draft.input(edit);edit.axes[0]=-24000;draft.input(edit);require(draft.amount==422);
+        edit={};draft.input(edit);edit.buttons=2;draft.input(edit);require(draft.field==1);
+        edit={};draft.input(edit);edit.axes[0]=24000;draft.input(edit);require(draft.years()==3);
+        edit={};draft.input(edit);edit.buttons=2;draft.input(edit);
+        edit={};draft.input(edit);edit.buttons=4;draft.input(edit);require(draft.bonus()==3);
+        edit={};draft.input(edit);edit.buttons=2;draft.input(edit);
+        const auto retained=draft.flags&0x1fffffffu;
+        edit={};draft.input(edit);edit.buttons=8;draft.input(edit);
+        require(draft.schedule()=="Balanced" && (draft.flags&0x1fffffffu)==retained);
+        edit={};draft.input(edit);edit.analog[2]=255;require(draft.input(edit)==2);
+        draft.waiting=true;edit={};draft.input(edit);edit.analog[2]=255;require(draft.input(edit)==0);
+        edit={};draft.input(edit);edit.analog[1]=255;require(draft.input(edit)==1);
+        draft.reset();require(!draft.active && !draft.waiting && !draft.epoch);
+        auto malformed=fixture["result"]["offer_context"];
+        malformed["amount_word"]=uint64_t(65536);require(!draft.begin(malformed,1));
+        malformed["amount_word"]=uint64_t(1);malformed["contract_format"]="unknown";require(!draft.begin(malformed,1));
+        require(!draft.begin(fixture["result"]["offer_context"],0));
+        auto original=fixture["result"]["offer_context"];original.erase("contract_format");
+        require(draft.begin(original,1) && draft.scale==1 && draft.table().rows[0].values[0]=="$4,220,000");
+        original["offer"]=nullptr;original["preview"]=nullptr;original["outcome"]="format_rejected";
+        require(draft.begin(original,1)); // Rejected drafts remain editable.
+        require(draft.begin(fixture["result"]["offer_context"],1));
+        draft.amount=65535;edit={};draft.input(edit);edit.buttons=8;draft.input(edit);require(draft.amount==65535);
+        draft.amount=1;edit={};draft.input(edit);edit.buttons=4;draft.input(edit);require(draft.amount==1);
+        edit={};draft.input(edit);edit.buttons=8;edit.analog[7]=255;draft.input(edit);require(draft.amount==26);
         for(const auto* term:{"$6,328,000","$3,796,000","$6,752,000","$9,704,000","$7,172,000","$79,512,000","$16,876,000"}) require(pages[0].find(term)!=std::string::npos);
         require(pages[1].find("Record ")==std::string::npos);
         require(franchise::screen_profile(fixture["result"]["performance_context"])=="6'0\"  /  200 lb  /  Age 23 at season start");

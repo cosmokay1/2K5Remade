@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 static char owned;
 static unsigned submissions, takes;
@@ -95,6 +96,9 @@ static DWORD WINAPI foreign_callback(void *unused)
     nfl2k5_franchise_display(&view); /* Renderer copy does not access transport. */
     nfl2k5_franchise_negotiation_view(&full_view);
     return 0;
+}
+static DWORD WINAPI foreign_preview(void *flags) {
+    return nfl2k5_franchise_preview_offer(full_view.preview_epoch,1955,*(const uint32_t*)flags)?0:1;
 }
 int main(void)
 {
@@ -253,6 +257,46 @@ int main(void)
     assert(!nfl2k5_franchise_negotiation_view(&full_view));
     assert(!nfl2k5_franchise_submit_held(&observation,nfl2k5_franchise_submission_epoch()));
     nfl2k5_franchise_stop();
+    _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_EDIT",L"1");
+    assert(nfl2k5_franchise_start());
+    strcpy(observation.first_name,"Authored");
+    nfl2k5_franchise_on_fsm(0x557B2C,1);nfl2k5_franchise_poll();
+    nfl2k5_franchise_signing_context(&observation);nfl2k5_franchise_poll();
+    assert(nfl2k5_franchise_negotiation_view(&full_view) && full_view.preview_enabled && !full_view.preview_pending);
+    const unsigned long long epoch=full_view.preview_epoch;
+    const uint32_t edited_flags=(observation.offer_flags&~0xe00f000fu)|0x40020005u;
+    assert(!nfl2k5_franchise_preview_offer(epoch,0,edited_flags));
+    assert(!nfl2k5_franchise_preview_offer(epoch,65536,edited_flags));
+    assert(!nfl2k5_franchise_preview_offer(epoch,1955,edited_flags^0x10u)); // Reserved bits cannot change.
+    assert(!nfl2k5_franchise_preview_offer(epoch,1955,(edited_flags&~0xf0000u)|0x80000u));
+    assert(!nfl2k5_franchise_preview_offer(epoch,1955,(edited_flags&~15u)|11u));
+    assert(!nfl2k5_franchise_preview_offer(epoch,1955,(edited_flags&0x1fffffffu)|0xe0000000u));
+    const unsigned before_draft=submissions;
+    thread=CreateThread(NULL,0,foreign_preview,(void*)&edited_flags,0,NULL);
+    assert(thread && WaitForSingleObject(thread,3000)==WAIT_OBJECT_0);
+    DWORD preview_exit=1;assert(GetExitCodeThread(thread,&preview_exit) && !preview_exit);CloseHandle(thread);
+    assert(!nfl2k5_franchise_preview_offer(epoch,1956,edited_flags));
+    assert(submissions==before_draft); // UI callback only copies intent.
+    assert(nfl2k5_franchise_negotiation_view(&full_view) && full_view.preview_pending);
+    nfl2k5_franchise_signing_context(&observation);
+    assert(submissions==before_draft+1 && strstr(last_request,"\"operation\":\"signing_context\""));
+    assert(strstr(last_request,"\"amount_word\":1955"));
+    char expected_flags[64];snprintf(expected_flags,sizeof(expected_flags),"\"flags_word\":%u",edited_flags);
+    assert(strstr(last_request,expected_flags));
+    nfl2k5_franchise_poll();
+    assert(nfl2k5_franchise_negotiation_view(&full_view) && !full_view.preview_pending && full_view.preview_epoch!=epoch);
+    assert(!nfl2k5_franchise_preview_offer(epoch,1955,edited_flags)); // Consumed contexts cannot replay.
+    assert(nfl2k5_franchise_preview_offer(full_view.preview_epoch,1956,edited_flags));
+    ++observation.slot;nfl2k5_franchise_signing_context(&observation);
+    assert(submissions==before_draft+1); // Changing player discards queued terms.
+    assert(nfl2k5_franchise_negotiation_view(&full_view) && !full_view.response[0] && !full_view.preview_enabled);
+    nfl2k5_franchise_on_fsm(0,0);
+    assert(!nfl2k5_franchise_preview_offer(epoch,1955,edited_flags));
+    nfl2k5_franchise_stop();
+    _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_PREVIEW",L"0");
+    assert(!nfl2k5_franchise_start()); // Editor cannot bypass read-only screen mode.
+    _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_EDIT",L"bad");assert(!nfl2k5_franchise_start());
+    _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_EDIT",L"0");
     _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_PREVIEW",L"bad");assert(!nfl2k5_franchise_start());
     return 0;
 }

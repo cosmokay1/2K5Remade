@@ -55,11 +55,17 @@ static FranchiseSigningDisplay display;
 static char display_response[65536];
 static int display_loading;
 static int display_valid;
+/* Guarded by display_lock. Only the transport owner consumes the mailbox. */
+static int draft_enabled, draft_pending;
+static unsigned long long draft_epoch;
+static uint32_t draft_amount,draft_flags;
+static FranchiseSigningObservation display_observation,draft_observation;
 static void clear_display(void) {
     AcquireSRWLockExclusive(&display_lock);
     memset(&display,0,sizeof(display));
     memset(display_response,0,sizeof(display_response));
     display_valid=0;display_loading=0;
+    draft_pending=0;++draft_epoch;
     ReleaseSRWLockExclusive(&display_lock);
 }
 int nfl2k5_franchise_display(FranchiseSigningDisplay *out) {
@@ -80,6 +86,9 @@ int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out) {
         if(display_valid && display.title[0] && display_response[0]) {
             memcpy((char*)out+offsetof(FranchiseNegotiationView,summary),&display,sizeof(display));
             memcpy((char*)out+offsetof(FranchiseNegotiationView,response),display_response,sizeof(display_response));
+            out->preview_epoch=draft_epoch;
+            out->preview_enabled=draft_enabled;
+            out->preview_pending=draft_pending!=0;
         } else {
             snprintf(out->summary.title,sizeof(out->summary.title),"Contract negotiation");
             snprintf(out->summary.offer,sizeof(out->summary.offer),"Loading verified franchise context...");
@@ -87,6 +96,21 @@ int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out) {
     }
     ReleaseSRWLockShared(&display_lock);
     return available;
+}
+int nfl2k5_franchise_preview_offer(unsigned long long epoch,uint32_t amount,uint32_t flags) {
+    int accepted=0;
+    const uint32_t mask=0xe00f000fu;
+    const unsigned years=(flags>>16)&15u,bonus=flags&15u,shape=flags>>29;
+    AcquireSRWLockExclusive(&display_lock);
+    if(draft_enabled && display_valid && display_response[0] && !draft_pending &&
+       epoch && epoch==draft_epoch && amount && amount<=65535 && years && years<=7 && bonus<=10 &&
+       (shape==1 || shape==2 || shape==(display_observation.offer_flags>>29)) &&
+       (flags&~mask)==(display_observation.offer_flags&~mask)) {
+        draft_amount=amount;draft_flags=flags;draft_observation=display_observation;
+        draft_pending=1;++draft_epoch;accepted=1;
+    }
+    ReleaseSRWLockExclusive(&display_lock);
+    return accepted;
 }
 /* Called under display_lock only after a successful formatter/transport check.
  * Never clip a frame: all data or no replacement view. */
@@ -119,6 +143,7 @@ static int positive_limit(const wchar_t *text, unsigned long long *value)
 void nfl2k5_franchise_stop(void)
 {
     clear_display();
+    AcquireSRWLockExclusive(&display_lock);draft_enabled=0;ReleaseSRWLockExclusive(&display_lock);
     InterlockedExchange(&franchise_owner_thread, 0);
     InterlockedExchange(&franchise_foreign_sign_logged, 0);
     hello_pending = hello_failed = 0;
@@ -243,7 +268,8 @@ void nfl2k5_franchise_poll(void)
                 if(franchise_host_signing_display(response,&next)==FRANCHISE_HOST_OK) {
                     snprintf(next.title,sizeof(next.title),"%s %s",observed.first_name,observed.last_name);
                     AcquireSRWLockExclusive(&display_lock); display=next; display_valid=1;
-                    copy_display_response(response); ReleaseSRWLockExclusive(&display_lock);
+                    copy_display_response(response);display_observation=requested;
+                    draft_pending=0;++draft_epoch;ReleaseSRWLockExclusive(&display_lock);
                 } else clear_display();
             } else if(!current) clear_display();
             /* Changed terms retain the debounce; unreadable or new-screen
@@ -388,6 +414,16 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
     observation_fresh=1;
     if(journal_locked) return; /* Still sample freshness; never queue another offer. */
     consume_submission(o);
+    /* The displayed snapshot must still describe the same live player, money,
+     * calendar and native draft. An obsolete UI intent is simply discarded. */
+    uint32_t preview_amount=0,preview_flags=0;
+    AcquireSRWLockExclusive(&display_lock);
+    if(draft_pending==1 && !context_pending) {
+        if(draft_enabled && !proposal_requested && !proposal_sent && same_observation(o,&draft_observation)) {
+            preview_amount=draft_amount;preview_flags=draft_flags;draft_pending=2;context_sent=0;
+        } else {draft_pending=0;++draft_epoch;}
+    }
+    ReleaseSRWLockExclusive(&display_lock);
     AcquireSRWLockExclusive(&display_lock); display_valid=display.title[0]!=0; ReleaseSRWLockExclusive(&display_lock);
     if (context_pending || (!proposal_requested && context_sent && (same_observation(&requested,&observed) ||
         GetTickCount64()-changed_tick<300))) return;
@@ -400,7 +436,7 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
     if (inspect_guest_offer) {
         if (o->offer_amount > 65535) return;
         snprintf(offer_field,sizeof(offer_field),"\"guest_offer\":{\"amount_word\":%u,\"flags_word\":%u},",
-            o->offer_amount,o->offer_flags);
+            preview_amount?preview_amount:o->offer_amount,preview_amount?preview_flags:o->offer_flags);
     }
     const int proposing=proposal_requested && !proposal_sent;
     int length = snprintf(request,sizeof(request),
@@ -493,6 +529,10 @@ int nfl2k5_franchise_start(void)
     const int preview_enabled=screen_preview && !wcscmp(screen_preview,L"1");
     // Inspection cannot silently become paid inference or native application.
     if(preview_enabled && (hold_enabled || prepare_enabled || !inspect_context || !offer_enabled || !inspect_performance)) return 0;
+    const wchar_t *screen_edit=_wgetenv(L"NFL2K5_FRANCHISE_SCREEN_EDIT");
+    if(screen_edit && *screen_edit && wcscmp(screen_edit,L"0") && wcscmp(screen_edit,L"1")) return 0;
+    const int edit_enabled=screen_edit && !wcscmp(screen_edit,L"1");
+    if(edit_enabled && !preview_enabled) return 0;
     const wchar_t *budget_database = _wgetenv(L"NFL2K5_FRANCHISE_AI_BUDGET_DATABASE");
     const wchar_t *budget_scope = _wgetenv(L"NFL2K5_FRANCHISE_AI_BUDGET_SCOPE");
     const wchar_t *budget_limit = _wgetenv(L"NFL2K5_FRANCHISE_AI_REQUEST_LIMIT");
@@ -529,6 +569,7 @@ int nfl2k5_franchise_start(void)
     context_enabled = inspect_context;
     saved_performance = inspect_performance;
     inspect_guest_offer = offer_enabled;
+    AcquireSRWLockExclusive(&display_lock);draft_enabled=edit_enabled;draft_pending=0;++draft_epoch;ReleaseSRWLockExclusive(&display_lock);
     AcquireSRWLockExclusive(&submission_lock);
     submission_enabled=hold_enabled;submission_active=submission_pending=0;++submission_epoch;
     ReleaseSRWLockExclusive(&submission_lock);

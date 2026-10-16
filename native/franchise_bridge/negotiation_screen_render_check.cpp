@@ -12,11 +12,19 @@ extern "C" int nfl2k5_addon_event(const char *name,const void *data,size_t size)
 }
 static nlohmann::json fixture;
 static bool available=true,loading=false;
+static bool editing=false,checking=false;
+static unsigned long long preview_epoch=1;
+static unsigned preview_calls;
+extern "C" int nfl2k5_franchise_preview_offer(unsigned long long epoch,uint32_t amount,uint32_t flags) {
+    if(epoch!=preview_epoch || checking || !amount || !flags) return 0;
+    ++preview_calls;checking=true;++preview_epoch;return 1;
+}
 extern "C" int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out) {
     *out={};if(!available) return 0;
     if(loading) {std::strcpy(out->summary.title,"Contract negotiation");return 1;}
     const auto response=fixture.dump();if(response.size()>=sizeof(out->response)) return 0;
     std::memcpy(out->response,response.c_str(),response.size()+1);
+    out->preview_enabled=editing;out->preview_pending=checking;out->preview_epoch=preview_epoch;
     std::strcpy(out->summary.title,"Authored Player");
     std::strcpy(out->summary.offer,"Read-only preview. Contract application is held.");return 1;
 }
@@ -69,6 +77,15 @@ int main(int argc,char** argv) {
             loading=true;capture("loading");require(changed,"Loading view must render before any reply");
             loading=false;capture("contract");require(changed,"First context needs pixels");
             require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed) && !changed,"Unchanged screen redrew");
+            editing=true;capture("editable-contract");press(0);capture("edit-offer");
+            press(-1,8);capture("edit-adjusted");
+            const auto before_checks=preview_calls;press(2);capture("edit-checking");
+            require(preview_calls==before_checks+1,"Explicit check was not queued");
+            press(2);require(preview_calls==before_checks+1,"Repeated check escaped pending guard");
+            checking=false;++preview_epoch;capture("edit-checked-identical-reply");
+            press(0);capture("edit-again");press(1);capture("edit-cancelled");
+            require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed),"Cancel left the native screen");
+            editing=false;capture("editing-disabled");
             NFL2K5AddonInput other{};other.port=1;other.analog[7]=255;nfl2k5_addon_ui_input(&other);
             require(!other.analog[7],"Other port reached the native menu");
             require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed) && !changed,"Other port navigated the view");
