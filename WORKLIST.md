@@ -859,7 +859,13 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
       repeated fresh-container builds and all three isolated Windows/Proton child
       checks pass. The user-requested redesign adds salary/cap columns, stronger
       navy/crimson hierarchy and a dedicated dialogue area;24 authored captures
-      include long contracts/rejections. Actual game build/install remains pending.
+      include long contracts/rejections. The approved e45a634 design passes full
+      Windows/Linux CI. Its actual Windows game and matching addon now compile,
+      and isolated Proton game --validate passes with a child completion marker.
+      All20 matching Windows package tests pass under Deck Proton, loading the
+      actual paired game addon DLL. A hash-pinned preview-only package and
+      backup/rollback installer are ready. Normal-exit installation and live
+      offer-screen verification remain pending; the installed game is untouched.
 - [ ] Integrate persistent stories/relationships into the actual franchise experience.
 - [ ] Add opt-in configuration, backups, recovery and explicit migration handling.
 

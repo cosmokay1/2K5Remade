@@ -8998,3 +8998,37 @@ Build38843271009 now both pass. New redesign CI follows. Actual rebuilt game
 packaging, normal-exit installation, live offer-screen takeover, editor/submit,
 AI execution and signing/save-reload remain unfinished. Existing saves, installed
 runtime/launcher, control grants and paid inference policy were not changed.
+
+
+## Approved screen — real-game package validation
+
+The user approved the redesigned native screen. At e45a634, Windows/Linux
+Build38845005523 and full Franchise AI38845005585 both pass. The private builder
+contained the known5698281 overlay on the earlier763c714 staging manifest; all11
+differing files were matched byte-for-byte to repository history before a backup
+and248-file source upgrade. Existing input/presentation/config sources were also
+verified against5698281. The private-only CMake validation block was accidentally
+appended twice during staging; configuration rejected duplicate targets before
+compilation, and the block was restored to its previous known hash. No installed
+runtime was affected.
+
+The actual Windows game, new generic UI hooks and matching production addon now
+compile in the established initialized compiler prefix, using one CPU. Isolated
+Proton game --validate returns a fresh child completion marker and the explicit
+validation success message. EXE SHA256
+b1105267f99ac1d89491f610fa64dcfa9a8374ac7d0a7e5131e83716aa8f9506;
+DLL5771c92c77b36c8fbda046c28de86bd9adfcf7f75d463377158f4513eb3fe624.
+Private screen-package-e45a634 preserves source/backup manifests, build log and
+validation receipt. This validates the executable, not actual franchise boot or
+screen takeover. All20 matching Windows standalone package tests now execute successfully under
+Deck Proton, with fresh child completion and per-test log evidence. Production
+addon tests explicitly load the exact DLL paired with the validated game. All249
+source files (including the known private validation-only CMake file) are hash
+verified. A candidate wrapper adds only SCREEN_PREVIEW=1 and SCREEN_PORT=0,
+retaining NEGOTIATION=0, GUEST_SIGNING=0 and unavailable credentials. The package
+receipt verifies installed/candidate hashes; the closed-game-only installer
+backs up all three replaced files, checks every save hash and rolls back on
+failure. It has not been run. The user was asked to exit normally because the
+installed game remains running. Actual boot/takeover/controller, editor/submit,
+model response and signing/save-reload are still unverified. No installed game,
+save, remote control or paid inference was changed.
