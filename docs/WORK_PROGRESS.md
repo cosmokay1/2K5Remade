@@ -8656,3 +8656,43 @@ budget/scope and forced missing credentials; it enables no AI, application grant
 or remote control renewal. steamdeck.local stopped resolving before transfer, so
 Windows validation and installation remain pending. The user was asked to keep
 the Deck awake; the running installed game/launcher/database were not replaced.
+
+### Windows CI exposed SQLite handle ownership
+
+At157f3c9 Build38832249074 passed, but Franchise38832249078 failed on Windows:
+six cleanup errors reported WinError32 for open SQLite files. A connection's
+transaction context does not close its handle. The import preview and several
+new test queries incorrectly relied on that context for ownership. Ubuntu/local
+success did not establish Windows compatibility; the pending package is superseded.
+
+The preview now explicitly closes both backup handles, including backup-error and
+validation-error paths. New test connections likewise commit writes separately
+from handle closure. A portable tracked-connection test verifies closure after a
+successful preview, stale-input rejection and an injected backup failure, without
+depending on garbage collection or Windows cleanup retries. All884 offline tests
+pass in45.788s. Salary calculations and imported inputs are unchanged.
+
+The user restored Deck connectivity. PID214192 remains running and is preserved.
+The144-file package was rebuilt with the fix and regression; a separate staged
+namespace/Windows environment is being prepared at low priority. No installed
+game, launcher, live database, user save or AI controls have been changed.
+
+The corrected package now passes its full isolated Windows batch: seven import/
+replay tests, six simulation/preview/resource-ownership tests, actual UDATA
+read-only context, below-minimum and over-cap refusals, forbidden AI operation,
+and both legacy/runtime-bound actual native C-client journal fixtures. Windows
+launcher exit0 and child marker passed are recorded in windows-receipt.json.
+All144 source hashes match the package manifest. The native checker hash is
+ff2118ad850e6fcb0b6ed3399f2d88e9a1558c70f20e4c62bb0970c38fe7e9df.
+The separate namespace replays all32 clubs/1806 classified veterans with unchanged
+contract balances and original database/identities. Its database hash is
+8f64df7947ce77ef10a873b60d92a8536bd6f16f6bb4c697e278760fa79820e1.
+
+The actual-source Windows context returns revision2 and the eligible Hernandez
+preview, rejects both illegal offers, preserves personality/source/registry/DB
+hashes and records zero model attempts. Credentials remain forced unavailable;
+the existing unused budget/scope is copied rather than credited or reset. These
+are isolated Windows checks, not updated callbacks in the running game. A guarded
+installer is staged to back up and atomically replace only the launcher after
+normal exit, preserving all current save hashes and the executable/addon. The
+current game remains running; no live package replacement has occurred.

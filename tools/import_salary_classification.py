@@ -1,5 +1,6 @@
 """Preview or explicitly import declared salary inputs without rebuilding a franchise."""
 import argparse
+from contextlib import closing
 import json
 from pathlib import Path
 import sqlite3
@@ -18,8 +19,8 @@ def import_inputs(database, batch, *, apply=False):
     # the original through FranchiseStore would perform schema initialization.
     with tempfile.TemporaryDirectory(prefix='2k5-salary-preview-') as directory:
         copy = Path(directory)/'franchise.sqlite'
-        with sqlite3.connect(database.as_uri()+'?mode=ro',uri=True) as original:
-            with sqlite3.connect(copy) as target:
+        with closing(sqlite3.connect(database.as_uri()+'?mode=ro',uri=True)) as original:
+            with closing(sqlite3.connect(copy)) as target:
                 original.backup(target)
         store = FranchiseStore(copy)
         before = {team:store.load_team(team).financial_snapshot() for team in batch['expected_revisions']}

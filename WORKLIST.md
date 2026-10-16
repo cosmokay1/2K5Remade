@@ -308,7 +308,13 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       All883 offline Python tests pass. Private scripted-proposal/journal restart/
       settlement/retry checks pass on constructed after-save data, not native
       application. A single144-file Windows service/fixture batch is prepared;
-      Deck connection is currently required to validate it before installation.
+      initial Windows CI exposed unclosed SQLite preview/test handles. Explicit
+      closure and a portable failure-path regression now pass884 local tests.
+      The corrected144-file package now passes all13 targeted Windows tests,
+      actual UDATA floor/cap/AI-disabled checks and both native C-client journal
+      fixtures under isolated Proton. Revision2 context preserves the original
+      personality/source/database with zero model attempts. Installation awaits
+      normal game exit; the executable and AI mode will remain unchanged.
 - [ ] Complete draft, persistent stories/promises, shutdown and final delivery checks
       below. Defer broader stat mapping while the core signing flow is incomplete.
 

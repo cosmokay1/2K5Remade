@@ -1,6 +1,7 @@
 import copy
 import hashlib
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 import json
 import sqlite3
 import tempfile
@@ -29,7 +30,7 @@ class SalaryClassificationTests(unittest.TestCase):
             observed_player_source='authored registry')
 
     def rows(self):
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db:
             return (db.execute('select * from teams order by id').fetchall(),
                     db.execute('select * from events order by id').fetchall(),
                     db.execute('select * from franchise_metadata order by key').fetchall())
@@ -74,12 +75,12 @@ class SalaryClassificationTests(unittest.TestCase):
 
     def test_deleted_or_tampered_group_refuses_replay_even_for_other_team(self):
         self.store.initialize_salary_classification(**self.inputs)
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             payload=json.loads(db.execute("select payload from events where team_id='b' and kind='salary_classification'").fetchone()[0])
             payload['batch_sha256']='0'*64
             db.execute("update events set payload=? where team_id='b' and kind='salary_classification'",(json.dumps(payload),))
         with self.assertRaises(ValueError):self.store.load_team('a')
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             db.execute("delete from events where kind='salary_classification'")
         with self.assertRaises(ValueError):self.store.load_team('a')
 
@@ -97,7 +98,7 @@ class SalaryClassificationTests(unittest.TestCase):
             results=list(pool.map(lambda _:FranchiseStore(self.path).initialize_salary_classification(**self.inputs),range(2)))
         self.assertEqual(results[0],results[1])
         self.assertEqual(self.store.load_team('a').revision,1)
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db:
             self.assertEqual(db.execute("select count(*) from events where kind='salary_classification'").fetchone()[0],2)
 
     def test_prepared_guest_work_blocks_classification_without_mutation(self):

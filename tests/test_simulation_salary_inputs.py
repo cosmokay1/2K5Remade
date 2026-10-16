@@ -2,9 +2,11 @@ import contextlib
 import hashlib
 import io
 from pathlib import Path
+import sqlite3
 import struct
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from franchise.books import OpeningBooks
 from franchise.cap import Ledger
@@ -62,6 +64,41 @@ class SimulationSalaryInputTests(unittest.TestCase):
             with contextlib.redirect_stderr(io.StringIO()),self.assertRaises(SystemExit):
                 main([str(missing),str(source),'--apply'])
             self.assertFalse(missing.exists())
+
+    def test_preview_closes_snapshot_handles_on_success_and_failure(self):
+        connections=[];fail_backup=False
+        class TrackedConnection(sqlite3.Connection):
+            closed=False
+            def close(self):
+                self.closed=True
+                return super().close()
+            def backup(self,*args,**kwargs):
+                if fail_backup:raise RuntimeError('Authored backup failure')
+                return super().backup(*args,**kwargs)
+        connect=sqlite3.connect
+        def tracked(*args,**kwargs):
+            connection=connect(*args,**kwargs,factory=TrackedConnection)
+            connections.append(connection)
+            return connection
+        with tempfile.TemporaryDirectory() as directory:
+            database=Path(directory)/'state.sqlite'
+            ids=frozenset(p['player_id'] for p in self.members.values())
+            store=FranchiseStore(database)
+            store.create_team('a',Ledger.from_opening(OpeningBooks(),cap=301200000,roster_reserve=0,
+                max_bonus_years=5,veteran_minimums={},observed_player_ids=ids,observed_player_source='fixture'))
+            batch,_=salary_inputs(self.bindings,self.payload,expected_revisions={'a':0},years=5)
+            try:
+                with patch('sqlite3.connect',side_effect=tracked):
+                    import_inputs(database,batch)
+                    self.assertTrue(connections and all(c.closed for c in connections))
+                    stale={**batch,'expected_revisions':{'a':1}}
+                    with self.assertRaises(ValueError):import_inputs(database,stale)
+                    self.assertTrue(all(c.closed for c in connections))
+                    fail_backup=True
+                    with self.assertRaisesRegex(RuntimeError,'Authored backup'):import_inputs(database,batch)
+                    self.assertTrue(all(c.closed for c in connections))
+            finally:
+                for connection in connections:connection.close()
 
     def test_zero_period_stays_unknown_instead_of_becoming_a_rookie_or_veteran(self):
         payload=bytearray(self.payload);struct.pack_into('<I',payload,PLAYER_START+PLAYER_STRIDE+0x24,0)
