@@ -94,12 +94,14 @@ Bahnschrift. A vertical section list, structured annual money table and dedicate
 scrollable dialogue/evidence panel replace the initial text-only prototype.
 The table is used only for supported previews with up to five annual rows;
 longer/rejected offers use the full scrollable view so terms/reasons remain
-accessible. Colors do not claim team branding without sourced palette metadata. LT/RT or left/right change sections; D-pad scrolls; B sends exactly
+accessible. Colors do not claim team branding without sourced palette metadata. Up/down on the D-pad or left stick selects vertical sections; LT/RT also change sections. The right stick scrolls content; B sends exactly
 one native Back packet and dismisses the view. Entry waits for held buttons to be
-released before navigation. Addon failure/invalidation quarantines held controls
+released before navigation. Sticks use a neutral dead zone and one action per deflection, with hysteresis to prevent drift repeats. Addon failure/invalidation quarantines held controls
 until neutral, preventing an old A/trigger press from reaching the native menu.
 The host copies no borrowed addon image pointers. Full opaque BGRA frames are
 cached; unchanged text does not redraw. Failed painting releases screen ownership.
+
+The preview publishes an empty-response loading snapshot as soon as the offer FSM opens, before the read-only handshake/context reply. It contains no player or financial claims. Failed/closed source state still clears the owned view. Context round-trip, largest owner polling gap and initial paint timing are logged separately from financial evidence.
 
 Terms, exact cap amounts and full player responses/counters/proposed promises
 come from the matching snapshot. Historical records remain separate, explicitly marked as having unverified

@@ -4,6 +4,7 @@
 #include "../../src/nfl2k5_franchise_host.h"
 #include <windows.h>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <mutex>
@@ -17,6 +18,7 @@ nlohmann::json screen_reply;
 std::vector<unsigned char> pixels;
 int width,height;
 bool paint_failed=false;
+ULONGLONG opened_tick;
 bool enabled(int& port) {
     const char *mode=std::getenv("NFL2K5_FRANCHISE_SCREEN_PREVIEW");
     const char *configured=std::getenv("NFL2K5_FRANCHISE_SCREEN_PORT");
@@ -30,15 +32,21 @@ bool enabled(int& port) {
 bool refresh() {
     static thread_local FranchiseNegotiationView view;
     if(!nfl2k5_franchise_negotiation_view(&view)) {
-        body.clear();closed_body.clear();presented_body.clear();navigation.reset();return false;
+        body.clear();closed_body.clear();presented_body.clear();opened_tick=0;navigation.reset();return false;
     }
     if(!std::memchr(view.response,0,sizeof(view.response)) || !std::memchr(view.summary.title,0,sizeof(view.summary.title)) ||
        !std::memchr(view.summary.offer,0,sizeof(view.summary.offer))) return false;
-    const std::string next=view.response;
+    const std::string next=view.response[0]?view.response:"loading";
     if(next==closed_body) return false;
     if(next!=body || title!=view.summary.title) {
-        auto parsed=franchise::parse_frame(next);
-        pages=franchise::negotiation_pages(parsed);screen_reply=std::move(parsed);
+        if(!opened_tick) opened_tick=GetTickCount64();
+        if(!view.response[0]) {
+            pages.fill("Loading verified franchise context...\n\nContract terms and performance will appear when the saved context is ready.");
+            screen_reply={{"result",nlohmann::json::object()}};
+        } else {
+            auto parsed=franchise::parse_frame(next);
+            pages=franchise::negotiation_pages(parsed);screen_reply=std::move(parsed);
+        }
         body=next;title=view.summary.title;navigation.reset();presented_body.clear();paint_key.clear();paint_failed=false;
     }
     status=view.summary.offer;return true;
@@ -156,8 +164,8 @@ bool paint(NFL2K5AddonDraw& draw) {
         }
         fill(0,draw.height-px(53),draw.width,draw.height,RGB(15,27,43));
         fill(0,draw.height-px(54),draw.width,draw.height-px(53),RGB(42,61,84));
-        text("LT / RT  Change section",px(31),draw.height-px(34),px(302),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
-        text("D-pad  Scroll",px(323),draw.height-px(34),px(554),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
+        text("D-pad / LS  Section",px(31),draw.height-px(34),px(302),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
+        text("RS  Scroll    LT / RT  Section",px(323),draw.height-px(34),px(800),draw.height-px(9),18,FW_NORMAL,secondary,DT_SINGLELINE);
         text("B  Back",draw.width-px(138),draw.height-px(34),draw.width-px(31),draw.height-px(9),18,FW_BOLD,white,DT_SINGLELINE|DT_RIGHT);
         auto *bytes=static_cast<unsigned char*>(bits);
         // GDI text does not maintain alpha; this full-screen surface is opaque.
@@ -167,6 +175,8 @@ bool paint(NFL2K5AddonDraw& draw) {
         width=draw.width;height=draw.height;paint_key=key;draw.changed=1;
     }
     if(draw.changed || draw.redraw){std::memcpy(draw.pixels,pixels.data(),pixels.size());draw.changed=1;}
+    if(presented_body!=body) std::fprintf(stderr,"[FRANCHISE-UI] first_paint state=%s elapsed_ms=%llu\n",
+        body=="loading"?"loading":"context",static_cast<unsigned long long>(GetTickCount64()-opened_tick));
     presented_body=body;return true;
 }
 }

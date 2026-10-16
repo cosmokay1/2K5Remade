@@ -11,9 +11,10 @@ extern "C" int nfl2k5_addon_event(const char *name,const void *data,size_t size)
     return franchise_negotiation_screen_event(name,data,size);
 }
 static nlohmann::json fixture;
-static bool available=true;
+static bool available=true,loading=false;
 extern "C" int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out) {
     *out={};if(!available) return 0;
+    if(loading) {std::strcpy(out->summary.title,"Contract negotiation");return 1;}
     const auto response=fixture.dump();if(response.size()>=sizeof(out->response)) return 0;
     std::memcpy(out->response,response.c_str(),response.size()+1);
     std::strcpy(out->summary.title,"Authored Player");
@@ -36,7 +37,8 @@ static void png(const std::filesystem::path& path,int width,int height,const voi
 static void press(int analog,int button=0) {
     NFL2K5AddonInput input{};nfl2k5_addon_ui_input(&input);
     if(analog>=0) input.analog[analog]=255;
-    input.buttons=button;nfl2k5_addon_ui_input(&input);
+    input.buttons=0;if(button==2) input.axes[3]=-24000;else if(button==1) input.axes[3]=24000;else input.buttons=button;
+    nfl2k5_addon_ui_input(&input);
 }
 int main(int argc,char** argv) {
     if(argc!=2) return 1;
@@ -64,7 +66,8 @@ int main(int argc,char** argv) {
                 require(light>2000,"Text was not rendered");
                 png(output/(std::to_string(height)+"-"+name+".png"),1280,height,pixels);
             };
-            capture("contract");require(changed,"First frame needs pixels");
+            loading=true;capture("loading");require(changed,"Loading view must render before any reply");
+            loading=false;capture("contract");require(changed,"First context needs pixels");
             require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed) && !changed,"Unchanged screen redrew");
             NFL2K5AddonInput other{};other.port=1;other.analog[7]=255;nfl2k5_addon_ui_input(&other);
             require(!other.analog[7],"Other port reached the native menu");

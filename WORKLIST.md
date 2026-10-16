@@ -866,8 +866,13 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
       actual paired game addon DLL. A hash-pinned preview-only package and
       backup/rollback installer are ready. After the user's normal exit, the
       matching game/DLL/preview wrapper were installed with backups and all205
-      saves verified unchanged. Actual live offer-screen/controller takeover
-      remains unverified; offer editing/submission and AI remain disabled.
+      saves verified unchanged. The user confirms the live screen appears, but reports delayed opening,
+      horizontal controls driving vertical sections and no stick navigation.
+      A combined fix adds pre-reply loading, vertical D-pad/left-stick selection,
+      right-stick scrolling and timing logs. Eleven portable checks and four
+      targeted Windows/Proton fixtures pass; the rebuilt game validates. Live
+      verification of this correction is pending. Editing/submission and AI
+      remain disabled.
 - [ ] Integrate persistent stories/relationships into the actual franchise experience.
 - [ ] Add opt-in configuration, backups, recovery and explicit migration handling.
 

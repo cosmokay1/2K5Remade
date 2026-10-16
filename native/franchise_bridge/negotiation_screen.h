@@ -126,18 +126,28 @@ struct NegotiationNavigation {
     bool armed=false;
     uint16_t previous_buttons=0;
     std::array<uint8_t,8> previous_analog{};
+    std::array<int,2> vertical{};
     void reset(){*this={};}
     int input(const NFL2K5AddonInput& input) {
         bool neutral=!input.buttons;
         for(auto value:input.analog) if(value>30) neutral=false;
+        for(auto value:input.axes) if(value>8000 || value<-8000) neutral=false;
         if(!armed) {armed=neutral;return NFL2K5_ADDON_UI_CONSUMED;}
         const auto pressed=input.buttons&~previous_buttons;
         auto down=[&](size_t i){return input.analog[i]>30 && previous_analog[i]<=30;};
         const bool back=down(1);
-        if((pressed&8) || down(7)) page=(page+1)%3;
-        if((pressed&4) || down(6)) page=(page+2)%3;
-        if(pressed&1) scroll[page]=std::max(0,scroll[page]-90);
-        if(pressed&2) scroll[page]=std::min(100000,scroll[page]+90);
+        auto stick=[&](size_t index,int16_t value) {
+            const int before=vertical[index];
+            if(value>16000) vertical[index]=1;
+            else if(value<-16000) vertical[index]=-1;
+            else if(value>=-8000 && value<=8000) vertical[index]=0;
+            return vertical[index]!=before ? vertical[index] : 0;
+        };
+        const int section=stick(0,input.axes[1]),scrolling=stick(1,input.axes[3]);
+        if((pressed&2) || section<0 || down(7)) page=(page+1)%3;
+        if((pressed&1) || section>0 || down(6)) page=(page+2)%3;
+        if(scrolling>0) scroll[page]=std::max(0,scroll[page]-90);
+        if(scrolling<0) scroll[page]=std::min(100000,scroll[page]+90);
         previous_buttons=input.buttons;
         std::copy(std::begin(input.analog),std::end(input.analog),previous_analog.begin());
         return back?NFL2K5_ADDON_UI_BACK:NFL2K5_ADDON_UI_CONSUMED;

@@ -35,6 +35,7 @@ static void submission_screen(int active) {
 }
 static unsigned long long context_revision;
 static unsigned context_sequence, context_logged;
+static ULONGLONG context_queued_tick,last_poll_tick,max_context_poll_gap;
 static unsigned long long request_session;
 static uint64_t requested_source_epoch;
 static int loaded_source_current(uint64_t *epoch) {
@@ -52,12 +53,13 @@ static unsigned long long changed_tick, screen_epoch, requested_epoch;
 static SRWLOCK display_lock=SRWLOCK_INIT;
 static FranchiseSigningDisplay display;
 static char display_response[65536];
+static int display_loading;
 static int display_valid;
 static void clear_display(void) {
     AcquireSRWLockExclusive(&display_lock);
     memset(&display,0,sizeof(display));
     memset(display_response,0,sizeof(display_response));
-    display_valid=0;
+    display_valid=0;display_loading=0;
     ReleaseSRWLockExclusive(&display_lock);
 }
 int nfl2k5_franchise_display(FranchiseSigningDisplay *out) {
@@ -73,10 +75,15 @@ int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out) {
     if(!out) return 0;
     memset(out,0,sizeof(*out));
     AcquireSRWLockShared(&display_lock);
-    available=display_valid && display.title[0] && display_response[0];
+    available=(display_valid && display.title[0] && display_response[0]) || display_loading;
     if(available) {
-        memcpy((char*)out+offsetof(FranchiseNegotiationView,summary),&display,sizeof(display));
-        memcpy((char*)out+offsetof(FranchiseNegotiationView,response),display_response,sizeof(display_response));
+        if(display_valid && display.title[0] && display_response[0]) {
+            memcpy((char*)out+offsetof(FranchiseNegotiationView,summary),&display,sizeof(display));
+            memcpy((char*)out+offsetof(FranchiseNegotiationView,response),display_response,sizeof(display_response));
+        } else {
+            snprintf(out->summary.title,sizeof(out->summary.title),"Contract negotiation");
+            snprintf(out->summary.offer,sizeof(out->summary.offer),"Loading verified franchise context...");
+        }
     }
     ReleaseSRWLockShared(&display_lock);
     return available;
@@ -154,6 +161,12 @@ void nfl2k5_franchise_on_fsm(uint32_t descriptor, int push)
         proposal_requested=proposal_sent=0;
     }
     signing_active=active;
+    if(active) {
+        const wchar_t *preview=_wgetenv(L"NFL2K5_FRANCHISE_SCREEN_PREVIEW");
+        AcquireSRWLockExclusive(&display_lock);
+        display_loading=preview && !wcscmp(preview,L"1");
+        ReleaseSRWLockExclusive(&display_lock);
+    }
     nfl2k5_franchise_poll();
     if (hello_failed || hello_pending || context_pending || journal_locked) return;
     if (push && descriptor == 0x00557B2Cu && (!context_enabled || !hello_consumed)) {
@@ -183,6 +196,10 @@ void nfl2k5_franchise_poll(void)
 {
     if ((DWORD)InterlockedCompareExchange(&franchise_owner_thread,0,0) != GetCurrentThreadId() ||
         !franchise_client || hello_failed) return;
+    const ULONGLONG poll_tick=GetTickCount64();
+    if(context_pending && last_poll_tick && poll_tick-last_poll_tick>max_context_poll_gap)
+        max_context_poll_gap=poll_tick-last_poll_tick;
+    last_poll_tick=poll_tick;
     if(InterlockedCompareExchange(&completion_failed,0,0)) goto failed;
     if (hello_pending || context_pending || journal_pending) {
         int ready = 0;
@@ -213,6 +230,8 @@ void nfl2k5_franchise_poll(void)
                 AcquireSRWLockExclusive(&display_lock);display=next;display_valid=1;ReleaseSRWLockExclusive(&display_lock);
             }
         } else if (context_pending) {
+            fprintf(stderr,"[FRANCHISE] context_roundtrip_ms=%llu largest_poll_gap_ms=%llu (transport plus service plus collection)\n",
+                (unsigned long long)(GetTickCount64()-context_queued_tick),(unsigned long long)max_context_poll_gap);
             context_pending = 0;
             const int was_proposal=proposal_pending;proposal_pending=0;
             int current=signing_active && observation_valid && observation_fresh && requested_source_current() &&
@@ -360,6 +379,10 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
     if (!observation_valid || !same_observation(&observed,o)) {
         clear_display();
         observed=*o; observation_valid=1; changed_tick=GetTickCount64();
+        const wchar_t *preview=_wgetenv(L"NFL2K5_FRANCHISE_SCREEN_PREVIEW");
+        AcquireSRWLockExclusive(&display_lock);
+        display_loading=preview && !wcscmp(preview,L"1");
+        ReleaseSRWLockExclusive(&display_lock);
         proposal_requested=proposal_sent=0;
     }
     observation_fresh=1;
@@ -402,6 +425,7 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
         return;
     }
     context_pending = 1;
+    context_queued_tick=last_poll_tick=GetTickCount64();max_context_poll_gap=0;
     proposal_pending=proposing;
     if(proposing) {proposal_requested=0;proposal_sent=1;}
     context_sent = 1;

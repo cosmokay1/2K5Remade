@@ -32,9 +32,20 @@ int main() {
         input={};nav.input(input);input.analog[7]=255;nav.input(input);require(nav.page==1);
         nav.input(input);require(nav.page==1); // held trigger is not repeated
         input={};nav.input(input);input.analog[7]=255;nav.input(input);require(nav.page==2);
-        input={};nav.input(input);input.buttons=2;nav.input(input);require(nav.scroll[2]==90);
+        input={};nav.input(input);input.buttons=2;nav.input(input);require(nav.page==0); // down selects next vertical section
+        nav.input(input);require(nav.page==0);
+        input={};nav.input(input);input.buttons=1;nav.input(input);require(nav.page==2);
+        input={};nav.input(input);input.buttons=4;nav.input(input);require(nav.page==2); // horizontal d-pad is not vertical navigation
+        input={};nav.input(input);input.buttons=8;nav.input(input);require(nav.page==2);
+        input={};nav.input(input);input.axes[1]=-20000;nav.input(input);require(nav.page==0);
+        nav.input(input);require(nav.page==0);input.axes[1]=-12000;nav.input(input);require(nav.page==0);
+        input.axes[1]=0;nav.input(input);input.axes[1]=20000;nav.input(input);require(nav.page==2);
+        input={};nav.input(input);input.axes[3]=-20000;nav.input(input);require(nav.scroll[2]==90);
         nav.input(input);require(nav.scroll[2]==90);
-        input={};nav.input(input);input.buttons=1;nav.input(input);require(nav.scroll[2]==0);
+        input={};nav.input(input);input.axes[3]=20000;nav.input(input);require(nav.scroll[2]==0);
+        nav.reset();input={};input.axes[1]=-20000;nav.input(input);require(!nav.armed && nav.page==0);
+        input.axes[1]=-9000;nav.input(input);require(!nav.armed);
+        input={};nav.input(input);require(nav.armed);
         input={};nav.input(input);input.analog[1]=255;require(nav.input(input)==2);
         nav.reset();require(!nav.armed && !nav.page && !nav.scroll[2]);
         std::puts("Exact terms, separate saved records, full responses/counters/promises and navigation passed");return 0;

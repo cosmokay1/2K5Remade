@@ -245,6 +245,12 @@ int main(void)
     assert(!nfl2k5_franchise_start()); // Read-only screen cannot submit AI proposals.
     _wputenv_s(L"NFL2K5_FRANCHISE_NEGOTIATION",L"0");
     assert(nfl2k5_franchise_start());
+    image_digest[0]='a';
+    nfl2k5_franchise_on_fsm(0x557B2C,1);
+    assert(nfl2k5_franchise_negotiation_view(&full_view));
+    assert(!strcmp(full_view.summary.title,"Contract negotiation") && !full_view.response[0]);
+    nfl2k5_franchise_on_fsm(0,0);
+    assert(!nfl2k5_franchise_negotiation_view(&full_view));
     assert(!nfl2k5_franchise_submit_held(&observation,nfl2k5_franchise_submission_epoch()));
     nfl2k5_franchise_stop();
     _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_PREVIEW",L"bad");assert(!nfl2k5_franchise_start());

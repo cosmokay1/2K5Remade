@@ -9046,3 +9046,37 @@ Private screen-package-e45a634/installation-receipt.json records the hashes and
 unchanged saves; installed-before-preview retains the original three files.
 Actual live franchise screen takeover/controller behavior is still to verify.
 No control renewal, inference request or financial write was made.
+
+
+## Live preview feedback — loading and navigation correction
+
+The installed e45a634 game/service started successfully after protected installation.
+The user confirms the addon screen works in MyNFL1, but appears after a long wait
+and maps horizontal input to the vertical section list while ignoring sticks.
+Current logs confirm the pinned MyNFL1 payload and Hernandez context were consumed;
+this is actual read-only integration evidence, not signing/AI/save-reload proof.
+
+The correction now publishes a claim-free loading snapshot on offer FSM entry,
+before the runtime binding/context response. The renderer retains the approved
+layout and fills financial/player data only from the complete verified reply.
+Invalid display data cannot leak into a loading snapshot; close/failure clears it.
+Up/down on D-pad or left stick selects the vertical sections, LT/RT still select
+sections, right-stick up/down scrolls, and horizontal D-pad no longer changes the
+vertical list. Entry waits for neutral sticks;16000/8000 hysteresis prevents drift
+and repeated held actions. The footer reflects these controls.
+
+All11 portable native checks pass. Actual Windows navigation, loading-render,
+host-handshake and held-signing fixture children pass under Deck Proton. The
+loading snapshot is tested before any reply and after close; the real renderer
+produces loading/context captures at both Deck sizes. Isolated game --validate
+passes with a fresh child marker. EXE4d30c13c1b48a52ca9e9ed56962b88dfe9ea53d8d633a096fb1ad6e36d353c38;
+DLL1f9fa29e08b63fd6ec2c739a95198bf3fa7eae8dbcac886f7dd43b40f415750d.
+The private screen-controls-batch records source hashes/backups and child logs.
+
+The cause of the complete live delay is not yet measured. Existing isolated
+service execution was approximately4s; the native path also binds the runtime
+before requesting context and collects replies in owner-thread input polling.
+New context-roundtrip/largest-poll-gap and loading/context-first-paint diagnostics
+will help distinguish collection gaps from request work; they do not claim to
+measure pure service time. No AI, signing authority or control renewal was added.
+Installation and live verification of this correction remain pending.
