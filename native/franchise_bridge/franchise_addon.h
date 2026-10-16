@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include "host_client.h"
 #include "load_read.h"
+/* Raw payroll query at the existing native recomputation/store. Zero means no
+ * active cap binding; positive encodes payroll+1; negative holds cap room. */
+#define FRANCHISE_CAP_PAYROLL_EVENT "franchise.cap-payroll.v1"
+typedef struct FranchiseCapPayrollEvent { uint32_t team,computed; } FranchiseCapPayrollEvent;
 #define FRANCHISE_FSM_EVENT "franchise.fsm.v1"
 #define FRANCHISE_SIGN_SUBMIT_EVENT "franchise.sign-submit.v1"
 #define FRANCHISE_SIGN_GATE_EVENT "franchise.sign-gate.v2"

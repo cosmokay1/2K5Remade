@@ -8,7 +8,7 @@
 #include <string.h>
 extern void nfl2k5_franchise_stop(void);
 uint64_t xbox_ggl_current_serial(void){return 0;}
-static int gate_reply,legacy_reply,view_reply;
+static int gate_reply,legacy_reply,view_reply,cap_reply;
 static FranchiseNegotiationView authored_view;
 static unsigned gates,legacy;
 static uint32_t last_stage,last_context;
@@ -27,6 +27,7 @@ int nfl2k5_addon_snapshot(const char* name,void* out,size_t capacity){
     memcpy(out,&authored_view,sizeof(authored_view));return view_reply;
 }
 int nfl2k5_addon_event(const char* name,const void* data,size_t size){
+    if(!strcmp(name,FRANCHISE_CAP_PAYROLL_EVENT) && size==sizeof(FranchiseCapPayrollEvent)) return cap_reply;
     if(!strcmp(name,FRANCHISE_SIGN_GATE_EVENT) && size==sizeof(FranchiseSignGateEvent)){
         FranchiseSignGateEvent event;memcpy(&event,data,sizeof(event));++gates;
         last_stage=event.stage;last_context=event.context;return gate_reply;
@@ -107,5 +108,8 @@ int main(void){
     gate_reply=legacy_reply=0;
     if(!nfl2k5_franchise_hold_signing_at(1,0x1234) || !nfl2k5_franchise_hold_signing_at(2,0x1234) ||
        nfl2k5_franchise_judge_signing(0x1234)!=1) return 21;
+    cap_reply=0;if(nfl2k5_franchise_cap_payroll(7,2000)!=2000)return 22;
+    cap_reply=3659;if(nfl2k5_franchise_cap_payroll(7,2000)!=3658)return 23;
+    cap_reply=-1;if(nfl2k5_franchise_cap_payroll(7,2000)!=INT32_MAX)return 24;
     puts("Stage-aware signing shim, legacy hold fallback and no-write behavior passed");return 0;
 }

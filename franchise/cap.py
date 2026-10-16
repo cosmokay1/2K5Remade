@@ -1364,7 +1364,7 @@ class Ledger:
                     "rookie_year_one_after": json_amount(self._rookie_year_one - scale.pool_charges(offer)[0]) if scale else None,
                     "rookie_total_after": self._rookie_total - int(sum(scale.pool_charges(offer))) if scale else None}
 
-    def preview_legacy_amendment(self, offer: Offer, expected_revision: int) -> dict:
+    def preview_legacy_amendment(self, offer: Offer, expected_revision: int, *, scope=None) -> dict:
         """Full-year simulation comparison, conditional on player agreement.
 
         Preserve imported bonus charges on their original schedule; replace only
@@ -1391,7 +1391,11 @@ class Ledger:
             previous=self._legacy_amendments.get(offer.player_id)
             if previous is not None:
                 old,carried=previous.charges(),previous.bonus_charges()
-            proposed = offer.charges(self.max_bonus_years)
+            from franchise.legacy_amendments import amendment_earned_base,InSeasonAmendmentScope
+            earned=amendment_earned_base(scope,remaining[0]['salary_dollars'] * original.game_dollar_scale,previous)
+            proposed = list(offer.charges(self.max_bonus_years))
+            if isinstance(scope,InSeasonAmendmentScope):
+                proposed[0]+=earned+scope.remaining_base(offer.salaries[0])-offer.salaries[0]
             horizon = max(len(old), len(proposed))
             after = tuple((proposed[i] if i < len(proposed) else 0) +
                           (carried[i] if i < len(carried) else 0) for i in range(horizon))
@@ -1400,7 +1404,7 @@ class Ledger:
                             (after[i] if i < len(after) else 0)
                             for i in range(max(horizon, len(self._charges))))
             room = self.cap - updated[0] - self.roster_reserve - self._draft_reserved()[0]
-            return {'revision': self.revision, 'rule': 'legacy_bonus_carry_v1',
+            result={'revision': self.revision, 'rule': 'legacy_bonus_carry_v1',
                     'original_contract': original.to_dict(),
                     'cap': self.cap, 'reserved_cap': json_amount(self.roster_reserve + self._draft_reserved()[0]),
                     'annual_team_charges_before': [json_amount(v) for v in self._charges],
@@ -1411,6 +1415,10 @@ class Ledger:
                     'room_before': json_amount(self.room), 'room_after': json_amount(room),
                     'within_modeled_cap': room >= 0,
                     'requires_player_agreement': True, 'settlement_authorized': False}
+            if isinstance(scope,InSeasonAmendmentScope):
+                result['earned_pay']={'scope':scope.to_dict(),'earned_base_obligation':json_amount(earned),
+                    'remaining_base_commitment':json_amount(scope.remaining_base(offer.salaries[0]))}
+            return result
 
     def apply_legacy_amendment(self,request_id,offer,expected_revision,*,proposal_request_id,source,scope):
         """Engine-only full-year agreement; the Store must verify saved consent.
@@ -1431,11 +1439,12 @@ class Ledger:
                 return prior
             if request_id in self._requests:
                 raise Rejected('Request already used for another financial operation')
-            preview=self.preview_legacy_amendment(offer,expected_revision)
+            preview=self.preview_legacy_amendment(offer,expected_revision,scope=scope)
             if not preview['within_modeled_cap']:
                 raise Rejected('Amendment exceeds available cap room')
             agreement=LegacyAmendment(request_id,proposal_request_id,offer,
-                tuple(parse_amount(v) for v in preview['carried_bonus_charges']),source,scope,self.max_bonus_years)
+                tuple(parse_amount(v) for v in preview['carried_bonus_charges']),source,scope,self.max_bonus_years,
+                parse_amount(preview['earned_pay']['earned_base_obligation']) if 'earned_pay' in preview else 0)
             self._charges=tuple(parse_amount(v) for v in preview['annual_team_charges_after'])
             self._legacy_amendments[offer.player_id]=agreement
             self._legacy_amendment_requests[request_id]=agreement

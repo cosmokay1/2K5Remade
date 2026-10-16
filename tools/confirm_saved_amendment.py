@@ -31,7 +31,11 @@ def confirm_saved_amendment(bindings,before,after,*,expected_before_sha256,offer
             or comparison.get('settlement_authorized') is not False
             or comparison.get('within_modeled_cap') is not True):
         raise ValueError('Noncommitting affordable amendment comparison required')
-    expected=expected_amended_state(bindings,before,offer=offer,guest_offer=guest_offer,team_id=team_id)
+    old_cap=inspect_cap(before);new_cap=inspect_cap(after)
+    old_team=old_cap['teams'][team_id];new_team=new_cap['teams'][team_id]
+    accelerated=new_team['original_first_year_accumulator_dollars']!=old_team['original_first_year_accumulator_dollars']
+    expected=expected_amended_state(bindings,before,offer=offer,guest_offer=guest_offer,team_id=team_id,
+        native_bonus_accelerated=accelerated)
     original_state=(saved_finance_state(before),saved_identity_state(before))
     if expected==original_state:
         raise ValueError('Unchanged native terms cannot prove a new amendment')
@@ -64,8 +68,23 @@ def confirm_saved_amendment(bindings,before,after,*,expected_before_sha256,offer
         required.append(extra+(rows[i]['allocated_bonus_dollars']*old.game_dollar_scale if i<len(rows) else 0))
     if carried!=tuple(required):
         raise ValueError('Amendment removed or rescheduled retained bonus debt')
-    horizon=max(len(required),len(native_new))
-    combined=tuple((required[i] if i<len(required) else 0)+(native_new[i] if i<len(native_new) else 0) for i in range(horizon))
+    added=list(native_new)
+    if 'earned_pay' in comparison:
+        from franchise.legacy_amendments import InSeasonAmendmentScope,amendment_scope_from_dict
+        earned=comparison['earned_pay']
+        scope=amendment_scope_from_dict(earned['scope'])
+        if not isinstance(scope,InSeasonAmendmentScope) or current!=native_old:
+            raise ValueError('First in-season amendment requires an independently matched prior salary schedule')
+        earned_base=Fraction((native_old[0]-rows[0]['allocated_bonus_dollars']*old.game_dollar_scale)*scope.elapsed_periods,scope.total_periods)
+        remaining=scope.remaining_base(offer.salaries[0])
+        if (parse_amount(earned['earned_base_obligation'])!=earned_base or
+                parse_amount(earned['remaining_base_commitment'])!=remaining):
+            raise ValueError('Saved amendment changed its earned salary obligation')
+        added[0]+=earned_base+remaining-offer.salaries[0]
+    if amounts('new_contract_charges')!=tuple(added):
+        raise ValueError('Amendment changed new salary or bonus charges')
+    horizon=max(len(required),len(added))
+    combined=tuple((required[i] if i<len(required) else 0)+(added[i] if i<len(added) else 0) for i in range(horizon))
     if amounts('combined_player_charges')!=combined:
         raise ValueError('Combined amended charges disagree with retained debt')
     before_team=amounts('annual_team_charges_before')
@@ -82,9 +101,17 @@ def confirm_saved_amendment(bindings,before,after,*,expected_before_sha256,offer
                       for i in range(max(map(lambda c:len(c.charges()),native_records),default=1)))
     debt=tuple((after_team[i] if i<len(after_team) else 0)-(native_team[i] if i<len(native_team) else 0)
                for i in range(max(len(after_team),len(native_team))))
-    if any(v<0 for v in debt):
+    if 'earned_pay' not in comparison and any(v<0 for v in debt):
         raise ValueError('Supplemental cap debt cannot erase native charges')
-    return dict(format='saved-amendment-effects-v1',franchise_id=bindings['franchise_id'],player_id=offer.player_id,
+    from franchise.native_cap import amendment_payroll_projection
+    projection=amendment_payroll_projection(comparison,
+        native_payroll_before_raw=old_team['roster_payroll_dollars']//1000,
+        native_old_charge=native_old[0],native_new_charge=native_new[0],
+        native_old_unamortized_bonus=sum(row['allocated_bonus_dollars'] for row in rows)*scale,
+        native_accumulator_before_raw=old_team['original_first_year_accumulator_dollars']//1000,
+        native_accumulator_after_raw=new_team['original_first_year_accumulator_dollars']//1000,
+        team_adjustment_applies=bool(new_team['original_team_flag_raw']),game_dollar_scale=scale)
+    return dict(cap_projection=projection,format='saved-amendment-effects-v1',franchise_id=bindings['franchise_id'],player_id=offer.player_id,
         source_slot=slot,team_id=team_id,before_payload_sha256=expected_before_sha256,
         after_payload_sha256=hashlib.sha256(after).hexdigest(),offer=offer.to_dict(),
         native_annual_team_charges_after=list(native_team),

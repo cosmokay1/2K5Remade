@@ -11,6 +11,7 @@
 #include "game_addon.h"
 #include "franchise_addon.h"
 #include "finance_state.h"
+#include "cap_enforcement.h"
 #include "identity_state.h"
 #include "pending_signing.h"
 #include "nfl2k5_sidecar_adapter.h"
@@ -24,6 +25,7 @@ static int reported_image;
 #ifdef _WIN32
 #include "source_binding_win.h"
 static SRWLOCK save_read_lock=SRWLOCK_INIT;
+static void cap_reset(void);
 static FranchiseSaveRead save_read;
 static FranchiseLoadRead load_read;
 static void save_read_reset(void) {
@@ -31,6 +33,7 @@ static void save_read_reset(void) {
     memset(&save_read,0,sizeof(save_read));memset(&load_read,0,sizeof(load_read));
     reported_save_read=reported_load_epoch=0;reported_load_phase=0;reported_image=0;
     ReleaseSRWLockExclusive(&save_read_lock);
+    cap_reset();
 }
 static int save_read_copy(FranchiseSaveRead *out) {
     AcquireSRWLockShared(&save_read_lock);*out=save_read;ReleaseSRWLockShared(&save_read_lock);
@@ -52,6 +55,17 @@ int nfl2k5_franchise_read_image(char out[65])
 }
 #endif
 static NFL2K5AddonHost adapter_host;
+#ifdef _WIN32
+static SRWLOCK cap_lock=SRWLOCK_INIT;
+static FranchiseCapEnforcement cap_plans[32];
+static uint32_t cap_armed;
+static void cap_reset(void) {
+    AcquireSRWLockExclusive(&cap_lock);
+    cap_armed=0;memset(cap_plans,0,sizeof(cap_plans));
+    ReleaseSRWLockExclusive(&cap_lock);
+}
+#endif
+
 static int capture_attempted;
 static bool signing_screen_range(uint32_t address,uint64_t size)
 {
@@ -474,6 +488,47 @@ int nfl2k5_franchise_source_path_matches(uint64_t epoch) {
 #ifdef NFL2K5_ADDON_SCREEN
 extern int franchise_negotiation_screen_event(const char *name,const void *data,size_t size);
 #endif
+/* Only the application coordinator may publish accepted cap evidence. This
+ * function never issues a signing grant or changes guest memory. No production
+ * issuer calls it yet; preview/proposal replies cannot arm it. */
+int nfl2k5_franchise_publish_cap(const FranchiseCapEnforcement *plan) {
+#ifdef _WIN32
+    char digest[65];uint64_t epoch=0;
+    if(!plan || !nfl2k5_franchise_read_loaded_source(digest,&epoch) || !plan->source_epoch || epoch!=plan->source_epoch ||
+       plan->team_index>=32 || plan->enforced_payroll>INT32_MAX-1u ||
+       !franchise_cap_state_matches(&plan->expected,&plan->expected)) return 0;
+    AcquireSRWLockExclusive(&cap_lock);
+    cap_plans[plan->team_index]=*plan;cap_armed|=1u<<plan->team_index;
+    ReleaseSRWLockExclusive(&cap_lock);return 1;
+#else
+    (void)plan;return 0;
+#endif
+}
+static int cap_payroll_reply(const FranchiseCapPayrollEvent *event) {
+#ifdef _WIN32
+    unsigned char teams[128];char digest[65];uint64_t epoch=0;uint32_t result=INT32_MAX;
+    AcquireSRWLockShared(&cap_lock);
+    if(!cap_armed) {ReleaseSRWLockShared(&cap_lock);return 0;}
+    if(!finance_read(&adapter_host,0xE5786Cu,teams,sizeof(teams))) {
+        ReleaseSRWLockShared(&cap_lock);return -1;
+    }
+    for(unsigned i=0;i<32;++i) if(finance_get32(teams+4*i)==event->team) {
+        if(!(cap_armed&(1u<<i))) {ReleaseSRWLockShared(&cap_lock);return 0;}
+        FranchiseFinanceSnapshot live;
+        /* No path/hash, process or transport work under guest ownership. The
+         * issuer verifies namespace/control before publishing; this callback
+         * only checks the cached loaded epoch and the guarded live state. */
+        if(nfl2k5_franchise_read_loaded_source(digest,&epoch) && franchise_finance_capture(&adapter_host,&live))
+            result=franchise_cap_enforced_payroll(&cap_plans[i],&live,epoch,i,event->computed);
+        ReleaseSRWLockShared(&cap_lock);
+        return result>=INT32_MAX ? -1 : (int)(result+1u);
+    }
+    ReleaseSRWLockShared(&cap_lock);
+#else
+    (void)event;
+#endif
+    return 0;
+}
 static int addon_event(const char *name,const void *data,size_t size) {
 #ifdef NFL2K5_ADDON_SCREEN
     const int ui=franchise_negotiation_screen_event(name,data,size);
@@ -486,6 +541,10 @@ static int addon_event(const char *name,const void *data,size_t size) {
         loaded_image=next;return 1;
     }
     if(!name || !data) return 0;
+    if(!strcmp(name,FRANCHISE_CAP_PAYROLL_EVENT) && size==sizeof(FranchiseCapPayrollEvent)) {
+        FranchiseCapPayrollEvent event;memcpy(&event,data,sizeof(event));
+        return cap_payroll_reply(&event);
+    }
 #ifdef _WIN32
     if(!strcmp(name,NFL2K5_ADDON_FILE_READ_V2) && size==sizeof(NFL2K5AddonFileReadV2)) {
         const NFL2K5AddonFileReadV2 *located=data;FranchiseSaveRead candidate;

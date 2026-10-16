@@ -1,6 +1,7 @@
 """Independent authored save changes expose native cap debt, never grant writes."""
 import copy
 import hashlib
+from fractions import Fraction
 import struct
 import unittest
 
@@ -78,3 +79,41 @@ class SavedAmendmentConfirmationTests(unittest.TestCase):
             if field=='room_after':comparison[field]+=1
             else:comparison[field][0]+=1
             with self.subTest(field=field),self.assertRaises(ValueError):self.confirm(comparison=comparison)
+
+    def test_native_bonus_acceleration_is_matched_then_offset_once(self):
+        before=bytearray(self.before)
+        struct.pack_into('<I',before,0x91320+0xAC,1)
+        struct.pack_into('<H',before,0x44A8+0x19C,500)
+        self.before=bytes(before)
+        self.bindings['baseline_payload_sha256']=hashlib.sha256(self.before).hexdigest()
+        after=bytearray(self.after)
+        struct.pack_into('<I',after,0x91320+0xAC,1)
+        # Old remaining bonus: $1.658M for each of two years; prior $0.5M
+        # adjustment remains withheld. Native packs these as thousands.
+        struct.pack_into('<H',after,0x44A8+0x19C,3816)
+        report=self.confirm(bytes(after));plan=report['cap_projection']
+        self.assertEqual(plan['enforced_payroll_raw'],342)
+        self.assertEqual(plan['league_cap_raw'],80500)
+        self.assertEqual(plan['expected_accumulator_raw'],3816)
+        self.assertEqual(plan['native_room_after'],76342000)
+        self.assertFalse(report['cap_enforcement_verified'])
+        struct.pack_into('<H',after,0x44A8+0x19C,3817)
+        with self.assertRaises(ValueError):self.confirm(bytes(after))
+
+    def test_saved_inseason_raise_requires_a_negative_payroll_correction(self):
+        from franchise.legacy_amendments import InSeasonAmendmentScope
+        raw={**self.raw,'amount_word':3000}
+        offer=GuestContractTerms.from_context(**raw).to_offer(self.player)
+        ledger=Ledger.from_opening(OpeningBooks(legacy_contracts=legacy_contracts(self.bindings,self.before)['49ers']),
+            cap=80500000,roster_reserve=0,max_bonus_years=5,veteran_minimums={self.player:(1000000,)*7})
+        comparison=ledger.preview_legacy_amendment(offer,0,
+            scope=InSeasonAmendmentScope(2026,8,17,'authored calendar evidence'))
+        after=bytearray(self.after)
+        struct.pack_into('<H',after,PLAYER_START+10,3000)
+        struct.pack_into('<I',after,0x44A8+0x124,10000)
+        report=self.confirm(bytes(after),offer=offer,guest_offer=raw,comparison=comparison)
+        self.assertLess(report['cap_projection']['enforced_payroll_raw'],10000)
+        self.assertLess(Fraction(report['required_retained_team_charges'][0]),0)
+        self.assertFalse(report['cap_enforcement_verified'])
+        tampered=copy.deepcopy(comparison);tampered['earned_pay']['earned_base_obligation']=0
+        with self.assertRaises(ValueError):self.confirm(bytes(after),offer=offer,guest_offer=raw,comparison=tampered)

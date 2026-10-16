@@ -9965,3 +9965,57 @@ Deck is not resolving, and the old private compiler overlay is superseded.
 Next game gates remain supplemental native bonus-cap enforcement, sourced
 supported earned-pay timing and one combined apply/reconcile/save/reload run.
 Do not enable live signing or deploy the superseded partial compiler stage.
+
+## Batched earned-pay and native cap candidate —2026-10-16
+
+The scheduled automation remains PAUSED, verified directly before work. No AI
+control was enabled, refreshed or renewed. Deck SSH was restored; the installed
+preview, service, database and saves have not been replaced.
+
+Implemented typed in-season salary-period scopes, exact earned-old plus
+remaining-new base, cumulative prior-rate accrual across subsequent agreements,
+annual minimum validation, preserved original/new bonus layers and exact new cash
+commitment excluding already-earned obligations. Comparison/provider/consent,
+settlement retries, durable replay and replay tamper checks bind the same scope.
+The old zero-earned journal shape remains compatible. No historical payments are
+inferred, and no new in-season Bridge request bypasses trusted clock evidence.
+
+Added native payroll projection with unchanged league ceiling, original bonus
+accumulator deduplication, preservation of unrelated prior native debt, negative
+salary corrections for in-season raises and conservative whole-unit rounding.
+Saved-effects verification now recognizes the native bonus acceleration branch
+and checks first in-season earned charges independently before producing the
+non-authorizing projection.
+
+The cap query is wired into the original payroll assignment atC3F58 for both
+compiled and interpreter execution. A source-epoch/full-finance guard returns
+the corrected total without adding it again on recomputation; stale armed plans
+hold cap room. The application-only plan publication API grants no signing
+permission and has no production issuer yet. The callback reads memory only;
+namespace/control validation belongs before publication. Reset clears cached
+plans to prevent source-epoch reuse after addon restart. Generic addon ABI2,
+readonly host memory API and engine-sidecar transport are unchanged.
+
+Local validation:965 Python tests,12 portable native checks,42 actual offline
+Bridge/native amendment cases and the money audit's5,050 bonus-conservation cases
+pass. Tests include old-pay preservation, successive rate changes, unchanged
+clock retries, scope/revision/consent mismatch denial, a cap violation hidden by
+unearned salary replacement, native bonus acceleration, saved-effect tamper,
+negative payroll correction and both owned native/interpreter callback paths.
+These are fixtures, not actual in-game signing or save/reload proof.
+
+Private cap-earned-salary-v1 compiled and passed8 Windows component/addon/UI
+checks. Its first full Windows service run exceeded150 seconds; a verbose run
+finished964 tests in146 seconds with3 failures caused by missing public
+config/google.json in the test snapshot (provider factories were never reached).
+No real provider call occurred. The combined v2 inputs include that config,
+the final native callback and regression fixture, with a fresh pinned interpreter
+snapshot. Compilation and final Windows service/game validation are pending.
+v1 is superseded and must not be installed.
+
+Pinned private probe data additionally identifies phase7 as Preseason(4),
+phase8 as Season(18) and phase9 as Postseason(4), and confirms theC3F58 store
+bytes. Source evidence is retained locally, without publishing retail memory.
+Automatic live clock binding, accepted-plan issuance, post-apply reconciliation
+and real legal signing/save/reload remain delivery gates. Keep AI/signing held
+until those gates and fresh control authorization pass.

@@ -171,3 +171,17 @@ void nfl2k5_franchise_signing_completed(uint32_t context) {
     (void)context;(void)applying;
 #endif
 }
+
+/* Called immediately before the original payroll store. Older/missing addons
+ * preserve native behavior; controlled signing remains independently held. */
+uint32_t nfl2k5_franchise_cap_payroll(uint32_t team,uint32_t computed) {
+#ifdef NFL2K5_FRANCHISE_CLIENT
+    const FranchiseCapPayrollEvent event={team,computed};
+    const int reply=nfl2k5_addon_event(FRANCHISE_CAP_PAYROLL_EVENT,&event,sizeof(event));
+    if(reply<0) return INT32_MAX;
+    if(reply>0) return (uint32_t)reply-1u;
+#else
+    (void)team;
+#endif
+    return computed;
+}

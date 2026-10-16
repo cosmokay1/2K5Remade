@@ -695,7 +695,7 @@ class FranchiseStore:
             if kind != 'actor':
                 actor_posting=actor_registered=None
             if kind == 'legacy_amendment':
-                from franchise.legacy_amendments import FullYearAmendmentScope
+                from franchise.legacy_amendments import FullYearAmendmentScope,InSeasonAmendmentScope,amendment_scope_from_dict
                 fields={'request_id','proposal_request_id','expected_revision','source','proposal_sha256',
                         'before','comparison','agreement','posting','scope'}
                 if type(payload) is not dict or set(payload)!=fields:
@@ -706,13 +706,14 @@ class FranchiseStore:
                     self._checkpoint_hash(payload['before'])!=self._checkpoint_hash(ledger.financial_snapshot()) or
                     payload['expected_revision']!=proposal['evidence']['financial_revision']):
                     raise ValueError('Amendment settlement changed its accepted source')
-                comparison=ledger.preview_legacy_amendment(Offer.from_dict(proposal['offer']),payload['expected_revision'])
+                comparison=ledger.preview_legacy_amendment(Offer.from_dict(proposal['offer']),payload['expected_revision'],
+                    scope=amendment_scope_from_dict(payload['scope']))
                 if (self._checkpoint_hash(comparison)!=self._checkpoint_hash(payload['comparison']) or
                     self._checkpoint_hash(comparison)!=self._checkpoint_hash(proposal['proposal_preview'])):
                     raise ValueError('Amendment comparison changed before settlement')
                 agreement=ledger.apply_legacy_amendment(payload['request_id'],Offer.from_dict(proposal['offer']),
                     payload['expected_revision'],proposal_request_id=payload['proposal_request_id'],source=payload['source'],
-                    scope=FullYearAmendmentScope.from_dict(payload['scope']))
+                    scope=amendment_scope_from_dict(payload['scope']))
                 self._remember_amendment_promises(ledger,payload['request_id'],proposal)
                 if (self._checkpoint_hash(agreement.to_dict())!=self._checkpoint_hash(payload['agreement']) or
                     self._checkpoint_hash(ledger.financial_snapshot())!=self._checkpoint_hash(payload['posting'])):
@@ -927,7 +928,10 @@ class FranchiseStore:
                 self._validate_dialogue(payload["event"], efficiency_cache=efficiency_cache)
                 if payload['event'].get('amendment_rule') is not None:
                     event=payload['event']
-                    comparison=ledger.preview_legacy_amendment(Offer.from_dict(event['offer']),event['evidence']['financial_revision'])
+                    from franchise.legacy_amendments import amendment_scope_from_dict
+                    comparison=ledger.preview_legacy_amendment(Offer.from_dict(event['offer']),event['evidence']['financial_revision'],
+                        scope=amendment_scope_from_dict(event['amendment_basis']['earned_pay']['scope'])
+                        if 'earned_pay' in event['amendment_basis'] else None)
                     if self._checkpoint_hash(comparison)!=self._checkpoint_hash(event['amendment_basis']):
                         raise ValueError('Amendment opinion changed its observed basis')
                     if event['outcome']=='accepted_amendment_proposal' and not comparison['within_modeled_cap']:
@@ -1948,15 +1952,15 @@ class FranchiseStore:
         with self._connection() as db:
             return self._preview_offer(db,team_id,self._load(db,team_id),offer,expected_revision)
 
-    def _preview_legacy_amendment(self, db, team_id, ledger, offer, expected_revision):
+    def _preview_legacy_amendment(self, db, team_id, ledger, offer, expected_revision, *, scope=None):
         owner=db.execute('SELECT team_id FROM ownership WHERE player_id=?',(offer.player_id,)).fetchone()
         if owner is None or owner[0] != team_id:
             raise Rejected('Amendment requires the current owning team')
-        return ledger.preview_legacy_amendment(offer,expected_revision)
+        return ledger.preview_legacy_amendment(offer,expected_revision,scope=scope)
 
-    def preview_legacy_amendment(self,team_id,offer,expected_revision):
+    def preview_legacy_amendment(self,team_id,offer,expected_revision,*,scope=None):
         with self._connection() as db:
-            result=self._preview_legacy_amendment(db,team_id,self._load(db,team_id),offer,expected_revision)
+            result=self._preview_legacy_amendment(db,team_id,self._load(db,team_id),offer,expected_revision,scope=scope)
             if not result['within_modeled_cap']:
                 raise Rejected('Amendment exceeds available cap room')
             return result
@@ -1979,8 +1983,8 @@ class FranchiseStore:
 
     def commit_accepted_amendment(self,team_id,proposal_request_id,request_id,expected_revision,*,scope,access_check):
         """Engine-only consent/cap settlement; never authorizes guest/save writes."""
-        from franchise.legacy_amendments import FullYearAmendmentScope
-        if (not isinstance(scope,FullYearAmendmentScope) or any(type(v) is not str or not v.strip() for v in (proposal_request_id,request_id))
+        from franchise.legacy_amendments import FullYearAmendmentScope,InSeasonAmendmentScope,amendment_scope_from_dict
+        if (not isinstance(scope,(FullYearAmendmentScope,InSeasonAmendmentScope)) or any(type(v) is not str or not v.strip() for v in (proposal_request_id,request_id))
                 or proposal_request_id==request_id or not callable(access_check) or type(expected_revision) is not int):
             raise ValueError('Distinct amendment IDs, explicit revision and current access required')
         def check():
@@ -2001,7 +2005,7 @@ class FranchiseStore:
             if proposal['evidence']['financial_revision']!=expected_revision:
                 raise Rejected('Amendment settlement changed its accepted revision')
             offer=Offer.from_dict(proposal['offer'])
-            comparison=self._preview_legacy_amendment(db,team_id,ledger,offer,expected_revision)
+            comparison=self._preview_legacy_amendment(db,team_id,ledger,offer,expected_revision,scope=scope)
             if self._checkpoint_hash(comparison)!=self._checkpoint_hash(proposal['proposal_preview']):
                 raise Rejected('Accepted amendment no longer matches current finances')
             before=ledger.financial_snapshot();source='accepted-agent:'+proposal_request_id
@@ -2585,6 +2589,7 @@ class FranchiseStore:
             raise Rejected("Response was based on stale negotiation history")
 
     def record_negotiation(self, team_id, event, *, access_check):
+        from franchise.legacy_amendments import amendment_scope_from_dict
         self._validate_dialogue(event)
         event = json.loads(json.dumps(event, allow_nan=False))
         with self._connection(write=True) as db:
@@ -2612,7 +2617,9 @@ class FranchiseStore:
                 if self._checkpoint_hash(preview) != self._checkpoint_hash(event['proposal_preview']):
                     raise Rejected('Accepted proposal preview changed before recording')
             if event.get('amendment_rule') is not None:
-                preview=self._preview_legacy_amendment(db,team_id,ledger,Offer.from_dict(event['offer']),event['evidence']['financial_revision'])
+                preview=self._preview_legacy_amendment(db,team_id,ledger,Offer.from_dict(event['offer']),event['evidence']['financial_revision'],
+                    scope=amendment_scope_from_dict(event['amendment_basis']['earned_pay']['scope'])
+                    if 'earned_pay' in event['amendment_basis'] else None)
                 if self._checkpoint_hash(preview)!=self._checkpoint_hash(event['amendment_basis']):
                     raise Rejected('Amendment opinion used different financial evidence')
                 if event['outcome']=='accepted_amendment_proposal' and not preview['within_modeled_cap']:
@@ -2893,11 +2900,16 @@ class FranchiseStore:
 
 class StoredLedger:
     """Negotiation-facing view; every operation reads current durable state."""
-    def __init__(self, store: FranchiseStore, team_id: str, *, return_scope=None,amendment_rule=None):
+    def __init__(self, store: FranchiseStore, team_id: str, *, return_scope=None,amendment_rule=None,amendment_scope=None):
         self.store, self.team_id = store, team_id
         from franchise.legacy_amendments import RULE
         if amendment_rule is not None and (amendment_rule!=RULE or return_scope is not None):
             raise ValueError('Separate supported imported amendment mode required')
+        if amendment_scope is not None:
+            from franchise.legacy_amendments import InSeasonAmendmentScope
+            if amendment_rule is None or not isinstance(amendment_scope,InSeasonAmendmentScope):
+                raise ValueError('In-season scope requires imported amendment mode')
+        self.amendment_scope=amendment_scope
         self.amendment_rule=amendment_rule
         if return_scope is not None:
             from franchise.returns import PreseasonReturnScope
@@ -2937,7 +2949,7 @@ class StoredLedger:
 
     def preview_offer(self, offer, expected_revision):
         if self.amendment_rule is not None:
-            return self.store.preview_legacy_amendment(self.team_id,offer,expected_revision)
+            return self.store.preview_legacy_amendment(self.team_id,offer,expected_revision,scope=self.amendment_scope)
         if self.return_scope is not None:
             return self.store.preview_return(self.team_id,offer,expected_revision,scope=self.return_scope)
         return self.store.preview_offer(self.team_id, offer, expected_revision)
@@ -2968,6 +2980,11 @@ class StoredLedger:
             raise Rejected('Return negotiation request already recorded in manual mode')
         if result is not None and self.store._checkpoint_hash(result.get('return_scope'))!=self.store._checkpoint_hash(self.return_scope_context()):
             raise Rejected('Negotiation request already recorded with different return scope or mode')
+        if result is not None and self.amendment_rule is not None:
+            actual=result.get('amendment_basis',{}).get('earned_pay',{}).get('scope')
+            expected=self.amendment_scope.to_dict() if self.amendment_scope is not None else None
+            if self.store._checkpoint_hash(actual)!=self.store._checkpoint_hash(expected):
+                raise Rejected('Negotiation request already recorded with different earned-pay scope')
         return result
 
     @property

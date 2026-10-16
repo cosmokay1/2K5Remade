@@ -4,6 +4,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/* Payroll is stored by the existing native assignment, never by an addon
+ * memory-write API. This query does not authorize a signing. */
+uint32_t nfl2k5_franchise_cap_payroll(uint32_t team,uint32_t computed);
 /* Existing generated-code callbacks. Read-only game observations; never a
  * transaction, remote-control grant or proof of mod-pack compatibility. */
 void nfl2k5_diag_fsm(uint32_t object, uint32_t descriptor, int push);

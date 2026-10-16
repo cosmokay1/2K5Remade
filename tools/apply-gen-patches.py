@@ -32,6 +32,11 @@ LENIENT = "--lenient" in sys.argv
 
 # (id, function, anchor line (stripped match), insert 'before' or 'after', code)
 PATCHES = [
+    # Verified C3F58 store in the pinned native and pack code. No cap ceiling
+    # writes: the optional application returns the reconciled payroll total.
+    ("FRANCHISE_CAP_PAYROLL", "sub_000C3F00", "MEM32(ebp + 0x124) = eax;", "before", """\
+    { extern uint32_t nfl2k5_franchise_cap_payroll(uint32_t,uint32_t); eax=nfl2k5_franchise_cap_payroll(ebp,eax); }
+"""),
     ("CELEBRATION_PREVIEW_CUSTOM", "sub_001B6B40", "loc_001B6B40: ;", "after", """\
     if (ecx >= 37u) { extern uint32_t nfl2k5_celebration_resource(uint32_t); eax = nfl2k5_celebration_resource(ecx); esp += 4; return; }
 """),

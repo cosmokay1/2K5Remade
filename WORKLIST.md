@@ -693,13 +693,23 @@ validated. Current source milestone:
 - [ ] Enforce retained bonus obligations in native cap calculations and verify
       correct team/year behavior through signing and save/reload. The existing
       packed contract stores one bonus schedule; replacing it loses old debt.
-- [ ] Establish sourced zero-earned-base timing for the supported full-year
-      amendment scope, or implement earned-pay proration before in-season apply.
+      Source now includes the original payroll-store callback in compiled and
+      interpreter paths, exact native-accumulator deduplication and an epoch/state
+      guard. The production issuer must still publish accepted cap plans and
+      verify real signing/save/reload; no preview or proposal arms them.
+- [x] Implement exact engine earned-pay proration, bind salary-period scope before
+      provider/consent, retain earned obligations through repeated renegotiation,
+      and verify durable replay without claiming historical cash payments.
+- [ ] Bind supported live salary-clock evidence before applying the scoped engine
+      agreement. Pinned phase-descriptor evidence identifies MyNFL1's saved phase
+      as preseason, but does not attest a fresh live clock or authorize writes.
 - [ ] Deliver one validated private package and verify an actual legal signing,
       ledger reconciliation and save/reload under fresh authorized AI control.
 
-Evidence:948 Python tests,11 portable native checks and42 actual offline Bridge
-reply/native validation cases pass. This is source/fixture validation; current
+Evidence:965 Python tests,12 portable native checks and42 actual offline Bridge
+reply/native validation cases pass locally. The combined private Windows/Deck
+candidate is being validated; its receipts must pass before packaging. This is
+source/fixture validation; current
 private game remains the cap-room/bumpers preview with AI/signing off. The native
 validator supports the first imported comparison only; repeated engine agreements
 require a newly reconciled native checkpoint before game delivery.

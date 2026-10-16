@@ -2717,6 +2717,10 @@ static uint32_t ih_franchise_fsm_push(void) {
 static uint32_t ih_franchise_fsm_pop(void) {
     nfl2k5_diag_fsm(g_esi,0,0); return 0;
 }
+extern uint32_t nfl2k5_franchise_cap_payroll(uint32_t team,uint32_t computed);
+static uint32_t ih_franchise_cap_payroll(void) {
+    g_eax=nfl2k5_franchise_cap_payroll(g_ebp,g_eax);return 0;
+}
 extern int nfl2k5_franchise_hold_signing_at(uint32_t stage,uint32_t context);
 extern int nfl2k5_franchise_judge_signing(uint32_t context);
 extern void nfl2k5_franchise_signing_completed(uint32_t context);
@@ -2761,6 +2765,7 @@ void nfl2k5_franchise_interp_hooks(void) {
     recomp_interp_add_hook(0x0016E70Bu,0,ih_franchise_load_input);
     recomp_interp_add_hook(0x0016E81Au,0,ih_franchise_load_decoded);
     recomp_interp_add_hook(0x0016E540u,0,ih_franchise_load_attempt);
+    recomp_interp_add_hook(0x000C3F58u,0,ih_franchise_cap_payroll);
     const char *mode=getenv("NFL2K5_FRANCHISE_NEGOTIATION");
     if(!mode || strcmp(mode,"1")) return;
     recomp_interp_add_hook(0x00324072u,0,ih_franchise_hold_cpu_pass);

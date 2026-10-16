@@ -367,3 +367,64 @@ the tested pack path and refusal behavior only. Other offers, rosters, pending
 work and mod configurations still need coverage. Active runtime/franchise binding,
 complete opening books, durable current-control permits and actual signing/
 save/reload remain required; production still grants no application authority.
+
+## Earned-base and cap-payroll candidate (2026-10-16)
+
+Imported amendments now support an explicit salary-period simulation scope in
+addition to the existing verified-zero-earned scope. The first year's base is
+`earned under the prior rate(s) + new annual rate * remaining periods / total`.
+The ledger retains every old bonus layer on its original schedule. A later
+amendment accrues the previous rate only between the two observed clock points;
+repeating a settlement does not earn salary twice. Year/period-count changes,
+backward clocks and resetting an in-season agreement to zero earned pay reject.
+The annual minimum applies to the offered annual rate, before proration.
+Earned salary remains an obligation, not an assertion that cash was paid.
+
+The scope is frozen into the comparison before the provider runs. Consent,
+settlement, retries and journal replay use that same comparison. Existing
+full-year journal shapes remain compatible. This is an engine interface: no
+bridge caller can invent an in-season clock or silently change the existing
+captured-offer response format. Automatic live clock binding remains required.
+
+`franchise.native_cap.amendment_payroll_projection` produces a current-year
+native payroll target from a frozen comparison and independently observed native
+contract/payroll/accumulator inputs. It keeps the league ceiling fixed. The old
+native signing helper can accelerate the prior bonus into its separate cap
+accumulator; when the observed change is exactly that known unamortized bonus,
+the target offsets it once in payroll. Pre-existing accumulator debt remains
+withheld. Unknown changes, wraparound and unrepresentable negative payroll hold
+application. Earned salary may require a negative correction to the new full
+annual native salary; treating every correction as positive retained bonus would
+incorrectly block raises. The complete liability is rounded up once to a guest
+currency unit, with the exact rounding charge retained as evidence.
+
+The saved-effects checker now derives that projection after independently
+matching contract, owner, calendar and native payroll effects. It supports the
+unchanged/accelerated bonus branches and a first scoped in-season amendment.
+Repeated in-season saved application still requires a reconciled prior agreement;
+the engine's repeated-agreement journal tests alone do not establish it.
+
+The owned payroll callback runs immediately before the original `C3F58`
+`team+124` store, both as a generated-code patch and an interpreter hook. The
+private pinned probe image confirms the six-byte store instruction there, and
+prior callgraph evidence identifies this function as unchanged by the pack.
+The optional application returns the reconciled payroll; it receives no generic
+memory-write capability. A bound plan checks the loaded epoch and complete live
+financial state, ignoring cached payroll fields so repeated recomputation is
+idempotent. Mismatched armed plans hold cap room. No armed plan preserves native
+behavior. Module reset clears the cache to prevent epoch reuse across sessions.
+The guest callback performs memory reads only, without file hashing or transport.
+
+**The production application issuer still returns no grant.** Preview and agent
+proposal replies cannot publish cap plans. The issuer must bind accepted consent,
+current control, the sourced salary clock and the exact before/after state before
+publishing a plan and permitting native mutation. It must also rebind after
+save/load. The new callback and authored boundary checks do not prove that a
+real game signing or saved franchise enforces these charges.
+
+Additional private code/data evidence is retained in
+`.local-runtime/cap-earned-salary-v1/calendar-code-evidence.json`. In that pinned
+probe image, descriptor phase7 is Preseason with4 steps, phase8 is Season with18,
+and phase9 is Postseason with4. MyNFL1's saved phase7/step0 is consistent with
+preseason. This is not a fresh Deck salary-clock attestation or payment record;
+do not turn arbitrary raw phase codes into permission to apply an amendment.

@@ -75,7 +75,7 @@ def expected_signed_state(bindings, payload: bytes, *, offer, guest_offer, team_
     return bytes(finance), saved_identity_state(payload)
 
 
-def expected_amended_state(bindings,payload: bytes,*,offer,guest_offer,team_id):
+def expected_amended_state(bindings,payload: bytes,*,offer,guest_offer,team_id,native_bonus_accelerated=False):
     """Expected native owned-player effects, with supplemental debt kept separate.
 
     The native packed contract cannot hold multiple bonus schedules. This image
@@ -106,6 +106,16 @@ def expected_amended_state(bindings,payload: bytes,*,offer,guest_offer,team_id):
     struct.pack_into('<HI',finance,record+1,terms.amount_word,(packed&~0x0FF7000F)|replacement)
     payroll_offset=48+12*TEAMS.index(team_id)
     payroll=struct.unpack_from('<I',finance,payroll_offset)[0]
+    if type(native_bonus_accelerated) is not bool:
+        raise ValueError('Explicit observed native bonus branch required')
+    if native_bonus_accelerated:
+        from franchise.legacy_contracts import original_annual_rows
+        rows=original_annual_rows(original.amount_word,original.bonus_code,original.shape_code,original.original_years)
+        bonus=sum(row['allocated_bonus_dollars'] for row in rows[-original.remaining_years:])//1000
+        flag,previous=struct.unpack_from('<II',finance,payroll_offset+4)
+        if not flag or not bonus or previous+bonus>65535:
+            raise ValueError('Native bonus acceleration branch is not representable')
+        struct.pack_into('<I',finance,payroll_offset+8,previous+bonus)
     delta=(offer.charges(5)[0]-original.charges()[0])/(1000*scale)
     if delta.denominator!=1 or not 0<=payroll+delta<=0xffffffff:
         raise ValueError('Exact representable amended native payroll required')

@@ -266,6 +266,10 @@ class Negotiation:
         return json.loads(json.dumps(event))
 
     def _check_recalled_mode(self, event, offer, expected_revision):
+        scope=getattr(self.ledger,'amendment_scope',None)
+        expected=scope.to_dict() if scope is not None else None
+        if event.get('amendment_basis',{}).get('earned_pay',{}).get('scope')!=expected:
+            raise Rejected('Negotiation request already used with different earned-pay scope')
         if event.get('amendment_rule')!=self._amendment_rule:
             raise Rejected('Negotiation request already used in a different amendment mode')
         if event.get('contract_format') != self._contract_format:

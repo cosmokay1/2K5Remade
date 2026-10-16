@@ -51396,6 +51396,8 @@ loc_000C3F54: ;
     _fa = (uint32_t)(eax) & 0xFFFFFFFFu; _fas = (int32_t)(int32_t)(_fa); /* add result */
     POP32(esp, edi);
     POP32(esp, esi);
+    /* NFL2K5-GENPATCH:FRANCHISE_CAP_PAYROLL */
+    { extern uint32_t nfl2k5_franchise_cap_payroll(uint32_t,uint32_t); eax=nfl2k5_franchise_cap_payroll(ebp,eax); }
     MEM32(ebp + 0x124) = eax;
     POP32(esp, ebp);
     esp += 4; return; /* ret */

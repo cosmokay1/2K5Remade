@@ -34,6 +34,7 @@ static struct {uint32_t va;uint32_t (*callback)(void);} hooks[16];
 void recomp_interp_add_hook(uint32_t va,uint32_t from,uint32_t (*callback)(void)){
  hooks[count].va=va;hooks[count++].callback=callback;
 }
+uint32_t nfl2k5_franchise_cap_payroll(uint32_t team,uint32_t computed){return team==0x1234?3658:computed;}
 void nfl2k5_diag_fsm(uint32_t obj,uint32_t desc,int push){
  ++events;object=obj;descriptor=desc;pushed=push;
 }
@@ -45,7 +46,7 @@ void nfl2k5_franchise_load_boundary(uint32_t s,uint32_t b,uint32_t o,uint32_t t,
 ''' + block + r'''
 int main(void){
  nfl2k5_franchise_interp_hooks();
- if(count!=7 || hooks[0].va!=0x6E3E6 || hooks[1].va!=0x6E439) return 1;
+ if(count!=8 || hooks[0].va!=0x6E3E6 || hooks[1].va!=0x6E439) return 1;
  g_esi=0x12345678;g_edi=0x557B2C;
  if(hooks[0].callback() || events!=1 || object!=g_esi || descriptor!=g_edi || pushed!=1) return 2;
  if(hooks[1].callback() || events!=2 || object!=g_esi || descriptor || pushed) return 3;
@@ -65,19 +66,21 @@ int main(void){
 #else
  if(setenv("NFL2K5_FRANCHISE_NEGOTIATION","1",1)) return 5;
 #endif
+ g_ebp=0x1234;g_eax=2000;
+ if(hooks[7].va!=0xC3F58 || hooks[7].callback() || g_eax!=3658 || g_ebp!=0x1234)return 18;
  count=0;nfl2k5_franchise_interp_hooks();
- if(count!=13 || hooks[7].va!=0x324072 || hooks[8].va!=0x323D80 ||
-    hooks[9].va!=0x3478B6 || hooks[10].va!=0x323F0A || hooks[11].va!=0x323F17 || hooks[12].va!=0x32404E) return 6;
- if(hooks[7].callback()!=0x324173 || stage!=2 || held_context || consumed!=1) return 7;
+ if(count!=14 || hooks[8].va!=0x324072 || hooks[9].va!=0x323D80 ||
+    hooks[10].va!=0x3478B6 || hooks[11].va!=0x323F0A || hooks[12].va!=0x323F17 || hooks[13].va!=0x32404E) return 6;
+ if(hooks[8].callback()!=0x324173 || stage!=2 || held_context || consumed!=1) return 7;
  hold_reply=0;
- if(hooks[7].callback() || consumed!=1) return 8;
+ if(hooks[8].callback() || consumed!=1) return 8;
  g_ebp=0x10000;g_eax=0x87654321;g_edi=0x11223344;
- if(hooks[10].callback()!=0x323E99 || held_context!=g_esi || g_eax!=0x87654321 || g_edi!=0x11223344) return 9;
+ if(hooks[11].callback()!=0x323E99 || held_context!=g_esi || g_eax!=0x87654321 || g_edi!=0x11223344) return 9;
  judgment_reply=0;
- if(hooks[10].callback() || g_eax!=0x87654321 || g_edi!=0x11223344) return 10;
+ if(hooks[11].callback() || g_eax!=0x87654321 || g_edi!=0x11223344) return 10;
  judgment_reply=2;
- if(hooks[10].callback()!=0x323F13 || g_eax!=1 || g_edi!=g_ebp || g_esi!=0x12345678) return 11;
- if(hooks[12].callback() || completed!=g_esi || g_eax!=1 || g_edi!=g_ebp) return 12;
+ if(hooks[11].callback()!=0x323F13 || g_eax!=1 || g_edi!=g_ebp || g_esi!=0x12345678) return 11;
+ if(hooks[13].callback() || completed!=g_esi || g_eax!=1 || g_edi!=g_ebp) return 12;
  return 0;
 }
 ''')
