@@ -848,8 +848,12 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
       The complete context/proposal snapshot is implemented separately from the
       unchanged compact-display ABI: exact offer/preview, saved evidence, missing
       data and full agent/counter/promise response, without another inference.
-      Renderer/editor, controller takeover, real response display and application
-      remain unimplemented/unverified; the installed diagnostic still clips text.
+      A read-only addon renderer and controller filter are now authored with
+      Contract/Performance/Agent sections, complete scrollable responses, one-use
+      Back and held-button quarantine. The preview refuses AI/application mode;
+      native signing remains held even if the addon fails. Eleven portable native
+      checks pass. Windows rendering and actual Deck takeover remain unverified;
+      editing/submission/application remain unfinished. Installed code is unchanged.
 - [ ] Integrate persistent stories/relationships into the actual franchise experience.
 - [ ] Add opt-in configuration, backups, recovery and explicit migration handling.
 

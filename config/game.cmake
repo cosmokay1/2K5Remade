@@ -33,6 +33,7 @@ if(NFL2K5_FRANCHISE_CLIENT)
   endif()
   add_subdirectory("${PROJECT_SOURCE_DIR}/native/franchise_bridge" "${CMAKE_BINARY_DIR}/franchise-bridge" EXCLUDE_FROM_ALL)
   target_include_directories(NFL2K5 PRIVATE "${PROJECT_SOURCE_DIR}/native/franchise_bridge")
+  target_sources(NFL2K5 PRIVATE native/game_addon/ui_host.cpp)
   add_dependencies(NFL2K5 franchise_game_addon)
   add_custom_command(TARGET NFL2K5 POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:NFL2K5>/addons/franchise"

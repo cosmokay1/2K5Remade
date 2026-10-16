@@ -12,6 +12,7 @@
 #include "xinput_xbox.h"
 #ifdef NFL2K5_FRANCHISE_CLIENT
 #include "nfl2k5_sidecar_adapter.h"
+#include "../native/game_addon/ui.h"
 #endif
 
 #define NFL2K5_XPP_GAMEPAD_TYPE 0x004DA614u
@@ -285,6 +286,16 @@ static void host_gamepad(XBOX_GAMEPAD *g)
     if (SDL_GetTicks() < s_inject_a_until) g->bAnalogButtons[0] = 255;
 }
 
+#ifdef NFL2K5_FRANCHISE_CLIENT
+static void addon_ui_input(uint32_t port,XBOX_GAMEPAD *g) {
+    NFL2K5AddonInput input={0};input.port=port;input.buttons=g->wButtons;
+    memcpy(input.analog,g->bAnalogButtons,8);
+    input.axes[0]=g->sThumbLX;input.axes[1]=g->sThumbLY;input.axes[2]=g->sThumbRX;input.axes[3]=g->sThumbRY;
+    nfl2k5_addon_ui_input(&input);
+    g->wButtons=input.buttons;memcpy(g->bAnalogButtons,input.analog,8);
+    g->sThumbLX=input.axes[0];g->sThumbLY=input.axes[1];g->sThumbRX=input.axes[2];g->sThumbRY=input.axes[3];
+}
+#endif
 static void put_gamepad(uint32_t va, const XBOX_GAMEPAD *g)
 {
     int i;
@@ -400,6 +411,9 @@ int nfl2k5_hle_XInputGetState(void)
         static XBOX_GAMEPAD lasts[4];
         if (port != 0) {
             host_gamepad_port((int)port, &g);
+#ifdef NFL2K5_FRANCHISE_CLIENT
+            addon_ui_input(port,&g);
+#endif
             if (memcmp(&g, &lasts[port], sizeof g)) { packets[port]++; lasts[port] = g; }
             MEM32(state) = packets[port];
             put_gamepad(state + 4u, &g);
@@ -409,6 +423,9 @@ int nfl2k5_hle_XInputGetState(void)
         }
     }
     host_gamepad(&g);
+#ifdef NFL2K5_FRANCHISE_CLIENT
+    addon_ui_input(0,&g);
+#endif
     if (memcmp(&g, &last, sizeof g)) {
         packet++;
         if (g.wButtons != last.wButtons || g.bAnalogButtons[0] != last.bAnalogButtons[0])

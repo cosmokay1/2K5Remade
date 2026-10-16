@@ -8881,3 +8881,42 @@ Build and Franchise AI checks are now both fully successful, including Windows.
 No model request, game deployment, UI rendering or contract write occurred in this
 chunk. Actual replacement controls/layout, financial completion and real-game
 signing/save/reload remain open. The Deck settings and disabled AI are unchanged.
+
+
+## Read-only replacement negotiation view and controller ownership
+
+The screen renderer and navigation now live in franchise-addon.dll. The game adds
+only optional named UI draw/input hooks: gathered packets before guest delivery,
+and a caller-owned BGRA buffer before ordinary HUD rendering. No franchise rules
+enter the generic host hook or independent engine-sidecar process transport.
+The opaque view uses the retained dark palette/Bahnschrift and Contract,
+Performance and Agent sections. It displays exact schedules/charges, separate raw
+saved period/mode records, explicit missing evidence, full agent reasons, counters
+and proposed promises. No hidden metric is permitted. D-pad scrolls full content;
+LT/RT change sections; one native B pulse exits. Entry-release handling and held
+input quarantine prevent controller carry-through after dismissal/addon failure.
+
+Preview mode defaults off, needs an explicit controller port, rejects simultaneous
+AI-negotiation/application startup and holds original signing even without the
+addon. It cannot submit a model request or apply a contract. Cached owned pixels
+avoid per-frame GDI redraw; no borrowed DLL surface survives module unloading.
+Eleven rebuilt portable native CTests pass, including new host filter and content/
+navigation checks. Windows fixtures render both1280x800 and1280x720, capture full/
+scrolled/missing-data states, and check cache/Back behavior. Their execution and
+actual game takeover remain pending; no deployment or save change is claimed.
+
+01afe88 CI passes Linux; Windows caught a real display-ordering issue: a late
+read-only context could republish after a waiting proposal intent was consumed.
+The signing hold did not release. The host now preserves waiting display state
+until the proposal reply; the fixture already exposes this regression. Maximum
+frame/UTF-8 ownership and other Windows checks passed in that run. New source
+must pass the corrected Windows fixture before this issue is considered verified.
+
+An isolated one-CPU private compiler attempt linked the renderer far enough to
+identify its missing user32 dependency (now included), then the reused Wine
+compiler prefix failed to create a temporary IL file. Disk has18GB free. This
+fixture stage did not touch the running game. Windows CI now runs native checks
+and uploads authored screen captures before the longer Python suite, providing a
+separate validation route. No control/IAM grant, paid inference, installed game
+replacement or financial write occurred. Editor/submit and real signing/reload
+remain open.

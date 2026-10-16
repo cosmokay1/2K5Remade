@@ -24,6 +24,20 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Compile asset-free native protocol and Windows pipe client
+        run: |
+          cmake -S native/franchise_bridge -B build-franchise-bridge
+          cmake --build build-franchise-bridge --config Release
+      - name: Execute native protocol boundary checks
+        run: ctest --test-dir build-franchise-bridge -C Release --output-on-failure
+      - name: Retain authored negotiation screen captures
+        if: always() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: negotiation-screen-fixtures
+          path: build-franchise-bridge/negotiation-screen/*.png
+          if-no-files-found: ignore
+
       - name: Financial, negotiation and shutdown tests
         run: python -m unittest discover -s tests -v
       - name: Audit regression checks and compensation conservation
@@ -50,12 +64,6 @@ jobs:
           cmake -S native/guest_execution -B build-guest-execution
           cmake --build build-guest-execution --config Release
           ctest --test-dir build-guest-execution -C Release --output-on-failure
-      - name: Compile asset-free native protocol and Windows pipe client
-        run: |
-          cmake -S native/franchise_bridge -B build-franchise-bridge
-          cmake --build build-franchise-bridge --config Release
-      - name: Execute native protocol boundary checks
-        run: ctest --test-dir build-franchise-bridge -C Release --output-on-failure
       - name: Cross-check exact native guest salary schedules
         run: python -m tools.check_native_guest_terms build-franchise-bridge
       - name: Compare native financial and identity capture to saved semantics

@@ -471,7 +471,14 @@ int nfl2k5_franchise_source_path_matches(uint64_t epoch) {
 #endif
 }
 #endif
+#ifdef NFL2K5_ADDON_SCREEN
+extern int franchise_negotiation_screen_event(const char *name,const void *data,size_t size);
+#endif
 static int addon_event(const char *name,const void *data,size_t size) {
+#ifdef NFL2K5_ADDON_SCREEN
+    const int ui=franchise_negotiation_screen_event(name,data,size);
+    if(ui) return ui;
+#endif
     if(name && data && !strcmp(name,NFL2K5_ADDON_LOADED_IMAGE) && size==sizeof(NFL2K5AddonImageIdentity)) {
         NFL2K5AddonImageIdentity next;
         if(!addon_image_identity(&next,((const NFL2K5AddonImageIdentity*)data)->sha256)) return 0;

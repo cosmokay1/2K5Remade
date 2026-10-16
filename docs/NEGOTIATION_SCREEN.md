@@ -73,10 +73,41 @@ truth. Consumers must parse it once per changed body, render only relevant field
 and preserve uncertainty. Empty history must never become zero production. Raw
 JSON and internal IDs are not player-facing UI.
 
+## Read-only takeover implementation
+
+The replacement renderer and navigation now compile into the franchise addon,
+not the main game. Two optional domain-neutral host messages provide gathered
+controller packets and a caller-owned BGRA drawing buffer. The addon never keeps
+host buffer pointers. Existing unsupported addons return no handling and leave
+the original presentation/input path available.
+
+The preview defaults off. It requires `NFL2K5_FRANCHISE_SCREEN_PREVIEW=1` and an
+explicit `NFL2K5_FRANCHISE_SCREEN_PORT=0` through `3`. The configured port controls
+the view; other ports cannot operate the covered original menu. The current Deck
+will use an explicitly configured port during private testing, not an inferred
+team/controller assignment. Negotiation and guest signing must both be off;
+conflicting modes reject service startup. The game shim holds native signing
+throughout preview mode, including missing/disabled addon and failed rendering.
+
+Contract, Performance and Agent sections use the retained dark palette and
+Bahnschrift. LT/RT or left/right change sections; D-pad scrolls; B sends exactly
+one native Back packet and dismisses the view. Entry waits for held buttons to be
+released before navigation. Addon failure/invalidation quarantines held controls
+until neutral, preventing an old A/trigger press from reaching the native menu.
+The host copies no borrowed addon image pointers. Full opaque BGRA frames are
+cached; unchanged text does not redraw. Failed painting releases screen ownership.
+
+Terms, exact cap amounts and full player responses/counters/proposed promises
+come from the matching snapshot. Historical records remain separate with raw
+period/mode labels and unavailable counters. Hidden/unsupported performance
+metrics refuse display. Editing, inference, application and promise commitment
+are absent from this read-only mode. Its controls do not imply verified live-game
+input ownership until the actual installed build is exercised.
+
 ## Remaining implementation and acceptance
 
-- Build the full native layout and controller-owned editor together; retire the
-  compact diagnostic only when controls cannot reach the covered native screen.
+- Validate the authored read-only takeover on the actual Deck, then add the
+  controller-owned editor. Retire the compact diagnostic after takeover is verified.
 - Use the same draft in financial previews, promise proposals and explicit submit;
   require current player/source/revision and preserve request identity on retry.
 - Render actual stats and full explanations at Deck 1280x800 and 1280x720, with
@@ -86,5 +117,6 @@ JSON and internal IDs are not player-facing UI.
 - Complete a bounded real model response test with writes held, then verify actual
   legal signing, ledger/save agreement and reload before enabling application.
 
-No replacement renderer, controller takeover, live model test or controlled native
-signing is delivered by the data-boundary change alone. AI remains disabled.
+The data-boundary change alone did not deliver a screen. The subsequent read-only
+implementation still needs Windows rendering and actual Deck verification; it
+does not deliver editing, a live model test or controlled signing. AI remains disabled.

@@ -1,0 +1,92 @@
+/* Real addon drawing and host input hooks; authored data, no game/AI process. */
+#include "negotiation_screen_fixture.h"
+#include "../../src/nfl2k5_franchise_host.h"
+#include <windows.h>
+#include <wincodec.h>
+#include <filesystem>
+#include <cstring>
+#include <cstdio>
+extern "C" int franchise_negotiation_screen_event(const char*,const void*,size_t);
+extern "C" int nfl2k5_addon_event(const char *name,const void *data,size_t size) {
+    return franchise_negotiation_screen_event(name,data,size);
+}
+static nlohmann::json fixture;
+static bool available=true;
+extern "C" int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out) {
+    *out={};if(!available) return 0;
+    const auto response=fixture.dump();if(response.size()>=sizeof(out->response)) return 0;
+    std::memcpy(out->response,response.c_str(),response.size()+1);
+    std::strcpy(out->summary.title,"Authored Player");
+    std::strcpy(out->summary.offer,"Read-only preview. Contract application is held.");return 1;
+}
+static void require(bool ok,const char *message){if(!ok) throw std::runtime_error(message);}
+static void png(const std::filesystem::path& path,int width,int height,const void *pixels) {
+    IWICImagingFactory *factory=nullptr;IWICStream *stream=nullptr;IWICBitmapEncoder *encoder=nullptr;
+    IWICBitmapFrameEncode *frame=nullptr;
+    auto ok=[](HRESULT status){require(SUCCEEDED(status),"PNG encoding failed");};
+    ok(CoCreateInstance(CLSID_WICImagingFactory,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(&factory)));
+    ok(factory->CreateStream(&stream));ok(stream->InitializeFromFilename(path.c_str(),GENERIC_WRITE));
+    ok(factory->CreateEncoder(GUID_ContainerFormatPng,nullptr,&encoder));ok(encoder->Initialize(stream,WICBitmapEncoderNoCache));
+    ok(encoder->CreateNewFrame(&frame,nullptr));ok(frame->Initialize(nullptr));ok(frame->SetSize(width,height));
+    WICPixelFormatGUID format=GUID_WICPixelFormat32bppBGRA;ok(frame->SetPixelFormat(&format));
+    require(IsEqualGUID(format,GUID_WICPixelFormat32bppBGRA),"PNG format changed");
+    ok(frame->WritePixels(height,width*4,width*height*4,const_cast<BYTE*>(static_cast<const BYTE*>(pixels))));
+    ok(frame->Commit());ok(encoder->Commit());frame->Release();encoder->Release();stream->Release();factory->Release();
+}
+static void press(int analog,int button=0) {
+    NFL2K5AddonInput input{};nfl2k5_addon_ui_input(&input);
+    if(analog>=0) input.analog[analog]=255;
+    input.buttons=button;nfl2k5_addon_ui_input(&input);
+}
+int main(int argc,char** argv) {
+    if(argc!=2) return 1;
+    try {
+        CoInitializeEx(nullptr,COINIT_MULTITHREADED);
+        std::filesystem::path output=argv[1];std::filesystem::create_directories(output);
+        _putenv_s("NFL2K5_FRANCHISE_SCREEN_PREVIEW","");_putenv_s("NFL2K5_FRANCHISE_SCREEN_PORT","0");
+        const void *pixels=nullptr;int changed=0;
+        fixture=negotiation_screen_fixture();
+        require(!nfl2k5_addon_ui_draw(1280,800,&pixels,&changed),"Preview must default off");
+        _putenv_s("NFL2K5_FRANCHISE_SCREEN_PREVIEW","1");
+        for(const int height:{800,720}) {
+            fixture=negotiation_screen_fixture();fixture["request_id"]=std::to_string(height);
+            auto capture=[&](const char *name){
+                require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed),"Real addon renderer did not produce a frame");
+                const auto* data=static_cast<const unsigned char*>(pixels);
+                size_t light=0;for(int i=0;i<1280*height;++i){require(data[i*4+3]==255,"Full-screen alpha must be opaque");if(data[i*4]>80)++light;}
+                require(light>2000,"Text was not rendered");
+                png(output/(std::to_string(height)+"-"+name+".png"),1280,height,pixels);
+            };
+            capture("contract");require(changed,"First frame needs pixels");
+            require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed) && !changed,"Unchanged screen redrew");
+            press(7);capture("performance");press(7);capture("agent-empty");
+            auto checkpoint=fixture["result"];
+            fixture["result"]={{"signing_checkpoint",checkpoint},{"counter",checkpoint["offer_context"]["offer"]},
+                {"counter_validation",{{"status","eligible"}}},{"reason",
+                    "We appreciate the offer, but the role matters as much as the money. "
+                    "We want a clear path to starting and a deal that reflects the production in the records you have. "
+                    "Where the records are missing, we should talk about that uncertainty rather than assume the worst. "
+                    "Our counter keeps the annual salaries and bonus explicit so you can review the cap impact. "
+                    "This is a proposal, and we are waiting for your response. END OF AGENT RESPONSE."}};
+            fixture["request_id"]="authored-counter"+std::to_string(height);
+            capture("counter-contract");press(7);press(7);capture("agent-full");
+            for(int i=0;i<12;++i)press(-1,2);capture("agent-bottom");
+            press(-1,1);capture("agent-up"); // end clamping must allow immediate upward movement
+            // Exactly one native B pulse, then quarantine the held B button.
+            NFL2K5AddonInput input{};nfl2k5_addon_ui_input(&input);input.analog[1]=255;
+            nfl2k5_addon_ui_input(&input);require(input.analog[1]==255,"Back did not leave the native offer menu");
+            input.analog[1]=255;nfl2k5_addon_ui_input(&input);require(!input.analog[1],"Held Back leaked twice");
+            require(!nfl2k5_addon_ui_draw(1280,height,&pixels,&changed),"Closed screen remained visible");
+            input={};nfl2k5_addon_ui_input(&input);
+            available=false;nfl2k5_addon_ui_draw(1280,height,&pixels,&changed);available=true;
+            fixture=negotiation_screen_fixture();fixture["request_id"]="missing-history"+std::to_string(height);
+            fixture["result"]["performance_context"]["saved_history"]=nlohmann::json::array();
+            capture("missing-contract");press(7);capture("missing-performance");
+            // A failed paint cannot keep invisible input ownership.
+            NFL2K5AddonDraw bad{1280,static_cast<uint32_t>(height),1,0,nullptr,1,0};
+            require(!franchise_negotiation_screen_event(NFL2K5_ADDON_UI_DRAW,&bad,sizeof(bad)),"Malformed surface accepted");
+        }
+        std::puts("Real addon rendering, cached pixels, full response scrolling, Back and missing data passed; no game or inference");
+        return 0;
+    } catch(const std::exception& error){std::fprintf(stderr,"%s\n",error.what());return 2;}
+}

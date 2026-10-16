@@ -25,13 +25,17 @@ static int signing_hold_result(uint32_t context,int held) {
     held_signing_context=held ? context : 0;
     return held;
 }
+static int screen_preview_requested(void) {
+    const char *mode=getenv("NFL2K5_FRANCHISE_SCREEN_PREVIEW");
+    return mode && !strcmp(mode,"1");
+}
 static int controlled_signing_requested(void) {
     const char *mode=getenv("NFL2K5_FRANCHISE_NEGOTIATION");
-    return mode && !strcmp(mode,"1");
+    return screen_preview_requested() || (mode && !strcmp(mode,"1"));
 }
 static int application_requested(void) {
     const char *mode=getenv("NFL2K5_FRANCHISE_GUEST_SIGNING");
-    return controlled_signing_requested() && mode && !strcmp(mode,"1");
+    return !screen_preview_requested() && controlled_signing_requested() && mode && !strcmp(mode,"1");
 }
 #ifdef NFL2K5_FRANCHISE_CLIENT
 #include "../game_addon/loader.h"

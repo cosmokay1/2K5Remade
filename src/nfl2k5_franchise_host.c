@@ -217,14 +217,16 @@ void nfl2k5_franchise_poll(void)
             const int was_proposal=proposal_pending;proposal_pending=0;
             int current=signing_active && observation_valid && observation_fresh && requested_source_current() &&
                 screen_epoch==requested_epoch && same_observation(&observed,&requested);
-            if(current) {
+            // A late preview must not replace the waiting state of an intent
+            // already consumed while this read-only request was outstanding.
+            if(current && (was_proposal || !proposal_requested)) {
                 FranchiseSigningDisplay next={0};
                 if(franchise_host_signing_display(response,&next)==FRANCHISE_HOST_OK) {
                     snprintf(next.title,sizeof(next.title),"%s %s",observed.first_name,observed.last_name);
                     AcquireSRWLockExclusive(&display_lock); display=next; display_valid=1;
                     copy_display_response(response); ReleaseSRWLockExclusive(&display_lock);
                 } else clear_display();
-            } else clear_display();
+            } else if(!current) clear_display();
             /* Changed terms retain the debounce; unreadable or new-screen
              * samples may retry once a valid observation becomes available. */
             if (!observation_valid || !observation_fresh || screen_epoch!=requested_epoch)
@@ -462,6 +464,11 @@ int nfl2k5_franchise_start(void)
     if(journal && wcscmp(journal,L"0") && wcscmp(journal,L"1")) return 0;
     const int prepare_enabled=journal && !wcscmp(journal,L"1");
     if(prepare_enabled && !hold_enabled) return 0;
+    const wchar_t *screen_preview=_wgetenv(L"NFL2K5_FRANCHISE_SCREEN_PREVIEW");
+    if(screen_preview && *screen_preview && wcscmp(screen_preview,L"0") && wcscmp(screen_preview,L"1")) return 0;
+    const int preview_enabled=screen_preview && !wcscmp(screen_preview,L"1");
+    // Inspection cannot silently become paid inference or native application.
+    if(preview_enabled && (hold_enabled || prepare_enabled || !inspect_context || !offer_enabled || !inspect_performance)) return 0;
     const wchar_t *budget_database = _wgetenv(L"NFL2K5_FRANCHISE_AI_BUDGET_DATABASE");
     const wchar_t *budget_scope = _wgetenv(L"NFL2K5_FRANCHISE_AI_BUDGET_SCOPE");
     const wchar_t *budget_limit = _wgetenv(L"NFL2K5_FRANCHISE_AI_REQUEST_LIMIT");

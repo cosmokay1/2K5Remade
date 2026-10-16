@@ -108,6 +108,7 @@ int main(void)
     assert(!nfl2k5_franchise_negotiation_view(&full_view));
     for(size_t i=0;i<sizeof(full_view);++i) assert(!((unsigned char*)&full_view)[i]);
 
+    _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_PREVIEW",L"0");
     owner = GetCurrentThreadId();
     _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_SIGNING",L"0");
     _wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER", L"");
@@ -239,5 +240,13 @@ int main(void)
     image_digest[0]='G';unsigned before=submissions;
     nfl2k5_franchise_on_fsm(0x557B2C,1);assert(submissions==before);
     nfl2k5_franchise_stop();
+    _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_PREVIEW",L"1");
+    _wputenv_s(L"NFL2K5_FRANCHISE_NEGOTIATION",L"1");
+    assert(!nfl2k5_franchise_start()); // Read-only screen cannot submit AI proposals.
+    _wputenv_s(L"NFL2K5_FRANCHISE_NEGOTIATION",L"0");
+    assert(nfl2k5_franchise_start());
+    assert(!nfl2k5_franchise_submit_held(&observation,nfl2k5_franchise_submission_epoch()));
+    nfl2k5_franchise_stop();
+    _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_PREVIEW",L"bad");assert(!nfl2k5_franchise_start());
     return 0;
 }

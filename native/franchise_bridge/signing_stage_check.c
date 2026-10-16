@@ -99,5 +99,13 @@ int main(void){
     nfl2k5_franchise_hold_signing_at(1,0x1234);
     nfl2k5_franchise_stop();
     if(nfl2k5_franchise_signing_was_held(0x1234)) return 16;
+#ifdef _WIN32
+    if(_putenv_s("NFL2K5_FRANCHISE_SCREEN_PREVIEW","1")) return 20;
+#else
+    if(setenv("NFL2K5_FRANCHISE_SCREEN_PREVIEW","1",1)) return 20;
+#endif
+    gate_reply=legacy_reply=0;
+    if(!nfl2k5_franchise_hold_signing_at(1,0x1234) || !nfl2k5_franchise_hold_signing_at(2,0x1234) ||
+       nfl2k5_franchise_judge_signing(0x1234)!=1) return 21;
     puts("Stage-aware signing shim, legacy hold fallback and no-write behavior passed");return 0;
 }
