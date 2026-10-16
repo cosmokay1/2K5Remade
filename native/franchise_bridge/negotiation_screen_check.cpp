@@ -11,6 +11,15 @@ int main() {
         require(pages[1].find("Record 1: completions: 478 count")!=std::string::npos);
         require(pages[1].find("Record 2: sacks: 2.5 sacks")!=std::string::npos);
         require(pages[1].find("unknown, not zero")!=std::string::npos && pages[1].find("qb hits")!=std::string::npos);
+        auto receiving=fixture;
+        receiving["result"]["performance_context"]["saved_history"]={
+            {{"metric","receptions"},{"value",70},{"unit","count"}},
+            {{"metric","receiving_yards"},{"value",900},{"unit","yards"}},
+            {{"metric","receiving_touchdowns"},{"value",4},{"unit","count"}}};
+        const auto receiving_page=franchise::negotiation_pages(receiving)[1];
+        require(receiving_page.find("receptions: 70 count")!=std::string::npos);
+        require(receiving_page.find("receiving yards: 900 yards")!=std::string::npos);
+        require(receiving_page.find("receiving touchdowns: 4 count")!=std::string::npos);
         auto missing=fixture;missing["result"]["performance_context"]["saved_history"]=nlohmann::json::array();
         require(franchise::negotiation_pages(missing)[1].find("No mapped performance records")!=std::string::npos);
         auto proposal=fixture;proposal["result"]={{"signing_checkpoint",fixture["result"]},

@@ -116,6 +116,13 @@ def guest_terms_for_offer(offer: Offer, *, contract_format=GUEST_CONTRACT_FORMAT
 
 def preview_guest_offer(store, team_id, player_id, *, amount_word, flags_word, expected_revision,
                         contract_format=GUEST_CONTRACT_FORMAT):
+    return _preview_guest_offer(player_id, amount_word=amount_word, flags_word=flags_word,
+        expected_revision=expected_revision, contract_format=contract_format,
+        preview_offer=lambda offer: store.preview_offer(team_id, offer, expected_revision))
+
+
+def _preview_guest_offer(player_id, *, amount_word, flags_word, expected_revision,
+                         contract_format, preview_offer):
     """Inspect exact new free-agent terms, never sign or reserve cap room.
 
     Format rejection is separate from authoritative ownership/minimum/cap
@@ -137,7 +144,7 @@ def preview_guest_offer(store, team_id, player_id, *, amount_word, flags_word, e
         return {**result, 'outcome': 'format_rejected', 'reason': str(error)}
     result['offer'] = offer.to_dict()
     try:
-        preview = store.preview_offer(team_id, offer, expected_revision)
+        preview = preview_offer(offer)
     except Rejected as error:
         return {**result, 'outcome': 'accounting_rejected', 'reason': str(error)}
     return {**result, 'outcome': 'eligible_preview', 'preview': preview}

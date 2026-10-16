@@ -4,7 +4,7 @@ from pathlib import Path
 import subprocess
 import sys
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from franchise.bridge import Bridge
 from franchise.control import AccessDisabled
@@ -57,7 +57,7 @@ class SigningContextBridgeTests(unittest.TestCase):
         self.assertEqual(evidence['player_id'],reply['result']['player_id'])
         self.assertFalse(evidence['history_present'])
         self.assertEqual(evidence['saved_history'],[])
-        self.assertEqual(len(evidence['missing_named_metrics']),10)
+        self.assertEqual(len(evidence['missing_named_metrics']),13)
         self.assertEqual(evidence['unmapped_requested_metrics'],['tackles','targets','pressures','qb_hits'])
         self.assertNotIn('performance_context',self.bridge.handle(self.request)['result'])
         self.assertEqual(self.bridge.handle({**request,'performance_format':'live'})['error'],'invalid_request')
@@ -78,6 +78,26 @@ class SigningContextBridgeTests(unittest.TestCase):
         self.assertFalse(reply['result']['write_authorized'])
         self.assertEqual(before,self.fixture.store.load_team('49ers').financial_snapshot())
         self.provider.assert_not_called(); self.access.assert_not_called()
+
+    def test_null_or_incomplete_guest_offer_is_not_treated_as_missing(self):
+        for raw in (None,{},[],{'amount_word':1}):
+            with self.subTest(raw=raw):
+                self.assertEqual(self.bridge.handle({**self.request,'guest_offer':raw})['error'],'state_rejected')
+        self.provider.assert_not_called()
+
+    def test_context_and_guest_preview_share_one_validated_read_snapshot(self):
+        from franchise.guest_contracts import preview_guest_offer
+        raw={'amount_word':600,'flags_word':(2<<29)|(3<<16)}
+        player=self.fixture.bindings['players'][1]['player_id']
+        expected=preview_guest_offer(self.fixture.store,'49ers',player,**raw,expected_revision=0)
+        before=Path(self.fixture.store.path).read_bytes()
+        with patch.object(self.fixture.store,'_load',wraps=self.fixture.store._load) as replay:
+            result=self.bridge.handle({**self.request,'guest_offer':raw})
+        self.assertIsNone(result['error'])
+        self.assertEqual(result['result']['offer_context'],expected)
+        self.assertEqual(replay.call_count,1)
+        self.assertEqual(Path(self.fixture.store.path).read_bytes(),before)
+        self.provider.assert_not_called();self.access.assert_not_called()
 
     def test_actual_process_uses_server_pinned_snapshot_despite_missing_adc(self):
         root = Path(self.fixture.temporary.name)

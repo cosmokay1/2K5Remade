@@ -16,11 +16,13 @@ from tools.inspect_franchise_cap import inspect_cap
 from tools.inspect_franchise_save import TEAMS
 
 
-def reconcile_signing_context(bindings, payload, observation, store, *, expected_revision):
+def reconcile_signing_context(bindings, payload, observation, store, *, expected_revision,guest_offer=None):
     if type(expected_revision) is not int or expected_revision < 0:
         raise ValueError('Explicit nonnegative financial revision required')
     if type(observation) is not dict or set(observation) != {'biography', 'team', 'calendar'}:
         raise ValueError('Complete live signing checkpoint required')
+    if guest_offer is not None and (type(guest_offer) is not dict or set(guest_offer)!={'amount_word','flags_word'}):
+        raise ValueError('Complete raw guest offer required')
     candidate = resolve_signing_candidate(bindings, payload, observation['biography'])
     scale = binding_money_scale(bindings)
     team = observation['team']
@@ -72,12 +74,20 @@ def reconcile_signing_context(bindings, payload, observation, store, *, expected
         context = store._player_context_from_ledger(db,name,candidate['candidate_player_id'],ledger)
         if context['financial_revision'] != expected_revision or not context['initialized']:
             raise ValueError('Persisted player context unavailable or changed during inspection')
+        offer_context=None
+        if guest_offer is not None:
+            from franchise.guest_contracts import _preview_guest_offer, GUEST_CONTRACT_FORMAT, SOFTDRINK_CONTRACT_FORMAT
+            offer_context=_preview_guest_offer(candidate['candidate_player_id'],**guest_offer,
+                expected_revision=expected_revision,
+                contract_format=SOFTDRINK_CONTRACT_FORMAT if scale==4 else GUEST_CONTRACT_FORMAT,
+                preview_offer=lambda offer:store._preview_offer(db,name,ledger,offer,expected_revision))
         db.commit()
         if db.execute('PRAGMA data_version').fetchone()[0] != version or file_version() != original_file:
             raise ValueError('Financial state changed during inspection')
     return {'player_id': candidate['candidate_player_id'], 'team_id': name,
             'financial_revision': expected_revision, 'saved_payload_sha256': cap['payload_sha256'],
             'source_slot': candidate['source_slot'], 'player_context': context,
+            **({'offer_context':offer_context} if guest_offer is not None else {}),
             'scope': 'matching saved legacy checkpoint; active franchise selection, cash/rookie obligations and write authorization remain unverified',
             'write_authorized': False, 'ai_authorized': False}
 

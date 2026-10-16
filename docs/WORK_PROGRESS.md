@@ -9080,3 +9080,109 @@ New context-roundtrip/largest-poll-gap and loading/context-first-paint diagnosti
 will help distinguish collection gaps from request work; they do not claim to
 measure pure service time. No AI, signing authority or control renewal was added.
 Installation and live verification of this correction remain pending.
+
+
+## Live timing, receiving records and lazy historical source foundation
+
+The user exited through Steam. The combined6c79e74 controls/loading package
+installed with all205 save hashes unchanged and unchanged preview-only wrapper.
+The game and read-only service were relaunched through the existing Steam entry.
+Windows/Linux Build38847528205 and Franchise38847528242 pass. User confirms Dart's
+passing stats appear; Hernandez has no rows. Fresh actual logs show loading
+first-paint15–29ms, context roundtrip1862–1949ms and largest owner-poll gaps18–37ms.
+Thus these captures do not support animation-paused polling as the main remaining
+delay; request work dominates. No pure-service timing claim is made.
+
+Read-only MyNFL1 inspection finds1521 players with history pointers and549 without,
+including Hernandez. Dart slot987 has nine supported records, including2272
+passing yards/15TD/5INT. Nabers slot998 has two periods with saved receiving codes
+previously excluded by the reader. Original REC/YDS/TD selectors and A8A510
+descriptors map native fields2E/4F/3E to history12/13/14 in both pinned retail
+73105b17 and SOFTDRINKf67e6fc1 images. New mappings/export/UI allowlisting preserve
+Nabers'109/1204/7 and18/271/2 separately, signed yards and missing fields, with no
+ratings or aggregation.29 focused Python checks and11 native checks pass; all897
+Python regressions pass when localhost web/TLS tests run outside the sandbox.
+The first broad run's four errors were sandbox port-binding denial, not assertions.
+This new receiving mapping is source-only and not yet deployed to the live service.
+
+The user requested real-player historical imports, then specified lazy year API
+requests. Documented nflverse APIs supply season CSVs. A private bounded2025
+roster/stat/snap audit retains URLs and SHA256s.1753 of2070 game identities have a
+unique name-and-DOB-component match;317 remain unmatched. Hernandez has396
+offensive snaps across seven regular-season source game rows and8 special-team
+snaps; starts are not established. No imported data was attached to actors or saves.
+
+A small franchise-owned SeasonCache now requests only the selected dataset/year
+on a background worker, deduplicates requests and persists immutable source bytes
+with hash/URL/attribution/license. Startup is inert; restarts reuse pinned cache.
+Failure, corrupt cache, future year and arbitrary URL/dataset requests do not
+become invented zero stats or unbounded retries. Four authored offline cache tests
+pass. It is not yet wired into Bridge, player identity association or the UI;
+external history remains separate from game records. docs/HISTORICAL_STATS.md and
+the worklist identify the remaining integration. Engine-sidecar transport, cloud
+controls, paid inference, personalities and financial records were unchanged.
+
+
+## Game-parity fallback rule and context request performance
+
+The user limited external imports to missing complete in-game seasons and metrics
+the game itself can produce/display after a full season. Existing complete seeded
+history also takes priority. Missing metrics after a full game season do not
+reactivate external supplementation. The cache now requires a current server-owned
+completed-game-season count on each poll and rejects nonzero/unknown counts; snap
+counts are removed from its fetch allowlist. Five authored cache tests pass. No
+external data is connected to the game or model yet; the eligibility/metric gating
+and source association remain explicit integration requirements. Hernandez snap
+audits are research only and will not become unsupported UI/model metrics.
+
+Fifth-year options are explicitly in scope. RookieScale currently records only
+first-round eligibility; exercise/decline, supported pricing/deadline/protections,
+cap/cash effects and durable game save/reload remain unchecked. Nothing adds an
+automatic fifth salary year or silently exercises an option.
+
+An actual MyNFL1 cProfile identifies two ledger replays per context: one for
+checkpoint/player context and another for guest cap preview. The new path computes
+both in one fresh SQLite read snapshot, retaining ownership/draft-right checks,
+contract inventory, revision, every actor/posting check and post-commit data-version/
+file-version freshness. Salary classification is validated once per read snapshot
+and reused across its replayed events; direct historical replay still validates it.
+No persistent financial cache or public schema/index changes were added. An index
+experiment touched only a disposable local profile database and was not shipped.
+
+Regression tests compare the combined result to the original standalone preview,
+require one replay and unchanged bytes, and retain rejection of null/incomplete
+guest offers. All904 offline Python tests pass, including localhost web/TLS checks.
+Eleven portable native tests passed for receiving support. The combined native
+Windows screen/navigation, loading, handshake and held-signing fixture children
+pass under Deck Proton.
+
+On actual Deck Windows CPython with private MyNFL1 database copies, before samples
+are1.827856/1.706341/1.837075s and after0.935895/0.811568/0.785956s: median improves
+1.827856→0.811568s. Replies are exactly equal except the three added receiving
+missing-metric names. Both source and private database hashes remain unchanged;
+model/cloud calls are forbidden. Targeted Windows tests pass:15 context-bridge,
+8 reconciliation (one platform skip),7 classification,8 performance-export and5
+lazy-cache checks. Receipt/source hashes and child completion are retained in
+private context-fast-batch. This is an isolated service measurement, not a new
+installed-game performance claim. Rebuilt game validation/package installation
+follow; AI and guest writes remain off.
+
+
+The first isolated game-validation attempt printed [TEST] Validation passed but
+did not produce a child completion marker before the120s timeout. It is not
+counted as a completed validation. The exact isolated process exited; the user
+game was not interrupted. One retry uses an explicit Windows batch file with
+errorlevel checking, fresh completion marker and explicit batch exit. That retry
+exits0 with marker validated and the validation success line. This establishes
+completion for the retry, not a claimed general shutdown fix. Matching rebuilt
+EXE95d0cc77abe82d876f727f2ae873cf18efe30cd591d6f26e9bb12390ec6130e2 and
+DLL75ef2cb9875d9420e42f2bee83952df8617a28dce4b1ef6925c25179afa571e9
+are pinned in the receipt.
+
+The package uses a copied Windows Python runtime with the new service import
+path, while retaining the original live financial database, registry, missing
+credentials, budget and disabled AI/application modes. The historical cache is
+not connected, so there is no runtime external-stat request or unsupported-stat
+display. The receiving mapper and faster authoritative read path are packaged
+together to avoid sending new metric names to an older UI allowlist. Normal-exit
+installation and actual live speed/receiving-page verification remain pending.

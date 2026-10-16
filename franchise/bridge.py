@@ -190,25 +190,18 @@ class Bridge:
                 self.connection_check()
                 from tools.reconcile_signing_context import reconcile_signing_context
                 try:
+                    if 'guest_offer' in request and (type(request['guest_offer']) is not dict or
+                            set(request['guest_offer'])!={'amount_word','flags_word'}):
+                        raise ValueError('Complete raw guest offer required')
                     result = reconcile_signing_context(*self.guest_snapshot, request['observation'],
-                        self.store, expected_revision=request['expected_revision'])
+                        self.store, expected_revision=request['expected_revision'],
+                        **({'guest_offer':request['guest_offer']} if 'guest_offer' in request else {}))
                     if 'performance_format' in request:
                         from tools.export_player_performance import saved_player_performance
                         performance = saved_player_performance(*self.guest_snapshot, result['source_slot'])
                         if performance['player_id'] != result['player_id']:
                             raise ValueError('Saved performance identity differs from signing checkpoint')
                         result['performance_context'] = performance
-                    if 'guest_offer' in request:
-                        raw=request['guest_offer']
-                        if type(raw) is not dict or set(raw)!={'amount_word','flags_word'}:
-                            raise ValueError('Complete raw guest offer required')
-                        from franchise.guest_contracts import (preview_guest_offer, GUEST_CONTRACT_FORMAT,
-                            SOFTDRINK_CONTRACT_FORMAT)
-                        from tools.franchise_snapshot_bindings import binding_money_scale
-                        contract_format = (SOFTDRINK_CONTRACT_FORMAT if
-                            binding_money_scale(self.guest_snapshot[0]) == 4 else GUEST_CONTRACT_FORMAT)
-                        result['offer_context']=preview_guest_offer(self.store,result['team_id'],result['player_id'],
-                            **raw,expected_revision=request['expected_revision'],contract_format=contract_format)
                 except ValueError as error:
                     raise Rejected(str(error)) from error
                 self.connection_check()

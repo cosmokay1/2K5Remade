@@ -661,18 +661,19 @@ class FranchiseStore:
         # One read transaction may replay the same generated player for many
         # clubs. Expected origins are immutable comparisons, never live actors.
         actor_origins={}
+        salary_batch=None
         if (db.execute("SELECT 1 FROM franchise_metadata WHERE key='salary-classification-v1'").fetchone()
                 or db.execute("SELECT 1 FROM events WHERE kind='salary_classification' LIMIT 1").fetchone()):
-            self._salary_classification(db)
-        ledgers={team:self._load_one(db,team,actor_origins=actor_origins) for team in team_ids}
+            salary_batch=self._salary_classification(db)
+        ledgers={team:self._load_one(db,team,actor_origins=actor_origins,salary_batch=salary_batch) for team in team_ids}
         # One fresh read transaction validates the league, without persistent cache.
         if db.execute("SELECT 1 FROM events WHERE kind IN ('year_transition','calendar_anchor','trade_out','trade_in','generation_trade_out','generation_trade_in') LIMIT 1").fetchone():
             for (other,) in db.execute('SELECT id FROM teams').fetchall():
                 if other not in ledgers:
-                    self._load_one(db,other,actor_origins=actor_origins)
+                    self._load_one(db,other,actor_origins=actor_origins,salary_batch=salary_batch)
         return ledgers
 
-    def _load_one(self, db, team_id, *, through_event_id=None, actor_origins=None) -> Ledger:
+    def _load_one(self, db, team_id, *, through_event_id=None, actor_origins=None,salary_batch=None) -> Ledger:
         row = db.execute("SELECT config FROM teams WHERE id=?", (team_id,)).fetchone()
         if row is None:
             raise Rejected("Unknown team")
@@ -920,7 +921,7 @@ class FranchiseStore:
             elif kind == "budget":
                 ledger.update_budget(**{key: payload[key] for key in ("cap", "roster_reserve", "expected_revision")})
             elif kind == 'salary_classification':
-                batch = self._salary_classification(db)
+                batch = salary_batch if salary_batch is not None else self._salary_classification(db)
                 from franchise.salary_rules import VeteranMinimumProfile
                 ledger.initialize_salary_classification(VeteranMinimumProfile.from_dict(batch['profile']),
                     source=batch['source'],expected_revision=batch['expected_revisions'][team_id])
@@ -1907,13 +1908,15 @@ class FranchiseStore:
                        (team_id,key,kind,json.dumps(payload,allow_nan=False)))
             return receipt
 
+    def _preview_offer(self, db, team_id, ledger, offer, expected_revision):
+        if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (offer.player_id,)).fetchone():
+            raise Rejected("Player already belongs to a team")
+        self._check_draft_right(db, team_id, offer.player_id)
+        return ledger.preview_offer(offer, expected_revision)
+
     def preview_offer(self, team_id: str, offer: Offer, expected_revision: int) -> dict:
         with self._connection() as db:
-            ledger = self._load(db, team_id)
-            if db.execute("SELECT 1 FROM ownership WHERE player_id=?", (offer.player_id,)).fetchone():
-                raise Rejected("Player already belongs to a team")
-            self._check_draft_right(db, team_id, offer.player_id)
-            return ledger.preview_offer(offer, expected_revision)
+            return self._preview_offer(db,team_id,self._load(db,team_id),offer,expected_revision)
 
     def preview_draft_offer(self, team_id, offer, expected_revision):
         with self._connection() as db:

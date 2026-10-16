@@ -18,6 +18,10 @@ NAMED_METRICS = {0: ('games', 'count'), 1: ('rush_attempts', 'count'),
                  6: ('pass_attempts', 'count'), 7: ('completions', 'count'),
                  8: ('passing_yards', 'yards'), 9: ('passing_touchdowns', 'count'),
                  10: ('interceptions_thrown', 'count'),
+                 # Native REC/YDS/TD columns at509A80 select fields2E/4F/3E;
+                 # A8A510+field*1C+0C maps them to saved codes12/13/14.
+                 12: ('receptions', 'count'), 13: ('receiving_yards', 'yards'),
+                 14: ('receiving_touchdowns', 'count'),
                  # Descriptor field2F -> history19; all ten Gildon pre-2004
                  # seasons corroborate half-sack units against NFL's table.
                  # This labels saved history, not live telemetry coverage.

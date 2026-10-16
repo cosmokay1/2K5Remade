@@ -69,6 +69,14 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       pending; this closes an early-failure gap, not the full
       active-franchise lifetime requirement or application authority.
 
+- [x] Remove duplicate ledger reconstruction from read-only offer context.
+      Context, ownership/draft-right checks and cap preview now share one SQLite
+      snapshot; salary-classification league validation is reused inside that
+      snapshot. Actual Windows/Deck service median1.828s→0.812s with exact replies
+      unchanged except added receiving metric coverage and unchanged database
+      hashes. No persistent ledger cache or schema/index changes were introduced.
+      This is isolated service evidence; installed-game timing remains to verify.
+
 - [ ] Finish held native submission through accepted proposal, guest/ledger commit
       and recovery. An opt-in source path now defers retail judgment/precommit,
       queues one captured proposal (including a bounded cross-thread submit handoff)
@@ -718,7 +726,10 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
 - [ ] Implement dated June-1 treatment, supported tenders/tags and salary benefits.
 - [ ] Implement incentive settlement, cap adjustments, carryover and year rollover. Atomic initial calendar anchoring now validates all teams, revisions, source years and exact postings across restart/migration; typed current contract views and closing settlement inspection preserve original plans/cash without a revenue gate. A scoped veteran-only atomic league transition now advances sourced schedules and eligible settled expiry with exact all-team replay; supported postroll veteran sign/release/trade and first/repeated-amendment mutations, history-aware payroll and native calendar context are implemented; rookie/cohort rules and actual game advancement remain open. Source/schema review identified generation projection, expiry and cohort dependencies; follow docs/season-rollover.md for the durable league-wide transition work.
 - [ ] Complete drafted/undrafted rookie rules, pool accounting, option exercise,
-      and performance escalators; never auto-exercise a fifth year.
+      and performance escalators; never auto-exercise a fifth year. The user
+      explicitly requested fifth-year options: first-round eligibility exists,
+      but the exercise/decline decision, supported deadline/pricing/protection
+      accounting, UI and durable save/reload integration remain to implement.
 - [ ] Re-audit money using independent expected examples from primary rule sources.
 
 Done when supported operations reconcile across at least two synthetic seasons.
@@ -853,8 +864,8 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
       Back and held-button quarantine. The preview refuses AI/application mode;
       native signing remains held even if the addon fails. Eleven portable native
       checks pass, and all20 Windows native checks/render fixtures pass at both
-      Deck resolutions. Actual Deck takeover remains unverified;
-      editing/submission/application remain unfinished. Installed code is unchanged.
+      Deck resolutions. Subsequent live read-only takeover is verified below;
+      editing/submission/application remain unfinished.
       The compiler TEMP blocker is repaired by using the initialized Wine prefix;
       repeated fresh-container builds and all three isolated Windows/Proton child
       checks pass. The user-requested redesign adds salary/cap columns, stronger
@@ -870,9 +881,27 @@ leave game/engine state consistent. Remote control is not tamper-proof DRM.
       horizontal controls driving vertical sections and no stick navigation.
       A combined fix adds pre-reply loading, vertical D-pad/left-stick selection,
       right-stick scrolling and timing logs. Eleven portable checks and four
-      targeted Windows/Proton fixtures pass; the rebuilt game validates. Live
-      verification of this correction is pending. Editing/submission and AI
-      remain disabled.
+      targeted Windows/Proton fixtures pass; the rebuilt game validates. The combined correction was installed after verified normal exit, with all205
+      saves unchanged. The user confirms Dart's passing stats render; live logs
+      show loading paint15–29ms, context roundtrip1862–1949ms and maximum polling
+      gaps18–37ms. Windows/Linux Build38847528205 and Franchise38847528242 pass.
+      Editing/submission and AI remain disabled.
+- [ ] Add on-demand real-roster historical evidence, keeping it separate from
+      simulated seasons and preserving identity/source/year/coverage. The user
+      wants lazy season requests with local caching rather than an all-year import.
+      A tested background year cache is implemented but not connected to the
+      running sidecar/UI. Read-only2025 matching finds1753 unique name/DOB matches
+      and317 unmatched; no actor was changed. Native receiving-history mappings
+      now export Nabers' saved records; Dart already exports passing history.
+      Hernandez has no saved history pointer, while external snap rows exist.
+      User correction: external history is a fallback only until a complete
+      in-game season exists, and only for metrics the game can itself produce and
+      display for that player/position. Do not import/show external snap counts or
+      other unsupported metrics. Missing game fields never reactivate fallback.
+      Finish verified identity association, completed-season/game-metric gating,
+      sidecar lookup, UI pending/ready/error refresh, model-context inclusion and
+      private integration checks. See
+      docs/HISTORICAL_STATS.md. No data fetch may block rendering or add model calls.
 - [ ] Integrate persistent stories/relationships into the actual franchise experience.
 - [ ] Add opt-in configuration, backups, recovery and explicit migration handling.
 

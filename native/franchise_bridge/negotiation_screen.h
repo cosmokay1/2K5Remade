@@ -15,7 +15,7 @@ inline std::string screen_label(std::string value) {
 inline std::string screen_metric(const std::string& value) {
     static const std::set<std::string> allowed={"games","rush_attempts","rushing_yards","rushing_touchdowns",
         "pass_attempts","completions","passing_yards","passing_touchdowns","interceptions_thrown","sacks",
-        "tackles","targets","pressures","qb_hits"};
+        "receptions","receiving_yards","receiving_touchdowns","tackles","targets","pressures","qb_hits"};
     if(!allowed.count(value)) throw std::runtime_error("Unsupported performance metric");
     return screen_label(value);
 }

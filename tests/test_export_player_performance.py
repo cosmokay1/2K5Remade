@@ -41,6 +41,23 @@ class SavedPerformanceTests(unittest.TestCase):
         self.assertEqual(ledger.revision, 0)
         self.assertEqual(bytes(self.fixture()), payload)
 
+    def test_receiving_seasons_preserve_exact_signed_yards_and_no_missing_zeros(self):
+        payload=self.fixture();bank=0x41D54
+        values=((1,12,70),(1,13,900),(1,14,4),(2,12,2),(2,13,-3))
+        struct.pack_into('<I',payload,0x360,len(values))
+        for i,(period,code,value) in enumerate(values):
+            word=(period<<23)|(code<<16)|(value&0xFFFF)
+            if i==len(values)-1:word|=0x80000000
+            struct.pack_into('<I',payload,bank+4*i,word)
+        before=bytes(payload);performance=saved_player_performance(create_bindings(before),before,0)
+        rows=performance['saved_history']
+        self.assertEqual([(r['metric'],r['value'],r['period_code_raw']) for r in rows],
+            [('receptions',70,1),('receiving_yards',900,1),('receiving_touchdowns',4,1),
+             ('receptions',2,2),('receiving_yards',-3,2)])
+        self.assertEqual(len([r for r in rows if r['metric']=='receiving_touchdowns']),1)
+        self.assertEqual(bytes(payload),before)
+        self.assertNotIn('targets',{r['metric'] for r in rows})
+
     def test_foreign_player_performance_cannot_enter_model_context(self):
         payload = bytes(self.fixture()); bindings = create_bindings(payload)
         performance = saved_player_performance(bindings, payload, 0)
@@ -55,7 +72,7 @@ class SavedPerformanceTests(unittest.TestCase):
         performance = saved_player_performance(bindings, payload, 1)
         self.assertFalse(performance['history_present'])
         self.assertEqual(performance['saved_history'], [])
-        self.assertEqual(len(performance['missing_named_metrics']), 10)
+        self.assertEqual(len(performance['missing_named_metrics']), 13)
         self.assertNotEqual(performance['player_id'], saved_player_performance(bindings, payload, 0)['player_id'])
 
     def test_deleted_unmapped_and_unknown_flags_never_become_named_production(self):
