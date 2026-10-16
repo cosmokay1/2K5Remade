@@ -681,12 +681,15 @@ validated. Current source milestone:
 - [x] Verify authored saved native amendment effects independently; report the
       supplemental bonus charges that native payroll cannot represent. These
       checks never authorize writes or assert native cap enforcement.
-- [ ] Wire explicit addon offer submission and recoverable agent errors into
+- [x] Wire explicit addon offer submission and recoverable agent errors into
       the reviewed draft flow; retain current context/source/control checks.
       Source now includes an explicit Y-send mailbox, owner-only exact checked
       capability, held writes, retained-error/recheck UX and lost-reply request
-      reuse. Portable checks pass; Windows controller/service validation remains
-      pending. The private installed preview is unchanged.
+      reuse. Source34591dd passes Windows/Linux franchise CI and the paired game
+      build checks, including real native-client/service and saved coordination
+      fixtures. Final720p/800p authored renders pass visual review. This completes
+      source/fixture delivery, not actual in-game submission/signing verification;
+      the private installed preview is unchanged.
 - [ ] Enforce retained bonus obligations in native cap calculations and verify
       correct team/year behavior through signing and save/reload. The existing
       packed contract stores one bonus schedule; replacing it loses old debt.

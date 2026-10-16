@@ -9931,3 +9931,37 @@ submission mode; the candidate now states Signing held and distinguishes queued,
 paused, checked and received states. Preview-only wording is retained. Free-agent
 predicted room is also hidden after error/dirty/pending states, and first-load
 errors replace the misleading loading message. Final Windows rerender remains.
+
+
+## Reviewed submission milestone verified —34591dd
+
+Final source34591dd passes both Windows and Ubuntu jobs of Franchise AI checks:
+https://github.com/cosmokay1/2K5Remade/actions/runs/38923038532
+The paired game Build check also succeeds:
+https://github.com/cosmokay1/2K5Remade/actions/runs/38923038981
+This includes the Windows host/mailbox/controller tests, actual C-client/service
+fixture and both native saved-signing coordinator checks. The948-test Python
+suite,42 native/Python amendment replies and5,767 exact term cases pass in CI.
+The original Windows SQLite cleanup failure is resolved, without hiding cleanup
+errors or changing accounting behavior.
+
+Final authored Windows renders are retained locally in
+.local-runtime/reviewed-submit-ci-34591dd. Visual inspection confirms720p queued,
+paused/retry and retained-contract views, with stale predicted room replaced by
+Check draft, and800p first-load errors replacing indefinite loading. Sidebar
+states now correctly distinguish submission mode from read-only preview. These
+are authored renderer fixtures, not captures of a real franchise negotiation.
+
+The independent engine-sidecar repository's latest Addon checks also succeeds
+on Windows and Ubuntu at2a2110d88f2f44979edf7d0ed56e8db5ba2ccf28:
+https://github.com/cosmokay1/engine-sidecar/actions/runs/38677485314
+No standalone transport changes or public reuse license decisions were needed.
+
+The reviewed-submission source/fixture worklist item is complete. Installed
+cap-room-bumpers-v1 and its pinned service/database were not replaced. No saves
+or AI/signing control settings were written; no cloud inference or control
+renewal occurred. The
+Deck is not resolving, and the old private compiler overlay is superseded.
+Next game gates remain supplemental native bonus-cap enforcement, sourced
+supported earned-pay timing and one combined apply/reconcile/save/reload run.
+Do not enable live signing or deploy the superseded partial compiler stage.
