@@ -9242,3 +9242,73 @@ is staged, retaining the installed faster service, wrapper, database and control
 Installation awaits normal exit; actual game receiving-page confirmation is open.
 CI for56ce66e was dispatched as Build38850554580 / Franchise38850554573 and was
 still running at this check.
+
+### Installed validator fix and external Deck test control
+
+The user confirmed the game was closed and requested tooling that can control it
+for actual tests. The protected installer installed the56ce66e EXE/DLL pair;
+all205 tracked save hashes were unchanged at installation. The existing launch
+wrapper, faster service, database, registry and disabled AI/signing settings were
+retained. Both native fix CI runs completed successfully: Build38850554580 and
+Franchise38850554573, including the Windows native integration that failed
+before the receiving validator correction.
+
+Added tools/game_test_control.py and docs/GAME_TEST_CONTROL.md. This is a small
+Linux/Proton runner, not another daemon or launcher. It identifies one actual
+NFL2K5.exe by executable and configured runtime root, supports the existing
+optional file-input hook, and provides an explicit existing-keyboard-mapping
+backend. Cooperating drivers share a nonblocking input lock. Batches are bounded,
+pending queues cannot be overwritten, keyboard keys are released in finally,
+and queue consumption is not misrepresented as menu success. Log assertions use
+an explicit pre-action byte offset and fail on restart, truncation or timeout.
+Nine asset-free tests pass, covering stale evidence, pending input, malformed
+batches, process identity, restart/truncation, key release and input serialization.
+The Linux lock case is intentionally skipped on Windows.
+
+The game was already running again when private queue enablement was attempted;
+the guard refused to change its launch configuration. A normal X11 window-close
+request did not stop it, and no process was force-killed. Rather than ask the user
+for another restart, actual tests used the explicit keyboard backend. The launch
+wrapper remains byte-identical and no file input queue was enabled. Ordinary X11
+root screenshots returned black on this Gamescope session, so the driver instead
+uses the installed gamescopectl screenshot command and requires a complete new
+PNG. It captures on demand, not continuously, and adds no host/renderer code.
+
+Actual process230141 was driven from Dart's Agent page to Performance, showing
+14games,86 rush attempts,487 rushing yards,9 rushing TD,339 pass attempts,
+216completions,2272passing yards,15passing TD and5interceptions. The live native
+context log reports1.278s roundtrip and18ms largest owner poll gap. This is live
+IPC/service/collection evidence, distinct from the earlier0.812s isolated median.
+The driver backed out without submitting, used the observed position selector
+and player list, selected Nabers, inspected his action menu, chose Re-negotiate
+Contract, waited for a fresh context reply and selected Performance. A first
+wait correctly timed out at the intermediate action menu; no following input
+was blindly executed after that failure.
+
+The actual Nabers screenshot shows separate saved records:109 receptions,
+1204receiving yards and7receiving TD in one period, and18 receptions,271yards,
+2receiving TD in another. These are not summed, assigned invented season labels,
+or represented as imported/current-season totals. Dart and Nabers both render
+through the corrected native validator; no model request or contract submission
+was made. Private screenshots/receipts remain in .local-runtime/game-test-control
+and the corresponding Deck directory; no retail assets are added to Git.
+
+The user also clarified that signed players must be able to negotiate early
+extensions, pay reductions instead of release, and supported cap restructures.
+WORKLIST now explicitly includes these distinct proposals, player consent where
+required, current-year relief/future commitments, and preservation of earned
+money, guarantees and bonus layers. The current signed-player rejection is an
+unimplemented feature, not product policy. This tooling milestone does not remove
+that guard or claim extension/signing/save-reload completion.
+
+Post-test read-only verification matches both installed binary hashes, the
+unchanged launch wrapper and original franchise database hash. All203 nonpartition
+files in the205-file save manifest are byte-identical, including both logical
+MyNFL1 and its physical UDATA payload. Partition0.img and Partition5.img hashes
+changed during the running session; they are preserved, not restored or claimed
+unchanged. Their internal changes were not attributed, and this is not a
+save/reload acceptance test. The live log has zero transport-unavailable events
+and two valid context replies, with correct Dart slot987 and Nabers slot998,
+AI/write authorization false. Nabers's actual roundtrip is1.146s with18ms maximum
+owner poll gap. The game is left on Nabers's Performance screen, with no held keys
+or background test driver.

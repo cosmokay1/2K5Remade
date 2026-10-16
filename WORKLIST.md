@@ -77,8 +77,9 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       hashes. No persistent ledger cache or schema/index changes were introduced.
       This is isolated service evidence. The combined update is installed on the Deck,
       all205 save hashes are unchanged, and the new service process starts from
-      context-fast-batch against the original database. Installed-game timing
-      and Nabers receiving-page verification remain pending; AI/signing are off.
+      context-fast-batch against the original database. Actual Dart context now
+      arrives in1.278s with18ms maximum owner poll gap. Actual Nabers receiving
+      rows are visually verified through the native screen; AI/signing are off.
 
 - [x] Align native reply validation with the three mapped receiving-history
       metrics. The installed service reply reproduced the old validator failure
@@ -86,8 +87,17 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       reply. Authored tests cover absent history, present receiving rows, signed
       receiving yards and rejection of the wrong unit. All11 local native checks
       pass. All five private Windows/Proton checks and isolated game validation
-      pass with child completion markers. Corrected package is staged awaiting
-      normal game exit; actual live confirmation remains pending.
+      pass with child completion markers. Corrected package is installed;205 save
+      hashes were unchanged at installation. Live Dart and Nabers context/screens
+      now remain connected, including receiving rows and missing coverage.
+
+- [x] Add a small external game-test driver for menu input, compositor screenshots
+      and fresh log checkpoints. Existing keyboard mappings work on the running
+      Deck without a new host build/server/launcher; the existing optional press
+      queue is also supported. Nine asset-free safeguards pass. Actual automated
+      navigation reaches Dart Performance, backs out, selects receivers/Nabers,
+      opens Re-negotiate Contract, waits for a fresh reply and captures receiving
+      evidence. Whole-franchise unattended signing/save/reload remains open.
 
 - [ ] Finish held native submission through accepted proposal, guest/ledger commit
       and recovery. An opt-in source path now defers retail judgment/precommit,
@@ -719,6 +729,12 @@ exact obligations, ownership, cap balances, rookie pools, and story history.
       unpaid bonus and other trade protections remain; supported assignments now use
       separate receiving generations when returning to a former club.
 - [ ] Implement extensions/restructures without erasing existing bonus layers.
+      Active players must be able to negotiate: early extensions before free
+      agency, consensual pay reductions instead of release, and supported cap
+      restructures. Keep these distinct from new free-agent signings. Show the
+      current-year relief and future commitments; retain existing guarantees,
+      earned money and bonus layers. Current negotiation.py signed-player
+      rejection is a missing capability, not intended product policy.
       First calendar-aware Ledger conversions now preserve immutable original
       terms and paid indices, reanchor the amended schedule and retain both bonus
       schedules through later rollover/release. Store replay, explicit sidecar routing
