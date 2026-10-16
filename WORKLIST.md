@@ -85,7 +85,9 @@ work unless a concrete Proton limitation requires it; retain existing fixes.
       (`Invalid missing history metric`); corrected validation accepts that exact
       reply. Authored tests cover absent history, present receiving rows, signed
       receiving yards and rejection of the wrong unit. All11 local native checks
-      pass; private Windows rebuilding/live confirmation remain pending.
+      pass. All five private Windows/Proton checks and isolated game validation
+      pass with child completion markers. Corrected package is staged awaiting
+      normal game exit; actual live confirmation remains pending.
 
 - [ ] Finish held native submission through accepted proposal, guest/ledger commit
       and recovery. An opt-in source path now defers retail judgment/precommit,

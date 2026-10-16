@@ -9229,3 +9229,16 @@ pass. The earlier Franchise AI CI38849831828 failed in the Windows native
 saved-signing integration step; the Python-only checks had not exercised this
 application validation boundary. Private Windows rebuilding and deployment are
 pending; no running game files have been replaced during diagnosis.
+
+
+The corrected private Windows build completes. All five Proton child checks pass
+(protocol, navigation, loading-render, host-handshake, held-signing), launcher
+exit0 plus fresh passed marker. Isolated game validation also completes exit0
+with fresh validated marker and validation success line. Candidate EXE
+de1b532c3a9301aaf34958702cfbbf1eb1c01df0f8868a9870b4412e82dcc2ab and
+DLL8a0c3203e84597543753e6e7890a9c97b2f03e509a207db4b35595b7ce1e6a7e
+are pinned in receiving-validator-fix receipts. The protected two-file installer
+is staged, retaining the installed faster service, wrapper, database and controls.
+Installation awaits normal exit; actual game receiving-page confirmation is open.
+CI for56ce66e was dispatched as Build38850554580 / Franchise38850554573 and was
+still running at this check.
