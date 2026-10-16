@@ -8920,3 +8920,19 @@ and uploads authored screen captures before the longer Python suite, providing a
 separate validation route. No control/IAM grant, paid inference, installed game
 replacement or financial write occurred. Editor/submit and real signing/reload
 remain open.
+
+
+Initial469406a Windows validation now compiles the production addon renderer and
+passes all20 native CTests, including actual GDI frame rendering at1280x800 and
+1280x720, one-use Back, ownership/caching, host lifecycle and the corrected late-
+preview/held-signing fixture. Authored PNG artifacts were retrieved from run
+38842645097. The batched initial inspection finds readable text and complete
+response/counter access, but long lines, ungrouped money and a partially clipped
+line at a scroll boundary need one correction batch. The source now groups exact
+integer dollars, shows total compensation/term, retains fractions without rounding,
+uses a shorter reading measure and aligns scrolling to text lines. Raw history
+codes remain in the source rather than the player-facing text. UTF-8 speech and
+other-controller/mixed-mode rejection checks join the final confirmation fixture.
+Final Windows confirmation is pending. The extracted standalone sidecar CI
+38677485314 remains successful;469406a Linux engine and Linux runtime checks pass.
+No installed game, save, controller mapping or remote control was changed.

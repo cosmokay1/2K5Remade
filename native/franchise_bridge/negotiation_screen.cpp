@@ -63,6 +63,7 @@ bool paint(NFL2K5AddonDraw& draw) {
         const float u=std::min(draw.width/1100.0f,draw.height/700.0f);
         auto px=[&](float value){return static_cast<int>(std::lround(value*u));};
         const int margin=px(32),right=draw.width-margin,body_top=px(164),body_bottom=draw.height-px(62);
+        const int body_right=std::min(right,margin+px(850));
         RECT background{0,0,static_cast<LONG>(draw.width),static_cast<LONG>(draw.height)};
         HBRUSH brush=CreateSolidBrush(RGB(9,14,23));FillRect(dc,&background,brush);DeleteObject(brush);
         SetBkMode(dc,TRANSPARENT);
@@ -83,12 +84,14 @@ bool paint(NFL2K5AddonDraw& draw) {
                 i==navigation.page?RGB(255,255,255):RGB(199,219,245),DT_SINGLELINE);
             if(i==navigation.page){RECT line{left,px(155),left+px(175),px(157)};brush=CreateSolidBrush(RGB(199,219,245));FillRect(dc,&line,brush);DeleteObject(brush);}
         }
-        const auto measured=text(pages[navigation.page],margin,0,right,0,22,FW_NORMAL,RGB(255,255,255),DT_CALCRECT|DT_WORDBREAK);
-        const int overflow=std::max(0,static_cast<int>(measured.bottom)-body_bottom+body_top);
+        const auto measured=text(pages[navigation.page],margin,0,body_right,0,22,FW_NORMAL,RGB(255,255,255),DT_CALCRECT|DT_WORDBREAK);
+        const int line_height=std::max(1,static_cast<int>(text("M",margin,0,body_right,0,22,FW_NORMAL,RGB(255,255,255),DT_CALCRECT|DT_SINGLELINE).bottom));
+        const int raw_overflow=std::max(0,static_cast<int>(measured.bottom)-body_bottom+body_top);
+        const int overflow=((raw_overflow+line_height-1)/line_height)*line_height;
         navigation.scroll[navigation.page]=std::min(navigation.scroll[navigation.page],static_cast<int>(std::ceil(overflow/u)));
-        const int offset=std::min(px(static_cast<float>(navigation.scroll[navigation.page])),overflow);
+        const int offset=std::min((px(static_cast<float>(navigation.scroll[navigation.page]))/line_height)*line_height,overflow);
         SaveDC(dc);IntersectClipRect(dc,margin,body_top,right,body_bottom);
-        text(pages[navigation.page],margin,body_top-offset,right,body_top-offset+measured.bottom+px(28),22,FW_NORMAL,RGB(255,255,255),DT_WORDBREAK);
+        text(pages[navigation.page],margin,body_top-offset,body_right,body_top-offset+measured.bottom+px(28),22,FW_NORMAL,RGB(255,255,255),DT_WORDBREAK);
         RestoreDC(dc,-1);
         std::string footer="LT / RT  Section     D-pad  Scroll     B  Back";
         if(overflow) footer+="     "+std::to_string(static_cast<int>(100LL*offset/overflow))+"%";

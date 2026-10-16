@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <string>
 #include <sstream>
+#include <limits>
 namespace franchise {
 inline std::string screen_label(std::string value) {
     for(auto& c:value) if(c=='_') c=' ';
@@ -23,14 +24,29 @@ inline std::string screen_number(const nlohmann::json& value) {
     if(value.is_number()) return value.dump();
     throw std::runtime_error("Unavailable display amount");
 }
+inline std::string screen_money(const nlohmann::json& value) {
+    auto number=screen_number(value);
+    if(number.find_first_not_of("-0123456789")!=std::string::npos) return "$"+number+" (exact dollars)";
+    const int first=!number.empty() && number[0]=='-'?1:0;
+    for(int i=static_cast<int>(number.size())-3;i>first;i-=3) number.insert(static_cast<size_t>(i),",");
+    return "$"+number;
+}
 inline void screen_terms(std::ostringstream& text,const nlohmann::json& offer) {
     const auto& salaries=offer.at("salaries");
-    for(size_t i=0;i<salaries.size();++i) {
-        text<<"Contract year "<<i+1<<" base salary: $"<<screen_number(salaries[i])<<"\n";
-        if(offer.contains("guaranteed_salaries"))
-            text<<"    Protected base: $"<<screen_number(offer.at("guaranteed_salaries").at(i))<<"\n";
+    int64_t total=offer.at("signing_bonus").get<int64_t>();
+    if(total<0) throw std::runtime_error("Invalid displayed compensation");
+    for(const auto& value:salaries) {
+        const auto salary=value.get<int64_t>();
+        if(salary<0 || total>std::numeric_limits<int64_t>::max()-salary) throw std::runtime_error("Invalid displayed compensation");
+        total+=salary;
     }
-    text<<"Signing bonus (total): $"<<screen_number(offer.at("signing_bonus"))<<"\n";
+    text<<"Term: "<<salaries.size()<<" years\nTotal compensation: "<<screen_money(total)<<"\n\n";
+    for(size_t i=0;i<salaries.size();++i) {
+        text<<"Contract year "<<i+1<<" base salary: "<<screen_money(salaries[i])<<"\n";
+        if(offer.contains("guaranteed_salaries"))
+            text<<"    Protected base: "<<screen_money(offer.at("guaranteed_salaries").at(i))<<"\n";
+    }
+    text<<"Signing bonus (total): "<<screen_money(offer.at("signing_bonus"))<<"\n";
 }
 inline std::array<std::string,3> negotiation_pages(const nlohmann::json& reply) {
     if(!reply.at("error").is_null()) throw std::runtime_error("No negotiation view");
@@ -39,7 +55,6 @@ inline std::array<std::string,3> negotiation_pages(const nlohmann::json& reply) 
     if(checkpoint.at("write_authorized")!=false || checkpoint.at("ai_authorized")!=false)
         throw std::runtime_error("Screen evidence is not an authorization");
     std::ostringstream contract,performance,agent;
-    contract<<"Contract preview\n\n";
     if(checkpoint.contains("offer_context")) {
         const auto& context=checkpoint.at("offer_context");
         if(!context.at("offer").is_null()) screen_terms(contract,context.at("offer"));
@@ -49,8 +64,8 @@ inline std::array<std::string,3> negotiation_pages(const nlohmann::json& reply) 
             contract<<"\nCap charges (supported ledger scope)\n";
             const auto& charges=preview.at("contract_charges");
             for(size_t i=0;i<charges.size();++i)
-                contract<<"Contract year "<<i+1<<": $"<<screen_number(charges[i])<<"\n";
-            contract<<"Cap room after offer: $"<<screen_number(preview.at("room_after"))<<"\n";
+                contract<<"Contract year "<<i+1<<": "<<screen_money(charges[i])<<"\n";
+            contract<<"Cap room after offer: "<<screen_money(preview.at("room_after"))<<"\n";
         }
         if(context.contains("reason") && context.at("reason").is_string())
             contract<<"\nOffer unavailable: "<<context.at("reason").get<std::string>()<<"\n";
@@ -58,19 +73,17 @@ inline std::array<std::string,3> negotiation_pages(const nlohmann::json& reply) 
     contract<<"\nThis preview does not sign or reserve a contract.\n"
         <<"Cash compensation and cap charges are different amounts.\n"
         <<"Opening liabilities are not fully verified.\n";
-    performance<<"Performance evidence\n\n";
     if(checkpoint.contains("performance_context")) {
         const auto& evidence=checkpoint.at("performance_context");
         const auto& rows=evidence.at("saved_history");
         if(rows.empty()) performance<<"No mapped performance records are available for this player.\n";
         else {
-            performance<<"Saved history: period and mode attribution unverified.\n"
+            performance<<"Saved history: season and game coverage unverified.\n"
                 <<"Each row is separate; these are not current-season totals.\n\n";
+            size_t record=0;
             for(const auto& row:rows)
-                performance<<screen_metric(row.at("metric").get<std::string>())<<": "
-                    <<screen_number(row.at("value"))<<" "<<row.at("unit").get<std::string>()
-                    <<"  (saved period "<<screen_number(row.at("period_code_raw"))
-                    <<", mode "<<screen_number(row.at("mode_code_raw"))<<")\n";
+                performance<<"Record "<<++record<<": "<<screen_metric(row.at("metric").get<std::string>())<<": "
+                    <<screen_number(row.at("value"))<<" "<<row.at("unit").get<std::string>()<<"\n";
         }
         if(evidence.contains("missing_named_metrics") && !evidence.at("missing_named_metrics").empty()) {
             performance<<"\nNot available in this history:\n";
@@ -85,7 +98,6 @@ inline std::array<std::string,3> negotiation_pages(const nlohmann::json& reply) 
     } else performance<<"Performance evidence unavailable.\n";
     performance<<"\nMissing observations are unknown, not zero.\n"
         <<"Saved history does not establish promise fulfillment.\n";
-    agent<<"Player / agent response\n\n";
     if(result.contains("signing_checkpoint")) {
         agent<<result.at("reason").get<std::string>()<<"\n";
         if(result.contains("counter") && !result.at("counter").is_null()) {

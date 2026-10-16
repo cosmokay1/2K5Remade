@@ -48,6 +48,13 @@ int main(int argc,char** argv) {
         fixture=negotiation_screen_fixture();
         require(!nfl2k5_addon_ui_draw(1280,800,&pixels,&changed),"Preview must default off");
         _putenv_s("NFL2K5_FRANCHISE_SCREEN_PREVIEW","1");
+        _putenv_s("NFL2K5_FRANCHISE_NEGOTIATION","1");
+        require(!nfl2k5_addon_ui_draw(1280,800,&pixels,&changed),"Read-only preview accepted negotiation mode");
+        _putenv_s("NFL2K5_FRANCHISE_NEGOTIATION","0");
+        _putenv_s("NFL2K5_FRANCHISE_GUEST_SIGNING","0");
+        _putenv_s("NFL2K5_FRANCHISE_SCREEN_PORT","bad");
+        require(!nfl2k5_addon_ui_draw(1280,800,&pixels,&changed),"Invalid controller port accepted");
+        _putenv_s("NFL2K5_FRANCHISE_SCREEN_PORT","0");
         for(const int height:{800,720}) {
             fixture=negotiation_screen_fixture();fixture["request_id"]=std::to_string(height);
             auto capture=[&](const char *name){
@@ -59,11 +66,14 @@ int main(int argc,char** argv) {
             };
             capture("contract");require(changed,"First frame needs pixels");
             require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed) && !changed,"Unchanged screen redrew");
+            NFL2K5AddonInput other{};other.port=1;other.analog[7]=255;nfl2k5_addon_ui_input(&other);
+            require(!other.analog[7],"Other port reached the native menu");
+            require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed) && !changed,"Other port navigated the view");
             press(7);capture("performance");press(7);capture("agent-empty");
             auto checkpoint=fixture["result"];
             fixture["result"]={{"signing_checkpoint",checkpoint},{"counter",checkpoint["offer_context"]["offer"]},
                 {"counter_validation",{{"status","eligible"}}},{"reason",
-                    "We appreciate the offer, but the role matters as much as the money. "
+                    u8"We\u2019d appreciate a clear role as much as the money in this offer. "
                     "We want a clear path to starting and a deal that reflects the production in the records you have. "
                     "Where the records are missing, we should talk about that uncertainty rather than assume the worst. "
                     "Our counter keeps the annual salaries and bonus explicit so you can review the cap impact. "

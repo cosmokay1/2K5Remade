@@ -98,8 +98,8 @@ The host copies no borrowed addon image pointers. Full opaque BGRA frames are
 cached; unchanged text does not redraw. Failed painting releases screen ownership.
 
 Terms, exact cap amounts and full player responses/counters/proposed promises
-come from the matching snapshot. Historical records remain separate with raw
-period/mode labels and unavailable counters. Hidden/unsupported performance
+come from the matching snapshot. Historical records remain separate, explicitly marked as having unverified
+season/coverage; raw period/mode codes remain in the source payload. Hidden/unsupported performance
 metrics refuse display. Editing, inference, application and promise commitment
 are absent from this read-only mode. Its controls do not imply verified live-game
 input ownership until the actual installed build is exercised.
@@ -118,5 +118,6 @@ input ownership until the actual installed build is exercised.
   legal signing, ledger/save agreement and reload before enabling application.
 
 The data-boundary change alone did not deliver a screen. The subsequent read-only
-implementation still needs Windows rendering and actual Deck verification; it
+implementation passes initial Windows rendering fixtures and still needs actual
+Deck verification; it
 does not deliver editing, a live model test or controlled signing. AI remains disabled.

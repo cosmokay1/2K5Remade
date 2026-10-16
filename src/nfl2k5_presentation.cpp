@@ -3464,6 +3464,7 @@ static int hud_callback(const XboxHudFrame *f, XboxHudImage *img)
 #ifdef NFL2K5_FRANCHISE_CLIENT
     const void *addon_pixels=nullptr;int addon_changed=0;
     if(nfl2k5_addon_ui_draw((int)f->game_w,(int)f->game_h,&addon_pixels,&addon_changed)) {
+        img->shared=nullptr;img->dw=img->dh=0;
         img->pixels=addon_pixels;img->w=(int)f->game_w;img->h=(int)f->game_h;img->stride=img->w*4;
         img->x=(int)f->game_x;img->y=(int)f->game_y;img->changed=addon_changed;return 1;
     }
