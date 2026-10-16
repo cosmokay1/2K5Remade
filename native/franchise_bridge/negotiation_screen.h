@@ -34,6 +34,35 @@ inline std::string screen_money(const nlohmann::json& value) {
 }
 struct ScreenStatRow {std::string label;std::vector<std::string> values;};
 struct ScreenTable {std::string title;std::vector<std::string> columns;std::vector<ScreenStatRow> rows;};
+struct ScreenPersonality {std::string key,label;};
+inline std::vector<ScreenPersonality> screen_personalities(const nlohmann::json& checkpoint) {
+    if(!checkpoint.contains("player_context")) return {};
+    const auto& player=checkpoint.at("player_context");
+    if(!player.value("initialized",false)) return {};
+    const auto priorities=personality_priority_values(player.at("personality"));
+    std::vector<ScreenPersonality> traits;
+    for(size_t i=0;i<2;++i) {
+        const auto& key=priorities[i].second;
+        traits.push_back({key,key=="pay"?"Pay":key=="security"?"Security":key=="playing time"?"Playing time":key=="winning"?"Winning":"Loyalty"});
+    }
+    return traits;
+}
+struct ScreenRelationship {std::string label;double value=0;bool known=false;};
+inline std::vector<ScreenRelationship> screen_relationships(const nlohmann::json& checkpoint) {
+    std::vector<ScreenRelationship> rows;
+    const auto player=checkpoint.value("player_context",nlohmann::json::object());
+    const auto relationships=player.value("initialized",false)?player.at("relationships"):nlohmann::json::object();
+    for(const auto& item:std::array<std::pair<const char*,const char*>,3>{{{"trust","Trust"},{"respect","Respect"},{"team_connection","Team connection"}}}) {
+        ScreenRelationship row{item.second};
+        if(relationships.contains(item.first) && !relationships.at(item.first).is_null()) {
+            const auto& value=relationships.at(item.first);
+            if(!value.is_number() || value<0 || value>1) throw std::runtime_error("Invalid team relationship");
+            row.value=value.get<double>();row.known=true;
+        }
+        rows.push_back(row);
+    }
+    return rows;
+}
 inline std::string screen_profile(const nlohmann::json& evidence) {
     if(!evidence.contains("player_profile")) return "Contract negotiation";
     const auto& profile=evidence.at("player_profile");std::vector<std::string> parts;
@@ -176,24 +205,8 @@ inline std::array<std::string,3> negotiation_pages(const nlohmann::json& reply) 
         }
     } else performance<<"No saved stats available for this player.\n";
     performance<<u8"Saved history. \u2014 means not recorded.\n";
-    if(checkpoint.contains("player_context") && checkpoint.at("player_context").value("initialized",false)) {
-        const auto& player=checkpoint.at("player_context");
-        agent<<"Player personality\n"<<personality_priorities(player.at("personality"))
-            <<"\nFictional traits saved for this franchise.\n\nRelationship with your team\n";
-        const auto& relationships=player.at("relationships");
-        for(const auto* key:{"trust","respect","team_connection"}) {
-            const auto label=key==std::string("team_connection")?"Team connection":key==std::string("trust")?"Trust":"Respect";
-            agent<<label<<": ";
-            if(!relationships.contains(key) || relationships.at(key).is_null()) agent<<"Unknown";
-            else {
-                const auto& value=relationships.at(key);
-                if(!value.is_number() || value<0 || value>1) throw std::runtime_error("Invalid team relationship");
-                agent<<(value==0.5?"Neutral":value>0.5?"Positive":"Strained");
-            }
-            agent<<"\n";
-        }
-        agent<<"\n";
-    } else agent<<"Player personality and team relationship unavailable.\n\n";
+    screen_personalities(checkpoint); // Validate separate header traits before rendering.
+    screen_relationships(checkpoint); // Validate bars even before the Agent tab opens.
     if(result.contains("signing_checkpoint")) {
         agent<<result.at("reason").get<std::string>()<<"\n";
         if(result.contains("counter") && !result.at("counter").is_null()) {

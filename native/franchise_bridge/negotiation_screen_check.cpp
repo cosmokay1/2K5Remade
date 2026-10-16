@@ -13,17 +13,23 @@ int main() {
         auto tables=franchise::performance_tables(fixture["result"]["performance_context"]);
         require(tables.size()==2 && tables[0].title=="Passing" && tables[1].title=="Defense");
         require(tables[0].rows[0].values[1]=="478" && tables[1].rows[0].values[1]=="2.5");
-        require(pages[2].find("Priorities: winning and playing time")!=std::string::npos);
-        require(pages[2].find("Trust: Neutral")!=std::string::npos);
+        require(pages[2].find("Priorities:")==std::string::npos);
+        require(pages[2].find("Fictional")==std::string::npos);
+        const auto traits=franchise::screen_personalities(fixture["result"]);
+        require(traits.size()==2 && traits[0].label=="Winning" && traits[1].label=="Playing time");
         auto relationship=fixture;
-        relationship["result"]["player_context"]["relationships"]={{"trust",0.3},{"respect",0.7}};
-        const auto relation_page=franchise::negotiation_pages(relationship)[2];
-        require(relation_page.find("Trust: Strained")!=std::string::npos && relation_page.find("Respect: Positive")!=std::string::npos);
-        require(relation_page.find("Team connection: Unknown")!=std::string::npos);
+        relationship["result"]["player_context"]["relationships"]={{"trust",0},{"respect",1}};
+        const auto rows=franchise::screen_relationships(relationship["result"]);
+        require(rows[0].known && rows[0].value==0 && rows[1].known && rows[1].value==1 && !rows[2].known);
         auto absent_personality=fixture;absent_personality["result"].erase("player_context");
-        require(franchise::negotiation_pages(absent_personality)[2].find("personality and team relationship unavailable")!=std::string::npos);
+        require(franchise::screen_personalities(absent_personality["result"]).empty());
         relationship["result"]["player_context"]["relationships"]["trust"]=2;
         bool bad_relationship=false;try{franchise::negotiation_pages(relationship);}catch(...){bad_relationship=true;}require(bad_relationship);
+        for(const auto* key:{"money","security","playing_time","winning","loyalty"}) {
+            auto priorities=fixture["result"];
+            priorities["player_context"]["personality"][key]=1;
+            require(!franchise::screen_personalities(priorities)[0].key.empty());
+        }
         auto receiving=fixture;
         receiving["result"]["performance_context"]["saved_history"]={
             {{"metric","receptions"},{"value",70},{"unit","count"},{"period_code_raw",1},{"mode_code_raw",0}},

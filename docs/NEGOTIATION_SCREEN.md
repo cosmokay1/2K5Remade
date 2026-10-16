@@ -111,14 +111,20 @@ resolves Dart to2025 and Nabers to2024/2025, rather than exposing raw title year
 Height, weight and age at season start are read from the pinned player record and
 shown beside the name. Injury tendency remains explicitly insufficient history
 until sourced injury/availability observations are connected.
-The Agent section also shows the saved fictional personality's two leading
-priorities, using the same ordering as the existing compact display. Team trust,
-respect and connection are described as neutral at the initialization midpoint,
-positive above it or strained below it; missing observations remain unknown.
-These descriptions expose neither numeric traits nor hidden gameplay ratings.
-They are saved simulation state, not a claim about the real athlete or a quote
-from an agent. Age-conditioned generation, personality evolution and teammate
-relationships remain separate pending features.
+The header shows the two leading saved personality traits separately beneath the
+player name. Each has its own authored line icon and label: pay (coin), security
+(shield), playing time (stopwatch), winning (trophy) and loyalty (linked rings).
+The shared priority ordering agrees with the compact display; the replacement
+screen does not combine them into a single Priorities sentence or show a
+fictional-traits disclaimer. Missing initialized personality stays unavailable.
+The Agent section shows separate labeled bars for team trust, respect and
+connection, followed by the existing player/agent response. Each bar reads the
+saved value on the same zero-to-one range, with a neutral midpoint marker;
+missing values remain Unknown rather than appearing as a known zero. Numeric
+traits and hidden gameplay ratings are not printed. Bars and dialogue scroll as
+one panel, retaining full response/counter/promise content. These are saved
+simulation state, not generated quotes. Age-conditioned generation, personality
+evolution, teammate relationships and market momentum remain pending.
 The raw Record list, unit suffixes and long missing-metric inventories are removed
 from the player page. Agent explanations keep their dedicated scrollable prose. Colors do not claim team branding without sourced palette metadata. Up/down on the D-pad or left stick selects vertical sections; LT/RT also change sections. The right stick scrolls content; B sends exactly
 one native Back packet and dismisses the view. Entry waits for held buttons to be

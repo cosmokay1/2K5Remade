@@ -73,6 +73,14 @@ int main(int argc,char** argv) {
             require(!other.analog[7],"Other port reached the native menu");
             require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed) && !changed,"Other port navigated the view");
             press(7);capture("performance");press(7);capture("agent-empty");
+            for(const auto* trait:{"money","security","playing_time","winning","loyalty"}) {
+                fixture=negotiation_screen_fixture();fixture["request_id"]=std::string("trait-")+trait+std::to_string(height);
+                fixture["result"]["player_context"]["personality"][trait]=1;
+                fixture["result"]["player_context"]["relationships"]={{"trust",0},{"respect",1},{"team_connection",nullptr}};
+                capture((std::string("trait-")+trait).c_str());press(7);press(7);
+                capture((std::string("bars-")+trait).c_str());
+            }
+            fixture=negotiation_screen_fixture();fixture["request_id"]="before-counter"+std::to_string(height);
             auto checkpoint=fixture["result"];
             fixture["result"]={{"signing_checkpoint",checkpoint},{"counter",checkpoint["offer_context"]["offer"]},
                 {"counter_validation",{{"status","eligible"}}},{"reason",

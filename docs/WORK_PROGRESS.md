@@ -9442,3 +9442,35 @@ These are renderer fixtures, not installed-game personality screenshots. The
 running game, live database and saves were not replaced or modified by this
 isolated check. Discord posting is paused at the user's request for a local draft
 and screenshot review; no progress post has been sent.
+
+## Separate trait icons and relationship bars
+
+The user refined the personality view: no fictional-traits label, individual
+Winning and Playing time traits rather than one Priorities sentence, distinct
+icons below the name, and one bar per relationship value. The header now renders
+the two leading saved traits separately, using small authored line icons for
+pay/coin, security/shield, playing time/stopwatch, winning/trophy and loyalty/
+linked rings. No emoji/font-glyph dependency or generic host changes are added.
+The existing compact summary keeps its unchanged priority sentence; both views
+share the same stable ordering. The replacement screen removes that sentence.
+
+Agent now shows labeled trust, respect and team-connection bars from saved
+values. A neutral midpoint is marked; known zero/full remain distinct from
+Unknown. Bars and full agent/counter/promise content share the existing scrolling
+panel. No changes to relationship state, personality generation, model access,
+contract authority or live game installation are made.
+
+All11 local native CTests pass. An isolated MSVC build and Windows/Proton
+navigation, protocol and real-renderer checks pass with launcher0 and fresh
+completion marker. Authored render scenarios cover all five leading traits,
+neutral/zero/full/unknown relationships and response scrolling at1280x800 and
+1280x720. One combined visual review confirms separate icons/labels, bars and
+unknown state without overlap. Private evidence: .local-runtime/personality-bars.
+These are authored renderer previews; actual installed-game capture remains open.
+
+Market/media and performance-driven star leverage are added as explicit pending
+M3 requirements. Market momentum is separate from personality and should evolve
+from sourced production, honors/playoff events, health and actual interest/bids;
+no competing offers, press coverage or prices may be invented. Routine updates
+must not buy extra model requests. The negotiation screen must expose the known
+causes and consequences when these mechanics are implemented.

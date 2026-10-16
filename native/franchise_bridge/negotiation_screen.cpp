@@ -91,11 +91,39 @@ bool paint(NFL2K5AddonDraw& draw) {
             DrawTextW(dc,content.c_str(),static_cast<int>(content.size()),&rect,flags|DT_NOPREFIX);
             SelectObject(dc,old);DeleteObject(font);return rect;
         };
-        text(title,px(30),px(25),draw.width-px(30),px(75),36,FW_BOLD,white,DT_SINGLELINE|DT_END_ELLIPSIS);
+        text(title,px(30),px(15),draw.width-px(30),px(61),36,FW_BOLD,white,DT_SINGLELINE|DT_END_ELLIPSIS);
         const auto& result=screen_reply.at("result");
         const auto& checkpoint=result.contains("signing_checkpoint")?result.at("signing_checkpoint"):result;
         const auto profile=checkpoint.value("performance_context",nlohmann::json::object());
-        text(franchise::screen_profile(profile),px(32),px(80),draw.width-px(32),px(108),19,FW_NORMAL,secondary,DT_SINGLELINE);
+        const auto traits=franchise::screen_personalities(checkpoint);
+        for(size_t trait=0;trait<traits.size();++trait) {
+            const auto& personality=traits[trait];
+            // Small authored line icons: shield, stopwatch, linked rings,
+            // coin and trophy. No font glyphs or external bitmap dependency.
+            const int x=px(33+190.0f*trait),y=px(66);
+            HPEN pen=CreatePen(PS_SOLID,std::max(1,px(2)),secondary);
+            const auto old_pen=SelectObject(dc,pen);const auto old_brush=SelectObject(dc,GetStockObject(NULL_BRUSH));
+            auto line=[&](std::initializer_list<POINT> points) {
+                std::vector<POINT> scaled;for(const auto& point:points) scaled.push_back({x+px(point.x),y+px(point.y)});
+                Polyline(dc,scaled.data(),static_cast<int>(scaled.size()));
+            };
+            if(personality.key=="security") line({{1,1},{17,1},{17,10},{14,15},{9,19},{4,15},{1,10},{1,1}});
+            else if(personality.key=="playing time") {
+                Ellipse(dc,x+px(1),y+px(3),x+px(18),y+px(20));line({{9,6},{9,12},{13,12}});
+                line({{6,0},{12,0}});line({{9,0},{9,3}});
+            }
+            else if(personality.key=="loyalty") {
+                Ellipse(dc,x,y+px(3),x+px(12),y+px(16));Ellipse(dc,x+px(7),y+px(3),x+px(19),y+px(16));
+            } else if(personality.key=="pay") {
+                Ellipse(dc,x,y,x+px(19),y+px(19));line({{9,4},{9,15}});line({{5,6},{13,6}});line({{5,12},{13,12}});
+            } else {line({{4,1},{15,1},{15,8},{12,12},{7,12},{4,8},{4,1}});
+                line({{4,3},{0,3},{0,7},{4,9}});line({{15,3},{19,3},{19,7},{15,9}});
+                line({{9,12},{9,18}});line({{4,18},{15,18}});}
+            SelectObject(dc,old_brush);SelectObject(dc,old_pen);DeleteObject(pen);
+            text(personality.label,x+px(28),px(64),x+px(175),px(90),18,FW_BOLD,secondary,DT_SINGLELINE);
+        }
+        if(traits.empty()) text("Personality unavailable",px(32),px(64),draw.width-px(32),px(90),18,FW_NORMAL,secondary,DT_SINGLELINE);
+        text(franchise::screen_profile(profile),px(32),px(96),draw.width-px(32),px(119),16,FW_NORMAL,secondary,DT_SINGLELINE);
         const char *tabs[]={"Contract","Performance","Agent"};
         for(unsigned i=0;i<3;++i) {
             const int top=px(153+62.0f*i);
@@ -195,17 +223,37 @@ bool paint(NFL2K5AddonDraw& draw) {
             const int body_left=left+px(24),body_right=right-px(26);
             const auto measured=text(pages[navigation.page],body_left,0,body_right,0,22,FW_NORMAL,white,DT_CALCRECT|DT_WORDBREAK);
             const int line_height=std::max(1,static_cast<int>(text("M",body_left,0,body_right,0,22,FW_NORMAL,white,DT_CALCRECT|DT_SINGLELINE).bottom));
-            const int raw_overflow=std::max(0,static_cast<int>(measured.bottom)-body_bottom+body_top);
+            const auto relationships=navigation.page==2 && body!="loading"?franchise::screen_relationships(checkpoint):std::vector<franchise::ScreenRelationship>{};
+            const int bars_height=relationships.empty()?0:px(197);
+            const int content_height=bars_height+static_cast<int>(measured.bottom);
+            const int raw_overflow=std::max(0,content_height-body_bottom+body_top);
             overflow=((raw_overflow+line_height-1)/line_height)*line_height;
             navigation.scroll[navigation.page]=std::min(navigation.scroll[navigation.page],static_cast<int>(std::ceil(overflow/u)));
             offset=std::min((px(static_cast<float>(navigation.scroll[navigation.page]))/line_height)*line_height,overflow);
             SaveDC(dc);IntersectClipRect(dc,body_left,body_top,body_right,body_bottom);
-            text(pages[navigation.page],body_left,body_top-offset,body_right,body_top-offset+measured.bottom+px(28),22,FW_NORMAL,white,DT_WORDBREAK);
+            if(!relationships.empty()) {
+                int y=body_top-offset;
+                text("Relationship with your team",body_left,y,body_right,y+px(30),22,FW_BOLD,white,DT_SINGLELINE);
+                y+=px(42);
+                for(const auto& relationship:relationships) {
+                    text(relationship.label,body_left,y,body_left+px(180),y+px(25),19,FW_NORMAL,secondary,DT_SINGLELINE);
+                    const int track_left=body_left+px(185),track_right=body_right-px(90),top=y+px(6),height=px(12);
+                    fill(track_left,top,track_right,top+height,RGB(42,61,84));
+                    if(relationship.known) {
+                        const int end=track_left+static_cast<int>(std::lround((track_right-track_left)*relationship.value));
+                        if(end>track_left) fill(track_left,top,end,top+height,RGB(133,178,218));
+                        fill(track_left+(track_right-track_left)/2,top,track_left+(track_right-track_left)/2+1,top+height,RGB(184,205,229));
+                    } else text("Unknown",track_right+px(12),y,body_right,y+px(25),16,FW_NORMAL,secondary,DT_SINGLELINE);
+                    y+=px(43);
+                }
+            }
+            const int prose_top=body_top+bars_height-offset;
+            text(pages[navigation.page],body_left,prose_top,body_right,prose_top+measured.bottom+px(28),22,FW_NORMAL,white,DT_WORDBREAK);
             RestoreDC(dc,-1);
             if(overflow) {
                 const int track_top=body_top,track_bottom=body_bottom,track_x=right-px(9);
                 fill(track_x,track_top,track_x+px(3),track_bottom,RGB(48,66,89));
-                const int thumb=std::max(px(24),(track_bottom-track_top)*(track_bottom-track_top)/std::max(1,static_cast<int>(measured.bottom)));
+                const int thumb=std::max(px(24),(track_bottom-track_top)*(track_bottom-track_top)/std::max(1,content_height));
                 const int y=track_top+static_cast<int>((track_bottom-track_top-thumb)*static_cast<double>(offset)/overflow);
                 fill(track_x,y,track_x+px(3),y+thumb,secondary);
             }

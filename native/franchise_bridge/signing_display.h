@@ -7,7 +7,7 @@
 #include <iomanip>
 #include <sstream>
 namespace franchise {
-inline std::string personality_priorities(const nlohmann::json& personality) {
+inline std::array<std::pair<double,std::string>,5> personality_priority_values(const nlohmann::json& personality) {
     std::array<std::pair<double,std::string>,5> priorities;
     const char* keys[]={"money","security","playing_time","winning","loyalty"};
     const char* labels[]={"pay","security","playing time","winning","loyalty"};
@@ -17,6 +17,10 @@ inline std::string personality_priorities(const nlohmann::json& personality) {
         priorities[i]={value.get<double>(),labels[i]};
     }
     std::stable_sort(priorities.begin(),priorities.end(),[](const auto& a,const auto& b){return a.first>b.first;});
+    return priorities;
+}
+inline std::string personality_priorities(const nlohmann::json& personality) {
+    const auto priorities=personality_priority_values(personality);
     return "Priorities: "+priorities[0].second+" and "+priorities[1].second;
 }
 struct SigningDisplayText { std::string priorities,offer,history; };
