@@ -21,6 +21,8 @@ are required.** No completion date is promised before the runtime inputs exist.
 Repository: https://github.com/cosmokay1/2K5Remade
 Branch: `codex/franchise-negotiation`. Progress evidence: [WORK_PROGRESS.md](docs/WORK_PROGRESS.md).
 Resume from the earliest unblocked unchecked item, respecting dependencies.
+Development process: [DEV_LOOP.md](docs/DEV_LOOP.md). Start with the compact
+[CURRENT_HANDOFF.md](docs/CURRENT_HANDOFF.md); consult detailed progress only as needed.
 
 Private build storage: reuse the active toolchain, shared Google SDK and test
 prefixes. Retain the current candidate and working rollback; prune obsolete
