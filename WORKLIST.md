@@ -1220,15 +1220,19 @@ gameplay costs remain unverified.
 
 ## User-requested simulation calibration (October 17)
 
-- [x] Prepare an isolated SIMTEST copy of MyNFL1 with separate writable saves,
-      no AI addon and an unchanged-main-save manifest (66 original loose files).
-- [x] Reuse roster/calendar validators and add a bounded read-only team-season
-      report and signed 5/6/7-minute trial preparation; 18 targeted checks pass.
-      Source-traced minute fields and original PC save signatures verified;
-      zero-game baseline remains unmeasured.
-- [ ] Confirm visible SIMTEST load, run 5/6/7-minute simulated-season trials,
-      corroborate counters against game tables, and compare league/per-player
-      results using actual games played. No trial has run yet.
+- [x] Prepare an isolated copy with separate writable saves, no AI addon, and an
+      unchanged-main-save manifest (66 original loose files). The initial renamed
+      import failed; restoring exact container names/metadata allowed loading.
+- [x] Reuse roster/calendar/history readers and add signed 5/6/7-minute trial
+      preparation, schedule validation and regular-season score reporting.
+- [x] Extract the first actual 5-minute season from isolated MyNFL2: 272 games,
+      544 team-games; user confirmed Dart's 3,562 yards / 25 TD / 7 INT. Original
+      manifest unchanged. Report 23.06 points and about 63.53 plays/team/game.
+      Reject incorrect upstream total-yard label with regression. 23 targeted
+      checks pass. Workload distribution remains distorted despite plausible pace.
+- [ ] User is running the 6-minute comparison. No agent reset/input. Check the
+      resulting save's setting, year and starting-copy lineage before comparing.
+      Preserve MyNFL2. No agent reset or optimal-setting claim is authorized.
 - [ ] Repeat the best candidate and recommend settings without altering MyNFL1.
 
 Experiment and evidence limits: [simulation calibration](docs/SIMULATION_CALIBRATION.md).

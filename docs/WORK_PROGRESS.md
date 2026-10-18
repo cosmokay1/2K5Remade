@@ -10315,3 +10315,25 @@ were copied byte-for-byte into a fresh isolated save tree, retaining failed-impo
 evidence. This removes the test rename and preserves original display names.
 Steam test relaunch dispatched, normal route restored, load confirmation pending.
 Do not describe the metadata rename as a proven cause until load evidence exists.
+
+
+## October17 — first real5-minute simulated-season result
+
+User loaded the restored exact-name test copy, simulated and saved as MyNFL2.
+Snapshot9077c8f654209196de568d7699c37acd40c3ad1c306fc89aca9558a96c85b734 has
+272completed games,17perteam,544team-games,8played/5simulated minutes. All66main
+save files remain unchanged. Dart3562yards/25TD/7INT confirmed in-game by user.
+First result:23.06points,236.72gross passing yards,125.02rushing yards and about
+63.53plays/team/game. Named yardage sums match player histories; quarterback
+raw11 and defensive sack credits agree at1352. Minor counter discrepancies remain
+(17rush attempts,8receptions). Upstream team+1D2 total-yard label is disproved by
+actual Giants427vs3562+2161; removed with authored regression, not reinterpreted
+as another guessed label.23targeted checks pass. No asset/native rebuild/inference.
+
+2025official NFL benchmarks were fetched once. Season distributions are suspect:
+18passers4000+,31rushers1000+,14rushers1500+,21receivers1000+,versus6/17/3/20.
+All32primary passers have17games; Injury20/40 andFatigue4/40unchanged. Actual
+injury/rotation behavior unverified. No conclusion that minutes alone fixes it.
+User said no reset, then chose to run6minutes personally. No reset/input sent;
+requested original starting COPY, sameyear, saveasMyNFL3. Await result and verify
+lineage before treating it as a paired experiment. Detailed limits in calibration doc.
