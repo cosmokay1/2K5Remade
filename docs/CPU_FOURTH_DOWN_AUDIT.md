@@ -45,8 +45,15 @@ retail result.
 compares loaded guest bytes against the reconstruction base and marks changed
 function entries. The gate uses that bitmap plus `g_interp_active` to dispatch
 to the interpreter; the source supports the patched entry in principle.
-The currently running bitmap, image bytes, actual caller and return category
-have not been observed. At the latest process inspection no game was running.
+After the combined broadcast installation on October 17, the normal Steam entry
+launched Windows game PID 317534 from the expected live-profile runtime. Its fresh
+session reports loaded-image SHA256
+`f67e6fc1cb76c9ea1f1ad504e4a6491ff126483d66a9da8ddb92950bbaf740ba`
+(`source_scope=load_image`), the expected SOFTDRINK pack, and an active interpreter
+with 1,287 of 31,081 converted functions differing. This confirms the loader's
+input identity for this launch, not a readback of every guest byte. The specific
+fourth-down entry bytes, dirty bit, actual caller and return category remain
+unobserved. `NFL2K5_HIDE_SKIP` is absent from this process environment.
 
 Next acceptance: identify the active pack and loaded image; capture entry bytes,
 dirty-bit/gate status and hook entry/return at one CPU fourth-down decision;

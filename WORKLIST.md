@@ -1251,8 +1251,17 @@ Experiment and evidence limits: [simulation calibration](docs/SIMULATION_CALIBRA
       temporary full extraction. No procedural fallback replaced the design.
 - [x] Author shared-art custom MNF/TNF variations and preview clock controls;
       retain NFL2K5-PC provenance. Original NBC lifecycle suite passes 107/107.
-- [ ] Verify the combined editor installation, native automatic selection,
-      per-game override, game relaunch and actual graphics on the Deck.
+- [x] Install the combined editor/native build after isolated game validation;
+      verify network-page HTTP responses and all 210 save files unchanged.
+- [ ] Verify native automatic selection, per-game override, game relaunch
+      and actual graphics on the Deck.
+- [x] Replace NBC's failing WebView2 path with a native definition using the
+      original artwork/layout. Actual Direct2D fixtures render NBC without a
+      browser, with identical output when HTML support is included/omitted;
+      independent play-clock repaint and isolated game validation pass.
+- [ ] Install the native NBC candidate after normal exit and verify its actual
+      exhibition graphics, clock, scoring/timeout and play-call hide/return.
+      Native title cards stay visible; full HTML cinematic parity is not claimed.
 - [ ] Expose supported runtime gameplay/SOFTDRINK options and provide access
       to Mod Studio; label immediate/next-game/restart application accurately.
 - [ ] Verify active guest image and fourth-down hook execution before tuning

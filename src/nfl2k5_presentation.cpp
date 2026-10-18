@@ -560,6 +560,16 @@ static void load_packages()
                 continue;
             }
         }
+        if (!p.html) {
+            bool complete = true;
+            if (const JVal *assets = p.root.get("required_assets"))
+                for (const auto &asset : assets->a)
+                    if (asset.t != JVal::Str || !file_exists(p.dir + "/" + asset.s)) {
+                        fprintf(stderr, "[PRES] Native package %s missing required artwork: %s\n", dir8, asset.s.c_str());
+                        complete = false;
+                    }
+            if (!complete) continue;
+        }
         p.name = p.root.str("name", dir8);
         if (const JVal *m = p.root.get("music")) {
             for (int k = 0; k < 2; k++)
@@ -1711,6 +1721,12 @@ static std::string var(const Ctx &c, const std::string &name)
     auto team_var = [&](int s, const std::string &k) -> std::string {
         const TeamInfo &t = c.team[s];
         if (k == "abbr") return g.t[s].abbr.empty() ? t.abbr : upper(g.t[s].abbr);
+        if (k == "modern_abbr") {
+            std::string code=upper(g.t[s].abbr.empty()?t.abbr:g.t[s].abbr);
+            if(code=="STL")return "LAR";if(code=="SD")return "LAC";
+            if(code=="OAK")return "LV";if(code=="JAC")return "JAX";if(code=="WSH")return "WAS";
+            return code;
+        }
         if (k == "score") return std::to_string(g.t[s].score);
         if (k == "timeouts") return std::to_string(g.t[s].timeouts);
         if (k == "name") return t.name;
@@ -1772,6 +1788,12 @@ static std::string var(const Ctx &c, const std::string &name)
         char buf[8];
         snprintf(buf, sizeof buf, ":%02d", g.play_clock);
         return buf;
+    }
+    if (name == "play_clock_seconds") return g.play_clock < 0 ? "" : std::to_string(g.play_clock);
+    if (name == "quarter_number") return g.period > 0 && g.period <= 4 ? std::to_string(g.period) : "";
+    if (name == "quarter_suffix") {
+        static const char *suffix[]={"","ST","ND","RD","TH"};
+        return g.period > 0 && g.period <= 4 ? suffix[g.period] : "";
     }
     if (name == "quarter") {
         if (g.period == 0) return "";
@@ -1850,10 +1872,13 @@ static bool shown(const Ctx &c, const std::string &cond)
     if (cond == "event_team:away") return c.ev && c.ev->team == AWAY;
     if (cond == "event_team:home") return c.ev && c.ev->team == HOME;
     if (cond == "play_clock_available") return c.g && c.g->play_clock >= 0;
+    if (cond == "play_clock_low") return g.play_clock >= 0 && g.play_clock <= 5;
     if (cond == "scrimmage") return g.phase == 4;
     if (cond == "not_scrimmage") return g.phase != 4;
     if (cond == "final") return is_final(g);
     if (cond == "not_final") return !is_final(g);
+    if (cond == "regulation") return g.period >= 1 && g.period <= 4 && !is_final(g) && !(g.period == 2 && g.clock <= 0);
+    if (cond == "quarter_label") return !shown(c,"regulation");
     if (cond == "flag") return GetTickCount64() < s_flag_until;
     if (cond == "no_flag") return GetTickCount64() >= s_flag_until;
     return true;
@@ -1963,23 +1988,53 @@ static void draw_element(const Ctx &c, const JVal &e, float alpha, float dx, flo
                         sb->Release();
                     }
                 }
-                ID2D1SolidColorBrush *b = nullptr;
-                rt->CreateSolidColorBrush(color(c, e.str("color", "#FFFFFF"), alpha), &b);
+                ID2D1Brush *b = nullptr;
+                if (const JVal *gr=e.get("gradient")) {
+                    D2D1_GRADIENT_STOP stops[2]={{0,color(c,gr->str("top"),alpha)},{1,color(c,gr->str("bottom"),alpha)}};
+                    ID2D1GradientStopCollection *collection=nullptr;
+                    if(SUCCEEDED(rt->CreateGradientStopCollection(stops,2,&collection))) {
+                        ID2D1LinearGradientBrush *gradient=nullptr;
+                        rt->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(x,y),D2D1::Point2F(x,y+h)),collection,&gradient);
+                        b=gradient;collection->Release();
+                    }
+                } else {
+                    ID2D1SolidColorBrush *solid=nullptr;
+                    rt->CreateSolidColorBrush(color(c,e.str("color","#FFFFFF"),alpha),&solid);b=solid;
+                }
                 if (b) { rt->DrawText(txt.c_str(), (UINT32)txt.size(), f, box, b, D2D1_DRAW_TEXT_OPTIONS_CLIP); b->Release(); }
             }
         }
-    } else if (type == "image") {
+    } else if (type == "image" || type == "mask") {
         std::string src = expand(c, e.str("src"));
         if (!src.empty()) {
             std::string path = src;
             if (c.pkg && !file_exists(path)) path = c.pkg->dir + "/" + src;
+            if (!file_exists(path)) {
+                std::string alternate=expand(c,e.str("fallback_src"));
+                if(!alternate.empty())path=file_exists(alternate)||!c.pkg?alternate:c.pkg->dir+"/"+alternate;
+            }
             ID2D1Bitmap *bm = file_exists(path) ? image(path) : nullptr;
             if (bm) {
                 D2D1_SIZE_F s = bm->GetSize();
-                float k = std::min(w / s.width, h / s.height);
-                float iw = s.width * k, ih = s.height * k;
-                rt->DrawBitmap(bm, D2D1::RectF(x + (w - iw) / 2, y + (h - ih) / 2, x + (w + iw) / 2, y + (h + ih) / 2),
-                               alpha * c.opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+                if (type == "mask") {
+                    ID2D1SolidColorBrush *brush = nullptr;
+                    rt->CreateSolidColorBrush(color(c, e.str("fill", "#FFFFFF"), alpha), &brush);
+                    if (brush) {
+                        auto previous = rt->GetAntialiasMode();
+                        rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+                        rt->FillOpacityMask(bm, brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS,
+                            D2D1::RectF(x,y,x+w,y+h), D2D1::RectF(0,0,s.width,s.height));
+                        rt->SetAntialiasMode(previous);brush->Release();
+                    }
+                } else {
+                    std::string fit=e.str("fit", "contain");
+                    float k = (fit=="cover" ? std::max(w/s.width,h/s.height) : std::min(w/s.width,h/s.height)) * (float)e.num("scale",1);
+                    float iw=fit=="fill"?w:s.width*k, ih=fit=="fill"?h:s.height*k;
+                    if(fit=="cover")rt->PushAxisAlignedClip(D2D1::RectF(x,y,x+w,y+h),D2D1_ANTIALIAS_MODE_ALIASED);
+                    rt->DrawBitmap(bm, D2D1::RectF(x+(w-iw)/2,y+(h-ih)/2,x+(w+iw)/2,y+(h+ih)/2),
+                                   alpha*c.opacity,D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+                    if(fit=="cover")rt->PopAxisAlignedClip();
+                }
             }
         }
     } else if (type == "timeouts") {
@@ -3735,6 +3790,8 @@ static int hud_callback(const XboxHudFrame *f, XboxHudImage *img)
              var(c, "down_distance").c_str(), var(c, "quarter").c_str(), (g.t[0].abbr + g.t[1].abbr).c_str(),
              g.t[0].score, g.t[1].score, g.t[0].timeouts, g.t[1].timeouts, g.poss * 10 + g.phase);
     std::string sig = sigbuf;
+    // The play clock keeps counting while the period clock is stopped.
+    sig += "|playclock:" + std::to_string(g.play_clock);
     /* Eased opacity rounds to 1 before the entrance transform finishes.
      * Include progress/state so the final settled geometry is actually drawn. */
     sig += "|life:" + std::to_string((int)s_bug_lifecycle) + ":" + std::to_string(s_life_progress);

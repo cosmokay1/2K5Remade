@@ -11,6 +11,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 extern "C" {
 ptrdiff_t g_xbox_mem_offset;
@@ -48,22 +49,27 @@ int main(int argc,char** argv) {
         const std::filesystem::path output=argv[2];
         std::filesystem::create_directories(output);
         CoInitializeEx(nullptr,COINIT_MULTITHREADED);
-        void* memory=VirtualAlloc(nullptr,0x1000000,MEM_RESERVE|MEM_COMMIT,PAGE_READWRITE);
+        void* memory=VirtualAlloc(nullptr,0x10000000,MEM_RESERVE|MEM_COMMIT,PAGE_READWRITE);
         require(memory!=nullptr,"Authored guest-memory allocation failed");
         g_xbox_mem_offset=reinterpret_cast<ptrdiff_t>(memory);
+        auto word=[&](size_t at,uint32_t v){std::memcpy(static_cast<char*>(memory)+at,&v,4);};
+        auto real=[&](size_t at,float v){std::memcpy(static_cast<char*>(memory)+at,&v,4);};
+        word(0xE6028C,0x10000);real(0x10010,791);word(0xE602C4,1);word(0xE602B4,4);
+        word(0xE5FC68,0x11000);word(0xE5FC28,0x12000);
+        word(0xE60294,0x13000);real(0x13010,40);
         _putenv_s("NFL2K5_PRES_TEST","1");
         nfl2k5_presentation_init();require(render!=nullptr,"Missing real HUD callback");
         nfl2k5_pres_set(1,0);nfl2k5_pres_set(2,0);nfl2k5_pres_set(3,0);nfl2k5_pres_set(5,0);
-        const char* names[]={"NFL on FOX","NFL on CBS"};
-        for(int style=0;style<2;++style) {
+        const char* names[]={"NFL on FOX","NFL on CBS","NBC Sunday Night Football"};
+        for(int style=0;style<3;++style) {
+            real(0x13010,40);
             int selected=-1;
             for(int i=0;i<nfl2k5_pres_package_count();++i) {
                 const char* name=nfl2k5_pres_package_name(i);
-#if !NFL2K5_HTML_PRESENTATIONS
-                require(strcmp(name,"NBC Sunday Night Football")!=0,"Unsupported HTML package was selectable");
-#endif
                 if(strcmp(name,names[style])==0) selected=i;
             }
+            // NBC's private reference media is not distributed with this fixture.
+            if(style==2 && !std::filesystem::exists("mods/presentations/NBC_SNF/assets/plates/pod.png"))continue;
             require(selected>0,"Expected existing native style missing");
             nfl2k5_pres_set(0,selected);nfl2k5_pres_set(1,0);nfl2k5_pres_set(2,0);
             XboxHudFrame frame{1280,720,0,0,1280,720};XboxHudImage image{};
@@ -92,6 +98,11 @@ int main(int argc,char** argv) {
             std::ofstream metadata(base.string()+".txt");
             metadata<<image.w<<' '<<image.h<<' '<<image.stride<<' '<<image.x<<' '<<image.y<<' '<<image.dw<<' '<<image.dh<<'\n';
             std::printf("Rendered %s: %dx%d, %zu colored pixels, no browser\n",names[style],image.w,image.h,colored);
+            std::vector<unsigned char> before(pixels,pixels+image.stride*image.h);
+            real(0x13010,39);image={};render(&frame,&image);
+            require(image.changed && image.pixels,"Stopped period clock prevented play-clock repaint");
+            if(style!=1)require(std::memcmp(before.data(),image.pixels,before.size())!=0,"Play-clock text failed to change pixels");
+            std::printf("Play clock updated independently: %s\n",names[style]);
         }
         return 0;
     } catch(const std::exception& error) { std::fprintf(stderr,"%s\n",error.what());return 2; }

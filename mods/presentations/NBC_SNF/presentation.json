@@ -1,0 +1,859 @@
+{
+  "format": 1,
+  "name": "NBC Sunday Night Football",
+  "network": "NBC SNF",
+  "font": "Arial Black",
+  "author": "NFL2K5-PC; native rendering adaptation by cosmokay1/2K5Remade",
+  "description": "NBC original artwork and 576px reference layout rendered directly with Direct2D; no browser required.",
+  "required_assets": [
+    "assets/plates/pod.png",
+    "assets/plates/rail.png",
+    "assets/plates/away_mask.png",
+    "assets/plates/home_mask.png",
+    "assets/logos/ARI.png",
+    "assets/logos/ATL.png",
+    "assets/logos/BUF.png",
+    "assets/logos/CAR.png",
+    "assets/logos/CHI.png",
+    "assets/logos/CIN.png",
+    "assets/logos/CLE.png",
+    "assets/logos/DAL.png",
+    "assets/logos/DEN.png",
+    "assets/logos/DET.png",
+    "assets/logos/GB.png",
+    "assets/logos/HOU.png",
+    "assets/logos/IND.png",
+    "assets/logos/JAX.png",
+    "assets/logos/KC.png",
+    "assets/logos/LAC.png",
+    "assets/logos/LAR.png",
+    "assets/logos/LV.png",
+    "assets/logos/MIA.png",
+    "assets/logos/MIN.png",
+    "assets/logos/NE.png",
+    "assets/logos/NO.png",
+    "assets/logos/NYG.png",
+    "assets/logos/NYJ.png",
+    "assets/logos/PHI.png",
+    "assets/logos/PIT.png",
+    "assets/logos/SEA.png",
+    "assets/logos/SF.png",
+    "assets/logos/TB.png",
+    "assets/logos/TEN.png",
+    "assets/logos/WAS.png"
+  ],
+  "scorebug": {
+    "canvas": {
+      "width": 576,
+      "height": 120,
+      "overflow_top": 100
+    },
+    "placement": {
+      "center_x": 0.49979166666666663,
+      "center_y": 0.9175925925925926,
+      "width": 0.43499999999999994
+    },
+    "elements": [
+      {
+        "type": "image",
+        "x": 2,
+        "y": 73,
+        "w": 571,
+        "h": 8,
+        "src": "assets/plates/rail.png",
+        "fit": "fill"
+      },
+      {
+        "type": "box",
+        "x": 2,
+        "y": 23,
+        "w": 248,
+        "h": 52,
+        "fill": "#1A1E2E",
+        "radius": 5
+      },
+      {
+        "type": "mask",
+        "x": 63,
+        "y": 23,
+        "w": 176,
+        "h": 52,
+        "src": "assets/plates/away_mask.png",
+        "fill": "{away.primary}"
+      },
+      {
+        "type": "box",
+        "x": 2,
+        "y": 23,
+        "w": 63,
+        "h": 52,
+        "fill": "{away.primary}",
+        "radius": 5
+      },
+      {
+        "type": "image",
+        "x": 2,
+        "y": 23,
+        "w": 63,
+        "h": 52,
+        "src": "assets/logos/{away.modern_abbr}.png",
+        "fit": "cover",
+        "scale": 1.3461538461538463,
+        "fallback_src": "{away.logo}"
+      },
+      {
+        "type": "box",
+        "x": 2,
+        "y": 23,
+        "w": 63,
+        "h": 2,
+        "gradient": {
+          "top": "#FFFFFF55",
+          "bottom": "#FFFFFF00"
+        },
+        "radius": 5
+      },
+      {
+        "type": "box",
+        "x": 151,
+        "y": 24,
+        "w": 1.5,
+        "h": 50,
+        "gradient": {
+          "top": "#FFFFFF33",
+          "bottom": "#FFFFFF88"
+        }
+      },
+      {
+        "type": "timeouts",
+        "x": 51,
+        "y": 75.6,
+        "w": 92,
+        "h": 3.2,
+        "team": "away",
+        "count": 3,
+        "bar_w": 25,
+        "bar_h": 3.2,
+        "gap": 8,
+        "radius": 0.5,
+        "on": "#FBFDFF",
+        "off": "#6F757D"
+      },
+      {
+        "type": "text",
+        "x": 68,
+        "y": 27,
+        "w": 75,
+        "h": 31,
+        "text": "{away.modern_abbr}",
+        "size": 28,
+        "weight": 900,
+        "color": "#F4F6F9",
+        "shadow": "#00000099",
+        "align": "right"
+      },
+      {
+        "type": "text",
+        "x": 95,
+        "y": 54,
+        "w": 48,
+        "h": 15,
+        "text": "{away.record}",
+        "size": 13,
+        "weight": 900,
+        "color": "#F4F6F9",
+        "shadow": "#00000099",
+        "align": "right"
+      },
+      {
+        "type": "text",
+        "x": 158,
+        "y": 25,
+        "w": 70,
+        "h": 47,
+        "text": "{away.score}",
+        "size": 46,
+        "weight": 900,
+        "color": "#F4F6F9",
+        "shadow": "#00000099",
+        "gradient": {
+          "top": "#FFFFFF",
+          "bottom": "#C9D2DF"
+        }
+      },
+      {
+        "type": "box",
+        "x": 2,
+        "y": 78,
+        "w": 274,
+        "h": 18,
+        "gradient": {
+          "top": "{away.primary}|darken:0.35",
+          "bottom": "#12161C"
+        },
+        "show": "possession:away"
+      },
+      {
+        "type": "text",
+        "x": 26,
+        "y": 78,
+        "w": 226,
+        "h": 18,
+        "text": "{down_distance}",
+        "size": 15,
+        "weight": 900,
+        "color": "#F4F6F9",
+        "shadow": "#00000099",
+        "font": "Segoe UI",
+        "show": "possession:away"
+      },
+      {
+        "type": "polygon",
+        "x": 14,
+        "y": 83,
+        "w": 7,
+        "h": 8,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            7,
+            4
+          ],
+          [
+            0,
+            8
+          ]
+        ],
+        "fill": "#D3DCE5",
+        "show": "possession:away"
+      },
+      {
+        "type": "polygon",
+        "x": 255,
+        "y": 83,
+        "w": 7,
+        "h": 8,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            7,
+            4
+          ],
+          [
+            0,
+            8
+          ]
+        ],
+        "fill": "#D3DCE5",
+        "show": "possession:away"
+      },
+      {
+        "type": "box",
+        "x": 326,
+        "y": 23,
+        "w": 248,
+        "h": 52,
+        "fill": "#2A2127",
+        "radius": 5
+      },
+      {
+        "type": "mask",
+        "x": 336,
+        "y": 23,
+        "w": 183,
+        "h": 52,
+        "src": "assets/plates/home_mask.png",
+        "fill": "{home.primary}"
+      },
+      {
+        "type": "box",
+        "x": 511,
+        "y": 23,
+        "w": 63,
+        "h": 52,
+        "fill": "{home.primary}",
+        "radius": 5
+      },
+      {
+        "type": "image",
+        "x": 511,
+        "y": 23,
+        "w": 63,
+        "h": 52,
+        "src": "assets/logos/{home.modern_abbr}.png",
+        "fit": "cover",
+        "scale": 1.3461538461538463,
+        "fallback_src": "{home.logo}"
+      },
+      {
+        "type": "box",
+        "x": 511,
+        "y": 23,
+        "w": 63,
+        "h": 2,
+        "gradient": {
+          "top": "#FFFFFF55",
+          "bottom": "#FFFFFF00"
+        },
+        "radius": 5
+      },
+      {
+        "type": "box",
+        "x": 419,
+        "y": 24,
+        "w": 1.5,
+        "h": 50,
+        "gradient": {
+          "top": "#FFFFFF33",
+          "bottom": "#FFFFFF88"
+        }
+      },
+      {
+        "type": "timeouts",
+        "x": 432,
+        "y": 75.6,
+        "w": 92,
+        "h": 3.2,
+        "team": "home",
+        "count": 3,
+        "bar_w": 25,
+        "bar_h": 3.2,
+        "gap": 8,
+        "radius": 0.5,
+        "on": "#FBFDFF",
+        "off": "#6F757D"
+      },
+      {
+        "type": "text",
+        "x": 430,
+        "y": 27,
+        "w": 75,
+        "h": 31,
+        "text": "{home.modern_abbr}",
+        "size": 28,
+        "weight": 900,
+        "color": "#F4F6F9",
+        "shadow": "#00000099",
+        "align": "left"
+      },
+      {
+        "type": "text",
+        "x": 432,
+        "y": 54,
+        "w": 48,
+        "h": 15,
+        "text": "{home.record}",
+        "size": 13,
+        "weight": 900,
+        "color": "#F4F6F9",
+        "shadow": "#00000099",
+        "align": "left"
+      },
+      {
+        "type": "text",
+        "x": 345,
+        "y": 25,
+        "w": 70,
+        "h": 47,
+        "text": "{home.score}",
+        "size": 46,
+        "weight": 900,
+        "color": "#F4F6F9",
+        "shadow": "#00000099",
+        "gradient": {
+          "top": "#FFFFFF",
+          "bottom": "#C9D2DF"
+        }
+      },
+      {
+        "type": "box",
+        "x": 300,
+        "y": 78,
+        "w": 274,
+        "h": 18,
+        "gradient": {
+          "top": "{home.primary}|darken:0.35",
+          "bottom": "#12161C"
+        },
+        "show": "possession:home"
+      },
+      {
+        "type": "text",
+        "x": 324,
+        "y": 78,
+        "w": 226,
+        "h": 18,
+        "text": "{down_distance}",
+        "size": 15,
+        "weight": 900,
+        "color": "#F4F6F9",
+        "shadow": "#00000099",
+        "font": "Segoe UI",
+        "show": "possession:home"
+      },
+      {
+        "type": "polygon",
+        "x": 312,
+        "y": 83,
+        "w": 7,
+        "h": 8,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            7,
+            4
+          ],
+          [
+            0,
+            8
+          ]
+        ],
+        "fill": "#D3DCE5",
+        "show": "possession:home"
+      },
+      {
+        "type": "polygon",
+        "x": 553,
+        "y": 83,
+        "w": 7,
+        "h": 8,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            7,
+            4
+          ],
+          [
+            0,
+            8
+          ]
+        ],
+        "fill": "#D3DCE5",
+        "show": "possession:home"
+      },
+      {
+        "type": "image",
+        "x": 237,
+        "y": 0,
+        "w": 101,
+        "h": 94,
+        "src": "assets/plates/pod.png",
+        "fit": "fill"
+      },
+      {
+        "type": "text",
+        "x": 250,
+        "y": 35.5,
+        "w": 76,
+        "h": 24,
+        "text": "{clock}",
+        "size": 22,
+        "weight": 900,
+        "color": "#F4F6F9",
+        "shadow": "#00000099",
+        "gradient": {
+          "top": "#FDFDFF",
+          "bottom": "#B5BCC4"
+        }
+      },
+      {
+        "type": "text",
+        "x": 268,
+        "y": 63,
+        "w": 15,
+        "h": 20,
+        "text": "{quarter_number}",
+        "size": 20,
+        "weight": 900,
+        "color": "#F6F9FC",
+        "show": "regulation"
+      },
+      {
+        "type": "text",
+        "x": 283,
+        "y": 65,
+        "w": 23,
+        "h": 11,
+        "text": "{quarter_suffix}",
+        "size": 11.5,
+        "weight": 900,
+        "color": "#F6F9FC",
+        "show": "regulation"
+      },
+      {
+        "type": "box",
+        "x": 284,
+        "y": 76,
+        "w": 20,
+        "h": 1.6,
+        "fill": "#E1E4E7",
+        "show": "regulation"
+      },
+      {
+        "type": "text",
+        "x": 254,
+        "y": 63,
+        "w": 66,
+        "h": 20,
+        "text": "{quarter}",
+        "size": 14,
+        "weight": 900,
+        "color": "#F4F6F9",
+        "shadow": "#00000099",
+        "show": "quarter_label"
+      },
+      {
+        "type": "box",
+        "x": 254,
+        "y": 7,
+        "w": 67,
+        "h": 22,
+        "fill": "#D8B642",
+        "radius": 5,
+        "show": "flag"
+      },
+      {
+        "type": "text",
+        "x": 254,
+        "y": 7,
+        "w": 67,
+        "h": 22,
+        "text": "FLAG",
+        "size": 13,
+        "weight": 900,
+        "color": "#F4F6F9",
+        "shadow": "#00000099",
+        "show": "flag"
+      },
+      {
+        "type": "box",
+        "x": 273,
+        "y": 80,
+        "w": 28,
+        "h": 15,
+        "radius": 2,
+        "gradient": {
+          "top": "#6F8299",
+          "bottom": "#33435A"
+        },
+        "stroke": "#BECDDE",
+        "show": "play_clock_available && scrimmage"
+      },
+      {
+        "type": "box",
+        "x": 273,
+        "y": 80,
+        "w": 28,
+        "h": 15,
+        "radius": 2,
+        "gradient": {
+          "top": "#D6343B",
+          "bottom": "#7D1218"
+        },
+        "show": "play_clock_low && scrimmage"
+      },
+      {
+        "type": "text",
+        "x": 273,
+        "y": 80,
+        "w": 28,
+        "h": 15,
+        "text": "{play_clock_seconds}",
+        "size": 12,
+        "weight": 900,
+        "color": "#F4F6F9",
+        "shadow": "#00000099",
+        "font": "Segoe UI",
+        "show": "play_clock_available && scrimmage"
+      }
+    ],
+    "lifecycle": {
+      "fade_in": {
+        "duration": 0.4,
+        "ease": "cubic_out"
+      },
+      "fade_out": {
+        "duration": 0.3,
+        "ease": "cubic_in"
+      }
+    }
+  },
+  "animations": {
+    "touchdown": {
+      "duration": 3,
+      "layers": [
+        {
+          "type": "box",
+          "x": 2,
+          "y": -41,
+          "w": 572,
+          "h": 39,
+          "gradient": {
+            "top": "#303844",
+            "bottom": "#10151CDD"
+          },
+          "stroke": "#CBD4DD88",
+          "enter": {
+            "type": "fade",
+            "time": 0.25
+          },
+          "exit": {
+            "type": "fade",
+            "time": 0.3
+          }
+        },
+        {
+          "type": "text",
+          "x": 16,
+          "y": -40,
+          "w": 544,
+          "h": 38,
+          "text": "TOUCHDOWN",
+          "size": 23,
+          "weight": 900,
+          "color": "#F4F6F9",
+          "enter": {
+            "type": "fade",
+            "time": 0.25
+          },
+          "exit": {
+            "type": "fade",
+            "time": 0.3
+          }
+        }
+      ]
+    },
+    "field_goal": {
+      "duration": 3,
+      "layers": [
+        {
+          "type": "box",
+          "x": 2,
+          "y": -41,
+          "w": 572,
+          "h": 39,
+          "gradient": {
+            "top": "#303844",
+            "bottom": "#10151CDD"
+          },
+          "stroke": "#CBD4DD88",
+          "enter": {
+            "type": "fade",
+            "time": 0.25
+          },
+          "exit": {
+            "type": "fade",
+            "time": 0.3
+          }
+        },
+        {
+          "type": "text",
+          "x": 16,
+          "y": -40,
+          "w": 544,
+          "h": 38,
+          "text": "FIELD GOAL",
+          "size": 23,
+          "weight": 900,
+          "color": "#F4F6F9",
+          "enter": {
+            "type": "fade",
+            "time": 0.25
+          },
+          "exit": {
+            "type": "fade",
+            "time": 0.3
+          }
+        }
+      ]
+    },
+    "safety": {
+      "duration": 3,
+      "layers": [
+        {
+          "type": "box",
+          "x": 2,
+          "y": -41,
+          "w": 572,
+          "h": 39,
+          "gradient": {
+            "top": "#303844",
+            "bottom": "#10151CDD"
+          },
+          "stroke": "#CBD4DD88",
+          "enter": {
+            "type": "fade",
+            "time": 0.25
+          },
+          "exit": {
+            "type": "fade",
+            "time": 0.3
+          }
+        },
+        {
+          "type": "text",
+          "x": 16,
+          "y": -40,
+          "w": 544,
+          "h": 38,
+          "text": "SAFETY",
+          "size": 23,
+          "weight": 900,
+          "color": "#F4F6F9",
+          "enter": {
+            "type": "fade",
+            "time": 0.25
+          },
+          "exit": {
+            "type": "fade",
+            "time": 0.3
+          }
+        }
+      ]
+    },
+    "timeout": {
+      "duration": 3,
+      "layers": [
+        {
+          "type": "box",
+          "x": 2,
+          "y": -41,
+          "w": 572,
+          "h": 39,
+          "gradient": {
+            "top": "#303844",
+            "bottom": "#10151CDD"
+          },
+          "stroke": "#CBD4DD88",
+          "enter": {
+            "type": "fade",
+            "time": 0.25
+          },
+          "exit": {
+            "type": "fade",
+            "time": 0.3
+          }
+        },
+        {
+          "type": "text",
+          "x": 16,
+          "y": -40,
+          "w": 544,
+          "h": 38,
+          "text": "TIMEOUT",
+          "size": 23,
+          "weight": 900,
+          "color": "#F4F6F9",
+          "enter": {
+            "type": "fade",
+            "time": 0.25
+          },
+          "exit": {
+            "type": "fade",
+            "time": 0.3
+          }
+        }
+      ]
+    },
+    "halftime": {
+      "duration": 3,
+      "layers": [
+        {
+          "type": "box",
+          "x": 2,
+          "y": -41,
+          "w": 572,
+          "h": 39,
+          "gradient": {
+            "top": "#303844",
+            "bottom": "#10151CDD"
+          },
+          "stroke": "#CBD4DD88",
+          "enter": {
+            "type": "fade",
+            "time": 0.25
+          },
+          "exit": {
+            "type": "fade",
+            "time": 0.3
+          }
+        },
+        {
+          "type": "text",
+          "x": 16,
+          "y": -40,
+          "w": 544,
+          "h": 38,
+          "text": "HALFTIME",
+          "size": 23,
+          "weight": 900,
+          "color": "#F4F6F9",
+          "enter": {
+            "type": "fade",
+            "time": 0.25
+          },
+          "exit": {
+            "type": "fade",
+            "time": 0.3
+          }
+        }
+      ]
+    },
+    "game_end": {
+      "duration": 3,
+      "layers": [
+        {
+          "type": "box",
+          "x": 2,
+          "y": -41,
+          "w": 572,
+          "h": 39,
+          "gradient": {
+            "top": "#303844",
+            "bottom": "#10151CDD"
+          },
+          "stroke": "#CBD4DD88",
+          "enter": {
+            "type": "fade",
+            "time": 0.25
+          },
+          "exit": {
+            "type": "fade",
+            "time": 0.3
+          }
+        },
+        {
+          "type": "text",
+          "x": 16,
+          "y": -40,
+          "w": 544,
+          "h": 38,
+          "text": "FINAL",
+          "size": 23,
+          "weight": 900,
+          "color": "#F4F6F9",
+          "enter": {
+            "type": "fade",
+            "time": 0.25
+          },
+          "exit": {
+            "type": "fade",
+            "time": 0.3
+          }
+        }
+      ]
+    }
+  }
+}

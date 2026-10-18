@@ -1,6 +1,6 @@
 # Native style comparison
 
-This executes the existing Direct2D FOX/CBS renderer with authored test match
+This executes the existing Direct2D FOX/CBS/NBC renderer with authored test match
 state, comparing its CPU BGRA pixels and HUD placement with HTML support compiled
 in and out. The enabled variant has a fail-on-use browser factory: neither
 executable links WebView2. No game/retail assets, game window or AI are needed.
@@ -20,9 +20,9 @@ package geometry, colors, fonts, image paths and animation code are retained.
 
 The game build accepts `-DNFL2K5_HTML_PRESENTATIONS=OFF` to omit the WebView2
 implementation, SDK requirement and loader library. That build lists native JSON
-packages only and logs skipped HTML packages. The option defaults to ON while
-NBC's HTML package still needs a visually verified native equivalent. Keep the
-installed game's selected presentation intact until that work passes.
+packages only and logs skipped HTML packages. The option defaults to ON.
+NBC now also has a native definition using its original private artwork.
+See `docs/NBC_NATIVE.md` for the scope and remaining live acceptance.
 
 This is a Windows renderer check (also runnable in an isolated Proton prefix).
 It does not port Direct2D, the game or the franchise adapter to Linux.

@@ -71,12 +71,24 @@ HTTP tests exercise persistent overrides, package editing and unchanged save
 bytes, including traversal and cross-origin rejection. The original NBC script
 suite passes 107 checks. The two saved 272-game trials produce identical network
 assignments despite different football results. The native Windows game compiled
-and linked using the existing compiler. The final MNF/TNF routing defaults
-still need an incremental relink; no binary has been installed for this feature. Native match selection, actual graphics and override persistence
+and linked using the existing compiler. The final incremental build and isolated
+Proton `--validate` passed with an explicit child completion marker. The combined
+editor and native update are installed on the Deck; all 210 save files matched
+before and after installation. Installed EXE SHA256:
+`9e30ec9fa17d30ab3aa8bb3d846bea13ad9a9280c629e97c7da0ca1f86f11c40`.
+The editor serves the network page, real franchise schedule and all three HTML
+packages. The old editor process was holding the port and ignoring SIGINT;
+restarting that exact process with SIGTERM resolved the stale-server conflict.
+Private receipts are in Deck `broadcast-networks-v1/`. Native match selection, actual graphics and override persistence
 still require a real Deck matchup and relaunch. Do not call these stages verified
 from the compile or source fixtures alone.
 
 Pending scope: expose supported runtime gameplay and SOFTDRINK controls together
 with broadcast settings, and provide access to the broader Mod Studio tools.
+The Deck exhibition test exposed WebView2 environment and composition/capture
+failures before the NBC HTML page produced a frame. Restoring media alone did
+not fix that runtime failure. NBC's native rendering adaptation is described in
+[NBC_NATIVE.md](NBC_NATIVE.md). MNF/TNF remain authored HTML variations and need
+their own native definitions before their Deck rendering can be claimed.
 Fourth-down tuning waits for the active-image/dispatch audit in
 [CPU_FOURTH_DOWN_AUDIT.md](CPU_FOURTH_DOWN_AUDIT.md). Scheduled task stays off.
