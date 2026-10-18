@@ -1230,9 +1230,12 @@ gameplay costs remain unverified.
       manifest unchanged. Report 23.06 points and about 63.53 plays/team/game.
       Reject incorrect upstream total-yard label with regression. 23 targeted
       checks pass. Workload distribution remains distorted despite plausible pace.
-- [ ] User is running the 6-minute comparison. No agent reset/input. Check the
-      resulting save's setting, year and starting-copy lineage before comparing.
-      Preserve MyNFL2. No agent reset or optimal-setting claim is authorized.
-- [ ] Repeat the best candidate and recommend settings without altering MyNFL1.
+- [x] Compare user-produced MyNFL3 (6 minutes) with MyNFL2 (5): same season,
+      schedule and other saved settings, 272 games each. Six minutes raises plays
+      63.53 -> 69.70 and scoring 23.06 -> 25.25/team/game; workload inflation worsens.
+      Recommend 5-minute simulated quarters as current baseline. All 66 main
+      files unchanged; both trial saves preserved. No agent reset or input.
+- [ ] Repeat the best candidate and investigate workload/injury/rotation effects
+      before claiming an optimum. Played-game timing remains a separate test.
 
 Experiment and evidence limits: [simulation calibration](docs/SIMULATION_CALIBRATION.md).

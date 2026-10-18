@@ -23,9 +23,9 @@ route is the existing Steam entry temporarily dispatched to the test script.
 
 The first 5-minute season is complete and saved as **MyNFL2**: 272 games,
 17 per team. The user confirmed Dart's exported passing line against the game.
-Detailed results and mapping limitations follow below. The user is now running
-the 6-minute comparison; no agent reset or input should interrupt them. No best
-setting has been established from comparative or repeated trials yet.
+Detailed results and mapping limitations follow below. The 6-minute MyNFL3 comparison is also complete; its results follow below.
+Five minutes is the recommended current simulation baseline. Repeated trials
+and workload calibration remain necessary before claiming an optimum.
 
 ## Tool reuse
 
@@ -148,3 +148,57 @@ unchanged MyNFL1 copy in the isolated runtime, set6minutes, simulate the same ye
 and save as MyNFL3. Awaiting that result. Do not assume a paired trial until its
 season, setting and baseline lineage are checked. Twenty-three targeted tool
 checks pass; no new native binaries or cloud inference are involved.
+
+## Second completed trial — 6 minutes, saved as MyNFL3
+
+Result SHA256:
+`26552d26fa9b08685dfbaf133eeb8e1936df5908d670ff2a5cd75a8a095526a3`.
+Native PC HMAC signature verifies. Both runs cover 272 completed regular-season
+games / 544 team-games in season index 0 and use the baseline's identical
+272-game template. Their settings prefixes differ only at 0x90 (5 versus 6
+simulated minutes); played quarters remain 8 minutes. Results differ throughout
+the schedule/stats, so MyNFL3 is not merely MyNFL2 with an edited setting.
+This is one run per setting, without a controlled RNG or repeated-run estimate.
+
+| Per team per game | 5 minutes | 6 minutes | NFL 2025 |
+|---|---:|---:|---:|
+| Offensive plays, player-counter estimate | 63.53 | 69.70 | 61.26 |
+| Pass attempts | 30.09 | 32.50 | 32.06 |
+| Rush attempts | 30.96 | 34.44 | 26.84 |
+| Gross passing yards | 236.72 | 256.18 | 225.02 |
+| Rushing yards | 125.02 | 141.14 | 116.94 |
+| Points | 23.06 | 25.25 | — |
+| Completion percentage | 63.72% | 64.13% | 64.32% |
+| Gross yards/pass attempt | 7.87 | 7.88 | 7.02 |
+| Yards/rush | 4.04 | 4.10 | 4.36 |
+
+| Annual threshold | 5 minutes | 6 minutes | NFL 2025 |
+|---|---:|---:|---:|
+| Passers with 4,000+ yards | 18 | 24 | 6 |
+| Players with 1,000+ rushing yards | 31 | 32 | 17 |
+| Players with 1,500+ rushing yards | 14 | 19 | 3 |
+| Players with 1,000+ receiving yards | 21 | 26 | 20 |
+
+The rushing leaders were J.K. Dobbins (1,887 yards) at 5 minutes and James Cook
+(2,600) at 6; Barkley also reached 2,545 and Henry 2,319 in the latter run.
+All 32 passers with 200+ attempts recorded 17 games in both runs. Gross passing
+and rushing player-yard sums match the team fields in both. Minor counter
+mismatches remain: 17/29 team-versus-player rush attempts (5/6-minute runs),
+8/0 completions minus receptions, and 0/1 QB sacks minus defensive sack credits.
+Keep offensive play counts approximate; these small gaps do not explain the
+roughly 6.2 extra plays/team/game in the six-minute trial.
+
+**Recommendation: use 5-minute simulated quarters as the current baseline.**
+Six minutes gets pass attempts closer to the reference, but increases already
+high rushing volume and worsens season-total inflation. Passing/rushing efficiency
+barely changes between runs, suggesting duration is primarily changing volume
+in this comparison. Both remain too concentrated in healthy full-season starters;
+run/pass balance, workload distribution and injury/rotation behavior need separate
+measurement. Do not claim that five minutes is an established optimum or that
+simulated-game results calibrate played-game timing.
+
+All 66 protected normal-profile files still match their original hashes; MyNFL2
+and MyNFL3 are preserved. No game input, reset, save edit, binary deployment,
+cloud inference or scheduled-task change was performed for this comparison.
+Private raw snapshots/reports/lineage receipt are under
+`.local-runtime/simulation-calibration/`. No game assets or saves are committed.

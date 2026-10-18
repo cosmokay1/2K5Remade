@@ -10337,3 +10337,26 @@ injury/rotation behavior unverified. No conclusion that minutes alone fixes it.
 User said no reset, then chose to run6minutes personally. No reset/input sent;
 requested original starting COPY, sameyear, saveasMyNFL3. Await result and verify
 lineage before treating it as a paired experiment. Detailed limits in calibration doc.
+
+
+## October 17 — comparison with actual 6-minute MyNFL3
+
+Read-only extraction of user-produced MyNFL3
+(26552d26fa9b08685dfbaf133eeb8e1936df5908d670ff2a5cd75a8a095526a3),
+PC signature verified. Same season index/template as baseline and 5-minute run;
+272 completed games / 544 team-games. Only settings-prefix difference is simulated
+minutes at +90; distinct scored results. All 66 normal-profile hashes unchanged,
+MyNFL2 preserved. No reset, game input, binary deployment, inference or automation.
+
+Five versus six minutes: estimated plays 63.53/69.70, points 23.06/25.25, gross
+passing 236.72/256.18, rushing 125.02/141.14 per team/game. Six-minute workload
+thresholds worsen: 24 passers 4000+, 32 rushers 1000+, 19 rushers 1500+; rushing
+leaders Cook2600/Barkley2545/Henry2319. Efficiency barely changes, and all32primary
+passers have17games in both. Named player-yard sums match teams; small unresolved
+count gaps retained (6-minute29rush attempts/1sack), not silently normalized.
+
+Recommend five SIMULATED minutes as current baseline, not a proved optimum.
+One run each without controlled RNG/repeats; workload/run-pass balance and actual
+injury/rotation behavior remain open. Played quarters stay8 and are uncalibrated.
+No source change or redundant test suite for analysis. Full tables and reference
+links in docs/SIMULATION_CALIBRATION.md; raw reports/receipt private.
