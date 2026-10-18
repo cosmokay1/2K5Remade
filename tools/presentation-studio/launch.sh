@@ -4,12 +4,18 @@ set -eu
 studio_dir="$(cd -- "$(dirname -- "$0")" && pwd)"
 presentations="${1:-$studio_dir/../../mods/presentations}"
 url=http://127.0.0.1:8735/tools/presentation-studio/index.html
+if curl --silent --fail "$url" >/dev/null; then
+    xdg-open "$url"
+    exit 0
+fi
 exec 9>"${XDG_RUNTIME_DIR:-/tmp}/2k5-presentation-studio-$UID.lock"
 if ! flock -n 9; then
     xdg-open "$url"
     exit 0
 fi
-python3 "$studio_dir/serve.py" --presentations "$presentations" --no-browser &
+save_args=()
+if [ -n "${2:-}" ]; then save_args=(--saves "$2"); fi
+python3 "$studio_dir/serve.py" --presentations "$presentations" "${save_args[@]}" --no-browser &
 server_pid=$!
 trap 'kill "$server_pid" 2>/dev/null || true' EXIT
 for attempt in {1..50}; do

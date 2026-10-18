@@ -9,6 +9,13 @@
   "description": "Reference-led 2022 NBC SNF presentation: matchup open, timeout score bumper, persistent NBC/SNF corner branding, player profiles, translucent stat inserts, score and drive foldouts, lineup slides and replay transitions. Includes rendered animation reviews. Original NBC 3D/video assets and broadcast fonts are not included.",
   "enabled": true,
   "entry": "scorebug.html",
+  "required_assets": [
+    "assets/plates/pod.png",
+    "assets/plates/rail.png",
+    "assets/plates/away_mask.png",
+    "assets/plates/home_mask.png",
+    "assets/branding/nbc-peacock-user.png"
+  ],
   "replaces": ["lineup", "player_cards", "pregame_cards"],
   "canvas": {
     "width": 1920,

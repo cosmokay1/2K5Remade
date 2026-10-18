@@ -5,10 +5,12 @@ from pathlib import Path
 import tempfile
 import threading
 import unittest
+import sys
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 spec = importlib.util.spec_from_file_location('studio_server', Path(__file__).resolve().parents[1] / 'tools/presentation-studio/serve.py')
+sys.path.insert(0, str(Path(spec.origin).parent))
 studio = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(studio)
 
@@ -18,11 +20,13 @@ class StudioTest(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name) / 'presentations'
         self.root.mkdir()
+        self.saves = Path(self.temp.name) / 'saves'
+        self.saves.mkdir()
         self.package = self.root / 'My Broadcast'
         self.package.mkdir()
         (self.package / 'mod.json').write_text(json.dumps(dict(type='html', name='Broadcast', entry='index.html')))
         (self.package / 'index.html').write_text('<h1>Score</h1>')
-        self.server = studio.make_server(self.root, 0)
+        self.server = studio.make_server(self.root, 0, self.saves)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         self.url = f'http://127.0.0.1:{self.server.server_port}'
@@ -84,6 +88,24 @@ class StudioTest(unittest.TestCase):
         for headers in ({'Origin': 'https://example.com'}, {'Host': 'example.com'}):
             self.assertEqual(self.request(path, b'bad', headers)[0], 403)
         self.assertFalse((self.package / 'layout.css').exists())
+
+    def test_network_override_is_durable_and_never_writes_save(self):
+        from tests.test_broadcast_networks import fixture
+        folder=self.saves/'MyNFL1';folder.mkdir()
+        save=folder/'SAVEGAME.DAT';before=bytes(fixture());save.write_bytes(before)
+        self.assertEqual(json.loads(self.request('/api/network-saves')[1]),['MyNFL1/SAVEGAME.DAT'])
+        endpoint='/api/networks?save=MyNFL1/SAVEGAME.DAT'
+        status,body=self.request(endpoint);self.assertEqual(status,200)
+        data=json.loads(body);key=data['games'][0]['key']
+        self.assertEqual(self.request(endpoint,json.dumps({'key':key,'network':'NBC'}).encode())[0],200)
+        self.assertEqual(json.loads(self.request(endpoint)[1])['settings']['overrides'][key],'NBC')
+        self.assertEqual(self.request(endpoint,json.dumps({'key':key,'network':''}).encode())[0],200)
+        self.assertNotIn(key,json.loads(self.request(endpoint)[1])['settings']['overrides'])
+        for change in ({'key':'unknown','network':'CBS'},{'key':key,'network':'Unknown'},{'enabled':'yes'},{'packages':{'FOX':'../bad'}}):
+            self.assertEqual(self.request(endpoint,json.dumps(change).encode())[0],400)
+        self.assertEqual(save.read_bytes(),before)
+        self.assertEqual(self.request('/api/networks?save=../SAVEGAME.DAT')[0],400)
+        self.assertEqual(self.request('/networks')[0],200)
 
 
 if __name__ == '__main__':

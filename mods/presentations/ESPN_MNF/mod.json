@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "id": "espn_mnf",
+  "name": "ESPN Monday Night Football (Custom)",
+  "menu_name": "MNF Custom",
+  "type": "html",
+  "version": "0.1.0",
+  "author": "NFL2K5-PC base; 2K5Remade fork variation",
+  "description": "Custom MNF variation of the original NBC SNF package. Shared original artwork, live data, animations and stats; distinct ESPN branding and accents.",
+  "enabled": true,
+  "entry": "scorebug.html",
+  "required_assets": [
+    "../NBC_SNF/assets/plates/pod.png",
+    "../NBC_SNF/assets/plates/rail.png",
+    "../NBC_SNF/assets/plates/away_mask.png",
+    "../NBC_SNF/assets/plates/home_mask.png",
+    "../NBC_SNF/network-variation.js",
+    "brand.svg"
+  ],
+  "replaces": [
+    "lineup",
+    "player_cards",
+    "pregame_cards"
+  ],
+  "canvas": {
+    "width": 1920,
+    "height": 1080,
+    "fit": "fill_width"
+  },
+  "dependencies": [
+    "nbc_snf"
+  ],
+  "compatibility": {
+    "game": "NFL2K5-PC",
+    "presentation_api": 1
+  }
+}

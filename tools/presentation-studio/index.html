@@ -79,6 +79,7 @@ dialog .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top
 </head>
 <body>
 <header>
+  <a href="/networks" style="color:var(--accent)">Franchise networks</a>
   <h1>Presentation Studio</h1>
   <select id="pkg" style="width:240px"></select>
   <button id="importBtn">Import HTML…</button>
@@ -100,6 +101,7 @@ dialog .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top
   <div class="row"><div><label>Away score</label><input id="sAwayScore" type="number" value="14"></div><div><label>Home score</label><input id="sHomeScore" type="number" value="10"></div></div>
   <div class="row"><div><label>Away timeouts</label><input id="sAwayTO" type="number" min="0" max="3" value="3"></div><div><label>Home timeouts</label><input id="sHomeTO" type="number" min="0" max="3" value="2"></div></div>
   <div class="row3"><div><label>Quarter</label><input id="sQ" type="number" min="0" max="6" value="2"></div><div><label>Clock (s)</label><input id="sClock" type="number" value="425"></div><div><label>Play clock</label><input id="sPlay" type="number" value="17"></div></div>
+  <button id="runClocks" type="button">Run preview clocks</button>
   <div class="row3"><div><label>Down</label><input id="sDown" type="number" min="0" max="4" value="3"></div><div><label>Distance</label><input id="sDist" type="number" value="7"></div><div><label>Possession</label><select id="sPoss"><option>away</option><option selected>home</option><option value="">none</option></select></div></div>
   <label class="check"><input type="checkbox" id="sVisible" checked> Scorebug visible (live play)</label>
   <label class="check"><input type="checkbox" id="sPlaycall"> Play selection on screen</label>
@@ -304,7 +306,11 @@ function applyAll() {
   if (!doc) return;
   let st = doc.getElementById('studio-layout');
   if (!st) { st = doc.createElement('style'); st.id = 'studio-layout'; doc.head.appendChild(st); }
-  st.textContent = layoutCss();
+  // Saved URLs are relative to this package's layout.css, even when the
+  // preview inherits shared broadcast HTML through a different <base>.
+  st.textContent = layoutCss().replace(/url\(["']?([^"')]+)["']?\)/g, (all, path) =>
+    /^(?:[a-z]+:|\/|#)/i.test(path) ? all :
+      `url("${new URL(path, location.origin + '/mods/presentations/' + encodeURIComponent(pkg.folder) + '/').href}")`);
   drawBoxes();
 }
 function snapshot() { history.push(JSON.stringify([...edits])); if (history.length > 200) history.shift(); }
@@ -514,6 +520,22 @@ function sampleState() {
 }
 function post(message) { if (frame.contentWindow) frame.contentWindow.postMessage({ nfl2k5: message }, '*'); }
 function sendState() { post({ type: 'state', state: sampleState() }); setTimeout(drawBoxes, 50); }
+let previewClockTimer = null;
+function stopPreviewClocks() {
+  clearInterval(previewClockTimer); previewClockTimer = null;
+  $('runClocks').textContent = 'Run preview clocks';
+}
+$('runClocks').onclick = () => {
+  if (previewClockTimer) { stopPreviewClocks(); return; }
+  $('runClocks').textContent = 'Pause preview clocks';
+  previewClockTimer = setInterval(() => {
+    $('sClock').value = Math.max(0, +$('sClock').value - 1);
+    $('sPlay').value = +$('sPlay').value > 0 ? +$('sPlay').value - 1 : 40;
+    sendState();
+    if (+$('sClock').value === 0) stopPreviewClocks();
+  }, 1000);
+};
+document.addEventListener('visibilitychange', () => { if (document.hidden) stopPreviewClocks(); });
 document.querySelectorAll('aside.left input, aside.left select').forEach(i => { if (i.id && i.id[0] === 's') i.addEventListener('input', sendState); });
 EVENTS.forEach(name => {
   const b = document.createElement('button');

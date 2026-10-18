@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Franchise networks · Presentation Studio</title>
+<style>
+:root{color-scheme:dark;--bg:#0f141b;--panel:#18202b;--line:#2f3b4c;--text:#e8eef6;--muted:#93a3b8;--accent:#4da3ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--line)}
+h1{font-size:20px;margin:0}a{color:var(--accent)}main{max-width:1200px;margin:auto;padding:24px}
+p{color:var(--muted);max-width:85ch}label{display:inline-flex;gap:8px;align-items:center;margin:8px 16px 8px 0}
+button,select{font:inherit;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:7px 10px;max-width:100%}
+button{cursor:pointer}button:hover,select:focus-visible{border-color:var(--accent)}details{margin:18px 0;padding:12px 0;border-block:1px solid var(--line)}summary{cursor:pointer}
+#mappings{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}#mappings label{display:grid;min-width:180px}
+.scroll{overflow:auto}table{width:100%;border-collapse:collapse;text-align:left;font-variant-numeric:tabular-nums}th{font-weight:600;color:var(--muted)}th,td{padding:12px 10px;border-bottom:1px solid var(--line)}
+td small{display:block;color:var(--muted)}tr.overridden td:first-child{border-left:3px solid var(--accent)}#status{min-height:22px;color:var(--accent)}
+@media(max-width:700px){main{padding:12px}header{padding:12px}th,td{padding:10px 6px}table{min-width:720px}}
+</style></head><body>
+<header><h1>Franchise networks</h1><a href="/">Presentation Studio</a></header>
+<main><p>Broadcasts follow the saved schedule: afternoon conference coverage, prime-time windows and holiday games. Change any matchup below, or return it to Automatic. Kickoff times and saves stay untouched.</p>
+<label>Franchise <select id="save" aria-label="Franchise save"></select></label>
+<label>Week <select id="week" aria-label="Week"></select></label>
+<label><input id="enabled" type="checkbox">Automatic networks</label>
+<button id="refresh">Refresh saved schedule</button>
+<div id="status" role="status" aria-live="polite"></div>
+<details><summary>Network graphics packages</summary><p>Choose installed graphics for each network. Automatic matches package names. If a network’s package is unavailable to the game, it keeps the original ESPN graphics and logs the missing package; it does not relabel another network’s graphics.</p><div id="mappings"></div></details>
+<div class="scroll"><table><thead><tr><th scope="col">Week</th><th scope="col">Date / kickoff</th><th scope="col">Matchup</th><th scope="col">Coverage</th><th scope="col">Network</th></tr></thead><tbody id="games"></tbody></table></div>
+<p>The schedule stores a 12-hour kickoff field without AM/PM. Sunday 9:30 is treated as a morning window; 7–11 otherwise means evening. This is an editable coverage model, not a verified TV listing. Equivalent copies of the same season schedule share overrides. New matchups receive automatic assignments; overrides never move or flex a game.</p>
+</main><script>
+const $=id=>document.getElementById(id);let state=null;
+function option(text,value){return new Option(text,value)}
+function message(text){$('status').textContent=text}
+async function request(change){const url='/api/networks?save='+encodeURIComponent($('save').value);const r=await fetch(url,change?{method:'POST',body:JSON.stringify(change)}:{});if(!r.ok)throw Error(await r.text());return r.json()}
+function draw(){
+ const tbody=$('games');tbody.replaceChildren();
+ for(const game of state.games){
+  if($('week').value && game.week!==Number($('week').value))continue;
+  const row=document.createElement('tr'),override=state.settings.overrides[game.key];if(override)row.className='overridden';
+  const texts=[String(game.week),game.date+' · '+game.kickoff,game.away+' at '+game.home,(override?'Your selection':game.network)+' · '+game.reason];
+  texts.forEach(text=>{const td=document.createElement('td');td.textContent=text;row.append(td)});
+  const td=document.createElement('td'),select=document.createElement('select');select.setAttribute('aria-label','Network for '+game.away+' at '+game.home+' '+game.date);
+  select.add(option('Automatic · '+game.network,''));state.networks.forEach(n=>select.add(option(n,n)));select.value=override||'';
+  select.onchange=async()=>{select.disabled=true;try{state=await request({key:game.key,network:select.value});draw();message('Network selection saved. Applies when this game loads.')}catch(e){select.value=override||'';message(e.message)}finally{select.disabled=false}};
+  td.append(select);row.append(td);tbody.append(row);
+ }
+}
+async function load(){try{
+ state=await request();$('enabled').checked=state.settings.enabled;
+ const previous=$('week').value;$('week').replaceChildren(option('All weeks',''));[...new Set(state.games.map(g=>g.week))].forEach(w=>$('week').add(option('Week '+w,w)));$('week').value=previous;
+ $('mappings').replaceChildren();for(const network of state.networks){const label=document.createElement('label');label.append(document.createTextNode(network));const select=document.createElement('select');select.add(option('Automatic package match',''));state.packages.forEach(p=>select.add(option(p.name,p.folder)));select.value=state.settings.packages[network]||'';select.onchange=async()=>{try{state=await request({packages:{[network]:select.value}});message('Graphics mapping saved. Applies when the next game loads.')}catch(e){message(e.message)}};label.append(select);$('mappings').append(label)}
+ draw();message(state.games.length+' scheduled matchups. Overrides are saved outside your franchise file.');
+}catch(e){message(e.message)}}
+$('save').onchange=()=>{$('week').value='';load()};$('week').onchange=draw;$('refresh').onclick=load;
+$('enabled').onchange=async()=>{try{state=await request({enabled:$('enabled').checked});message(state.settings.enabled?'Automatic networks enabled.':'Automatic networks disabled; the game uses your manual package selection.')}catch(e){$('enabled').checked=state.settings.enabled;message(e.message)}};
+(async()=>{try{const r=await fetch('/api/network-saves');if(!r.ok)throw Error(await r.text());const saves=await r.json();saves.forEach(s=>$('save').add(option(s.replace(/\/SAVEGAME\.DAT$/,''),s)));if(saves.length)await load();else message('No saves configured. Start Presentation Studio with --saves pointing at the game saves directory.')}catch(e){message(e.message)}})();
+</script></body></html>

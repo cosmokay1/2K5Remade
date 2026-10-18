@@ -1239,3 +1239,25 @@ gameplay costs remain unverified.
       before claiming an optimum. Played-game timing remains a separate test.
 
 Experiment and evidence limits: [simulation calibration](docs/SIMULATION_CALIBRATION.md).
+
+## Runtime broadcast and mod controls (October 17)
+
+- [x] Implement deterministic schedule windows, explicit per-match overrides and
+      read-only schedule editing in Presentation Studio; 14 focused tests pass,
+      including 5,490 Python/C++ comparisons. Source and candidate are not proof
+      of actual Deck match selection.
+- [x] Recover the original NBC release artwork into the private Deck package,
+      verify the installer checksum, preserve existing edits and remove the
+      temporary full extraction. No procedural fallback replaced the design.
+- [x] Author shared-art custom MNF/TNF variations and preview clock controls;
+      retain NFL2K5-PC provenance. Original NBC lifecycle suite passes 107/107.
+- [ ] Verify the combined editor installation, native automatic selection,
+      per-game override, game relaunch and actual graphics on the Deck.
+- [ ] Expose supported runtime gameplay/SOFTDRINK options and provide access
+      to Mod Studio; label immediate/next-game/restart application accurately.
+- [ ] Verify active guest image and fourth-down hook execution before tuning
+      Modern2. Source replay shows raw-clock sensitivity for short quarters;
+      a complete user-observed fourth-down case is still needed. No preset changed.
+
+Evidence and remaining acceptance: [broadcasts](docs/BROADCAST_NETWORKS.md),
+[fourth-down audit](docs/CPU_FOURTH_DOWN_AUDIT.md). Scheduled task stays off.

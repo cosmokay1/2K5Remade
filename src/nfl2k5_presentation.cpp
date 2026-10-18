@@ -32,6 +32,7 @@
 #include <wincodec.h>
 #include "nfl2k5_broadcast.h"
 #include "nfl2k5_presentation.h"
+#include "broadcast_schedule.h"
 #ifdef NFL2K5_FRANCHISE_CLIENT
 #include "nfl2k5_franchise_host.h"
 #include "../native/game_addon/ui.h"
@@ -486,6 +487,7 @@ struct Package {
 
 static std::vector<Package> s_pkgs;           /* [0] is the game's own ESPN presentation */
 static std::atomic<int> s_sel_pkg{ 0 }, s_sel_intro{ 1 }, s_sel_outro{ 1 }, s_sel_anim{ 1 }, s_sel_vol{ 8 };
+static std::atomic<int> s_network_manual{ -1 };
 static void pregame_replacement_reset();
 static std::atomic<int> s_sel_commentary{ 0 };
 static std::string s_commentary_dir = "E:\\cfbsound";
@@ -533,6 +535,14 @@ static void load_packages()
 #endif
             p.html = true;
             p.entry = p.root.str("entry", "index.html");
+            bool complete = true;
+            if (const JVal *assets = p.root.get("required_assets"))
+                for (const auto &asset : assets->a)
+                    if (asset.t != JVal::Str || !file_exists(p.dir + "/" + asset.s)) {
+                        fprintf(stderr, "[PRES] HTML package %s missing required artwork: %s\n", dir8, asset.s.c_str());
+                        complete = false;
+                    }
+            if (!complete) continue; /* Do not offer a text-only broken broadcast. */
             if (const JVal *r = p.root.get("replaces"))
                 for (auto &v : r->a)
                     if (v.t == JVal::Str) {
@@ -576,7 +586,7 @@ static void save_settings()
     char ipath[MAX_PATH];
     FILE *f = fopen(xbox_user_path(k_ini, ipath, sizeof ipath), "w");
     if (!f) return;
-    int pk = s_sel_pkg;
+    int pk = s_network_manual.load() >= 0 ? s_network_manual.load() : s_sel_pkg.load();
     fprintf(f, "; Broadcast presentation (Coach Match Up > Presentation edits this)\n");
     fprintf(f, "package = %s\nintro = %d\noutro = %d\nanimations = %d\ntheme_volume = %d\ncustom_commentary = %d\ncommentary_dir = %s\n",
             pk > 0 && pk < (int)s_pkgs.size() ? s_pkgs[pk].name.c_str() : "ESPN (Original)",
@@ -680,6 +690,7 @@ extern "C" void nfl2k5_pres_set(int what, int v)
     switch (what) {
     case 0:
         pregame_replacement_reset();
+        s_network_manual = -1; /* An explicit menu choice owns the rest of this game. */
         s_sel_pkg = v;
         s_sel_intro = std::min(1, nfl2k5_pres_values(1) - 1);    /* first theme of the new package */
         s_sel_outro = std::min(1, nfl2k5_pres_values(2) - 1);
@@ -692,6 +703,8 @@ extern "C" void nfl2k5_pres_set(int what, int v)
     }
     save_settings();
 }
+
+#include "broadcast_assignment.inc"
 
 /* ======================================================================
  * Theme music (Media Foundation decode -> XAudio2)
@@ -3477,6 +3490,7 @@ static int hud_callback(const XboxHudFrame *f, XboxHudImage *img)
 
     GameState g;
     read_state(g);
+    if (!s_test) franchise_broadcast_tick(g);
     if (s_test) {
         g.valid = true; g.period = 1; g.clock = 791; g.period_len = 900; g.phase = 4; g.down = 1;
         g.ball = 0; g.line = 914.4f; g.poss = 2;

@@ -4,10 +4,12 @@ import argparse
 import json
 import mimetypes
 import re
+import threading
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
+from networks import NETWORKS, load_settings, read_schedule, save_settings
 
 WEB = {'.html', '.css', '.js', '.json', '.png', '.jpg', '.jpeg', '.gif',
        '.svg', '.webp', '.ttf', '.otf', '.woff', '.woff2', '.mp4', '.webm', '.mp3'}
@@ -31,9 +33,12 @@ def package_name(name):
     return name
 
 
-def make_server(presentations, port=8735):
+def make_server(presentations, port=8735, saves=None):
     presentations = Path(presentations).resolve()
     editor = Path(__file__).with_name('index.html')
+    saves = Path(saves).resolve() if saves else None
+    settings_file = presentations.parent / 'broadcast-networks.json'
+    write_lock = threading.Lock()
 
     class Handler(BaseHTTPRequestHandler):
         def send(self, code, body, kind='text/plain; charset=utf-8'):
@@ -58,7 +63,8 @@ def make_server(presentations, port=8735):
             self.handle_request(False)
 
         def do_POST(self):
-            self.handle_request(True)
+            with write_lock:
+                self.handle_request(True)
 
         def handle_request(self, post):
             # Restrict Host as well as Origin: protects local writes from other sites.
@@ -71,6 +77,62 @@ def make_server(presentations, port=8735):
             query = parse_qs(url.query)
             arg = lambda key: query.get(key, [''])[0]
             try:
+                if path == '/api/network-saves' and not post:
+                    files = [str(f.relative_to(saves)) for f in sorted(saves.rglob('SAVEGAME.DAT'))
+                             if f.resolve().is_relative_to(saves) and f.is_file()] if saves else []
+                    self.send(200, json.dumps(files), 'application/json')
+                    return
+                if path == '/api/networks':
+                    if not saves:
+                        raise ValueError('Start with --saves pointing at your game saves directory')
+                    save = contained(saves, arg('save'))
+                    if save.name != 'SAVEGAME.DAT':
+                        raise ValueError('Select a franchise SAVEGAME.DAT')
+                    schedule = read_schedule(save.read_bytes())
+                    settings = load_settings(settings_file)
+                    if post:
+                        length = int(self.headers.get('Content-Length', '-1'))
+                        if not 0 <= length <= 65536:
+                            raise ValueError('Invalid settings request size')
+                        change = json.loads(self.rfile.read(length))
+                        if not isinstance(change, dict):
+                            raise ValueError('Invalid settings request')
+                        if 'enabled' in change:
+                            if type(change['enabled']) is not bool:
+                                raise ValueError('Enabled must be true or false')
+                            settings['enabled'] = change['enabled']
+                        if 'key' in change:
+                            if change['key'] not in {g['key'] for g in schedule['games']} or change.get('network') not in ('', *NETWORKS):
+                                raise ValueError('Unknown game or network')
+                            if change['network']:
+                                settings['overrides'][change['key']] = change['network']
+                            else:
+                                settings['overrides'].pop(change['key'], None)
+                        if 'packages' in change:
+                            if not isinstance(change['packages'], dict):
+                                raise ValueError('Invalid network package mapping')
+                            for network, folder in change['packages'].items():
+                                if network not in NETWORKS or not isinstance(folder, str):
+                                    raise ValueError('Invalid network package mapping')
+                                if folder:
+                                    directory = contained(presentations, package_name(folder))
+                                    if not any(contained(directory, f).is_file() for f in ('mod.json', 'presentation.json')):
+                                        raise ValueError('Unknown presentation package')
+                                settings['packages'][network] = folder
+                        save_settings(settings_file, settings)
+                    packages = []
+                    for directory in sorted(presentations.iterdir()):
+                        if directory.name.startswith(('.', '_')) or not directory.is_dir():
+                            continue
+                        for manifest in ('presentation.json', 'mod.json'):
+                            try:
+                                info = json.loads(contained(presentations, directory.name + '/' + manifest).read_text())
+                                packages.append(dict(folder=directory.name, name=info.get('name',directory.name)))
+                                break
+                            except (ValueError, OSError):
+                                continue
+                    self.send(200, json.dumps(dict(**schedule, settings=settings, networks=NETWORKS, packages=packages)), 'application/json')
+                    return
                 if not post:
                     if path == '/api/packages':
                         packages = []
@@ -90,7 +152,9 @@ def make_server(presentations, port=8735):
                                  if f.is_file() and f.resolve().is_relative_to(folder)]
                         self.send(200, json.dumps(files), 'application/json')
                         return
-                    if path in ('/', '/tools/presentation-studio', '/tools/presentation-studio/', PAGE):
+                    if path == '/networks':
+                        file = editor.with_name('networks.html')
+                    elif path in ('/', '/tools/presentation-studio', '/tools/presentation-studio/', PAGE):
                         file = editor
                     elif path.startswith('/mods/presentations/'):
                         file = contained(presentations, path[len('/mods/presentations/'):])
@@ -148,10 +212,11 @@ def main():
                         default=Path(__file__).resolve().parents[2] / 'mods/presentations')
     parser.add_argument('--port', type=int, default=8735)
     parser.add_argument('--no-browser', action='store_true')
+    parser.add_argument('--saves', type=Path, help='Read-only root containing franchise SAVEGAME.DAT files')
     args = parser.parse_args()
     if not args.presentations.is_dir():
         parser.error('presentation directory does not exist')
-    with make_server(args.presentations, args.port) as server:
+    with make_server(args.presentations, args.port, args.saves) as server:
         address = f'http://127.0.0.1:{server.server_port}{PAGE}'
         print(f'Presentation Studio: {address}\nEditing: {args.presentations.resolve()}', flush=True)
         if not args.no_browser:

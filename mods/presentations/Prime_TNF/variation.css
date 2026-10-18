@@ -1,0 +1,12 @@
+/* Custom TNF: preserves the original SNF art and live football layout. */
+:root { --network-accent:#4eb8f0; }
+.pod::after { content:"prime video"; display:flex; justify-content:center; align-items:center;
+ position:absolute; z-index:2; left:19px; top:6px; width:58px; height:24px;
+ background:linear-gradient(#141b25,#080b11); color:var(--network-accent);
+ border-radius:45% 45% 0 0; font:italic 900 10px/1 Arial,sans-serif; }
+.pod .peacock-user,.pod .peacock-fallback { display:none; }
+.nbc-brand { filter:none!important; }
+.panel::before { box-shadow:inset 0 1px 0 var(--network-accent); }
+#qb-stat::before { box-shadow:inset 0 2px 0 var(--network-accent); }
+.qs-brand i,.pf-brand i { background:var(--network-accent); }
+.notice-glass,.wipe-plane.front { border-color:var(--network-accent); }
