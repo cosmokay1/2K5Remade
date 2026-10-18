@@ -219,7 +219,7 @@ async function loadPackages(want) {
     const i = Math.max(0, list.findIndex(p => p.folder === want));
     sel.value = i;
     if (list.length) openPackage(list[i]); else msg('No HTML packages (mod.json "type": "html") in mods/presentations');
-  } catch (e) { msg('Open this page through serve.ps1 (http://127.0.0.1:8735/...)'); }
+  } catch (e) { msg('Start Presentation Studio with serve.py or serve.ps1 (http://127.0.0.1:8735/...)'); }
 }
 $('pkg').onchange = () => openPackage($('pkg').packages[$('pkg').value]);
 $('reload').onclick = () => pkg && openPackage(pkg, true);
