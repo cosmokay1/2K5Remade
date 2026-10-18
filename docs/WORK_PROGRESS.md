@@ -10288,3 +10288,30 @@ remain protected.
 Also retained the user's request for smaller bonus percentage increments. The
 current packed guest format is10% per nibble step; finer values require lossless
 native/signing/save support and are not represented by a cosmetic slider change.
+
+
+## October17 — isolated simulated-season tooling, no simulation result yet
+
+Prepared SIMTEST from the exact MyNFL1 physical/library save; all66 original
+loose-save files still match after test startup. Own writable runtime saves,
+portable config/cache/input/logs; content shared; no AI addon or service state.
+Invisible direct launches were stopped only in the disposable profile. A Steam
+launch was dispatched with the normal route automatically restored; user-visible
+NFL2K5 main menu was confirmed by the user. SIMTEST load/schedule options remain
+unconfirmed; requested a text report before input. No screenshots.
+
+Reused existing game-control and roster/calendar readers. Added source-mapped
+read-only team-season totals, plus fresh-copy-only trial preparation using the
+existing PC-runtime HMAC format. Traced Sim. Quarter Length through descriptor
+52BD74/getter2C6F60 to E60010 -> settings+90; played getter149170 reads E6000C
+->+8C. Baseline stores8played/5simulated minutes. Three signed5/6/7 variants
+verify; only simulation word/signature differ.18 targeted checks pass. No season
+has run, field-display/counter corroboration is pending, and no recommendation
+is supported yet. docs/SIMULATION_CALIBRATION.md records the experiment/limits.
+
+Test loading then showed damaged-save entries despite identical DAT and valid PC
+signatures. No simulation ran. After the user exited, all66 original loose files
+were copied byte-for-byte into a fresh isolated save tree, retaining failed-import
+evidence. This removes the test rename and preserves original display names.
+Steam test relaunch dispatched, normal route restored, load confirmation pending.
+Do not describe the metadata rename as a proven cause until load evidence exists.

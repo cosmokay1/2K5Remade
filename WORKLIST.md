@@ -1217,3 +1217,18 @@ pass; actual Windows token launch/restart awaits CI.
 Further spending-policy expansion is deferred. Prioritize the actual in-game
 negotiation path and save/load evidence; authoritative season scope and measured
 gameplay costs remain unverified.
+
+## User-requested simulation calibration (October 17)
+
+- [x] Prepare an isolated SIMTEST copy of MyNFL1 with separate writable saves,
+      no AI addon and an unchanged-main-save manifest (66 original loose files).
+- [x] Reuse roster/calendar validators and add a bounded read-only team-season
+      report and signed 5/6/7-minute trial preparation; 18 targeted checks pass.
+      Source-traced minute fields and original PC save signatures verified;
+      zero-game baseline remains unmeasured.
+- [ ] Confirm visible SIMTEST load, run 5/6/7-minute simulated-season trials,
+      corroborate counters against game tables, and compare league/per-player
+      results using actual games played. No trial has run yet.
+- [ ] Repeat the best candidate and recommend settings without altering MyNFL1.
+
+Experiment and evidence limits: [simulation calibration](docs/SIMULATION_CALIBRATION.md).
