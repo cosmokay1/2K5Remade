@@ -10380,3 +10380,20 @@ tradeoffs; league-wide calibration and complete opening retained/dead-money
 reconciliation remain required. No actual offline signing or save/reload verified;
 no live install, screenshots, menu inputs, control renewals or scheduled work.
 See OFFLINE_MARKET.md for limits and private package location.
+
+## October 18 — retain declared opening debt through saved amendments
+
+Fixed the roster-only preflight mismatch: owned-player amendments now reconcile
+saved native contracts plus exact retained opening records. The existing native
+cap projection carries that debt and reserve into enforced payroll at the same
+league ceiling. Canonical rational liabilities compare exactly and round only
+at the native aggregate. Source-cap credits and unexplained adjustments remain
+unsupported; the free-agent path cannot bypass its missing debt adapter.
+
+Six new authored integration checks cover one-use issuance, saved settlement,
+store reopen, idempotency, cap refusal, fractional debt and saved-payroll tamper.
+All 1,074 Python tests pass in one full run (32 seconds); log:
+/private/tmp/2k5-retained-cap-full.log. No native source change or EXE rebuild.
+Combined private candidate receives committed service source only; no live
+installation, save edits, controls or scheduled-task changes. Complete MyNFL1
+opening debt/source reconciliation and actual Deck transaction remain unverified.

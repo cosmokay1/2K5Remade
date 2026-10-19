@@ -114,3 +114,27 @@ committed Python sources, NBC native definition, signing-disabled policy preview
 and checksums. It excludes retail assets, saves, databases and credentials.
 It is not installed or activated; its preview must be rebound to the disposable
 franchise registry before any negotiation test.
+
+## Retained opening debt through amendment signing
+
+The read-only signing checkpoint and owned-player preflight now distinguish
+native roster payroll from separately declared retained opening obligations.
+The ledger must equal the exact saved contract schedules plus those retained
+records. Unknown credits, source-cap adjustments, altered contracts and unmatched
+native accumulators remain outside this adapter. This does not establish that
+the imported list is complete or invent missing MyNFL1 dead money.
+
+The existing native amendment projection includes these obligations and roster
+reserve in enforced payroll, keeps the league ceiling fixed, and rounds only
+the aggregate liability upward to native units. The free-agent native signing
+path still refuses supplemental debt because it lacks this payroll adapter.
+
+Six authored checks exercise the actual saved-amendment journal: retained debt
+survives one-use issuance, settlement, store reopen and idempotent retry; debt
+can make an otherwise affordable native-roster offer illegal; fractional debt
+rounds conservatively; unverified credits and a reduced saved payroll fail
+without committing finances. The full Python regression passes: 1,074 tests. Native runtime bytes are
+unchanged in this batch.
+These are offline fixtures, not observed Deck gameplay or a complete opening
+cap reconciliation. Further negotiations after an amended saved checkpoint
+remain outside the initial saved-legacy adapter and need a follow-up binding.

@@ -8,6 +8,7 @@ import argparse
 import json
 from pathlib import Path
 
+from franchise.books import parse_amount
 from franchise.store import FranchiseStore
 from tools.export_legacy_contracts import legacy_contracts
 from tools.franchise_snapshot_bindings import resolve_signing_candidate, binding_money_scale
@@ -64,12 +65,16 @@ def reconcile_signing_context(bindings, payload, observation, store, *, expected
             raise ValueError('Ledger contract inventory differs from pinned legacy snapshot')
         financial = ledger.financial_snapshot()
         schedules = [record.charges() for record in contracts]
+        # The save caches roster payroll only. Explicit retained opening debt
+        # belongs in the ledger as well; it never disappears when a player is
+        # amended. Do not admit arbitrary credits or source-cap adjustments.
+        schedules.extend(record.annual_charges for record in ledger._opening_books.retained)
         expected_charges = [sum(row[index] if index < len(row) else 0 for row in schedules)
                             for index in range(max(map(len, schedules), default=0))]
         if (financial['revision'] != expected_revision or inventory['financial_revision'] != expected_revision
                 or financial['cap'] != cap['league_cap_dollars'] * scale
                 or financial['signed_players'] != sorted(record.player_id for record in contracts)
-                or financial['charges'] != expected_charges):
+                or [parse_amount(v) for v in financial['charges']] != expected_charges):
             raise ValueError('Ledger revision, ownership or current cap differs from checkpoint')
         context = store._player_context_from_ledger(db,name,candidate['candidate_player_id'],ledger)
         if context['financial_revision'] != expected_revision or not context['initialized']:
@@ -100,7 +105,7 @@ def reconcile_signing_context(bindings, payload, observation, store, *, expected
             'financial_revision': expected_revision, 'saved_payload_sha256': cap['payload_sha256'],
             'source_slot': candidate['source_slot'], 'player_context': context,
             **({'offer_context':offer_context} if guest_offer is not None else {}),
-            'scope': 'matching saved legacy checkpoint; active franchise selection, cash/rookie obligations and write authorization remain unverified',
+            'scope': 'matching saved legacy roster and explicit retained opening debt; complete opening liabilities, active franchise selection, cash/rookie obligations and write authorization remain unverified',
             'write_authorized': False, 'ai_authorized': False}
 
 

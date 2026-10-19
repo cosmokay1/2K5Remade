@@ -41,7 +41,9 @@ class GuestAmendmentApplicationTests(unittest.TestCase):
         self.store=FranchiseStore(Path(self.temp.name)/'db.sqlite')
         all_players=frozenset(p['player_id'] for p in resolve_bindings(self.bindings,self.before).values())
         records=legacy_contracts(self.bindings,self.before)
-        self.store.create_franchise({team:Ledger.from_opening(OpeningBooks(legacy_contracts=records[team]),
+        self.store.create_franchise({team:Ledger.from_opening(OpeningBooks(legacy_contracts=records[team],
+            retained=getattr(self,"opening_retained",()) if team=="49ers" else (),
+            adjustments=getattr(self,"opening_adjustments",()) if team=="49ers" else ()),
             cap=80500000,roster_reserve=0,max_bonus_years=5,veteran_minimums={self.player:(1000000,)*7},
             observed_player_ids=all_players,observed_player_source='authored') for team in TEAMS},seed=self.bindings['personality_seed'])
         for team in TEAMS:self.store.initialize_cash(team,(),source='authored legacy payment unknown',unknown_legacy_players=tuple(c.player_id for c in records[team]))

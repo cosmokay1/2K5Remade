@@ -56,6 +56,11 @@ def _before_books(store,db,bindings,payload,offer,guest_offer,team_id,*,owned=Fa
         contracts=saved[team]
         financial=ledger.financial_snapshot()
         schedules=[contract.charges() for contract in contracts]
+        # Owned-player application has a supplemental payroll projection. Its
+        # target includes retained opening debt and reserve without changing
+        # the league ceiling. The free-agent native path has no such adapter.
+        if owned:
+            schedules.extend(record.annual_charges for record in ledger._opening_books.retained)
         charges=[sum(row[i] if i<len(row) else 0 for row in schedules)
                  for i in range(max(map(len,schedules),default=0))]
         def trim(values):

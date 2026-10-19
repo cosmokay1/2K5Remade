@@ -1286,6 +1286,9 @@ Evidence and remaining acceptance: [broadcasts](docs/BROADCAST_NETWORKS.md),
       one combined test.
 - [ ] Verify actual local negotiation -> signing -> cap reconciliation ->
       save/reload on a disposable Deck franchise. No repeated screen check-ins.
+- [x] Carry explicitly declared retained opening debt through the owned-player
+      checkpoint, native cap target and saved settlement; reject unverified
+      credits, reduced saved payroll and unsupported free-agent debt projection.
 - [ ] Reconcile retained/dead-money opening obligations; roster contract totals
       alone are not proof that starting cap room is accurate.
 - [ ] Bind complete-season production and future-year market refresh; calibrate
