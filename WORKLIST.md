@@ -1308,8 +1308,21 @@ Evidence and limits: [OFFLINE_MARKET.md](docs/OFFLINE_MARKET.md). Scheduled task
 - [x] Locate and inspect the existing NFL 2K27 standalone roster candidate: June
       29, 2026 save metadata, 60 Giants players, no later McCarthy trade.
       Reject the misleading NFL2026Camp download, already linked in August 2025.
+- [x] Launch an isolated profile with hash-verified SOFTDRINK v0.6; verify all
+      211 main-save files unchanged. Detect PRECAP used the disc roster instead
+      of accepting importer success as title-level compatibility.
 - [ ] Import the candidate into an isolated Xbox profile, create a fresh franchise
-      and verify load/save compatibility with SOFTDRINK.
+      and verify load/save compatibility with SOFTDRINK. PREOFF is damaged.
+      The actual game-created NATIVE reference is bare ROS; the TMM settings-
+      prefix hypothesis was disproved and withdrawn. The current isolated NATIVE
+      trial preserves that reference's container and metadata, replacing only
+      candidate data and its signature. Actual load/save/reload remains pending.
+- [ ] Build the requested hybrid using SOFTDRINK's player presentation/record bank
+      and verified preseason membership plus independently reconciled contracts.
+      Read-only name/decoded-DOB planner matches1380/1907 desired players;
+      Giants43/60. Resolve435 missing,84 DOB conflicts and8 ambiguous entries
+      before creating a hybrid; native slot/photo IDs must remain native.
+      Direct import trial superseded; normal Steam routing restored exactly.
 - [ ] Recover a dated beginning-of-preseason roster and complete matching
       liabilities. MyNFL1 contains a late-September trade; the available contract
       snapshot is September 24. Neither establishes an early-August book.

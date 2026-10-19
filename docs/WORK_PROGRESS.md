@@ -10433,3 +10433,35 @@ its identical link was already in the creator's August 2025 README. No new full
 mod, ISO, BIOS or roster archive was downloaded. Main saves and ledgers untouched.
 Scheduled task remains PAUSED; no IAM/control/inference changes or paid calls.
 See PRESEASON_OPENING.md for links and exact limits.
+
+## October 18 — roster compatibility audit and hybrid direction
+
+Isolated SOFTDRINK v0.6 launched with all19 pack-file hashes verified. First
+PRECAP saved, but its2619-player bank/53 Giants identify the disc baseline rather
+than the imported2479-player/60-Giant roster. All32 native payroll reconstructions
+match; Giants$211.984M/$89.216M room at$301.2M cap is roster-only arithmetic,
+not an authoritative modern opening book. Original211 main-save files matched
+after that save; MyNFL1 physical/logical payloads were rechecked unchanged later.
+
+PREOFF damaged; actual game-created NATIVE disproved the proposed TMM/settings
+prefix explanation. NATIVE is bare593984-byte ROST/ROS. A corrected helper
+preserves the real container metadata and swaps only payload/HMAC. Neither a
+successful importer nor that packaging proves title-level roster compatibility.
+
+User now requests a hybrid preserving SOFTDRINK's correct player images. The
+direct-import test is superseded. Normal Steam launch wrapper restored exactly
+to SHA256 cc04c51a70ae38c5faa4ba47bc8815acd88323d88b6a090e9ee59c02fa9467db,
+without changing a running executable or saves. No further load prompt needed.
+
+Read-only hybrid planner matches exact names plus decoded DOB against native
+memberships and readable unassigned records. It preserves native slot/photo IDs
+in its plan and never writes records/contracts/ratings.1380/1907 match;527 remain
+unresolved (435 absent from readable native bank,84 DOB conflicts,8 ambiguous).
+Giants43/60 match. Native unreadable unassigned381 slots are explicit gaps.
+No hybrid save generated/installed; identity/asset resolution and modern opening
+contract/liability reconciliation remain required. Source assets remain private.
+No screenshots, inference, credential/control/IAM changes or game rebuild.
+Scheduled task remains off. Detailed limits: PRESEASON_OPENING.md.
+Final full working-tree regression:1,099 Python tests pass in44.047 seconds;
+unrelated credential/source instructions remain outside the commit. Fixture
+passing does not establish hybrid load, fresh-franchise or save/reload success.

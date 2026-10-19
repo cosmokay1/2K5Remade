@@ -103,3 +103,108 @@ initially lacked accumulator fields required by the new check; its explicit
 zero-valued observation was corrected and the Windows checks rerun.
 This is not boot, interactive signing, financial reconciliation or save/reload
 acceptance. Final receipts are in private `follow-on-v1`; live install is false.
+
+
+## Live isolated trial (October 18)
+
+### Current direction: preserve SOFTDRINK presentation in a hybrid
+
+The user confirmed the player images are correct in SOFTDRINK and requested a
+hybrid rather than replacing its roster wholesale. The direct-import acceptance
+request is superseded. Normal Steam routing was restored exactly (SHA-256
+cc04c51a70ae38c5faa4ba47bc8815acd88323d88b6a090e9ee59c02fa9467db);
+this changes the next launch, not the running game or saves.
+
+`tools/plan_hybrid_roster.py` is a read-only comparison, not a merge. Preserve native
+player slots, portrait IDs and appearance data. It matches exact case-insensitive
+names plus decoded DOB, rejecting ambiguous/unknown/conflicting identities. The
+DOB byte's low nibble is not part of the birth date; comparing raw bytes would
+incorrectly reject appearance differences. Native unassigned records are searched
+when their names are readable; unreadable records remain explicitly unresolved.
+No PS2 financial words or ratings are copied and no hybrid save is produced.
+
+Pinned inputs yield1380 matched preseason members and527 unresolved:435 absent
+from the readable native bank,84 DOB conflicts and8 ambiguous names. Giants have
+43/60 matches. A match is provisional cross-roster evidence, not a permanent ID
+or proof of portrait content. Unresolved players need verified identity/asset
+mapping before generating a hybrid. Private report: hybrid-plan.json in the
+existing local trial directory. MyNFL1 and the game binaries remain untouched.
+
+### Earlier direct-import investigation
+
+Prepared `preseason-roster-v1` on the Deck with the live known-good EXE
+`9e30ec9...`, independently copied settings and no franchise/AI addon/ledger.
+Immutable game assets and the existing SOFTDRINK pack were shared to avoid
+another full installation. All 19 installed v0.6 pack-file hashes match the
+pinned overlay receipt. The test launch log confirms actual v0.6 overlay dispatch.
+Normal Steam routing was restored immediately after the isolated process started.
+All 211 original main-save files were verified byte-identical after PRECAP saved.
+The scheduled task remains PAUSED.
+
+The PC importer accepted PRE26, but that did not prove title-level loading.
+The user's saved `precap` is 720,044 bytes, SHA-256
+`9a1529ffd1bb3a1eec3f6ac4c65451d2ec50ba76e97e31d679f419f16d64561a`,
+and its PC signature verifies. Its 2,619-record player bank and 53 Giants players
+are the SOFTDRINK disc baseline, not the candidate's 2,479-record bank and 60
+Giants players. The native schedules reconcile for all 32 clubs; Giants saved
+cap/payroll/room are $301.2M/$211.984M/$89.216M. This is mathematical agreement
+with that default save, not proof of accurate modern opening obligations.
+Do not issue an identity registry or financial import for the candidate from it.
+
+PREOFF TYPE=TMM retry was reported damaged. A proposed settings-prefix
+explanation was disproved by the user's actual game-created NATIVE reference:
+it is a 593,984-byte bare ROST with TYPE ROS, SHA-256
+`445161c0d7a0da4a9bd55f91c6eccf0547f8846f4a74bc4540b5fadd6577399d`.
+The TMM sizing routines describe a different save path and were insufficient
+proof for this roster type. That prefix conversion was withdrawn. PREOK's
+untested queued prefix package was preserved outside the importer, not validated
+or installed as a successful roster. Never reuse that explanation as a fix.
+
+The current trial helper instead requires the actual signed native ROS container,
+preserves its container ID, TYPE, SaveMeta bytes and manifest exactly, and replaces
+only the ROST payload and its HMAC. The source roster bytes remain unchanged.
+The isolated trial uses the native display name NATIVE and physical container
+12430F5113A1; the user's original game-created NATIVE remains in the main profile.
+Failed PRE26/PREOFF candidates are preserved outside the test profile's active
+save list. This is a controlled container/metadata comparison, not a claim that
+metadata was conclusively the root cause. The source's header +8 is 2 while the
+native reference is 0; that field must not be blindly zeroed or called a platform
+marker without following its additional-data handling.
+
+A game restart returned the user to the normal profile because initial temporary
+Steam routing had already been restored. MyNFL1's physical and logical payloads
+were checked again and remain identical to their pre-test hashes. Subsequent
+trial routing is retained only for the authorized isolated test, with the exact
+normal wrapper backed up for restoration afterward. User saves, game EXE/addon,
+AI controls and inference budgets are not changed by the roster trial.
+
+Until the preserved-container trial actually loads and yields the expected fresh
+franchise plus save/reload evidence, compatibility remains unverified. Do not
+transplant an unrelated franchise's player-history tail or claim PRECAP proves
+that the candidate roster was used.
+
+New source-only helpers: `tools/inspect_roster_save.py`,
+`tools/prepare_roster_trial.py`, and `tools/reconcile_roster_trial.py`.
+They report source/target roster identity and terms separately from native payroll,
+explicitly retain unsupported schedules, and never authorize financial writes.
+The audit reader reports auxiliary name pointers; it does not broaden the strict
+production identity reader. The candidate has two such name pointers for Odell
+Beckham. One Saints contract (Barion Brown) has remaining years greater than its
+zero original term. Its preserved legacy amounts also cannot be interpreted as
+SOFTDRINK-scaled real contracts: Giants raw charges total $85.903M, or $343.612M
+at four-to-one. A successful load will still need a modern source reconciliation.
+
+Current nflverse contract coverage has unambiguous name candidates for 59 of 60
+Giants, with Dru Phillips needing an independently verified name mapping. That
+is not identity or preseason schedule proof. Full player season-history repeats
+across contract rows, so the read-only preview deduplicates it instead of summing
+contract copies. Nothing from the October snapshot has been imported.
+Private evidence: `.local-runtime/preseason-roster-v1/` and
+`.local-runtime/preseason-roster-v2/`; fixtures contain authored bytes only.
+
+The targeted roster fixtures cover exact container metadata, HMAC/pin rejection,
+non-overwrite, malformed references and read-only cap audits. Hybrid fixtures
+add decoded DOB, native photo preservation, ambiguity, unknown/missing identity
+and unassigned-bank matching. No game EXE/addon rebuilt or replaced for this batch.
+Final full working-tree regression:1,099 Python tests pass in44.047 seconds,
+including the existing credential edits that are excluded from this source batch.
