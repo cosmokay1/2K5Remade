@@ -10465,3 +10465,18 @@ Scheduled task remains off. Detailed limits: PRESEASON_OPENING.md.
 Final full working-tree regression:1,099 Python tests pass in44.047 seconds;
 unrelated credential/source instructions remain outside the commit. Fixture
 passing does not establish hybrid load, fresh-franchise or save/reload success.
+
+## October 18 — user switches target to Week1 of2026
+
+Read-only inspected creator-linked NFL2027Week1 package, uploaded September23;
+ReadMe identifies2026–2027 schedule, includes native Xbox roster/franchise saves.
+Roster593984bytes, hash9160847891722eb98b5484e25f1aa823a57050239dd571e1a07e5e03b409b4e5;
+53 Giants,1937 memberships. Retained Xbox containers/credits/hash manifest only;
+removed40.5MB archive; bundled utilities not extracted/executed. No live actions.
+Conservative hybrid planner matches1316, leaves621 unresolved; Giants39/53.
+Aliases/status need reconciliation: candidate includes Tupou among53 while
+cached Week1 NFL data has practice-squad status. Austin/Black are reserve.
+Official Giants opening-roster report corroborates cut/reserve distinctions.
+No hybrid generated, contracts imported, saves changed, or compatibility claimed.
+MyNFL1 untouched; scheduled task off. Documentation/source audit only; reused
+validated tooling without repeating tests. See PRESEASON_OPENING.md current target.

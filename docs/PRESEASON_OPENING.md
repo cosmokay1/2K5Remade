@@ -1,5 +1,42 @@
 # MyNFL1 preseason opening book
 
+## Current target: Week 1 of 2026 (October 18)
+
+The user replaced preseason with Week1 of2026, still preserving SOFTDRINK's
+correct player imagery in a hybrid and leaving MyNFL1 untouched. Investigations
+below this section are historical, not the current roster/financial cutoff.
+
+The [creator index](https://github.com/lostsoul63b/NFL-Ratings) links an
+[NFL2027Week1 package](https://www.mediafire.com/file_premium/q325axapfk15jba/NFL2027Week1Rosters.zip/file)
+whose ReadMe explicitly identifies the2026–2027 schedule. Uploaded September23,
+2026, it includes native Xbox roster/franchise saves. Credit the2K5 Mod Team,
+LostsouL, BAD_AL, egb11, seskid and djsteveo627. Read-only extracted just Xbox
+containers and ReadMe, retained hash manifest, removed40.5MB archive; bundled
+utilities were neither extracted nor executed. No installation or live writes.
+
+Archive SHA256:5dc12300cd41889539cfbe70e936398e87128d4bfc21dbbec90186aabded67ad.
+Roster SHA256:9160847891722eb98b5484e25f1aa823a57050239dd571e1a07e5e03b409b4e5.
+Native Xbox container11DA3096C4F6, TYPE ROS, metadata name NFL27Ros;593984 bytes,
+2479 bank records,1937 memberships,53 Giants. Conservative hybrid plan matches
+1316/1937, Giants39/53. Suffixes/football names need verified aliases; the exact
+name/DOB mismatch count is not proof of different people or unavailable art.
+
+The label is not exact opening-day proof. Cached2026 Week1 NFL data lists Josh
+Tupou on practice squad and Calvin Austin/Korie Black on reserve; this candidate
+includes them among Giants53. The [official opening roster report](https://www.giants.com/news/roster-update-giants-announce-initial-53-man-roster-for-2026-nfl-season-week-1-john-harbaugh)
+also records Tupou's release and Austin/Black reserve moves. Distinguish active
+membership from reserve/payroll obligations; never discard injured-player cap
+charges. Verify source full/legal/football names before claiming a player absent.
+
+Next: reconcile Week1 membership/status and native image/identity mappings,
+then contracts and retained/reserve liabilities at that cutoff. The ReadMe's
+$198.2M cap is not authority for2026 or the SOFTDRINK money scale. No completed
+hybrid or actual SOFTDRINK load/save/reload yet. Evidence: private
+.local-runtime/week1-roster-v1/. No new code or test run required for this audit.
+Scheduled task stays off.
+
+## Earlier preseason target (superseded)
+
 The user requires the roster and liabilities at the beginning of preseason.
 Later cuts, trades, extensions and injured-reserve placements must not be
 backdated into that book. The read-only audit currently uses August 6, 2026,

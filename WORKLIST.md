@@ -1303,6 +1303,17 @@ Evidence and limits: [OFFLINE_MARKET.md](docs/OFFLINE_MARKET.md). Scheduled task
 
 ## Preseason source boundary (October 18)
 
+Current target is Week1 of2026, superseding preseason. Preserve SOFTDRINK images
+and earlier evidence below; MyNFL1 stays untouched.
+
+- [x] Inspect the creator-linked NFL2027Week1 native Xbox saves. ReadMe identifies
+      2026–2027 schedule;53 Giants/1937 memberships. Saves/credits extracted only.
+- [ ] Reconcile actual Week1 membership/reserve status and native identity/image
+      mappings, then the corresponding opening contract/liability book. Current
+      conservative match1316/1937, Giants39/53. Reserve/practice-squad differences
+      mean the archive label alone is insufficient. Actual hybrid load/save/
+      reload remains unverified; scheduled task off.
+
 - [x] Audit the cached MyNFL1 money scale and opening-source coverage without
       changing the save: $301.2M cap, $211.984M roster payroll, $89.216M room.
 - [x] Locate and inspect the existing NFL 2K27 standalone roster candidate: June
