@@ -14,6 +14,7 @@ from tools.franchise_finance_state import saved_finance_state
 from tools.franchise_identity_state import saved_identity_state
 from tools.franchise_offer_state import expected_amended_state
 from tools.inspect_franchise_save import TEAMS
+from franchise.saved_checkpoint import projection
 
 
 def prepare_amendment(store,team,proposal_id,request_id,*,bindings,before_payload,guest_offer,
@@ -24,7 +25,7 @@ def prepare_amendment(store,team,proposal_id,request_id,*,bindings,before_payloa
             type(expected_revision) is not int or _hash(before_payload)!=expected_before_sha256):
         raise ValueError('Distinct amendment journal identity and pinned save required')
     scope=bind_salary_clock(bindings,before_payload,observation,salary_clock)
-    if live_projection!={'finance':_hash(saved_finance_state(before_payload)),
+    if live_projection!={'finance':_hash(projection(before_payload)[1]),
                          'identity':_hash(saved_identity_state(before_payload))}:
         raise Rejected('Live amendment state differs from the complete saved league')
     # Read-only checkpoint precedes the write transaction. The exact proposal,
@@ -44,6 +45,8 @@ def prepare_amendment(store,team,proposal_id,request_id,*,bindings,before_payloa
         else:
             if db.execute("SELECT 1 FROM guest_signings WHERE state='prepared'").fetchone():
                 raise Rejected('Another native signing awaits recovery')
+            if db.execute("SELECT 1 FROM guest_signings WHERE state='settled' AND team_id!=? AND json_extract(intent,'$.format')=2",(team,)).fetchone():
+                raise Rejected('Cross-team amendment chains require a multi-team native cap adapter')
             proposal=store._accepted_amendment(db,team,proposal_id)
             offer=Offer.from_dict(proposal['offer'])
             contract_format,ledger=_before_books(store,db,bindings,before_payload,offer,guest_offer,team,owned=True)
@@ -52,7 +55,7 @@ def prepare_amendment(store,team,proposal_id,request_id,*,bindings,before_payloa
                     proposal.get('contract_format')!=contract_format or
                     proposal['proposal_preview']!=comparison or not comparison['within_modeled_cap']):
                 raise Rejected('Accepted amendment differs from current salary/cap checkpoint')
-            if live_projection!={'finance':_hash(saved_finance_state(before_payload)),
+            if live_projection!={'finance':_hash(projection(before_payload)[1]),
                                  'identity':_hash(saved_identity_state(before_payload))}:
                 raise Rejected('Live amendment state differs from the complete saved league')
             intent=dict(format=2,request_id=request_id,team_id=team,proposal_request_id=proposal_id,
@@ -60,6 +63,13 @@ def prepare_amendment(store,team,proposal_id,request_id,*,bindings,before_payloa
                 before_payload_sha256=expected_before_sha256,offer=offer.to_dict(),scope=scope.to_dict(),
                 proposal_sha256=store._checkpoint_hash(proposal),comparison=comparison,
                 salary_clock=salary_clock,observation=observation)
+            if db.execute("SELECT 1 FROM guest_signings WHERE state='settled' AND json_extract(intent,'$.format')=2").fetchone():
+                finance=projection(before_payload)[1]
+                _,flag,accumulator=struct.unpack_from('<III',finance,48+12*TEAMS.index(team))
+                if flag and accumulator:intent['accounted_accumulator_before_raw']=accumulator
+            previous=ledger._legacy_amendments.get(offer.player_id)
+            if previous is not None:
+                intent['previous_amendment']=previous.to_dict()
             # Build and validate the representable cap target before reserving.
             amendment_target(intent,before_payload)
             db.execute("INSERT INTO guest_signings VALUES (?,?,'prepared',?,?,NULL,NULL)",
@@ -73,22 +83,28 @@ def amendment_target(intent,before):
     from franchise.native_cap import amendment_payroll_projection
     from franchise.legacy_contracts import original_annual_rows
     offer=Offer.from_dict(intent['offer']);team=intent['team_id'];index=TEAMS.index(team)
-    original=next(c for c in legacy_contracts(intent['bindings'],before)[team] if c.player_id==offer.player_id)
+    normalized,finance,_=projection(before)
+    original=next(c for c in legacy_contracts(intent['bindings'],normalized)[team] if c.player_id==offer.player_id)
     rows=original_annual_rows(original.amount_word,original.bonus_code,original.shape_code,original.original_years)[-original.remaining_years:]
-    finance=saved_finance_state(before);offset=48+12*index
+    offset=48+12*index
     payroll,flag,accumulator=struct.unpack_from('<III',finance,offset)
     bonus=sum(r['allocated_bonus_dollars'] for r in rows)*original.game_dollar_scale
     acceleration=bool(flag and bonus)
-    native,identity=expected_amended_state(intent['bindings'],before,offer=offer,
+    native,identity=expected_amended_state(intent['bindings'],normalized,offer=offer,
         guest_offer=intent['guest_offer'],team_id=team,native_bonus_accelerated=acceleration)
     after_accumulator=struct.unpack_from('<I',native,offset+8)[0]
-    cap=amendment_payroll_projection(intent['comparison'],native_payroll_before_raw=payroll,
+    raw_payroll=struct.unpack_from('<I',saved_finance_state(normalized),offset)[0]
+    cap=amendment_payroll_projection(intent['comparison'],native_payroll_before_raw=raw_payroll,
         native_old_charge=original.charges()[0],native_new_charge=offer.charges(5)[0],
         native_old_unamortized_bonus=bonus,native_accumulator_before_raw=accumulator,
         native_accumulator_after_raw=after_accumulator,team_adjustment_applies=bool(flag),
-        game_dollar_scale=original.game_dollar_scale)
+        game_dollar_scale=original.game_dollar_scale,
+        accounted_accumulator_before_raw=intent.get('accounted_accumulator_before_raw',0))
     if not cap['within_cap']: raise Rejected('Native salary/cap target has insufficient room')
-    target=bytearray(native);struct.pack_into('<I',target,offset,cap['enforced_payroll_raw'])
+    target=bytearray(native)
+    for i in range(32):
+        if i!=index:target[48+12*i:52+12*i]=finance[48+12*i:52+12*i]
+    struct.pack_into('<I',target,offset,cap['enforced_payroll_raw'])
     return bytes(target),identity,cap
 
 
@@ -98,7 +114,7 @@ def read_amendment(store,db,request_id):
     team,state,text,before,after,proof=row;intent=json.loads(text)
     fields={'format','request_id','team_id','proposal_request_id','expected_revision','bindings','guest_offer',
             'before_payload_sha256','offer','scope','proposal_sha256','comparison','salary_clock','observation'}
-    if (set(intent)!=fields or type(intent['format']) is not int or intent['format']!=2 or
+    if (not fields<=set(intent) or set(intent)-fields-{'previous_amendment','accounted_accumulator_before_raw'} or type(intent['format']) is not int or intent['format']!=2 or
             intent['request_id']!=request_id or intent['team_id']!=team or _hash(before)!=intent['before_payload_sha256']):
         raise ValueError('Amendment journal fingerprint mismatch')
     from franchise.salary_clock import bind_salary_clock
@@ -111,6 +127,21 @@ def read_amendment(store,db,request_id):
     if (store._checkpoint_hash(event)!=intent['proposal_sha256'] or event['outcome']!='accepted_amendment_proposal' or
             event['offer']!=intent['offer'] or event['proposal_preview']!=intent['comparison']):
         raise ValueError('Amendment journal changed accepted terms')
+    if 'accounted_accumulator_before_raw' in intent:
+        prior=db.execute("SELECT after_payload FROM guest_signings WHERE state='settled' AND team_id=? AND rowid<(SELECT rowid FROM guest_signings WHERE request_id=?) ORDER BY rowid DESC LIMIT 1",(team,request_id)).fetchone()
+        value=intent['accounted_accumulator_before_raw']
+        if prior is None or type(value) is not int or value<=0:
+            raise ValueError('Accounted accumulator lacks a prior saved settlement')
+        current=projection(before)[1];recorded=projection(prior[0])[1];offset=48+12*TEAMS.index(team)
+        if (current[offset+4:offset+12]!=recorded[offset+4:offset+12] or
+                struct.unpack_from('<I',current,offset+8)[0]!=value):
+            raise ValueError('Recorded accumulator coverage changed')
+    if 'previous_amendment' in intent:
+        previous=intent['previous_amendment']
+        prior=db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=? AND kind='legacy_amendment'",
+            (team,'legacy-amendment:'+previous['request_id'])).fetchone()
+        if prior is None or json.loads(prior[0])['agreement']!=previous:
+            raise ValueError('Prior amendment differs from its durable settlement')
     posting=db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=? AND kind='legacy_amendment'",
                        (team,'legacy-amendment:'+request_id)).fetchone()
     if state=='settled':
@@ -138,10 +169,11 @@ def saved_amendment_projection(intent,before,after):
     index=TEAMS.index(intent['team_id']);offset=0x44A8+0x1F4*index+0x124
     if struct.unpack_from('<I',after,offset)[0]!=cap['enforced_payroll_raw']:
         raise ValueError('Saved payroll differs from accepted cap enforcement')
-    normalized=bytearray(after);struct.pack_into('<I',normalized,offset,cap['native_payroll_after_raw'])
-    finance=bytearray(saved_finance_state(bytes(normalized)))
-    struct.pack_into('<I',finance,48+12*index,cap['enforced_payroll_raw'])
-    return bytes(finance),saved_identity_state(after),bytes(normalized)
+    normalized,finance,identity=projection(after)
+    raw=struct.unpack_from('<I',saved_finance_state(normalized),48+12*index)[0]
+    if raw!=cap['native_payroll_after_raw']:
+        raise ValueError('Saved native roster payroll differs from accepted amendment')
+    return finance,identity,normalized
 
 
 def confirm_amendment(intent,before,after):
@@ -152,7 +184,9 @@ def confirm_amendment(intent,before,after):
         raise ValueError('Saved amendment differs from enforced cap/contract target')
     proof=confirm_saved_amendment(intent['bindings'],before,normalized,
         expected_before_sha256=intent['before_payload_sha256'],offer=Offer.from_dict(intent['offer']),
-        guest_offer=intent['guest_offer'],team_id=intent['team_id'],comparison=intent['comparison'])
+        guest_offer=intent['guest_offer'],team_id=intent['team_id'],comparison=intent['comparison'],
+        previous_amendment=intent.get('previous_amendment'),
+        accounted_accumulator_before_raw=intent.get('accounted_accumulator_before_raw',0))
     proof.update(normalized_comparison_sha256=proof['after_payload_sha256'],after_payload_sha256=_hash(after),
         saved_enforced_payroll_raw=cap['enforced_payroll_raw'])
     return proof
@@ -198,15 +232,17 @@ def authorize(store,request_id,journal_id,current_payload,*,access_check,live_pr
         intent,state,before,_,_=_read(store,db,journal_id)
         if state!='prepared' or before!=current_payload: raise Rejected('Prepared unchanged native source required')
         if intent['format']==2:
-            _check={'finance':_hash(saved_finance_state(before)),'identity':_hash(saved_identity_state(before))}
+            _check={'finance':_hash(projection(before)[1]),'identity':_hash(saved_identity_state(before))}
             if live_projection!=_check: raise Rejected('Live amendment source changed')
             target,identity,cap=amendment_target(intent,before)
-            pre=saved_finance_state(before)
+            pre=projection(before)[1]
             epoch=intent['salary_clock']['source_epoch']
         else:
             raise Rejected('Live issuance currently requires an imported amendment with a bound salary clock')
         # Other writes are already blocked by the pending journal. Recheck the
         # immutable proposal and full ledger replay before issuing authority.
+        from franchise.saved_checkpoint import verify
+        verify(store,db,before)
         ledger=store._load(db,intent['team_id'])
         comparison=store._preview_legacy_amendment(db,intent['team_id'],ledger,Offer.from_dict(intent['offer']),
             intent['expected_revision'],scope=amendment_scope_from_dict(intent['scope']))
@@ -238,23 +274,30 @@ def restore_cap(store,request_id,payload,*,source_epoch,loaded_payload_sha256,li
         raise ValueError('Fresh loaded source and complete cached payroll sample required')
     _access(connection_check)
     with store._connection() as db:
-        journals=[row[0] for row in db.execute("SELECT request_id FROM guest_signings WHERE state!='cancelled' AND json_extract(intent,'$.format')=2")]
+        journals=[row[0] for row in db.execute("SELECT request_id FROM guest_signings WHERE state!='cancelled' AND json_extract(intent,'$.format')=2 ORDER BY rowid DESC LIMIT 1")]
         if not journals:
             return dict(request_id=request_id,loaded_payload_sha256=loaded_payload_sha256,cap_plan=None)
-        if len(journals)!=1: raise Rejected('Multiple native amendment checkpoints require explicit reconciliation')
         intent,state,before,after,_=read_amendment(store,db,journals[0])
         if payload==before and state=='prepared':
-            return dict(request_id=request_id,loaded_payload_sha256=loaded_payload_sha256,cap_plan=None)
-        if state=='settled' and payload!=after: raise Rejected('Loaded save differs from settled native amendment')
-        confirm_amendment(intent,before,payload)
-        target,identity,projection=amendment_target(intent,before)
+            prior=db.execute("SELECT request_id FROM guest_signings WHERE state='settled' AND json_extract(intent,'$.format')=2 ORDER BY rowid DESC LIMIT 1").fetchone()
+            if prior is None:
+                return dict(request_id=request_id,loaded_payload_sha256=loaded_payload_sha256,cap_plan=None)
+            intent,state,before,after,_=read_amendment(store,db,prior[0])
+        if state=='settled':
+            from franchise.saved_checkpoint import verify
+            verify(store,db,payload)
+            _,target,identity=projection(payload)
+            _,_,cap_projection=amendment_target(intent,before)
+        else:
+            confirm_amendment(intent,before,payload)
+            target,identity,cap_projection=amendment_target(intent,before)
         observed=bytearray(target)
         for i,value in enumerate(finance_payrolls):struct.pack_into('<I',observed,48+12*i,value)
         if live_projection!={'finance':_hash(bytes(observed)),'identity':_hash(identity)}:
             raise Rejected('Loaded live contracts/calendar/ownership differ from the saved amendment')
         store._load(db,intent['team_id'])
         cap_plan=dict(format='native-cap-restore-v1',source_epoch=source_epoch,team_index=TEAMS.index(intent['team_id']),
-            native_payroll_raw=projection['native_payroll_after_raw'],enforced_payroll_raw=projection['enforced_payroll_raw'],
+            native_payroll_raw=cap_projection['native_payroll_after_raw'],enforced_payroll_raw=cap_projection['enforced_payroll_raw'],
             finance_sha256=_hash(target),identity_sha256=_hash(identity),
             canonical_payrolls=[struct.unpack_from('<I',target,48+12*i)[0] for i in range(32)])
         _access(connection_check)

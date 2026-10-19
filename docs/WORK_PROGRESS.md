@@ -10397,3 +10397,39 @@ All 1,074 Python tests pass in one full run (32 seconds); log:
 Combined private candidate receives committed service source only; no live
 installation, save edits, controls or scheduled-task changes. Complete MyNFL1
 opening debt/source reconciliation and actual Deck transaction remain unverified.
+
+
+## October 18 — follow-on agreements and preseason roster candidate
+
+Completed same-club, same-season saved-amendment chaining: prior offer terms,
+carried bonus layers, earned base, canonical checkpoint normalization and latest
+cap restoration survive repeated agreements and service restart. Other players'
+retained liabilities stay charged. Native first-year accumulator amounts already
+accounted by the ledger no longer double-charge; unrecorded adjustments remain
+blocked. Signing context reads the current server-owned save and detects a changed
+save during reads. Native Current Contract tables show the amended schedule.
+Cross-club chains/season migration remain unsupported.
+
+Validation: 1,084 Python tests pass in 39.415s; seven isolated Windows checks,
+ten real bridge response cases and paired EXE/addon `--validate` pass. A native
+authored fixture missing explicit team accumulator fields was fixed before the
+final Windows pass. Source-only fixtures do not prove live signing or persistence.
+Final EXE 3f5501538572ce62d2e9000c86466f875cfe34d28c865ee237eca91c82eb37bf;
+addon 18c7a333e5ea505a70f30f955df04aee23642b09a98f68ff99f3798210f13cc5.
+Private receipts: follow-on-v1/final-complete.json, windows-checks-receipt.json,
+validate-receipt.json. No live files installed; the older private patch is
+superseded and must not be deployed.
+
+Read-only opening audit: cached MyNFL1 has $301.2M cap, $211.984M roster payroll,
+$89.216M roster-only room, 42 matched/11 unresolved Giants contracts and no proven
+complete opening retained liabilities. Its September McCarthy acquisition means
+it is not an opening-preseason roster. Current cap/dead money must not be backdated.
+User chose finding a downloadable preseason roster. The existing official NFL
+2K27 PS2 card has a separate June 29, 2026 roster with 60 Giants players, Dart/
+Winston and no McCarthy; extracted read-only and indexed 1,718 team memberships.
+It is the preferred candidate, pending isolated Xbox import, fresh franchise,
+source-date/contract/liability verification. NFL2026Camp is not the right year:
+its identical link was already in the creator's August 2025 README. No new full
+mod, ISO, BIOS or roster archive was downloaded. Main saves and ledgers untouched.
+Scheduled task remains PAUSED; no IAM/control/inference changes or paid calls.
+See PRESEASON_OPENING.md for links and exact limits.

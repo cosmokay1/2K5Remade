@@ -29,7 +29,7 @@ int main(int argc,char** argv) {
                 const auto sample=franchise::parse_frame(line);bool valid=false;
                 try {
                     franchise::validate_result(sample.at("response"),sample.at("request"));
-                    if(sample.at("request").contains("observation")) {
+                    if(sample.at("request").value("operation",std::string())=="negotiate_proposal" && sample.at("request").contains("observation")) {
                         const auto text=franchise::signing_display(sample.at("response"));
                         const auto preparation=franchise::saved_signing_prepare(sample.at("request"),sample.at("response"));
                         if(text.history.find("Reason: ")!=0 || (!preparation.is_null())!=sample.value("journal_preparation",false))
@@ -819,6 +819,8 @@ int main(int argc,char** argv) {
             {"preview",{{"revision",0},{"contract_charges",{4766000,3523000}},{"room_after",5234000}}}};
         franchise::validate_result(guest_reply,guest_request);
         auto amendment_request=guest_request;
+        amendment_request["observation"]["team"]["team_flag_raw"]=0;
+        amendment_request["observation"]["team"]["first_year_accumulator_raw"]=0;
         amendment_request["observation"]["team"]["payroll_raw"]=4766;
         amendment_request["observation"]["team"]["league_cap_raw"]=10000;
         auto amendment_reply=guest_reply;

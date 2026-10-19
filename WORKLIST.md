@@ -1289,6 +1289,9 @@ Evidence and remaining acceptance: [broadcasts](docs/BROADCAST_NETWORKS.md),
 - [x] Carry explicitly declared retained opening debt through the owned-player
       checkpoint, native cap target and saved settlement; reject unverified
       credits, reduced saved payroll and unsupported free-agent debt projection.
+- [x] Support follow-on same-club negotiations, both old bonus layers and earned
+      salary, same-year clock progress and latest saved-cap recovery. Native
+      Current Contract rows must use the amended charges.
 - [ ] Reconcile retained/dead-money opening obligations; roster contract totals
       alone are not proof that starting cap room is accurate.
 - [ ] Bind complete-season production and future-year market refresh; calibrate
@@ -1297,3 +1300,22 @@ Evidence and remaining acceptance: [broadcasts](docs/BROADCAST_NETWORKS.md),
       obligations and independent prices, not arbitrary cap reductions.
 
 Evidence and limits: [OFFLINE_MARKET.md](docs/OFFLINE_MARKET.md). Scheduled task off.
+
+## Preseason source boundary (October 18)
+
+- [x] Audit the cached MyNFL1 money scale and opening-source coverage without
+      changing the save: $301.2M cap, $211.984M roster payroll, $89.216M room.
+- [x] Locate and inspect the existing NFL 2K27 standalone roster candidate: June
+      29, 2026 save metadata, 60 Giants players, no later McCarthy trade.
+      Reject the misleading NFL2026Camp download, already linked in August 2025.
+- [ ] Import the candidate into an isolated Xbox profile, create a fresh franchise
+      and verify load/save compatibility with SOFTDRINK.
+- [ ] Recover a dated beginning-of-preseason roster and complete matching
+      liabilities. MyNFL1 contains a late-September trade; the available contract
+      snapshot is September 24. Neither establishes an early-August book.
+      Do not backdate current cuts, injury statuses or extensions into it.
+- [ ] Complete the real disposable Deck signing/cap/save-reload test once the
+      opening book is reconciled. Signing remains disabled in the candidate.
+
+Evidence and source limitations: [PRESEASON_OPENING.md](docs/PRESEASON_OPENING.md).
+Scheduled task stays PAUSED.

@@ -26,6 +26,15 @@ class GuestAmendmentApplicationTests(unittest.TestCase):
         sample=saved_fixture.SavedAmendmentConfirmationTests();sample.setUp()
         raw=bytearray(sample.before);calendar=inspect_calendar(bytes(raw));start=calendar['scheduler_offset']
         raw[start+1]=7;raw[start+4]=4;raw[start+5]=0
+        struct.pack_into('<I',raw,start+0xac,getattr(self,'opening_team_flag',0))
+        if getattr(self,'two_players',False):
+            from tools.inspect_franchise_save import PLAYER_START,PLAYER_STRIDE
+            raw[0x45c4]=2
+            struct.pack_into('<i',raw,0x44ac,PLAYER_START+PLAYER_STRIDE-0x44ac+1)
+            struct.pack_into('<H',raw,0x358,0)
+            struct.pack_into('<H',raw,PLAYER_START+PLAYER_STRIDE+10,829)
+            struct.pack_into('<I',raw,PLAYER_START+PLAYER_STRIDE+36,0x02410ba2)
+            struct.pack_into('<I',raw,0x44a8+0x124,9532)
         self.before=bytes(raw);self.bindings=create_bindings(self.before,seed='authored application')
         self.player=self.bindings['players'][0]['player_id'];self.offer_raw=sample.raw
         self.clock=dict(source_epoch=3,descriptor_hex='00'*16)
@@ -33,8 +42,8 @@ class GuestAmendmentApplicationTests(unittest.TestCase):
         self.descriptors.start();self.addCleanup(self.descriptors.stop)
         cal=inspect_calendar(self.before)
         self.observation=dict(biography=dict(source_slot=0,first_name='Synthetic',last_name='Starter',
-            pbp_photo_raw='00000000',dob_region_raw='000000'),team=dict(table_index=0,table_mode=2,payroll_raw=4766,
-            league_cap_raw=80500,team_flag_raw=0,first_year_accumulator_raw=0),calendar={k:cal[k] for k in
+            pbp_photo_raw='00000000',dob_region_raw='000000'),team=dict(table_index=0,table_mode=2,payroll_raw=struct.unpack_from('<I',self.before,0x44a8+0x124)[0],
+            league_cap_raw=80500,team_flag_raw=getattr(self,'opening_team_flag',0),first_year_accumulator_raw=0),calendar={k:cal[k] for k in
             ('season_index','display_year','phase_01_raw','phase_02_raw','step_04_raw','step_05_raw','counter_08_raw')})
         self.scope=bind_salary_clock(self.bindings,self.before,self.observation,self.clock)
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
@@ -44,7 +53,7 @@ class GuestAmendmentApplicationTests(unittest.TestCase):
         self.store.create_franchise({team:Ledger.from_opening(OpeningBooks(legacy_contracts=records[team],
             retained=getattr(self,"opening_retained",()) if team=="49ers" else (),
             adjustments=getattr(self,"opening_adjustments",()) if team=="49ers" else ()),
-            cap=80500000,roster_reserve=0,max_bonus_years=5,veteran_minimums={self.player:(1000000,)*7},
+            cap=80500000,roster_reserve=0,max_bonus_years=5,veteran_minimums={p:(1000000,)*7 for p in (all_players if getattr(self,'two_players',False) else (self.player,))},
             observed_player_ids=all_players,observed_player_source='authored') for team in TEAMS},seed=self.bindings['personality_seed'])
         for team in TEAMS:self.store.initialize_cash(team,(),source='authored legacy payment unknown',unknown_legacy_players=tuple(c.player_id for c in records[team]))
         self.revision=self.store.load_team('49ers').revision

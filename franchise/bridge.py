@@ -267,6 +267,11 @@ class Bridge:
                     raise Rejected('Pinned guest snapshot not configured')
                 deadline = time.monotonic() + timeout / 1000
                 self.connection_check()
+                snapshot=self.guest_snapshot
+                if self.guest_signing_reader is not None:
+                    snapshot=(snapshot[0],self.guest_signing_reader())
+                    if type(snapshot[1]) is not bytes:
+                        raise ValueError('Server save reader must return bytes')
                 from tools.reconcile_signing_context import reconcile_signing_context
                 try:
                     if 'guest_offer' in request and (type(request['guest_offer']) is not dict or
@@ -275,19 +280,21 @@ class Bridge:
                     scope=None
                     if 'salary_clock' in request:
                         from franchise.salary_clock import bind_salary_clock
-                        scope=bind_salary_clock(*self.guest_snapshot,request['observation'],request['salary_clock'])
-                    result = reconcile_signing_context(*self.guest_snapshot, request['observation'],
+                        scope=bind_salary_clock(*snapshot,request['observation'],request['salary_clock'])
+                    result = reconcile_signing_context(*snapshot, request['observation'],
                         self.store, expected_revision=request['expected_revision'],
                         **({'guest_offer':request['guest_offer']} if 'guest_offer' in request else {}),amendment_scope=scope)
                     if 'performance_format' in request:
                         from tools.export_player_performance import saved_player_performance
-                        performance = saved_player_performance(*self.guest_snapshot, result['source_slot'])
+                        performance = saved_player_performance(*snapshot, result['source_slot'])
                         if performance['player_id'] != result['player_id']:
                             raise ValueError('Saved performance identity differs from signing checkpoint')
                         result['performance_context'] = performance
                 except ValueError as error:
                     raise Rejected(str(error)) from error
                 self.connection_check()
+                if self.guest_signing_reader is not None and self.guest_signing_reader()!=snapshot[1]:
+                    raise Rejected('Saved checkpoint changed during context inspection')
                 if time.monotonic() >= deadline:
                     raise TimeoutError('Signing checkpoint expired')
                 self._require_frame(request_id, result)
@@ -334,7 +341,7 @@ class Bridge:
                     normalized['amendment_rule']=amendment_rule
                     if 'salary_clock' in request:
                         from franchise.salary_clock import bind_salary_clock
-                        normalized['amendment_scope']=bind_salary_clock(*self.guest_snapshot,request['observation'],request['salary_clock']).to_dict()
+                        normalized['amendment_scope']=inspected['amendment']['earned_pay']['scope']
                 if 'promise_goals' in request:
                     normalized['promise_goals'] = request['promise_goals']
                 reply = self.handle(normalized)

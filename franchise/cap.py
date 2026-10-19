@@ -1415,6 +1415,10 @@ class Ledger:
                     'room_before': json_amount(self.room), 'room_after': json_amount(room),
                     'within_modeled_cap': room >= 0,
                     'requires_player_agreement': True, 'settlement_authorized': False}
+            if previous is not None:
+                result['prior_terms']={'offer':previous.offer.to_dict(),'scope':previous.scope.to_dict(),
+                    'earned_base':json_amount(previous.earned_base),
+                    'carried_bonus_charges':[json_amount(v) for v in previous.carried_bonus_charges]}
             if isinstance(scope,InSeasonAmendmentScope):
                 result['earned_pay']={'scope':scope.to_dict(),'earned_base_obligation':json_amount(earned),
                     'remaining_base_commitment':json_amount(scope.remaining_base(offer.salaries[0]))}

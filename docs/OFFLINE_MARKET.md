@@ -136,5 +136,5 @@ rounds conservatively; unverified credits and a reduced saved payroll fail
 without committing finances. The full Python regression passes: 1,074 tests. Native runtime bytes are
 unchanged in this batch.
 These are offline fixtures, not observed Deck gameplay or a complete opening
-cap reconciliation. Further negotiations after an amended saved checkpoint
-remain outside the initial saved-legacy adapter and need a follow-up binding.
+cap reconciliation. Follow-on saved checkpoints are now handled by the combined candidate described
+in PRESEASON_OPENING.md; real Deck and preseason opening-book verification remain pending.

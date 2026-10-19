@@ -14,8 +14,10 @@ from tests import test_guest_amendment_application as fixtures
 
 
 class RetainedGuestCapTests(unittest.TestCase):
-    def sample(self, *, retained=None, adjustments=()):
+    def sample(self, *, retained=None, adjustments=(), team_flag=0, two_players=False):
         sample=fixtures.GuestAmendmentApplicationTests()
+        sample.opening_team_flag=team_flag
+        sample.two_players=two_players
         sample.opening_retained=retained if retained is not None else (
             ChargeRecord('prior-release',(5000000,2000000),'Authored retained bonus schedule'),)
         sample.opening_adjustments=adjustments

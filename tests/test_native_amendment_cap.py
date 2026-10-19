@@ -68,6 +68,23 @@ class NativeAmendmentCapTests(unittest.TestCase):
         self.comparison['room_after']=0
         with self.assertRaises(ValueError):self.project()
 
+    def test_previously_recorded_accumulator_is_not_an_extra_cap_charge(self):
+        # A prior signed amendment already carried this old bonus in the
+        # ledger. Unrelated native debt remains charged by the default path.
+        self.comparison['annual_team_charges_before'][0]+=10000000
+        self.comparison['annual_team_charges_after'][0]+=10000000
+        self.comparison['room_before']-=10000000;self.comparison['room_after']-=10000000
+        self.arguments['native_payroll_before_raw']+=2500
+        a=self.project(native_accumulator_before_raw=20,native_accumulator_after_raw=1760)
+        b=self.project(native_accumulator_before_raw=20,native_accumulator_after_raw=1760,
+            accounted_accumulator_before_raw=20)
+        self.assertEqual(b['exact_room_after'],self.comparison['room_after'])
+        self.assertEqual(b['exact_room_after']-a['exact_room_after'],80000)
+        self.assertEqual(a['enforced_payroll_raw']-b['enforced_payroll_raw'],20)
+        for value in (True,-1,21):
+            with self.subTest(value=value),self.assertRaises(ValueError):
+                self.project(native_accumulator_before_raw=20,accounted_accumulator_before_raw=value)
+
     def test_accessor_branch_accumulator_overflow_and_unexplained_changes_hold(self):
         for changes in (dict(native_accumulator_before_raw=2,native_accumulator_after_raw=1),
                         dict(native_accumulator_after_raw=1),dict(native_accumulator_after_raw=65536),

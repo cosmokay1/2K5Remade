@@ -9,6 +9,7 @@
 #include <string>
 #include <sstream>
 #include <limits>
+#include <numeric>
 namespace franchise {
 inline std::string screen_label(std::string value) {
     for(auto& c:value) if(c=='_') c=' ';
@@ -170,6 +171,24 @@ inline ScreenTable current_contract_table(const nlohmann::json& checkpoint) {
     const auto performance=checkpoint.value("performance_context",nlohmann::json::object());
     auto label=[&](unsigned i){return performance.contains("franchise_season_year")?
         std::to_string(performance.at("franchise_season_year").get<int>()+i):"Year "+std::to_string(i+1);};
+    if(checkpoint.contains("offer_context") && checkpoint.at("offer_context").contains("amendment") &&
+       checkpoint.at("offer_context").at("amendment").contains("prior_terms")) {
+        const auto& amendment=checkpoint.at("offer_context").at("amendment");
+        const auto& current=amendment.at("current_charges");const auto& bonus=amendment.at("carried_bonus_charges");
+        auto exact=[](const nlohmann::json& v)->std::pair<int64_t,int64_t>{
+            if(v.is_number_integer()) return {v.get<int64_t>(),1};
+            const auto text=v.get<std::string>();const auto slash=text.find('/');
+            return {std::stoll(text.substr(0,slash)),std::stoll(text.substr(slash+1))};
+        };
+        for(size_t i=0;i<current.size();++i) {
+            const auto c=exact(current[i]),b=exact(bonus.at(i));
+            const auto d=std::lcm(c.second,b.second);
+            const auto n=c.first*(d/c.second)-b.first*(d/b.second),g=std::gcd(n,d);
+            nlohmann::json base=d/g==1?nlohmann::json(n/g):nlohmann::json(std::to_string(n/g)+"/"+std::to_string(d/g));
+            table.rows.push_back({label(static_cast<unsigned>(i)),{screen_money(base),screen_money(bonus[i]),screen_money(current[i])}});
+        }
+        return table;
+    }
     if(player.contains("legacy_contract")) {
         const auto& legacy=player.at("legacy_contract");
         const auto years=legacy.at("original_years").get<unsigned>(),remaining=legacy.at("remaining_years").get<unsigned>();

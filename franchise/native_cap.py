@@ -14,7 +14,7 @@ from franchise.legacy_amendments import RULE
 def amendment_payroll_projection(comparison, *, native_payroll_before_raw,
         native_old_charge, native_new_charge, native_old_unamortized_bonus,
         native_accumulator_before_raw, native_accumulator_after_raw,
-        team_adjustment_applies, game_dollar_scale):
+        team_adjustment_applies, game_dollar_scale, accounted_accumulator_before_raw=0):
     """Keep the league ceiling fixed and account for both native cap branches.
 
     Native recalculation includes the replacement's full annual salary, not the
@@ -39,6 +39,9 @@ def amendment_payroll_projection(comparison, *, native_payroll_before_raw,
         if not 0<=result<=10**15:
             raise ValueError('Bounded exact nonnegative cap obligation required')
         return result
+    if (type(accounted_accumulator_before_raw) is not int or not 0<=accounted_accumulator_before_raw<=native_accumulator_before_raw
+            or (accounted_accumulator_before_raw and not team_adjustment_applies)):
+        raise ValueError('Recorded accumulator coverage required')
     quantum=1000*game_dollar_scale
     old,new,unamortized=map(amount,(native_old_charge,native_new_charge,native_old_unamortized_bonus))
     if any((v/quantum).denominator!=1 for v in (old,new,unamortized)):
@@ -68,14 +71,15 @@ def amendment_payroll_projection(comparison, *, native_payroll_before_raw,
     withheld_after=native_accumulator_after_raw*quantum if team_adjustment_applies else 0
     # Keep the pre-existing accumulator intact. The new native acceleration
     # already withholds this amount, so subtract it from payroll exactly once.
-    required=after+reserve-acceleration
+    accounted=accounted_accumulator_before_raw*quantum
+    required=after+reserve-acceleration-accounted
     if required<0:
         raise ValueError('Corrected native payroll is not representable; hold application')
     raw=required/quantum
     rounded=(raw.numerator+raw.denominator-1)//raw.denominator
     if rounded>0x7ffffffe or (cap/quantum).denominator!=1:
         raise ValueError('Cap projection exceeds native signed currency range')
-    exact_room=cap-after-reserve-withheld_before
+    exact_room=cap-after-reserve-withheld_before+accounted
     native_room=cap-withheld_after-rounded*quantum
     return dict(format='native-amendment-payroll-v1',game_dollar_scale=game_dollar_scale,
         league_cap_raw=int(cap/quantum),native_payroll_after_raw=int(native_after/quantum),

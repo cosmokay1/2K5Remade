@@ -44,25 +44,23 @@ def _before_books(store,db,bindings,payload,offer,guest_offer,team_id,*,owned=Fa
         raise Rejected('Captured terms differ from accepted proposal')
     if {row[0] for row in db.execute('SELECT id FROM teams')}!=set(TEAMS):
         raise Rejected('Complete supported league books required')
-    cap=inspect_cap(payload)
-    if any(row['original_team_flag_raw'] and row['original_first_year_accumulator_dollars']
+    from franchise.saved_checkpoint import projection,verify,charges as checkpoint_charges,verify_terms
+    native,_,_=projection(payload)
+    recorded=verify(store,db,payload) if owned else False
+    cap=inspect_cap(native)
+    if not recorded and any(row['original_team_flag_raw'] and row['original_first_year_accumulator_dollars']
            for row in cap['teams'].values()):
         raise Rejected('Unresolved guest first-year cap adjustments')
-    saved=legacy_contracts(bindings,payload)
+    saved=legacy_contracts(bindings,native)
     ledgers=store._load_teams(db,TEAMS)
     for team,ledger in ledgers.items():
         if ledger.cash_snapshot() is None:
             raise Rejected('Explicit coverage of league cash obligations required before guest signing')
         contracts=saved[team]
         financial=ledger.financial_snapshot()
-        schedules=[contract.charges() for contract in contracts]
-        # Owned-player application has a supplemental payroll projection. Its
-        # target includes retained opening debt and reserve without changing
-        # the league ceiling. The free-agent native path has no such adapter.
-        if owned:
-            schedules.extend(record.annual_charges for record in ledger._opening_books.retained)
-        charges=[sum(row[i] if i<len(row) else 0 for row in schedules)
-                 for i in range(max(map(len,schedules),default=0))]
+        charges=checkpoint_charges(ledger,contracts) if owned else [
+            sum(row[i] if i<len(row) else 0 for row in [c.charges() for c in contracts])
+            for i in range(max((len(c.charges()) for c in contracts),default=0))]
         def trim(values):
             values=list(values)
             while values and values[-1]==0: values.pop()
@@ -71,6 +69,9 @@ def _before_books(store,db,bindings,payload,offer,guest_offer,team_id,*,owned=Fa
                 or financial['signed_players']!=sorted(c.player_id for c in contracts)
                 or trim(ledger.charges)!=trim(charges)):
             raise Rejected('Saved roster charges differ from league books; guest projection is unsupported')
+        if owned:
+            verify_terms(ledger,contracts,original_sources=not recorded)
+            continue
         for record in contracts:
             legacy=ledger._legacy_contracts.get(record.player_id)
             if legacy is not None:

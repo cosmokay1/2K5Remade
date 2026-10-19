@@ -51,6 +51,14 @@ int main() {
         auto current=franchise::current_contract_table(fixture["result"]);
         require(current.rows.size()==3 && current.rows[0].label=="2026");
         require(current.rows[0].values==std::vector<std::string>({"$1,544,000","$2,320,000","$3,864,000"}));
+        auto follow=fixture["result"];
+        follow["offer_context"]["amendment"]={{"prior_terms",nlohmann::json::object()},
+            {"current_charges",{3658000,3658000,2000000}},{"carried_bonus_charges",{1658000,1658000,0}}};
+        current=franchise::current_contract_table(follow);
+        require(current.rows.size()==3 && current.rows[0].values==std::vector<std::string>({"$2,000,000","$1,658,000","$3,658,000"}));
+        follow["offer_context"]["amendment"]["current_charges"][0]="10974001/3";
+        current=franchise::current_contract_table(follow);
+        require(current.rows[0].values[0]=="$6000001/3 (exact dollars)");
         auto aged=fixture["result"];aged["player_context"]["legacy_contract"]["remaining_years"]=2;
         current=franchise::current_contract_table(aged);
         require(current.rows.size()==2 && current.rows[0].values[2]=="$4,640,000");
