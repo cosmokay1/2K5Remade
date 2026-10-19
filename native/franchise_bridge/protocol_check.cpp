@@ -53,6 +53,21 @@ int main(int argc,char** argv) {
             {"runtime_binding",{{"loaded_image_sha256",std::string(64,'a')},{"franchise_id",std::string(32,'b')},
                 {"bindings_sha256",std::string(64,'c')},{"snapshot_payload_sha256",std::string(64,'d')}}}}}};
         franchise::validate_result(hello_reply,hello_request);
+        auto local_reply=hello_reply;
+        local_reply["result"]["ai_enabled"]=false;
+        local_reply["result"]["negotiation_enabled"]=true;
+        local_reply["result"]["decision_mode"]="local-rules";
+        franchise::validate_result(local_reply,hello_request);
+        for(int scenario=0;scenario<5;++scenario) {
+            auto bad=local_reply;
+            if(scenario==0)bad["result"]["ai_enabled"]=true;
+            if(scenario==1)bad["result"]["negotiation_enabled"]=1;
+            if(scenario==2)bad["result"].erase("decision_mode");
+            if(scenario==3)bad["result"]["decision_mode"]="offline-fixture";
+            if(scenario==4)bad["result"].erase("runtime_binding");
+            bool rejected=false;try{franchise::validate_result(bad,hello_request);}catch(const std::exception&){rejected=true;}
+            if(!rejected)throw std::runtime_error("Invalid local negotiation grant accepted");
+        }
         for(int scenario=0;scenario<7;++scenario) {
             auto bad=hello_reply;auto req=hello_request;
             if(scenario==0) bad["result"].erase("runtime_binding");
@@ -80,6 +95,13 @@ int main(int argc,char** argv) {
             if(!rejected)throw std::runtime_error("Observation binding granted excess authority");
         }
         const franchise::BudgetLaunch launch_budget{LR"(C:\budget path\ledger.sqlite)",L"scope \"quoted\" --provider offline-fixture",17};
+        const auto local_command=franchise::launch_command(L"python",L"db",franchise::ServiceMode::LocalRules);
+        if(local_command.find(L"local-rules")==std::wstring::npos || local_command.find(L"impersonate")!=std::wstring::npos ||
+            local_command.find(L"--ai-")!=std::wstring::npos) throw std::runtime_error("Local launch requested cloud access");
+        {bool rejected=false;
+         try{franchise::launch_command(L"python",L"db",franchise::ServiceMode::LocalRules,launch_budget);}
+         catch(const std::invalid_argument&){rejected=true;}
+         if(!rejected)throw std::runtime_error("Local mode accepted an AI budget");}
         const auto budget_command=franchise::launch_command(L"python path",L"database path",franchise::ServiceMode::VertexRuntime,launch_budget);
         const auto expected_budget=franchise::quote(L"python path")+L" \"-m\" \"franchise.sidecar\" \"--database\" "+franchise::quote(L"database path")+
             L" \"--provider\" \"vertex\" \"--impersonate-runtime\" \"--ai-budget-database\" "+franchise::quote(launch_budget.database)+

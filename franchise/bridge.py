@@ -21,6 +21,16 @@ class Bridge:
             raise ValueError("Provider and remote access check required")
         self.store, self.provider, self.access_check = store, provider, access_check
         self.connection_check = connection_check
+        from franchise.local_runtime import LocalRulesRuntime
+        self.local_rules = isinstance(provider, LocalRulesRuntime)
+        self.auction = None
+        if self.local_rules and 'auction' in provider.config:
+            from franchise.auction import LocalAuction
+            def auction_access():
+                if self.connection_check() is False:
+                    raise AccessDisabled('Auction client disconnected')
+                return self.access_check()
+            self.auction = LocalAuction(store, provider, access_check=auction_access)
         if guest_snapshot is not None and (type(guest_snapshot) is not tuple or len(guest_snapshot) != 2
                 or type(guest_snapshot[0]) is not dict or type(guest_snapshot[1]) is not bytes):
             raise ValueError('Pinned bindings and saved payload required')
@@ -98,9 +108,53 @@ class Bridge:
                 if self.guest_signing_reader is not None:
                     operations.extend(('guest_signing_prepare','guest_signing_confirm','guest_signing_status','guest_signing_authorize'))
                 result = {"ai_enabled": True, "operations": operations}
+                if self.local_rules:
+                    result.update(ai_enabled=False, negotiation_enabled=True, decision_mode='local-rules')
+                if self.auction is not None:
+                    operations.extend(('auction_bid', 'auction_withdraw', 'auction_resolve', 'auction_status'))
                 if binding is not None:
                     result['runtime_binding'] = binding
                 self.runtime_verified = binding is not None
+                return self._reply(request_id, result=result)
+            if operation in ('auction_bid', 'auction_withdraw', 'auction_resolve', 'auction_status'):
+                if self.auction is None:
+                    raise Rejected('No sourced local auction is configured')
+                if self.runtime_image is not None and not self.runtime_verified:
+                    raise AccessDisabled('Verified runtime handshake required for auctions')
+                self.connection_check()
+                if self.access_check() is False:
+                    raise AccessDisabled('Auction access denied')
+                fields = {'protocol', 'operation', 'request_id'}
+                if operation == 'auction_bid':
+                    fields |= {'team_id', 'offer', 'expected_revision'}
+                    optional = {'contract_format', 'promise_goals'}
+                elif operation == 'auction_withdraw':
+                    fields |= {'team_id', 'player_id'}
+                    optional = set()
+                elif operation == 'auction_status':
+                    fields |= {'team_id'}
+                    optional = set()
+                else:
+                    optional = set()
+                if not fields <= set(request) or set(request) - fields - optional:
+                    raise ValueError('Complete auction request required; simulation deadlines are server-owned')
+                if 'team_id' in request and request['team_id'] != self.provider.config['team_id']:
+                    raise Rejected('Auction client policy belongs to another team')
+                if operation == 'auction_bid':
+                    from franchise.promises import goals_from_list
+                    result = self.auction.bid(request['team_id'], request_id, Offer.from_dict(request['offer']),
+                        request['expected_revision'], contract_format=request.get('contract_format'),
+                        promise_goals=goals_from_list(request.get('promise_goals', [])),
+                        receipt_check=lambda value: self._require_frame(request_id, value))
+                elif operation == 'auction_withdraw':
+                    result = self.auction.withdraw(request['team_id'], request['player_id'], request_id,
+                        receipt_check=lambda value: self._require_frame(request_id, value))
+                elif operation == 'auction_status':
+                    result = self.auction.status(request['team_id'])
+                else:
+                    result = self.auction.resolve(receipt_check=lambda value: self._require_frame(request_id, value))
+                self.connection_check()
+                self._require_frame(request_id, result)
                 return self._reply(request_id, result=result)
             if operation=='guest_cap_restore':
                 fields={'protocol','request_id','operation','source_epoch','loaded_payload_sha256',
@@ -154,6 +208,8 @@ class Bridge:
                 def guarded():
                     local()
                     if self.access_check() is False: raise AccessDisabled('AI control denied settlement')
+                    if self.local_rules:
+                        self.provider.check(signing=True)
                     local()
                     if self.guest_signing_reader()!=payload:
                         raise Rejected('Saved payload changed during journal coordination')
@@ -555,6 +611,9 @@ class Bridge:
             if type(timeout) is not int or not 1 <= timeout <= 60_000:
                 raise ValueError("Timeout must be 1-60000 milliseconds")
             deadline = time.monotonic() + timeout / 1000
+            provider = self.provider
+            if self.local_rules and operation in ('negotiate', 'negotiate_proposal'):
+                provider = self.provider.for_team(request['team_id'])
             def local_access():
                 self.connection_check()
                 if time.monotonic() >= deadline:
@@ -563,6 +622,8 @@ class Bridge:
                 local_access()
                 if self.access_check() is False:
                     raise AccessDisabled('AI control denied negotiation')
+                if self.local_rules and operation in ('negotiate', 'negotiate_proposal'):
+                    provider.request_check(signing=operation == 'negotiate')
                 if time.monotonic() >= deadline:
                     raise TimeoutError("Request expired")
             data = request["offer"]
@@ -600,7 +661,7 @@ class Bridge:
                     proposal_only=operation == 'negotiate_proposal',
                     contract_format=request.get('contract_format'))
                 from franchise.promises import goals_from_list
-                result = session.respond(request_id, offer, self.provider,
+                result = session.respond(request_id, offer, provider,
                                          expected_revision=request["expected_revision"],
                                          promise_goals=goals_from_list(request.get("promise_goals", [])))
             return self._reply(request_id, result=result)

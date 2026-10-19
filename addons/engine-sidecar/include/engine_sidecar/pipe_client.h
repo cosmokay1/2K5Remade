@@ -105,7 +105,9 @@ public:
     }
     void abort() noexcept { close(); }
     DWORD process_id() const { return GetProcessId(process_); }
-    void submit(std::string json) {
+    void submit(std::string json, std::chrono::milliseconds timeout=std::chrono::seconds(5)) {
+        if(timeout.count()<1 || timeout>std::chrono::seconds(65))
+            throw std::invalid_argument("Bounded sidecar response timeout required");
         if (!process_) throw std::runtime_error("Client is disconnected");
         if (pending_.valid()) throw std::runtime_error("Client request already pending");
         if (json.size() > 4095 || json.find_first_of("\r\n") != std::string::npos || json.find('\0') != std::string::npos)
@@ -115,12 +117,12 @@ public:
             throw std::runtime_error("Request ID required");
         request_id_ = request["request_id"].get<std::string>();
         if (request_id_.empty()) throw std::runtime_error("Request ID required");
-        pending_ = std::async(std::launch::async, [this, json = std::move(json)] {
+        pending_ = std::async(std::launch::async, [this, json = std::move(json), timeout] {
             std::string frame = json + "\n", response;
             DWORD written = 0;
             if (!WriteFile(input_, frame.data(), static_cast<DWORD>(frame.size()), &written, nullptr) || written != frame.size())
                 throw std::runtime_error("Sidecar write failed");
-            auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+            auto deadline = std::chrono::steady_clock::now() + timeout;
             while (std::chrono::steady_clock::now() < deadline) {
                 DWORD available = 0;
                 if (!PeekNamedPipe(output_, nullptr, 0, nullptr, &available, nullptr))

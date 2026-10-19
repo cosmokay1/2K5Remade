@@ -12,7 +12,15 @@ public:
         : engine_sidecar::PipeClient(python,launch_arguments(python,database,mode,budget)) {}
     void submit(std::string text) {
         auto request=parse_frame(text);
-        engine_sidecar::PipeClient::submit(std::move(text));
+        auto timeout=std::chrono::milliseconds(5000);
+        if(request.contains("timeout_ms")) {
+            const auto& budget=request.at("timeout_ms");
+            if(!budget.is_number_integer() || budget<1 || budget>60000)
+                throw std::invalid_argument("Bounded franchise request timeout required");
+            // Allow the service to report its own deadline before closing IPC.
+            timeout=std::chrono::milliseconds(budget.get<int64_t>()+1000);
+        }
+        engine_sidecar::PipeClient::submit(std::move(text),timeout);
         request_=std::move(request);
     }
     std::string take() {

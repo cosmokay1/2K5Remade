@@ -8,11 +8,13 @@ extern "C" {
 
 /* One owner thread per handle. No guest memory, roster or money hooks.
  * Paths and mode are explicit; runtime never falls back to the fixture.
+ * Local rules also require the inherited explicit LOCAL_CONFIG policy path.
  * Destroy an existing handle before creating a replacement. */
 typedef struct FranchiseHostClient FranchiseHostClient;
 typedef enum FranchiseHostMode {
     FRANCHISE_HOST_OFFLINE_FIXTURE = 1,
-    FRANCHISE_HOST_VERTEX_RUNTIME = 2
+    FRANCHISE_HOST_VERTEX_RUNTIME = 2,
+    FRANCHISE_HOST_LOCAL_RULES = 3
 } FranchiseHostMode;
 typedef enum FranchiseHostStatus {
     FRANCHISE_HOST_OK = 0,
@@ -60,7 +62,8 @@ FranchiseHostStatus franchise_host_create_with_token_budget(const wchar_t* pytho
     unsigned long long request_limit, unsigned long long token_limit, FranchiseHostClient** out_client);
 /* Explicit UTF-8 JSON bytes, excluding terminator; max 4095, no NUL/CR/LF.
  * A pending or unread cached reply rejects the next submission as BUSY.
- * AI negotiation and journal writes require a validated successful hello grant;
+ * Negotiation and journal writes require a validated successful hello grant
+ * matching the selected local-rules or Vertex mode;
  * journal writes additionally require advertised journal operations. Server access is
  * checked again per request; ai_disabled/failedhello clears the local grant.
  * Manual and read operations remain available without an AI grant. */
@@ -89,7 +92,7 @@ struct FranchiseCapEnforcement;
 FranchiseHostStatus franchise_host_restore_cap(FranchiseHostClient *client,unsigned long long epoch,const char *payload,
     const void *finance,size_t finance_size,const void *identity,size_t identity_size);
 int franchise_host_take_restored_cap(FranchiseHostClient *client,struct FranchiseCapEnforcement *cap);
-/* One-use application issuance. Remote control is rechecked by the service;
+/* One-use application issuance. Selected-mode access is rechecked by the service;
  * the five-second deadline starts before transport submission. No guest writes. */
 FranchiseHostStatus franchise_host_authorize_accepted(FranchiseHostClient *client,
     const void *finance,size_t finance_size,const void *identity,size_t identity_size);

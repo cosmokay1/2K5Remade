@@ -10360,3 +10360,23 @@ One run each without controlled RNG/repeats; workload/run-pass balance and actua
 injury/rotation behavior remain open. Played quarters stay8 and are uncalibrated.
 No source change or redundant test suite for analysis. Full tables and reference
 links in docs/SIMULATION_CALIBRATION.md; raw reports/receipt private.
+
+## October 18 — combined offline negotiation and independent market pricing
+
+Local-rules provider, persistent bargaining/auction backend and bounded native
+transport are batched with sourced market pricing. Opening export: 816 veteran
+comparables, 393 exact Giants/free-agent quotes; Burns uses actual $28.2M APY,
+not fitted remaining cap charges. Rookie and one-year tender paths stay separate.
+Sixteen pricing/export/bridge checks and 50 existing local/auction checks pass.
+Full Python run had one new fixture setup error among 1,063 tests; corrected
+fixture and its group pass, not relabeled as a green full run. Portable native
+protocol and actual generated-price reply/tamper cases pass. Six headless Windows
+checks and paired EXE/addon isolated game validation pass; hashes/receipts are
+in offline-franchise-v1. Private patch packaging preserves live files.
+
+Cap-pressure fixture keeps a $300M cap: $200M existing plus $20M reserve allows
+four $20M additions, refuses the next atomically. User requires lasting cap
+tradeoffs; league-wide calibration and complete opening retained/dead-money
+reconciliation remain required. No actual offline signing or save/reload verified;
+no live install, screenshots, menu inputs, control renewals or scheduled work.
+See OFFLINE_MARKET.md for limits and private package location.

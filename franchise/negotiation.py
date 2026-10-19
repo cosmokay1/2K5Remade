@@ -191,9 +191,14 @@ class Negotiation:
                 'bonus_allocation_max_years': 5,
                 'annual_schedule': 'Must exactly encode an original game schedule; no rounding or truncating a demand'}
         from franchise.vertex_provider import VertexProvider
+        from franchise.local_runtime import LocalRulesRuntime
         frozen_context=json.loads(json.dumps(context, allow_nan=False))
-        response = (provider(frozen_context,before_generate=self._access_check)
-                    if isinstance(provider,VertexProvider) else provider(frozen_context))
+        local_evidence = None
+        if isinstance(provider, LocalRulesRuntime):
+            response, local_evidence = provider.evaluate(frozen_context)
+        else:
+            response = (provider(frozen_context,before_generate=self._access_check)
+                        if isinstance(provider,VertexProvider) else provider(frozen_context))
         decision = Decision.parse(response, self.player_id)
         if proposed and decision.action == "counter" and "promise_goals" not in json.loads(response):
             raise ValueError("Counter must explicitly preserve, change or withdraw promise proposals")
@@ -207,6 +212,8 @@ class Negotiation:
                      **({'return_scope':return_scope} if return_scope is not None else {}),
                      **({'observed_efficiency': json.loads(self._efficiency)} if self._efficiency is not None else {})},
                  "history_request_ids": [entry["request_id"] for entry in context["history"]]}
+        if local_evidence is not None:
+            event['local_rules'] = local_evidence
         if 'reaction' in json.loads(response):
             event['reaction'] = decision.reaction
         if decision.reaction != 'none':

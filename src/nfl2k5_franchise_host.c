@@ -101,9 +101,9 @@ int nfl2k5_franchise_negotiation_view(FranchiseNegotiationView *out) {
             memcpy((char*)out+offsetof(FranchiseNegotiationView,summary),&display,sizeof(display));
             memcpy((char*)out+offsetof(FranchiseNegotiationView,response),display_response,sizeof(display_response));
             out->preview_epoch=draft_epoch;
-            out->preview_enabled=draft_enabled;
+            out->preview_enabled=draft_enabled && !hello_failed;
             out->preview_pending=draft_pending!=0;
-            out->submit_enabled=screen_submit_enabled && display_offer_kind && !draft_pending;
+            out->submit_enabled=screen_submit_enabled && display_offer_kind && !draft_pending && !hello_failed;
             out->proposal_pending=draft_pending && draft_proposal;
         } else {
             snprintf(out->summary.title,sizeof(out->summary.title),"Contract negotiation");
@@ -119,7 +119,7 @@ static int queue_draft(unsigned long long epoch,uint32_t amount,uint32_t flags,i
     const uint32_t mask=0xe00f000fu;
     const unsigned years=(flags>>16)&15u,bonus=flags&15u,shape=flags>>29;
     AcquireSRWLockExclusive(&display_lock);
-    if(draft_enabled && display_valid && display_response[0] && !draft_pending &&
+    if(!hello_failed && draft_enabled && display_valid && display_response[0] && !draft_pending &&
        (!proposal || (screen_submit_enabled && display_offer_kind && amount==checked_amount && flags==checked_flags)) &&
        epoch && epoch==draft_epoch && amount && amount<=65535 && years && years<=7 && bonus<=10 &&
        (shape==1 || shape==2 || shape==(display_observation.offer_flags>>29)) &&
@@ -397,7 +397,12 @@ void nfl2k5_franchise_poll(void)
     return;
 failed:
     hello_failed = 1;
-    clear_display();
+    AcquireSRWLockExclusive(&display_lock);
+    draft_pending=draft_proposal=draft_amendment=display_offer_kind=0;++draft_epoch;
+    snprintf(display_notice,sizeof(display_notice),journal_locked ?
+        "Connection lost. Signing is not confirmed. Recover the saved transaction before another offer." :
+        "Connection lost. No confirmed signing. Back out and restart the game to reconnect.");
+    ReleaseSRWLockExclusive(&display_lock);
     fprintf(stderr,"[FRANCHISE] Sidecar transport unavailable; signing remains held. Check journal recovery.\n");
 }
 int nfl2k5_franchise_completed(void)
@@ -530,7 +535,7 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
     const int proposing=proposal_requested && !proposal_sent;
     int length = snprintf(request,sizeof(request),
         "{\"protocol\":1,\"request_id\":\"game-sign-%s-%lu-%llu-%u\",\"operation\":\"%s\","
-        "%s%s%s%s\"expected_revision\":%llu,\"timeout_ms\":10000,\"observation\":{"
+        "%s%s%s%s\"expected_revision\":%llu,\"timeout_ms\":%u,\"observation\":{"
         "\"biography\":{\"source_slot\":%u,\"first_name\":\"%s\",\"last_name\":\"%s\","
         "\"pbp_photo_raw\":\"%s\",\"dob_region_raw\":\"%s\"},"
         "\"team\":{\"table_index\":%u,\"table_mode\":2,\"payroll_raw\":%u,\"league_cap_raw\":%u,"
@@ -539,7 +544,7 @@ void nfl2k5_franchise_signing_context(const FranchiseSigningObservation *o)
         "\"step_04_raw\":%u,\"step_05_raw\":%u,\"counter_08_raw\":%u}}}",
         proposing ? "proposal" : "context",(unsigned long)GetCurrentProcessId(),request_session,++context_sequence,
         proposing ? "negotiate_proposal" : "signing_context",saved_performance && !proposing ? "\"performance_format\":\"saved_history_v1\"," : "",
-        offer_field,clock_field,reviewed_proposal && reviewed_amendment ? "\"amendment_rule\":\"legacy_bonus_carry_v1\"," : "",context_revision,o->slot,o->first_name,o->last_name,o->photo,o->dob,
+        offer_field,clock_field,reviewed_proposal && reviewed_amendment ? "\"amendment_rule\":\"legacy_bonus_carry_v1\"," : "",context_revision,proposing?60000u:10000u,o->slot,o->first_name,o->last_name,o->photo,o->dob,
         o->team_index,o->payroll,o->cap,o->team_flag,o->accumulator,o->calendar[5],2004u+o->calendar[5],
         o->calendar[0],o->calendar[1],o->calendar[3],o->calendar[4],o->calendar[6]);
     if(proposing && reviewed_proposal && retry_available && retry_source_epoch==source_epoch &&
@@ -594,15 +599,19 @@ int nfl2k5_franchise_start(void)
     const wchar_t *python = _wgetenv(L"NFL2K5_FRANCHISE_PYTHON");
     const wchar_t *database = _wgetenv(L"NFL2K5_FRANCHISE_DATABASE");
     if (!mode) return 1; /* Compiling transport does not enable AI. */
-    if (wcscmp(mode, L"vertex") || !python || !*python || !database || !*database) {
-        fprintf(stderr, "[FRANCHISE] Explicit vertex provider, Python and database paths required.\n");
+    const int local_rules = !wcscmp(mode,L"local-rules");
+    if ((!local_rules && wcscmp(mode, L"vertex")) || !python || !*python || !database || !*database) {
+        fprintf(stderr, "[FRANCHISE] Explicit supported provider, Python and database paths required.\n");
         return 0;
     }
+    const wchar_t *local_config = _wgetenv(L"NFL2K5_FRANCHISE_LOCAL_CONFIG");
+    if(local_rules && (!local_config || !*local_config)) return 0;
     const wchar_t *guest_save = _wgetenv(L"NFL2K5_FRANCHISE_GUEST_SAVE");
     const wchar_t *guest_bindings = _wgetenv(L"NFL2K5_FRANCHISE_GUEST_BINDINGS");
     const wchar_t *guest_revision = _wgetenv(L"NFL2K5_FRANCHISE_GUEST_REVISION");
     int inspect_context = guest_save && *guest_save;
     if ((guest_bindings && *guest_bindings) || (guest_revision && *guest_revision)) inspect_context = 1;
+    if(local_rules && !inspect_context) return 0;
     unsigned long long revision = 0;
     if (inspect_context && (!guest_save || !*guest_save || !guest_bindings || !*guest_bindings ||
         !guest_revision || !*guest_revision ||
@@ -643,6 +652,7 @@ int nfl2k5_franchise_start(void)
     FranchiseHostStatus status;
     if ((budget_database && *budget_database) || (budget_scope && *budget_scope) || (budget_limit && *budget_limit) ||
         (token_limit && *token_limit)) {
+        if(local_rules) return 0; /* Local launch never consumes AI credentials/budgets. */
         unsigned long long limit = 0, tokens=0;
         if (!budget_database || !*budget_database || !budget_scope || !*budget_scope || !budget_limit || !*budget_limit) return 0;
         if (!positive_limit(budget_limit,&limit)) return 0;
@@ -655,7 +665,7 @@ int nfl2k5_franchise_start(void)
                 budget_database,budget_scope,limit,&franchise_client);
         }
     } else {
-        status = franchise_host_create(python,database,FRANCHISE_HOST_VERTEX_RUNTIME,&franchise_client);
+        status = franchise_host_create(python,database,local_rules ? FRANCHISE_HOST_LOCAL_RULES : FRANCHISE_HOST_VERTEX_RUNTIME,&franchise_client);
     }
     if (status != FRANCHISE_HOST_OK) {
         fprintf(stderr, "[FRANCHISE] Sidecar launch failed.\n");

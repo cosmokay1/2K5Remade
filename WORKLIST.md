@@ -537,7 +537,7 @@ Do not deploy superseded staged diagnostics blindly or overwrite existing saves.
       contracts and all32 team totals reconcile; verified pack economy displays
       four real dollars per game dollar. $89.216M room follows $301.2M cap less
       $211.984M roster charges. Matched all53 names to the2026 reference, isolated
-      $42.392M of additional current-reference roster/reserve/PS charges and
+      $42.393M of additional current-reference roster/reserve/PS charges and
       $43.691M dead money; dated obligations import remains unverified. See
       [Mynfl1 audit](docs/MYNFL1_CAP_AUDIT.md).
 - [x] Support declared modded player-bank bounds/settings in the strict save reader:
@@ -777,7 +777,7 @@ the same missing input.
 - [x] Identify our original additions and document unresolved permission scope.
 - [x] Commit/push development work without publishing installers.
 - [x] Add automated portable financial/negotiation tests to fork CI.
-      Published at `589a2bd`; run `38457090392` passed on Linux and Windows.
+      Published at `589a2bd`; run `38457090393` passed on Linux and Windows.
 - [x] Add asset-free Windows checks for our bridge/runtime additions; clearly
       distinguish these from a full game build/test. Native pipe compile/execution
       verified at `dd1ed9e`, run `38464795249`; no guest assets or game exercised.
@@ -1206,7 +1206,7 @@ capture and multi-window aggregation remain unverified/unimplemented.
 
 Native budget launch wiring is implemented through a compatible explicit C ABI
 and validated host environment fields. Portable launch/quoting checks pass;
-actual Windows configured-budget launch/restart smoke passed in CI38528423925.
+actual Windows configured-budget launch/restart smoke passed in CI38528423935.
 Live runtimes now count the exact contents, instructions and structured response
 schema before generation, rejecting missing/invalid/over-16384 input counts.
 The provider output ceiling is explicitly configurable (runtime4096). Durable
@@ -1270,3 +1270,27 @@ Experiment and evidence limits: [simulation calibration](docs/SIMULATION_CALIBRA
 
 Evidence and remaining acceptance: [broadcasts](docs/BROADCAST_NETWORKS.md),
 [fourth-down audit](docs/CPU_FOURTH_DOWN_AUDIT.md). Scheduled task stays off.
+
+## Offline franchise market pricing (October 18)
+
+- [x] Generate local asking contracts from actual sourced APY, position and
+      verified production; reject hidden-rating/cap-fit substitutions and missing
+      classification. Normalize cap shares and retain exact native money units.
+- [x] Adapt the reconciled opening snapshot: 816 veteran comparables, 393 exact
+      Giants/free-agent quotes; preserve rookie/special-contract exclusions.
+- [x] Validate cap pressure at an unchanged league cap, atomic over-cap refusal,
+      local proposal framing, independent prices and persisted price provenance.
+- [x] Compile the combined Windows offline provider/host candidate; six affected
+      headless Windows checks and isolated matching EXE/addon validation pass.
+      Stage one private combined patch; keep live binaries/saves unchanged until
+      one combined test.
+- [ ] Verify actual local negotiation -> signing -> cap reconciliation ->
+      save/reload on a disposable Deck franchise. No repeated screen check-ins.
+- [ ] Reconcile retained/dead-money opening obligations; roster contract totals
+      alone are not proof that starting cap room is accurate.
+- [ ] Bind complete-season production and future-year market refresh; calibrate
+      league-wide cap distribution, roster turnover and retained/dead charges
+      before claiming realistic multi-year economics. Difficulty must come from
+      obligations and independent prices, not arbitrary cap reductions.
+
+Evidence and limits: [OFFLINE_MARKET.md](docs/OFFLINE_MARKET.md). Scheduled task off.

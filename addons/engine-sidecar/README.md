@@ -15,13 +15,16 @@ checks also run on macOS. This does not port a consuming Windows application.
 The Remade game and franchise adapter still require Proton on Steam Deck.
 
 Use engine_sidecar::PipeClient(executable, arguments), submit(json), ready(), take().
+Callers can supply `submit(json, std::chrono::milliseconds(timeout))` for a bounded
+1–65,000ms response wait; the default remains 5,000ms. Application adapters own
+the choice of deadline, including any grace for a server's timeout response.
 Call from a single owner thread. Do not destroy it from a render callback: cleanup
 may wait for the owned process and worker. One pending request; no queue or retries.
 Requests max 4095 bytes; replies max 65536 bytes, nesting max 32. Reply envelope:
 protocol=1, matching request_id, result object or null, error string or null, detail
-string or null. On Windows the five-second reply deadline starts after the synchronous write;
+string or null. On Windows the reply deadline starts after the synchronous write;
 a blocked write is released by owned-process destruction, not that deadline.
-Linux uses nonblocking I/O with one five-second deadline covering write and reply.
+Linux uses nonblocking I/O with one deadline covering write and reply.
 An application must reject obsolete replies and recheck authority before writes.
 
 ## Standalone checks

@@ -17,6 +17,7 @@ struct FranchiseHostClient {
     bool pending = false;
     bool cached = false;
     bool ai_granted = false;
+    bool local_rules = false;
     bool journal_capable = false;
     bool reply_failed = false;
     int offer_kind=0;
@@ -62,12 +63,14 @@ extern "C" FranchiseHostStatus franchise_host_create(const wchar_t* python, cons
     if (!out_client) return FRANCHISE_HOST_INVALID_ARGUMENT;
     *out_client = nullptr;
     if (!python || !*python || !database || !*database ||
-        (mode != FRANCHISE_HOST_OFFLINE_FIXTURE && mode != FRANCHISE_HOST_VERTEX_RUNTIME))
+        (mode != FRANCHISE_HOST_OFFLINE_FIXTURE && mode != FRANCHISE_HOST_VERTEX_RUNTIME && mode != FRANCHISE_HOST_LOCAL_RULES))
         return FRANCHISE_HOST_INVALID_ARGUMENT;
     try {
         auto client = std::make_unique<FranchiseHostClient>();
+        client->local_rules = mode == FRANCHISE_HOST_LOCAL_RULES;
         client->transport = std::make_unique<franchise::PipeClient>(python,database,
-            mode == FRANCHISE_HOST_OFFLINE_FIXTURE ? franchise::ServiceMode::OfflineFixture : franchise::ServiceMode::VertexRuntime);
+            mode == FRANCHISE_HOST_OFFLINE_FIXTURE ? franchise::ServiceMode::OfflineFixture :
+            client->local_rules ? franchise::ServiceMode::LocalRules : franchise::ServiceMode::VertexRuntime);
         *out_client = client.release();
         return FRANCHISE_HOST_OK;
     } catch (...) { return FRANCHISE_HOST_SERVICE_FAILURE; }
@@ -239,8 +242,12 @@ extern "C" FranchiseHostStatus franchise_host_take(FranchiseHostClient* client, 
                 }
             }
             if (client->operation == "hello" || client->operation == "bind_runtime") {
+                if(client->operation=="hello" && response.at("error").is_null() &&
+                    client->local_rules != response.at("result").contains("decision_mode"))
+                    throw std::runtime_error("Service decision mode differs from explicit launch mode");
                 client->ai_granted = client->operation=="hello" && response.at("error").is_null() &&
-                    response.at("result").at("ai_enabled").is_boolean() && response.at("result").at("ai_enabled") == true;
+                    (client->local_rules ? response.at("result").at("negotiation_enabled") == true :
+                     response.at("result").at("ai_enabled") == true);
                 client->journal_capable=false;client->loaded_payload.clear();
                 if(response.at("error").is_null() && response.at("result").contains("runtime_binding"))
                     client->loaded_payload=response.at("result").at("runtime_binding").at("snapshot_payload_sha256").get<std::string>();

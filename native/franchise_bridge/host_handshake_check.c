@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 static char owned;
+static FranchiseHostMode expected_mode = FRANCHISE_HOST_VERTEX_RUNTIME;
 static unsigned submissions, takes;
 static int ready_value;
 static DWORD owner;
@@ -53,7 +54,7 @@ FranchiseHostStatus franchise_host_signing_display(const char *response,Franchis
 FranchiseHostStatus franchise_host_create(const wchar_t *python, const wchar_t *database,
     FranchiseHostMode mode, FranchiseHostClient **out)
 {
-    assert(python && database && mode == FRANCHISE_HOST_VERTEX_RUNTIME);
+    assert(python && database && mode == expected_mode);
     *out = (FranchiseHostClient *)&owned;
     return FRANCHISE_HOST_OK;
 }
@@ -369,5 +370,20 @@ int main(void)
     sent=submissions;nfl2k5_franchise_poll();assert(submissions==sent); // No AI reauthorization loop.
     nfl2k5_franchise_stop();
     _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_SUBMIT",L"bad");assert(!nfl2k5_franchise_start());
+    _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_SUBMIT",L"0");
+    _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_EDIT",L"0");
+    _wputenv_s(L"NFL2K5_FRANCHISE_SCREEN_PREVIEW",L"0");
+    _wputenv_s(L"NFL2K5_FRANCHISE_NEGOTIATION",L"0");
+    _wputenv_s(L"NFL2K5_FRANCHISE_PROVIDER",L"local-rules");
+    _wputenv_s(L"NFL2K5_FRANCHISE_LOCAL_CONFIG",L"");
+    assert(!nfl2k5_franchise_start());
+    _wputenv_s(L"NFL2K5_FRANCHISE_LOCAL_CONFIG",L"authored-local-policy");
+    expected_mode=FRANCHISE_HOST_LOCAL_RULES;
+    assert(nfl2k5_franchise_start());nfl2k5_franchise_stop();
+    _wputenv_s(L"NFL2K5_FRANCHISE_AI_BUDGET_SCOPE",L"forbidden-in-local-mode");
+    assert(!nfl2k5_franchise_start());
+    _wputenv_s(L"NFL2K5_FRANCHISE_AI_BUDGET_SCOPE",L"");
+    _wputenv_s(L"NFL2K5_FRANCHISE_GUEST_BINDINGS",L"");
+    assert(!nfl2k5_franchise_start());
     return 0;
 }

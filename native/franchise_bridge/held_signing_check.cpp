@@ -16,6 +16,7 @@ static nlohmann::json submitted;
 static unsigned submissions;
 static DWORD owner;
 static bool ready;
+static bool transport_failure;
 static unsigned preparations;
 static unsigned saved_checks,completed_observations;
 static bool completion_readable=true;
@@ -34,7 +35,7 @@ FranchiseHostStatus franchise_host_submit(FranchiseHostClient* c,const char* byt
 }
 int franchise_host_reviewed_offer(FranchiseHostClient*,unsigned int*,unsigned int*){return 0;}
 int franchise_host_reply_failed(FranchiseHostClient*){return 0;}
-FranchiseHostStatus franchise_host_ready(FranchiseHostClient*,int* out) { require(GetCurrentThreadId()==owner);*out=ready;return FRANCHISE_HOST_OK; }
+FranchiseHostStatus franchise_host_ready(FranchiseHostClient*,int* out) { require(GetCurrentThreadId()==owner);*out=ready;return transport_failure?FRANCHISE_HOST_SERVICE_FAILURE:FRANCHISE_HOST_OK; }
 static bool image_available=true;
 static bool source_matches=true,payload_matches=true,path_matches=true;static unsigned path_checks;static uint64_t source_epoch=1;
 int nfl2k5_franchise_source_path_matches(uint64_t epoch){++path_checks;return path_matches && epoch!=0;}
@@ -137,6 +138,7 @@ int main(int argc,char** argv) {
         require(submissions==3 && submitted["operation"]=="negotiate_proposal");
         require(!submitted.contains("performance_format") && submitted["guest_offer"]["amount_word"]==829);
         require(submitted["expected_revision"]==0 && submitted["observation"]["biography"]["first_name"]=="Authored");
+        require(submitted["timeout_ms"]==60000);
         require_no_negotiation_view(); // Waiting must not expose the previous read-only reply.
         nfl2k5_franchise_poll();
         require(nfl2k5_franchise_submit_held(&observation,nfl2k5_franchise_submission_epoch())==1);
@@ -244,6 +246,23 @@ int main(int argc,char** argv) {
         nfl2k5_franchise_poll();require(!preparations);
         FranchiseSigningDisplay stale={};require(!nfl2k5_franchise_display(&stale));require_no_negotiation_view();
         nfl2k5_franchise_stop();source_epoch=1;
+        // A transport failure keeps the last checked view under addon ownership,
+        // disables edits/sending, and exposes recovery rather than dropping UI.
+        _putenv_s("NFL2K5_FRANCHISE_SCREEN_PREVIEW","1");
+        _putenv_s("NFL2K5_FRANCHISE_SCREEN_EDIT","1");
+        _putenv_s("NFL2K5_FRANCHISE_SCREEN_SUBMIT","1");
+        require(nfl2k5_franchise_start()==1);
+        nfl2k5_franchise_on_fsm(0x557B2C,1);nfl2k5_franchise_poll();
+        nfl2k5_franchise_signing_context(&observation);nfl2k5_franchise_poll();
+        FranchiseNegotiationView checked={};require(nfl2k5_franchise_negotiation_view(&checked));
+        require(nfl2k5_franchise_preview_offer(checked.preview_epoch,observation.offer_amount+1,observation.offer_flags));
+        nfl2k5_franchise_signing_context(&observation);require(submitted["timeout_ms"]==10000);
+        transport_failure=true;nfl2k5_franchise_poll();transport_failure=false;
+        FranchiseNegotiationView failed={};require(nfl2k5_franchise_negotiation_view(&failed));
+        require(!failed.preview_enabled && !failed.submit_enabled && !failed.preview_pending);
+        require(std::strstr(failed.notice,"Connection lost") && !std::strcmp(checked.response,failed.response));
+        require(!nfl2k5_franchise_preview_offer(failed.preview_epoch,observation.offer_amount,observation.offer_flags));
+        nfl2k5_franchise_stop();
         image_available=false;
         require(nfl2k5_franchise_start()==1);
         const auto unbound_submissions=submissions;

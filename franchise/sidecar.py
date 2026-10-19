@@ -87,7 +87,7 @@ def serve(bridge, reader, writer):
                     emit(Bridge._reply(None, error="invalid_request"))
                     continue
                 request_id = request.get("request_id") if type(request) is dict else None
-                if type(request) is dict and request.get("operation") in ("negotiate", "negotiate_proposal", "guest_signing_prepare", "guest_signing_confirm"):
+                if type(request) is dict and request.get("operation") in ("negotiate", "negotiate_proposal", "guest_signing_prepare", "guest_signing_confirm", "auction_bid", "auction_withdraw", "auction_resolve"):
                     if busy.is_set():
                         emit(Bridge._reply(request_id, error="busy"))
                     else:
@@ -104,7 +104,9 @@ def serve(bridge, reader, writer):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database", required=True)
-    parser.add_argument("--provider", required=True, choices=("vertex", "offline-fixture"))
+    parser.add_argument("--provider", required=True, choices=("vertex", "offline-fixture", "local-rules"))
+    parser.add_argument('--local-config', default=os.environ.get('NFL2K5_FRANCHISE_LOCAL_CONFIG'),
+                        help='Explicit local asking-price/authorization policy; no cloud fallback')
     parser.add_argument("--impersonate-runtime", action="store_true",
                         help="Use the configured keyless runtime service account; requires authorized source ADC")
     parser.add_argument('--ai-budget-database', help='Separate durable AI usage database')
@@ -123,6 +125,13 @@ def main():
     args = parser.parse_args()
     if args.impersonate_runtime and args.provider != "vertex":
         parser.error("Runtime impersonation applies only to Vertex mode")
+    if args.provider != 'vertex' and any(value is not None for value in (
+            args.ai_budget_database, args.ai_budget_scope, args.ai_request_limit, args.ai_token_limit)):
+        parser.error('AI budgets apply only to Vertex mode')
+    if args.local_config and args.provider != 'local-rules':
+        parser.error('Local configuration applies only to explicitly selected local-rules mode')
+    if args.provider == 'local-rules' and (not args.local_config or not args.guest_save or not args.guest_bindings):
+        parser.error('Local rules require explicit configuration and a pinned saved calendar/bindings')
     if not Path(args.database).is_file():
         parser.error("An existing verified franchise database is required")
     guest_snapshot = None
@@ -142,7 +151,16 @@ def main():
         except (OSError, ValueError):
             parser.error('Pinned guest snapshot could not be validated')
     sdk_provider = None
-    if args.provider == "offline-fixture":
+    if args.provider == 'local-rules':
+        from franchise.local_runtime import LocalRulesRuntime, saved_calendar_tick
+        try:
+            provider = LocalRulesRuntime(args.local_config,
+                clock=lambda: saved_calendar_tick(lambda: read_guest_save(guest_path)))
+            provider.tick()
+            access_check = provider.check
+        except (OSError, ValueError, AccessDisabled):
+            parser.error('Local policy or saved calendar could not be validated; no fallback enabled')
+    elif args.provider == "offline-fixture":
         def provider(_):
             return json.dumps(dict(action="reject", reason="Offline transport fixture",
                                    salaries=None, signing_bonus=None))

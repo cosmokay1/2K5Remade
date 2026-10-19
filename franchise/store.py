@@ -2464,6 +2464,9 @@ class FranchiseStore:
 
     @staticmethod
     def _validate_story_evidence(story, *, efficiency_cache=None):
+        if story is not None and 'local_rules' in story:
+            from franchise.local_runtime import validate_local_record
+            validate_local_record(story)
         if story is not None and 'return_scope' in story:
             FranchiseStore._return_scope(story['return_scope'])
         if story is not None and "promise_goals" in story:
@@ -2593,54 +2596,58 @@ class FranchiseStore:
             raise Rejected("Response was based on stale negotiation history")
 
     def record_negotiation(self, team_id, event, *, access_check):
-        from franchise.legacy_amendments import amendment_scope_from_dict
-        self._validate_dialogue(event)
         event = json.loads(json.dumps(event, allow_nan=False))
         with self._connection(write=True) as db:
-            ledger = self._load(db, team_id)
+            return self._record_negotiation(db, team_id, event, access_check=access_check)
+
+    def _record_negotiation(self, db, team_id, event, *, access_check):
+        """Internal transaction-sharing boundary for deferred auction decisions."""
+        from franchise.legacy_amendments import amendment_scope_from_dict
+        self._validate_dialogue(event)
+        ledger = self._load(db, team_id)
+        access_check()
+        key = "dialogue:" + event["request_id"]
+        if db.execute("SELECT 1 FROM events WHERE team_id=? AND request_key=?",
+                      (team_id, "sign:" + event["request_id"])).fetchone():
+            raise Rejected("Request already belongs to a signing")
+        prior = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, key)).fetchone()
+        if prior:
+            recorded = json.loads(prior[0])["event"]
+            if recorded != event:
+                raise Rejected("Negotiation request already recorded differently")
+            return recorded
+        if event.get("evidence") is not None and event["outcome"] != "accounting_rejected":
+            if event["evidence"]["financial_revision"] != ledger.revision:
+                raise Rejected("Response was based on stale franchise context")
+        if event['outcome'] == 'accepted_proposal':
+            offer = Offer.from_dict(event['offer'])
+            if db.execute('SELECT 1 FROM ownership WHERE player_id=?', (offer.player_id,)).fetchone():
+                raise Rejected('Player already belongs to a team')
+            self._check_draft_right(db, team_id, offer.player_id)
+            preview = ledger.preview_offer(offer, event['evidence']['financial_revision'])
+            if self._checkpoint_hash(preview) != self._checkpoint_hash(event['proposal_preview']):
+                raise Rejected('Accepted proposal preview changed before recording')
+        if event.get('amendment_rule') is not None:
+            preview=self._preview_legacy_amendment(db,team_id,ledger,Offer.from_dict(event['offer']),event['evidence']['financial_revision'],
+                scope=amendment_scope_from_dict(event['amendment_basis']['earned_pay']['scope'])
+                if 'earned_pay' in event['amendment_basis'] else None)
+            if self._checkpoint_hash(preview)!=self._checkpoint_hash(event['amendment_basis']):
+                raise Rejected('Amendment opinion used different financial evidence')
+            if event['outcome']=='accepted_amendment_proposal' and not preview['within_modeled_cap']:
+                raise Rejected('Accepted amendment exceeds available cap room')
+        self._check_history(db, team_id, event["offer"]["player_id"], event)
+        from franchise.negotiation_reactions import apply_reaction
+        apply_reaction(ledger._actors.get(event['offer']['player_id']), event)
+        payload = {"event": event, "posting": ledger.financial_snapshot()}
+        if 'return_scope' in event or event['outcome'] in ('accepted_proposal','accepted_amendment_proposal') or event.get('reaction', 'none') != 'none':
             access_check()
-            key = "dialogue:" + event["request_id"]
-            if db.execute("SELECT 1 FROM events WHERE team_id=? AND request_key=?",
-                          (team_id, "sign:" + event["request_id"])).fetchone():
-                raise Rejected("Request already belongs to a signing")
-            prior = db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=?", (team_id, key)).fetchone()
-            if prior:
-                recorded = json.loads(prior[0])["event"]
-                if recorded != event:
-                    raise Rejected("Negotiation request already recorded differently")
-                return recorded
-            if event.get("evidence") is not None and event["outcome"] != "accounting_rejected":
-                if event["evidence"]["financial_revision"] != ledger.revision:
-                    raise Rejected("Response was based on stale franchise context")
-            if event['outcome'] == 'accepted_proposal':
-                offer = Offer.from_dict(event['offer'])
-                if db.execute('SELECT 1 FROM ownership WHERE player_id=?', (offer.player_id,)).fetchone():
-                    raise Rejected('Player already belongs to a team')
-                self._check_draft_right(db, team_id, offer.player_id)
-                preview = ledger.preview_offer(offer, event['evidence']['financial_revision'])
-                if self._checkpoint_hash(preview) != self._checkpoint_hash(event['proposal_preview']):
-                    raise Rejected('Accepted proposal preview changed before recording')
-            if event.get('amendment_rule') is not None:
-                preview=self._preview_legacy_amendment(db,team_id,ledger,Offer.from_dict(event['offer']),event['evidence']['financial_revision'],
-                    scope=amendment_scope_from_dict(event['amendment_basis']['earned_pay']['scope'])
-                    if 'earned_pay' in event['amendment_basis'] else None)
-                if self._checkpoint_hash(preview)!=self._checkpoint_hash(event['amendment_basis']):
-                    raise Rejected('Amendment opinion used different financial evidence')
-                if event['outcome']=='accepted_amendment_proposal' and not preview['within_modeled_cap']:
-                    raise Rejected('Accepted amendment exceeds available cap room')
-            self._check_history(db, team_id, event["offer"]["player_id"], event)
-            from franchise.negotiation_reactions import apply_reaction
-            apply_reaction(ledger._actors.get(event['offer']['player_id']), event)
-            payload = {"event": event, "posting": ledger.financial_snapshot()}
-            if 'return_scope' in event or event['outcome'] in ('accepted_proposal','accepted_amendment_proposal') or event.get('reaction', 'none') != 'none':
-                access_check()
-            db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'dialogue', ?)",
-                       (team_id, key, json.dumps(payload, allow_nan=False)))
-            if event.get('reaction', 'none') != 'none':
-                db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'offer_reaction', ?)",
-                    (team_id,'offer-reaction:'+event['request_id'],json.dumps(dict(
-                        source_request_id=event['request_id'],posting=ledger.financial_snapshot()),allow_nan=False)))
-            return event
+        db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'dialogue', ?)",
+                   (team_id, key, json.dumps(payload, allow_nan=False)))
+        if event.get('reaction', 'none') != 'none':
+            db.execute("INSERT INTO events (team_id, request_key, kind, payload) VALUES (?, ?, 'offer_reaction', ?)",
+                (team_id,'offer-reaction:'+event['request_id'],json.dumps(dict(
+                    source_request_id=event['request_id'],posting=ledger.financial_snapshot()),allow_nan=False)))
+        return event
 
     @staticmethod
     def _draft_order(db, draft_id):

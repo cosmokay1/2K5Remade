@@ -171,7 +171,9 @@ public:
     ~PipeClient() { close(); }
     void abort() noexcept { close(); }
     pid_t process_id() const { return process_; }
-    void submit(std::string json) {
+    void submit(std::string json, std::chrono::milliseconds timeout=std::chrono::seconds(5)) {
+        if(timeout.count()<1 || timeout>std::chrono::seconds(65))
+            throw std::invalid_argument("Bounded sidecar response timeout required");
         if(process_<=0 || stopping_.load()) throw std::runtime_error("Client is disconnected");
         if(pending_.valid()) throw std::runtime_error("Client request already pending");
         if(json.size()>4095 || json.find_first_of("\r\n")!=std::string::npos || json.find('\0')!=std::string::npos)
@@ -181,8 +183,8 @@ public:
             throw std::runtime_error("Request ID required");
         request_id_=request["request_id"].get<std::string>();
         if(request_id_.empty()) throw std::runtime_error("Request ID required");
-        pending_=std::async(std::launch::async,[this,json=std::move(json)] {
-            auto deadline=Clock::now()+std::chrono::seconds(5);
+        pending_=std::async(std::launch::async,[this,json=std::move(json),timeout] {
+            auto deadline=Clock::now()+timeout;
             std::string frame=json+"\n",response;
             size_t sent=0;
             while(sent<frame.size()) {
