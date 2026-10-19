@@ -1314,6 +1314,14 @@ and earlier evidence below; MyNFL1 stays untouched.
       User requires a clean historically accurate Week1 pool; no later substitute.
 - [x] Stage 198 user-approved official missing headshots and native texture slots
       privately; decode validation passes. Not installed or visually verified.
+- [x] Retrieve/validate all three pages of the January–September10 transaction
+      feed (1443 records; one empty description preserved). Reject looping NFL
+      wire pagination. Cross-check the clean current OTC directory by dated IDs:
+      349 candidates, five retirements and49 restricted/exclusive-rights reviews;
+      138 have supporting expiry/release evidence, not full-pool certification.
+- [x] Audit active, reserve and practice-squad cap coverage together. Giants:
+      62/78 current-list entries matched, $233,045,649 known subtotal;16 unresolved.
+      Cut-player retained debt and missing adjustments are not implicitly zero.
 - [ ] Reconcile actual Week1 membership/reserve status and native identity/image
       mappings, then the corresponding opening contract/liability book. Latest
       explicit profile/historical identity pass matches1558/1937, Giants48/53;

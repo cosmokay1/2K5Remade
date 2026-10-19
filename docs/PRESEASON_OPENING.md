@@ -2,6 +2,54 @@
 
 ## Current target: Week 1 of 2026 (October 18)
 
+### Follow-on source reconciliation
+
+The public [OTC free-agency directory](https://overthecap.com/free-agency) loads
+its rows through the page's own `get_free_agents` read action. Requested season
+2026 returned 1,261 clean named entries. This is a current directory, not a dated
+Week 1 snapshot. Cross-checking OTC IDs against the September 10 contracts and
+weekly roster leaves 349 unique candidates, not a finished free-agent pool.
+The dated histories and transaction review flag five retirees and 49 RFA/ERFA
+entries. 138 candidates have supporting archived expiry/release evidence and
+unrestricted/street classifications; this is a review subset, not an exhaustive
+certified pool. No later SOFTDRINK pool was substituted and no candidate was
+installed. Missing release/waiver-clearance/rights evidence remains explicit.
+
+The [ESPN transaction feed](https://www.espn.com/nfl/transactions) for January 1
+through September 10 has 1,443 records across three pages. All indexes, counts,
+row counts and date bounds validate. One Tennessee record on May 1 has an empty
+description; preserve that gap. Provider pagination completeness does not prove
+every NFL event was recorded: this feed does not include the Winston/Runyan
+extensions. The [NFL wire](https://www.nfl.com/transactions/league/terminations/2026/9)
+independently confirms Slayton's September 7 release, while the archived roster
+still labels him ACT. Explicitly reconcile that disagreement before membership
+or retained cap charges are imported.
+
+`tools/nfl_transaction_wire.py` refuses repeating/truncated/off-month pagination,
+foreign links and incomplete alternative-feed pages. Public NFL pagination was
+observed cycling back to already-seen pages; those chains were rejected, not
+called complete. Bounded checks of the archive availability API found no Giants
+cap-table snapshot and a free-agency capture dated October 2, after the cutoff.
+PFR/Spotrac direct source requests returned 403 and were not bypassed.
+
+Financial coverage now includes the whole supplied Giants club list: 53 ACT,
+seven RES and 18 DEV, plus ten CUT entries retained for debt review. 62 of the
+78 club members have matching annual source cap figures, totaling $233,045,649.
+Sixteen entries remain unresolved, including the stale Slayton ownership and
+rookie/practice-squad schedule gaps. This subtotal is not cap room. The new
+`club_source_coverage` audit includes reserves and practice squad, refuses unknown
+statuses/duplicate ownership, and never treats a cut player's retained charge
+as zero. A current dead-money table was retained only for comparison; it cannot
+be backdated. Prior bonus debt can coexist with a later contract for the same
+player, so names alone cannot identify a liability generation.
+
+Closing blockers remain: a fully reconciled dated FA/rights list, corrected
+membership and annual schedules, and supported retained charges and club
+adjustments. No complete opening cap book, signed hybrid, fresh franchise or
+Deck-ready candidate exists. Source receipts and review subsets are private in
+`week1-roster-v1/source-research`; no live files or MyNFL1 were touched. Scheduling
+was rechecked PAUSED. No inference, IAM/control changes or native rebuild.
+
 ### Latest audit: clean free-agent pool required
 
 The user requires a historically accurate Week 1 free-agent pool. SOFTDRINK's

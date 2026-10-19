@@ -101,3 +101,63 @@ def reconcile_week1(source_payload, identity_report, contract_rows, source_recei
             'teams': teams, 'retained_and_reserve_liabilities_verified': False,
             'club_rollover_and_adjustments_verified': False,
             'ready_for_franchise_test': False, 'signing_authorized': False, 'writes_performed': False}
+
+
+def club_source_coverage(weekly_rows, contract_rows, *, team_code, team_name, season_year):
+    """Audit all club lists, including reserve/PS, before attempting an import.
+
+    This is coverage of the supplied snapshots, not a dated membership correction
+    or a full cap book. Transactions, retained charges and adjustments are separate.
+    """
+    if type(season_year) is not int or not team_code or not team_name:
+        raise ValueError('Explicit club identity and season required')
+    weekly = [r for r in weekly_rows if str(r.get('season')) == str(season_year)
+              and str(r.get('week')) == '1' and r.get('game_type') == 'REG']
+    members = [r for r in weekly if r.get('team') == team_code]
+    if not members:
+        raise ValueError('Club absent from supplied Week 1 snapshot')
+    by_gsis = defaultdict(list)
+    for row in contract_rows:
+        if row.get('gsis_id'):
+            by_gsis[row['gsis_id']].append(row)
+    club_statuses = {'ACT', 'INA', 'RES', 'DEV', 'EXE'}
+    counts = defaultdict(int)
+    entries, excluded = [], []
+    for member in members:
+        status, gsis = member.get('status'), member.get('gsis_id')
+        counts[status] += 1
+        entry = {'gsis_id': gsis, 'name': member.get('full_name'),
+                 'roster_status': status, 'cap_dollars': None}
+        if status in ('CUT', 'RET'):
+            excluded.append({**entry, 'retained_charge_verified': False})
+            continue
+        if status not in club_statuses:
+            raise ValueError('Unknown roster status cannot be silently excluded')
+        owners = [r for r in weekly if gsis and r.get('gsis_id') == gsis
+                  and r.get('status') in club_statuses]
+        contracts = by_gsis[gsis]
+        if not gsis or len(owners) != 1 or len(contracts) != 1:
+            entry['status'] = 'unresolved_identity_or_contract'
+        else:
+            row = contracts[0]
+            annual = [s for s in row.get('season_history', [])
+                      if str(s.get('year')) in (str(season_year), str(season_year)+'.0')
+                      and s.get('team') == team_name]
+            unique = {repr(sorted(s.items())):s for s in annual}
+            if row.get('is_active') is not True or len(unique) != 1:
+                entry['status'] = 'unresolved_current_year_ownership'
+            else:
+                try:
+                    entry['cap_dollars'] = _dollars(next(iter(unique.values())).get('cap_number'))
+                    entry['status'] = 'source_comparison_only'
+                except ValueError:
+                    entry['status'] = 'unresolved_source_amount'
+        entries.append(entry)
+    return {'team_code': team_code, 'team_name': team_name, 'season_year': season_year,
+            'source_status_counts': dict(counts), 'players': entries, 'excluded_members': excluded,
+            'contracts_compared': sum(p['cap_dollars'] is not None for p in entries),
+            'known_roster_subtotal': sum(p['cap_dollars'] for p in entries if p['cap_dollars'] is not None),
+            'complete_roster_subtotal': (sum(p['cap_dollars'] for p in entries)
+                                        if all(p['cap_dollars'] is not None for p in entries) else None),
+            'membership_at_cutoff_verified': False, 'complete_opening_book': False,
+            'cap_room': None, 'signing_authorized': False, 'writes_performed': False}

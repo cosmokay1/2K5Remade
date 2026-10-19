@@ -2,7 +2,7 @@ import hashlib
 import unittest
 from tests import test_plan_hybrid_roster as fixtures
 from tools.inspect_roster_save import inspect_roster
-from tools.reconcile_week1_contracts import reconcile_week1
+from tools.reconcile_week1_contracts import reconcile_week1, club_source_coverage
 
 
 class Week1ContractTests(unittest.TestCase):
@@ -57,3 +57,32 @@ class Week1ContractTests(unittest.TestCase):
         player=self.run_report(inputs)['teams']['49ers']['players'][0]
         self.assertEqual(player['status'],'unresolved_identity_or_contract')
         self.assertIsNone(player['source_cap_dollars'])
+
+    def weekly(self):
+        return [dict(season='2026', week='1', game_type='REG', team='SF',
+                     gsis_id=gsis, full_name=gsis, status=status)
+                for gsis, status in [('test-player','ACT'), ('reserve-player','RES'),
+                                     ('practice-player','DEV'), ('cut-player','CUT')]]
+
+    def coverage(self, rows=None, contracts=None):
+        return club_source_coverage(self.weekly() if rows is None else rows,
+            self.inputs()[2] if contracts is None else contracts,
+            team_code='SF', team_name='49ers', season_year=2026)
+
+    def test_club_coverage_counts_reserve_and_practice_squad_and_preserves_unknown_debt(self):
+        report=self.coverage()
+        self.assertEqual(len(report['players']),3)
+        self.assertEqual(report['contracts_compared'],1)
+        self.assertEqual(report['known_roster_subtotal'],1123456)
+        self.assertIsNone(report['complete_roster_subtotal'])
+        self.assertIsNone(report['cap_room'])
+        self.assertFalse(report['excluded_members'][0]['retained_charge_verified'])
+        self.assertFalse(report['complete_opening_book'])
+
+    def test_duplicate_owner_missing_money_and_unknown_status_cannot_look_complete(self):
+        rows=self.weekly();rows.append({**rows[0], 'team':'NYG'})
+        self.assertEqual(self.coverage(rows)['contracts_compared'],0)
+        contracts=self.inputs()[2];contracts[0]['season_history'][0]['cap_number']=None
+        self.assertEqual(self.coverage(contracts=contracts)['contracts_compared'],0)
+        rows=self.weekly();rows[1]['status']='UNKNOWN'
+        with self.assertRaises(ValueError):self.coverage(rows)

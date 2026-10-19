@@ -3,6 +3,22 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
+## Latest source closure attempt — October 18
+
+Validated1443 Jan1–Sept10 ESPN transaction records/all3pages; one empty TEN row
+preserved. Current OTC directory1261 clean entries cross-checked by dated IDs:
+349 candidates,5 retirees/49 RFA-ERFA reviews,138 evidence-supported candidates.
+This is not a complete certified FA pool. NFL wire pagination loops and is
+rejected; it separately confirms Slayton releasedSept7 despite archived ACT.
+Giants whole-club coverage62/78, known subtotal$233,045,649;16 unresolved plus
+retained/adjustment book. No cap room or final hybrid can be certified yet.
+Checked archive endpoints provide no dated Giants table; closest FA capture is
+Oct2. Need remaining historical rights/status and full dated financial export;
+no arbitrary debt fill or current-table backdating. Private source-research
+receipts; PRESEASON_OPENING.md follow-on section.1119 tests pass in39.773s.
+No Deck writes, screenshots, native rebuild or inference. MyNFL1 untouched;
+automation rechecked PAUSED. No fresh-franchise test requested yet.
+
 ## Latest Week 1 hybrid audit — October 18
 
 User requires a clean historically accurate Week1 free-agent pool; no later

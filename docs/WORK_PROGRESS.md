@@ -10524,3 +10524,45 @@ changed. Scheduled task remains paused. Clean dated FA availability and complete
 opening liabilities block a fresh-franchise test; do not deploy the preview.
 
 Final loopback-permitted regression:1,112 tests passed in38.033seconds; diff whitespace check passed. No native rebuild was needed.
+
+
+## October 18 — full transaction coverage and club-list liabilities
+
+Continued the requested clean historical Week1 pool and opening-cap work without
+live Deck writes. Current OTC directory's public get_free_agents/season2026 read
+returned1261 clean entries; dated OTC-ID/GSIS/weekly-roster cross-check leaves349
+unique candidates. Archived contract histories and1443 January1–September10
+ESPN transaction records flag five retirees and49 RFA/ERFA rights reviews.138
+candidates have supporting expired/terminated contract and release evidence, but
+this subset is not a complete certified pool. Do not deploy it as the final pool.
+No later SOFTDRINK FA availability was substituted.
+
+All three ESPN pages validate indexes/counts/date bounds and unique rows; one
+Tennessee May1 description is empty and preserved. Pagination completeness does
+not certify every NFL event: the feed omits the Winston/Runyan extensions. NFL's
+September terminations independently confirm Slayton's September7 release while
+the archived weekly roster still lists ACT. Official NFL pagination repeatedly
+cycled to earlier pages; those month chains were rejected. A bounded archive
+availability check found no Giants table snapshot and only an October2 FA
+capture. Direct PFR/Spotrac403 responses were not bypassed. Source receipt hashes,
+normalized data and review subsets remain private in week1-roster-v1/source-research.
+
+Added tested read-only transaction collection/alternative-feed validation.
+Whole-club financial audit now includes53 ACT,7 RES and18 DEV entries, plus10 CUT
+entries for retained-debt review.62/78 have annual cap figures totaling233045649
+integer dollars;16 remain unresolved. A missing cut-player liability never
+becomes zero, and a duplicate owner or unknown roster status cannot silently
+produce a complete book. Current dead-money rows are comparison data only:
+retained debt may coexist with a later contract for the same player, so active
+membership cannot erase older bonus charges and current values cannot be
+backdated without evidence. No complete opening book or cap room is certified.
+
+20 focused checks passed while editing; final working-tree regression1119 tests
+passed in39.773seconds with required loopback fixtures permitted. Whitespace
+check passed. No native rebuild, installation, main-save modification, inference,
+IAM/control/budget changes or screenshots. Automation rechecked PAUSED. New
+concrete blockers: remaining historical availability/rights evidence, stale
+membership correction, missing annual schedules and dated retained/adjustment
+book. A dated complete Week1 cap export would supply the missing financial
+closure; public sources checked in this batch did not provide one. No Deck-ready
+hybrid, fresh franchise or actual signing/save-reload test is claimed.
