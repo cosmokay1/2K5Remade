@@ -14,6 +14,17 @@ from franchise.legacy_contracts import original_annual_rows
 from tools.inspect_roster_save import inspect_roster
 from tools.reconcile_roster_trial import _terms
 
+CLUBS = {
+    'ARI': 'Cardinals', 'ATL': 'Falcons', 'BAL': 'Ravens', 'BUF': 'Bills',
+    'CAR': 'Panthers', 'CHI': 'Bears', 'CIN': 'Bengals', 'CLE': 'Browns',
+    'DAL': 'Cowboys', 'DEN': 'Broncos', 'DET': 'Lions', 'GB': 'Packers',
+    'HOU': 'Texans', 'IND': 'Colts', 'JAX': 'Jaguars', 'KC': 'Chiefs',
+    'LA': 'Rams', 'LAC': 'Chargers', 'LV': 'Raiders', 'MIA': 'Dolphins',
+    'MIN': 'Vikings', 'NE': 'Patriots', 'NO': 'Saints', 'NYG': 'Giants',
+    'NYJ': 'Jets', 'PHI': 'Eagles', 'PIT': 'Steelers', 'SEA': 'Seahawks',
+    'SF': '49ers', 'TB': 'Buccaneers', 'TEN': 'Titans', 'WAS': 'Commanders',
+}
+
 
 def _dollars(value):
     if value is None or isinstance(value, bool):
@@ -161,3 +172,29 @@ def club_source_coverage(weekly_rows, contract_rows, *, team_code, team_name, se
                                         if all(p['cap_dollars'] is not None for p in entries) else None),
             'membership_at_cutoff_verified': False, 'complete_opening_book': False,
             'cap_room': None, 'signing_authorized': False, 'writes_performed': False}
+
+
+def league_source_coverage(weekly_rows, contract_rows, *, season_year):
+    """Require the same coverage audit for every club; never certify a partial league."""
+    if type(season_year) is not int:
+        raise ValueError('Explicit integer season required')
+    weekly_rows, contract_rows = list(weekly_rows), list(contract_rows)
+    represented = {r.get('team') for r in weekly_rows
+                   if str(r.get('season')) == str(season_year) and str(r.get('week')) == '1'
+                   and r.get('game_type') == 'REG'}
+    if represented != set(CLUBS):
+        raise ValueError('All 32 supported clubs must be present in the Week 1 snapshot')
+    teams = {code: club_source_coverage(weekly_rows, contract_rows, team_code=code,
+                                      team_name=name, season_year=season_year)
+             for code, name in CLUBS.items()}
+    return {'season_year': season_year, 'teams': teams, 'clubs_audited': len(teams),
+            'club_members': sum(len(t['players']) for t in teams.values()),
+            'contracts_compared': sum(t['contracts_compared'] for t in teams.values()),
+            'unresolved_club_members': sum(len(t['players']) - t['contracts_compared']
+                                           for t in teams.values()),
+            'known_roster_subtotal': sum(t['known_roster_subtotal'] for t in teams.values()),
+            'all_roster_schedules_present': all(t['complete_roster_subtotal'] is not None
+                                               for t in teams.values()),
+            'membership_at_cutoff_verified': False, 'complete_opening_books': False,
+            'free_agent_pool_verified': False, 'ready_for_franchise_test': False,
+            'signing_authorized': False, 'writes_performed': False}

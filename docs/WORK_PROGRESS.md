@@ -10566,3 +10566,27 @@ membership correction, missing annual schedules and dated retained/adjustment
 book. A dated complete Week1 cap export would supply the missing financial
 closure; public sources checked in this batch did not provide one. No Deck-ready
 hybrid, fresh franchise or actual signing/save-reload test is claimed.
+
+
+## October 18 — all-team opening-book scope
+
+User clarified that reconciliation is required for all teams. Added one shared
+league_source_coverage wrapper with the32 canonical NFL/source club names; it
+refuses missing or unknown clubs, retains reserve/PS/exempt obligations and
+preserves per-club errors in aggregate coverage. Full schedule coverage alone
+never certifies opening debt, adjustments, FA availability or signing readiness.
+
+Ran against the existing pinned September10 weekly roster and archived-contract
+subset.32 teams,2526 club-listed players,1930 annual cap figures matched and596
+unresolved;255 gaps are drafted2026 rookies. By roster list:266 ACT,4 INA,78 RES,
+247 DEV,1 EXE. Known source subtotal7690046819 dollars is not complete payroll or
+cap room. Every club book remains incomplete. Source receipt includes both RDS
+hashes and the extracted contract JSON hash. Public all-team scorecard contains
+counts/subtotals, not player assets, save data or claims of accurate cap room.
+
+24 focused league/contract/identity/portrait/transaction checks pass in0.072s;
+whitespace check passes. This source-only wrapper does not modify runtime money
+rules or native binaries; previous1119-test runtime baseline was not rerun.
+MyNFL1 and Deck untouched; scheduled task remains off. All-team contract/source
+cohorts, retained obligations, adjustments and shared FA rights remain required
+before a real hybrid signing/cap/save-reload acceptance test.

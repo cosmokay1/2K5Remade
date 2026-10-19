@@ -3,6 +3,18 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
+## All-team scope — October 18
+
+User explicitly requires all32 clubs, not Giants-only closure. Shared
+league_source_coverage now refuses missing/unknown clubs and audits active,
+inactive, reserve, PS and exempt obligations for all32. Actual dated inputs:
+2526 club members,1930 annual cap matches,596 unresolved, including255 drafted
+2026 rookies. All32 books and the shared FA pool remain incomplete. Fix source
+cohorts league-wide; no CPU-club bypass or guessed debt/adjustment values.
+See WEEK1_LEAGUE_RECONCILIATION.md and private league-contract-coverage.json.
+24 focused tests pass; no runtime/native rebuild or repeat full suite required
+for this source-only wrapper. No Deck/save/control changes; scheduling stays off.
+
 ## Latest source closure attempt — October 18
 
 Validated1443 Jan1–Sept10 ESPN transaction records/all3pages; one empty TEN row

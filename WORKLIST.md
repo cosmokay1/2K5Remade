@@ -1306,6 +1306,19 @@ Evidence and limits: [OFFLINE_MARKET.md](docs/OFFLINE_MARKET.md). Scheduled task
 Current target is Week1 of2026, superseding preseason. Preserve SOFTDRINK images
 and earlier evidence below; MyNFL1 stays untouched.
 
+Scope is all 32 teams and the shared league-wide free-agent pool. No Giants-only
+delivery or unverified CPU-team cap books. Each club needs membership, contracts,
+reserves/PS, retained debt and adjustments reconciled at the same cutoff.
+
+- [x] Run the shared whole-club audit across all32 teams.2526 club members,
+      1930 annual figures matched,596 unresolved (including255 drafted2026 rookies).
+      Refuse absent/unknown teams; one-club or cross-club ownership gaps cannot
+      look like complete league coverage. All opening books remain incomplete.
+      See [all-team scorecard](docs/WEEK1_LEAGUE_RECONCILIATION.md).
+- [ ] Close all32 opening books and the global FA/rights pool before certifying
+      the hybrid. Resolve source cohorts league-wide; do not fill missing debt,
+      reserve/PS obligations or team adjustments with zero.
+
 - [x] Inspect the creator-linked NFL2027Week1 native Xbox saves. ReadMe identifies
       2026–2027 schedule;53 Giants/1937 memberships. Saves/credits extracted only.
 - [x] Separate verified player identity/image matching from free-agent
