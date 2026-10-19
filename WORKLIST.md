@@ -1318,6 +1318,15 @@ reserves/PS, retained debt and adjustments reconciled at the same cutoff.
 - [ ] Close all32 opening books and the global FA/rights pool before certifying
       the hybrid. Resolve source cohorts league-wide; do not fill missing debt,
       reserve/PS obligations or team adjustments with zero.
+- [x] Audit the full459-contract current rookie cohort against published schedules:
+      309 matching schedules (197 Drafted,33 UDFA,78 Practice,1 SFA),150 unresolved.
+      Preserve replacement lineage, original bonus-debt boundary, source hashes,
+      missing cash and stale/contradictory inputs.34 focused tests pass. Later
+      published schedules are comparisons, not verified historical Week1 charges.
+- [ ] Resolve the150 rookie source exceptions, then the other annual/status gaps,
+      retained liabilities, adjustments and global FA rights. Supplemental rookie
+      comparisons cover307 club-listed entries;289 club entries still lack even
+      a comparison. No complete opening book or Deck-ready hybrid is certified.
 
 - [x] Inspect the creator-linked NFL2027Week1 native Xbox saves. ReadMe identifies
       2026–2027 schedule;53 Giants/1937 memberships. Saves/credits extracted only.

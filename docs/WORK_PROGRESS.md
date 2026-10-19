@@ -10590,3 +10590,37 @@ rules or native binaries; previous1119-test runtime baseline was not rerun.
 MyNFL1 and Deck untouched; scheduled task remains off. All-team contract/source
 cohorts, retained obligations, adjustments and shared FA rights remain required
 before a real hybrid signing/cap/save-reload acceptance test.
+
+
+## October 18 — league-wide rookie schedule comparisons
+
+Added tools/rookie_contract_sources.py and reproducible batch CLI. Audit compares
+identity, drafted slot/undrafted entry, active original/replacement lineage,
+owner, annual sequence, published first-year summary and nominal signed total.
+Missing pages/terms, changed contracts, duplicate identities and contradictory
+schedules remain unresolved. Archive fingerprint prevents applying a report to
+changed terms. Existing complete annual evidence is preserved; only absent cap
+comparison rows are filled, with explicit historical-verification=false. No
+salary, paid cash, historical reserve charges or retained bonus debt is invented.
+
+Actual private inputs:459 current-year rookie contracts;309 published matches
+(197 Drafted,33 UDFA,78 Practice,1 SFA).150 unresolved:61 unavailable pages,
+43 nominal/annual contradictions,24 current-generation changes,9 archived-lineage
+conflicts,9 truncated identity/history pages,3 ownership/history conflicts and
+1 unsupported bonus allocation.5 matching cap schedules have inconsistent cash
+components; flags remain false and no cash components are imported. Direct
+retrieval timeouts and alternate cached representations were retained as failures;
+unsafe line-number assembly across different layouts was discarded, not used.
+
+307 club entries gain supplemental comparisons, separate from1930 archived annual
+matches.289/2526 club entries still lack a comparison (42ACT,75RES,171DEV,1EXE).
+All32 opening books, retained/adjustment data and the shared historical FA pool
+remain incomplete. Current cap schedules do not prove dated reserve treatment.
+See WEEK1_LEAGUE_RECONCILIATION.md and private rookie-source-audit.json /
+league-rookie-comparison.json. No final hybrid or Deck readiness is claimed.
+
+34 focused checks passed in0.072s, including lineage, cash-vs-cap distinction,
+first-year summary, stale archive, missing/duplicate/conflicting batch inputs and
+existing whole-league/source fixtures. No runtime change or native rebuild;
+unchanged1119-test financial/runtime baseline was not rerun. MyNFL1/Deck untouched,
+no inference or credential/control changes. Automation rechecked PAUSED.

@@ -3,6 +3,22 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
+## Rookie source comparisons — October 18
+
+Audited459 archived current-year rookie contracts;309 published schedules match
+(197 Drafted,33 UDFA,78 Practice,1 SFA),150 unresolved.307 club-listed gaps gain
+comparisons;289 club entries still lack one. Later source matches are NOT dated
+Week1 charge verification; keep original1930 archived annual figures separate.
+Five source cash-component inconsistencies stay flagged; no cash/salary inference.
+Rookie tool/CLI preserves lineage, stale/archive/conflict guards and input files.
+All32 retained/adjustment books and historical FA pool remain incomplete. No
+Deck-ready hybrid or completed rookie/cap import is claimed. Next: close dated
+reserve/split-salary and unavailable/changed-contract exceptions, then remaining
+club and FA rights sources. See WEEK1_LEAGUE_RECONCILIATION.md.34 focused checks
+pass; no native build/runtime/save/inference/control changes. MyNFL1 untouched;
+automation verified PAUSED. Private rookie-source-audit.json and league-rookie-
+comparison.json retain evidence. Earlier staged candidates remain superseded.
+
 ## All-team scope — October 18
 
 User explicitly requires all32 clubs, not Giants-only closure. Shared
