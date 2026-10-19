@@ -3,6 +3,24 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
+## Latest Week 1 hybrid audit — October 18
+
+User requires a clean historically accurate Week1 free-agent pool; no later
+SOFTDRINK substitute. Xbox and PS3 source exports share the same corrupted241
+FA entries, four duplicates on clubs, and additional current-status conflicts.
+No complete hybrid or new Deck candidate was produced. MyNFL1/Deck untouched.
+Identity/image resolver, photo-only non-installable preview and dated contract
+comparison tools are source-only. Latest optional profile/historical pass:
+1558 matches/379 unresolved, Giants48/53; identity is not availability authority.
+198 approved official headshots/native slots staged privately, not game-tested.
+September10 contract archive pinned; initial41-Giants comparison is only a known
+subtotal, not a cap book. Need a clean dated FA source and complete club/reserve/
+retained obligations before packaging or requesting a fresh-franchise test.
+Full working-tree regression:1112 tests pass in38.033s after sandbox socket setup
+errors were resolved by permitting loopback fixtures. No native rebuild.
+See PRESEASON_OPENING.md latest audit and private week1-roster-v1 receipts.
+Keep all older installation candidates below inactive; scheduled task stays off.
+
 ## Current outcome and next action
 
 Finish startup stability, then one bounded actual negotiation and signing /

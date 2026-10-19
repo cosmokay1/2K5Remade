@@ -10480,3 +10480,47 @@ Official Giants opening-roster report corroborates cut/reserve distinctions.
 No hybrid generated, contracts imported, saves changed, or compatibility claimed.
 MyNFL1 untouched; scheduled task off. Documentation/source audit only; reused
 validated tooling without repeating tests. See PRESEASON_OPENING.md current target.
+
+
+## October 18 — Week 1 identity, image and contract audit
+
+User approved official NFL headshots for missing native mappings, then explicitly
+required a clean historically accurate Week 1 free-agent pool. No later SOFTDRINK
+pool substitution is allowed. The Xbox and PS3 exports have identical 241-entry
+FA lists, including corrupted names and four club/FA duplicates. PS3 inspection
+used only 183,896 ranged ZIP bytes; no bundled utilities were executed.
+
+Added source-only Week 1 identity resolver, non-installable portrait preview and
+dated contract comparison with authored fixtures. Identity aliases/profile and
+historical evidence remain explicit; none proves current FA availability. Actual
+historical/profile pass:1558 native image matches,379 unresolved, Giants48/53.
+FA audit:108 unresolved identities,4 team duplicates,35 Week1 club conflicts,
+94 without dated availability evidence; no availability flag is certified.
+Duplicate source identities cannot provide contract authority. Preview changes
+only verified Photo uint16s, creates no container/signature and never permits a
+franchise test or signing. No native bank/name/history merge has been completed.
+
+Pinned September10 nflverse historical contract archive SHA256
+80e8f98e8b43ea2f1e35e39e956f65d2cb3da628f1db54fc6070932df84635e3.
+Unique active contract selection replaces an initially rejected last-row approach.
+Initial strict comparison covers41 Giants and a known $212,325,370 subtotal;
+remaining contracts, retained/reserve debt and club adjustments remain unknown.
+Current primary OTC tables supplement eight rookie gaps privately; they are not
+historical opening-book authorization. Cap numbers are not inferred paid cash,
+guarantees or signing bonuses. Never infer complete room from these subtotals.
+
+198 approved official headshots staged (20,824,320bytes), plus198 native128x128
+texture slots (3,497,472bytes), using existing cache format and a non-selectable
+asset namespace. Decode validation passes; actual game dispatch/appearance is
+unverified. Later historical identity matches add gaps not covered by this pass.
+All roster/assets/source receipts remain private under week1-roster-v1.
+
+Validation:27 targeted tests passed before the final duplicate-contract fixture.
+The first full run attempted1112 tests but11 local HTTP/TLS fixture setups were
+blocked by sandbox socket permissions; that run is not green. A single full rerun
+with loopback binding permitted supplies the final result below.
+No Deck files, saves, binaries, settings, credentials, IAM, controls or inference
+changed. Scheduled task remains paused. Clean dated FA availability and complete
+opening liabilities block a fresh-franchise test; do not deploy the preview.
+
+Final loopback-permitted regression:1,112 tests passed in38.033seconds; diff whitespace check passed. No native rebuild was needed.

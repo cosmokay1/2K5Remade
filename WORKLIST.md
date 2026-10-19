@@ -1308,9 +1308,17 @@ and earlier evidence below; MyNFL1 stays untouched.
 
 - [x] Inspect the creator-linked NFL2027Week1 native Xbox saves. ReadMe identifies
       2026–2027 schedule;53 Giants/1937 memberships. Saves/credits extracted only.
+- [x] Separate verified player identity/image matching from free-agent
+      availability; inspect the other platform export and pin the September10
+      contract archive. Xbox/PS3 share corrupted FA data and four team duplicates.
+      User requires a clean historically accurate Week1 pool; no later substitute.
+- [x] Stage 198 user-approved official missing headshots and native texture slots
+      privately; decode validation passes. Not installed or visually verified.
 - [ ] Reconcile actual Week1 membership/reserve status and native identity/image
-      mappings, then the corresponding opening contract/liability book. Current
-      conservative match1316/1937, Giants39/53. Reserve/practice-squad differences
+      mappings, then the corresponding opening contract/liability book. Latest
+      explicit profile/historical identity pass matches1558/1937, Giants48/53;
+      historical identities do not establish current availability. Initial strict
+      contract comparison covers41 Giants, not a complete book. Reserve/status gaps
       mean the archive label alone is insufficient. Actual hybrid load/save/
       reload remains unverified; scheduled task off.
 

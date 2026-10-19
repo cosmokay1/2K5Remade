@@ -2,6 +2,57 @@
 
 ## Current target: Week 1 of 2026 (October 18)
 
+### Latest audit: clean free-agent pool required
+
+The user requires a historically accurate Week 1 free-agent pool. SOFTDRINK's
+later pool is not an approved substitute. Both Xbox and PS3 exports of the
+creator's Week 1 archive contain the same 241 free-agent entries, including
+corrupted names and four players also assigned to teams (Tyrel Dodson, DaQuan
+Jones, Chris Moore and Isaac Yiadom). The PS3 export was read through bounded
+HTTP ranges (183,896 bytes downloaded), without downloading bundled utilities.
+Neither export supplies a clean alternative. Do not install the source or
+repair unidentified players by guessing their names.
+
+`tools/resolve_week1_players.py` now distinguishes identity and image matching
+from availability. With current Week 1 plus prior-season identity evidence and
+explicit profile matching, 1,558 of 1,937 source members have native image
+matches; 379 remain unresolved. Historical names and birthdays do not establish
+current membership. The 241 free-agent entries have 108 unresolved identities,
+four team duplicates, 35 Week 1 club-status conflicts and 94 lacking dated
+availability evidence. Even a CUT label does not establish unrestricted
+availability. Every free-agent availability flag remains false.
+
+The user approved official NFL headshots only where no native image mapping is
+verified. Staged privately: 198 official images (20.8 MB) and 198 decoded/validated
+128x128 native texture slots (3.5 MB), using existing asset-cache conventions.
+No selectable team, game code or live installation was added. This covers an
+earlier identity pass, not every later unresolved player. Actual cache dispatch
+and visual matching in the game remain unverified.
+
+`tools/build_hybrid_portraits.py` creates only a non-installable photo-byte
+preview. It preserves all other source bytes, including unreconciled contracts;
+it creates no save container or signature and never authorizes signing/testing.
+An incomplete preview requires an explicit flag. This is not the final native
+record-bank hybrid and must not be installed.
+
+A dated [September 10 nflverse contract archive](https://github.com/nflverse/nflverse-data-archives/releases/tag/archive-2026-09-10)
+was obtained privately and hash-pinned. Unique active contracts, rather than the
+last historical row, supply comparisons. `tools/reconcile_week1_contracts.py`
+checks exact integer-dollar annual cap numbers, team/year ownership, duplicate
+identities and source dates. Repeated annual rows are deduplicated; conflicting
+rows or missing money stay unresolved. Cap charges never become inferred paid
+cash, guarantees or signing bonuses. The initial strict-identity comparison
+covers 41 Giants contracts ($212,325,370 known subtotal), not a complete payroll
+or cap-room calculation. Eight rookie schedules have supplemental current OTC
+tables, retained separately without claiming historical opening authority.
+
+Blockers: source-backed Week 1 free-agent identities/availability and active vs
+reserve membership; remaining image/identity gaps; complete annual contracts,
+retained/reserve obligations and club adjustments. No opening cap book or fresh
+franchise has been certified. MyNFL1 and all Deck files were untouched by this
+batch, and the scheduled task remains paused. Private receipts and source hashes
+are under `.local-runtime/week1-roster-v1/`; no assets are committed.
+
 The user replaced preseason with Week1 of2026, still preserving SOFTDRINK's
 correct player imagery in a hybrid and leaving MyNFL1 untouched. Investigations
 below this section are historical, not the current roster/financial cutoff.
