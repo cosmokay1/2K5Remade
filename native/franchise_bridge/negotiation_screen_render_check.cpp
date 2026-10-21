@@ -89,6 +89,14 @@ int main(int argc,char** argv) {
             notice="Request failed. No verified context is available.";capture("loading-error");notice.clear();
             loading=false;capture("contract");require(changed,"First context needs pixels");
             require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed) && !changed,"Unchanged screen redrew");
+            const auto valid_offer=fixture;
+            fixture["request_id"]="unreviewed-"+std::to_string(height);
+            fixture["result"]["offer_context"]["outcome"]="format_rejected";
+            fixture["result"]["offer_context"]["offer"]=nullptr;
+            fixture["result"]["offer_context"]["preview"]=nullptr;
+            fixture["result"]["offer_context"]["reason"]="Guest bonus rounding differs from modern allocation";
+            capture("unreviewed-game-offer");
+            fixture=valid_offer;
             editing=true;capture("editable-contract");press(0);capture("edit-offer");
             press(-1,8);capture("edit-adjusted");
             press(3);require(nfl2k5_addon_ui_draw(1280,height,&pixels,&changed) && !changed,"Y still switches contract tabs");

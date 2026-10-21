@@ -210,6 +210,9 @@ bool paint(NFL2K5AddonDraw& draw) {
                     summary=std::to_string(annual.rows.size())+" years  /  "+franchise::screen_money(total)+" total";
                     tables.push_back(context.contains("amendment")?
                         franchise::amendment_table(context,checkpoint.value("performance_context",nlohmann::json::object())):std::move(annual));
+                } else {
+                    auto unreviewed=franchise::unreviewed_contract_table(context);
+                    if(!unreviewed.rows.empty()) tables.push_back(std::move(unreviewed));
                 }
                 note=context.contains("preview") && !context.at("preview").is_null()?
                     "Proposed terms only. Opening liabilities remain unverified.":

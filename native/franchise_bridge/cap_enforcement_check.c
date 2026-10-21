@@ -28,6 +28,20 @@ int main(void) {
     CHECK(franchise_cap_enforced_payroll(&plan,&live,42,7,2000)==1900);
     plan.enforced_payroll=UINT32_MAX;
     CHECK(franchise_cap_enforced_payroll(&plan,&live,42,7,2000)==INT32_MAX);
+    plan.enforced_payroll=3658;
+    unsigned char *record=live.bytes+FRANCHISE_FINANCE_HEADER;
+    memset(record,0,FRANCHISE_FINANCE_RECORD);record[5]=2;finance_put32(record+7,32);plan.expected=live;
+    finance_put32(record+7,UINT32_MAX);
+    CHECK(franchise_cap_enforced_payroll(&plan,&live,42,7,2000)==3658);
+    for(unsigned offset=0;offset<7;++offset) {
+        record[offset]^=1;
+        CHECK(franchise_cap_enforced_payroll(&plan,&live,42,7,2000)==INT32_MAX);
+        record[offset]^=1;
+    }
+    finance_put32(record+7,7);
+    CHECK(franchise_cap_enforced_payroll(&plan,&live,42,7,2000)==INT32_MAX);
+    finance_put32(record+7,32);
+    CHECK(franchise_cap_enforced_payroll(&plan,&live,42,7,2000)==3658);
     puts("Cap payroll binding: exact state, repeat recomputation, stale/source denial passed");
     return 0;
 }

@@ -13,6 +13,46 @@ from tools.reconcile_week1_contracts import CLUBS
 FIELDS = ('contract_value', 'contract_bonus', 'contract_type', 'contract_length', 'contract_remaining')
 
 
+def refit_opening_franchise(payload,old_roster,new_roster,old_fit,new_fit):
+    """Return a repaired fresh copy only; preserve game-created state flags."""
+    from tools.inspect_franchise_calendar import inspect_calendar
+    from tools.inspect_franchise_save import inspect_save,PLAYER_START,PLAYER_STRIDE,TEAMS
+    from tools.inspect_roster_save import inspect_roster
+    calendar=inspect_calendar(payload)
+    if (calendar['season_index']!=0 or calendar['phase_01_raw']!=7 or calendar['step_05_raw']!=0
+            or sha256(old_roster).hexdigest()!=old_fit['output_sha256']
+            or sha256(new_roster).hexdigest()!=new_fit['output_sha256']
+            or set(old_fit['players'])!=set(new_fit['players'])):
+        raise ValueError('Pinned prior/new fits and an unadvanced opening franchise required')
+    old,new,saved=inspect_roster(old_roster),inspect_roster(new_roster),inspect_save(payload)
+    from franchise.saved_checkpoint import projection
+    if projection(payload)[0]!=payload:
+        raise ValueError('Refit requires the original native opening payroll, before ledger enforcement')
+    for team in (*TEAMS,'free_agents'):
+        def members(document):return document['free_agents'] if team=='free_agents' else document['teams'][team]
+        if members(old)!=members(new) or members(old)!=members(saved):
+            raise ValueError('Opening refit cannot change player names or membership')
+    result=bytearray(payload);changed=[]
+    fields=((10,255),(11,255),(36,15),(38,255),(39,15))
+    for gsis,prior in old_fit['players'].items():
+        current=new_fit['players'][gsis];slot=prior['source_slot']
+        if current['source_slot']!=slot or current['team']!=prior['team']:
+            raise ValueError('Opening refit player locator changed')
+        r=0xAFA8+slot*PLAYER_STRIDE;f=PLAYER_START+slot*PLAYER_STRIDE
+        for offset,mask in ((4,255),(5,255),(6,255),(7,255),(25,255),(26,255),(27,15),(37,31),*fields):
+            if old_roster[r+offset]&mask != payload[f+offset]&mask:
+                raise ValueError('Opening biography or prior contract changed; refit refused')
+        if any(old_roster[r+offset]&mask != new_roster[r+offset]&mask for offset,mask in fields):
+            changed.append(gsis)
+        for offset,mask in fields:
+            result[f+offset]=(result[f+offset]&(~mask&255))|(new_roster[r+offset]&mask)
+    # Only this private opening copy receives updated native cached totals.
+    # Exact retained/adjustment obligations are applied by the separate bootstrap.
+    result=projection(bytes(result))[0]
+    return bytes(result),dict(changed_players=changed,source_sha256=sha256(payload).hexdigest(),
+        output_sha256=sha256(result).hexdigest(),source_unchanged=True,installed=False)
+
+
 def dollars(value):
     amount = Decimal(str(value)) * 1000000
     if not amount.is_finite() or amount < 0 or amount != int(amount):
@@ -26,6 +66,21 @@ def source_schedule(charge, archive, year):
     if type(first) is not int or first <= 0:
         raise ValueError('Positive opening charge required')
     candidates = [r for r in archive if r.get('gsis_id') == charge['gsis_id'] and r.get('is_active') is True]
+    remaining = 0
+    if len(candidates)==1:
+        contract=candidates[0]
+        if (contract.get('team')==CLUBS[charge['team']] and contract.get('year_signed') is not None and contract.get('year_signed')==contract.get('draft_year')
+                and contract.get('years') in (3,4)):
+            remaining=max(0,int(contract['year_signed']+contract['years']-year))
+    modeled=charge.get('annual_cap_projection')
+    if modeled is not None:
+        if (charge.get('basis')!='modeled_rookie_allocation' or not isinstance(modeled,list) or not modeled
+                or any(type(r.get('cap_dollars')) is not int or r['cap_dollars']<=0 or r.get('year')!=year+i for i,r in enumerate(modeled))
+                or modeled[0]['cap_dollars']!=first or len(modeled)<remaining
+                or charge.get('nominal_total_preserved') is not True
+                or sum(r['cap_dollars'] for r in modeled)!=charge.get('signed_total_dollars')):
+            raise ValueError('Complete approved rookie projection preserving the signed total required')
+        return [r['cap_dollars'] for r in modeled],None,'approved_modeled_rookie_schedule'
     histories = []
     for contract in candidates:
         rows = [r for r in contract.get('season_history', []) if str(r.get('year')) == str(year)
@@ -33,6 +88,8 @@ def source_schedule(charge, archive, year):
         if len(rows) == 1 and rows[0].get('cap_number') is not None and dollars(rows[0]['cap_number']) == first:
             histories.append((contract, rows[0]))
     if len(histories) != 1:
+        if remaining>1:
+            raise ValueError('Known multi-year rookie contract requires reconciled annual schedules')
         return [first], None, 'accepted_current_charge_only'
     contract, opening = histories[0]
     schedule = [first]
@@ -42,6 +99,8 @@ def source_schedule(charge, archive, year):
         if len(rows) != 1 or rows[0].get('cap_number') is None or dollars(rows[0]['cap_number']) == 0:
             break
         schedule.append(dollars(rows[0]['cap_number']))
+    if len(schedule)<remaining:
+        raise ValueError('Reconciled rookie schedule would truncate the known remaining term')
     bonus = dollars(opening['prorated_bonus']) if opening.get('prorated_bonus') is not None else None
     return schedule, bonus, 'owned_source_annual_schedule'
 

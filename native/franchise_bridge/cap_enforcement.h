@@ -25,8 +25,18 @@ static int franchise_cap_state_matches(const FranchiseFinanceSnapshot *a,const F
        finance_get32(a->bytes+24)!=32) return 0;
     for(unsigned i=0;i<32;++i)
         if(memcmp(a->bytes+48+12*i+4,b->bytes+48+12*i+4,8)) return 0;
-    return !memcmp(a->bytes+FRANCHISE_FINANCE_HEADER,b->bytes+FRANCHISE_FINANCE_HEADER,
-                   a->size-FRANCHISE_FINANCE_HEADER);
+    for(uint32_t i=0;i<players;++i) {
+        const unsigned char *expected=a->bytes+FRANCHISE_FINANCE_HEADER+i*FRANCHISE_FINANCE_RECORD;
+        const unsigned char *live=b->bytes+FRANCHISE_FINANCE_HEADER+i*FRANCHISE_FINANCE_RECORD;
+        if(memcmp(expected,live,7)) return 0;
+        if(finance_get32(expected+7)==finance_get32(live+7)) continue;
+        /* An offer screen temporarily removes an unsigned player from the FA
+         * pool. Exactly unchanged zero terms cannot change any club liability.
+         * Team ownership, positive amounts/terms and bonus changes still fail. */
+        if(finance_get32(expected+7)!=32 || finance_get32(live+7)!=UINT32_MAX ||
+           expected[1] || expected[2] || (expected[3]&15) || expected[5]!=2 || (expected[6]&15)) return 0;
+    }
+    return 1;
 }
 /* No plan means ordinary native accounting. An armed plan that no longer
  * matches blocks further cap room rather than silently losing retained debt.

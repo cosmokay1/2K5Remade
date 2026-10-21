@@ -83,5 +83,13 @@ struct ContractDraft {
         return cancel?1:(!waiting && check)?2:0;
     }
 };
+inline ScreenTable unreviewed_contract_table(const nlohmann::json& context) {
+    ContractDraft draft;
+    if(context.value("outcome",std::string())!="format_rejected" || !draft.begin(context,1))
+        return {"",{}, {}};
+    draft.active=false;
+    auto table=draft.table();table.title="Game offer — needs adjustment";
+    return table;
+}
 }
 #endif

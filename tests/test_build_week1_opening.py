@@ -77,3 +77,9 @@ class OpeningBundleTests(unittest.TestCase):
         self.assertEqual(bindings['game_context']['loaded_image_sha256'],'a'*64)
         with self.assertRaises(ValueError):
             build_opening(*self.inputs(),seed='authored',loaded_image_sha256='unverified')
+
+    def test_opening_repair_preserves_registry_and_personalities(self):
+        args=self.inputs();_,bindings,_=build_opening(*args,seed='authored')
+        _,retained,_=build_opening(*args,seed='authored',bindings=bindings)
+        self.assertEqual(retained,bindings)
+        with self.assertRaises(ValueError):build_opening(*args,seed='different',bindings=bindings)

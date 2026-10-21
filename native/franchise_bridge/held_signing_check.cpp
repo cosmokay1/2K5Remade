@@ -263,6 +263,16 @@ int main(int argc,char** argv) {
         require(std::strstr(failed.notice,"Connection lost") && !std::strcmp(checked.response,failed.response));
         require(!nfl2k5_franchise_preview_offer(failed.preview_epoch,observation.offer_amount,observation.offer_flags));
         nfl2k5_franchise_stop();
+        // Begin handshake on the loaded franchise menu, before opening a FA
+        // screen can temporarily remove that player from the free-agent pool.
+        require(nfl2k5_franchise_start()==1);
+        const auto menu_submissions=submissions;
+        nfl2k5_franchise_on_fsm(0x52533C,1);
+        require(submissions==menu_submissions+1 && submitted["operation"]=="hello");
+        nfl2k5_franchise_poll();
+        nfl2k5_franchise_on_fsm(0x557B2C,1);
+        require(submissions==menu_submissions+1); // No duplicate handshake.
+        nfl2k5_franchise_stop();
         image_available=false;
         require(nfl2k5_franchise_start()==1);
         const auto unbound_submissions=submissions;

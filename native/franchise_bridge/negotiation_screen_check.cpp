@@ -37,6 +37,11 @@ int main() {
         require(draft.begin(original,1) && draft.scale==1 && draft.table().rows[0].values[0]=="$4,220,000");
         original["offer"]=nullptr;original["preview"]=nullptr;original["outcome"]="format_rejected";
         require(draft.begin(original,1)); // Rejected drafts remain editable.
+        const auto unchanged=original;
+        auto unreviewed=franchise::unreviewed_contract_table(original);
+        require(unreviewed.rows.size()==4 && unreviewed.rows[0].values[0]=="$4,220,000");
+        require(original==unchanged && original["offer"].is_null() && original["preview"].is_null());
+        require(franchise::unreviewed_contract_table(fixture["result"]["offer_context"]).rows.empty());
         require(draft.begin(fixture["result"]["offer_context"],1));
         draft.amount=65535;edit={};draft.input(edit);edit.buttons=8;draft.input(edit);require(draft.amount==65535);
         draft.amount=1;edit={};draft.input(edit);edit.buttons=4;draft.input(edit);require(draft.amount==1);

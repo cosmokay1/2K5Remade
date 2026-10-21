@@ -35,7 +35,7 @@ def rookie_amendment_hold(archive,gsis,team,year):
     return False
 
 
-def build_opening(payload,roster,fit_receipt,assembly,charges,cap_book,archive,*,seed,loaded_image_sha256=None):
+def build_opening(payload,roster,fit_receipt,assembly,charges,cap_book,archive,*,seed,loaded_image_sha256=None,bindings=None):
     if sha256(roster).hexdigest()!=fit_receipt['output_sha256'] or set(charges['teams'])!=set(CLUBS) or set(cap_book['teams'])!=set(CLUBS):
         raise ValueError('Pinned fitted roster and complete all-team modeled books required')
     if (charges['input_sha256']!=cap_book['salary_input_sha256'] or charges['season_year']!=2026
@@ -64,7 +64,12 @@ def build_opening(payload,roster,fit_receipt,assembly,charges,cap_book,archive,*
         context['loaded_image_sha256']=loaded_image_sha256
     if context['league_cap_raw']*1000*context['money_scale']!=charges['league_cap']:
         raise ValueError('Fresh franchise league cap differs from modeled scale')
-    bindings=create_bindings(payload,seed=seed,game_context=context)
+    if bindings is None:
+        bindings=create_bindings(payload,seed=seed,game_context=context)
+    else:
+        bindings=json.loads(json.dumps(bindings))
+        if bindings['personality_seed']!=seed or bindings['game_context']!=context:
+            raise ValueError('Opening repair must preserve the existing registry seed and context')
     members=resolve_bindings(bindings,payload);legacy=legacy_contracts(bindings,payload)
     slots=assembly['bindings'];ids={g:members[s]['player_id'] for g,s in slots.items()}
     if set(members)!=set(slots.values()):raise ValueError('Unexpected fresh player identity or missing binding')

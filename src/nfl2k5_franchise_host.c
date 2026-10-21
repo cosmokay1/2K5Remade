@@ -28,7 +28,7 @@ static uint64_t retry_source_epoch;
 static FranchiseSigningObservation retry_observation;
 static int journal_enabled, journal_pending, journal_locked;
 static uint32_t application_amount,application_flags;
-static int cap_restore_pending;
+static int cap_restore_pending,cap_restore_retry;
 static uint64_t cap_restore_epoch;
 static volatile LONG completion_failed;
 static unsigned long long journal_next_check;
@@ -179,7 +179,7 @@ void nfl2k5_franchise_stop(void)
     submission_enabled=submission_active=submission_pending=submission_reviewed=0;++submission_epoch;
     ReleaseSRWLockExclusive(&submission_lock);
     proposal_requested=proposal_sent=proposal_pending=0;retry_available=0;retry_proposal[0]=0;
-    journal_enabled=journal_pending=journal_locked=0;cap_restore_pending=0;cap_restore_epoch=0;
+    journal_enabled=journal_pending=journal_locked=0;cap_restore_pending=cap_restore_retry=0;cap_restore_epoch=0;
     InterlockedExchange(&completion_failed,0);
     journal_next_check=0;journal_last_reply[0]=0;
     context_sequence = context_logged = 0;
@@ -203,6 +203,9 @@ void nfl2k5_franchise_on_fsm(uint32_t descriptor, int push)
     }
     if (!franchise_client || hello_failed) return;
     int active=push && descriptor==0x00557B2Cu;
+    if(!active && cap_restore_retry && !cap_restore_pending) {
+        cap_restore_epoch=0;cap_restore_retry=0;
+    }
     if (active || active!=signing_active) {
         clear_display();
         ++screen_epoch;
@@ -219,7 +222,9 @@ void nfl2k5_franchise_on_fsm(uint32_t descriptor, int push)
     }
     nfl2k5_franchise_poll();
     if (hello_failed || hello_pending || context_pending || journal_locked) return;
-    if (push && descriptor == 0x00557B2Cu && (!context_enabled || !hello_consumed)) {
+    char loaded_digest[65];uint64_t loaded_epoch=0;
+    const int loaded=context_enabled && nfl2k5_franchise_read_loaded_source(loaded_digest,&loaded_epoch);
+    if (push && (descriptor == 0x00557B2Cu || loaded) && (!context_enabled || !hello_consumed)) {
         char request[256], digest[65]={0};
         NFL2K5AddonImageIdentity image;
         const int present=nfl2k5_franchise_read_image(digest);
@@ -263,7 +268,8 @@ void nfl2k5_franchise_poll(void)
         if(cap_restore_pending) {
             cap_restore_pending=0;
             if(franchise_host_reply_failed(franchise_client)) {
-                fprintf(stderr,"[FRANCHISE] Loaded cap restoration denied; retained debt remains held.\n");
+                cap_restore_retry=1; /* Retry on navigation, never every frame. */
+                fprintf(stderr,"[FRANCHISE] Loaded cap restoration denied; retained debt remains held. Reply: %s\n",response);
             } else {
                 FranchiseCapEnforcement *cap=malloc(sizeof(*cap));
                 if(!cap) goto failed;
@@ -690,7 +696,7 @@ int nfl2k5_franchise_start(void)
     submission_enabled=hold_enabled;submission_reviewed=submit_enabled;submission_active=submission_pending=0;++submission_epoch;
     ReleaseSRWLockExclusive(&submission_lock);
     proposal_requested=proposal_sent=proposal_pending=0;retry_available=0;retry_proposal[0]=0;
-    journal_enabled=prepare_enabled;journal_pending=journal_locked=0;cap_restore_pending=0;cap_restore_epoch=0;
+    journal_enabled=prepare_enabled;journal_pending=journal_locked=0;cap_restore_pending=cap_restore_retry=0;cap_restore_epoch=0;
     InterlockedExchange(&completion_failed,0);
     journal_next_check=0;journal_last_reply[0]=0;
     context_revision = revision;

@@ -1524,3 +1524,18 @@ October20 actual W1CAP opening continuation:
 - [ ] Await normal exit/local-signing choice, then install/relaunch isolated W1CAP
       and verify legal FA signing, cap limits and saved reload. Current running
       W1CAP is still unbound. MyNFL1 protected; scheduled task stays off.
+
+October20 combined rookie/offer/cap regression repair:
+
+- [x] Prevent raw-archive gaps from shortening known rookie deals. Consume resolved
+      tables/approved full projections; verify213 four-year/39 three-year current
+      rookies and preserve the sourced one-year replacement.259 owned fits changed.
+- [x] Repair a new copy of game-created W1CAP while retaining player IDs, personality
+      seed, flags, images/stats and all32 current cap targets. No post-signing migration.
+- [x] Start control/cap handshake on franchise menu; retain strict ownership guards
+      while allowing zero-liability FA pool removal. Show rejected stock offers as
+      unreviewed editable terms.1,206 Python tests/20 Windows tests/9 native stages
+      and actual repaired-save32club preflight pass. No EXE rebuild.
+- [ ] After normal exit, install staged combined v3 fix once; verify actual loaded
+      rookie terms, cap restoration, legal local signing, balances and save/reload.
+      Current v2 still running. MyNFL1 untouched; scheduled task stays off.

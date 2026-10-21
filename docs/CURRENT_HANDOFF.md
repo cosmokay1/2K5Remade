@@ -3,6 +3,64 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
+## Combined rookie-term, opening-cap and offer-table repair — October 20
+
+Live W1CAP logs matched image f67e6fc1… and loaded payload51518d79…. User's open
+player was DeAndre Hopkins, slot1919. The service returned valid personality/
+profile but format_rejected for the stock offer (bonus proration rounding), so
+the UI had no annual table. Cap restore also denied while that FA was absent
+from the live pool; hello previously began only on entering the offer screen.
+No offer, journal, signing or paid inference occurred.
+
+Confirmed rookie defect: native fitter used week1-archived-contracts.json rather
+than rookie-reconciled-contracts.json. Missing annual data silently became one
+year. Corrected candidate consumes the resolved tables and explicit approved
+annual_cap_projection rows (including signed-total equality). Known same-club
+multi-year rookie deals now reject incomplete/truncated schedules. Older-team
+contracts cannot impose a rookie term on a replacement club's modeled deal.
+All1695 native fits rebuilt;259 changed. Current-year rookie audit:213 four-year,
+39 three-year and1 sourced one-year deal; no known multi-year term truncated.
+Giants' Fields/Reese/Mauigoa/Hood/Jamison-Travis/Davis/Kelly now4; Mann/Zvada3.
+Positive sourced future option years are preserved; this is not a fifth-year
+option election UI. Current all32 cap-room targets and1,773 player IDs/personality
+seed remain unchanged. No ratings, portraits or stats modified.
+
+New refit_opening_franchise repairs only a verified unadvanced native opening
+copy, refuses changed prior terms/memberships or an already-enforced payroll,
+keeps packed state flags, then recomputes only native cached payrolls. Separate
+prepare_week1_franchise applies exact modeled books. Optional existing bindings
+preserve registry/seed/context instead of rerolling actors. Prepared private
+w1cap-bound-v3c:save77dc23a9d10f99fd1e7498d01bc6a2b7d07e54818e96099ccdda2abd661046f2;
+roster35b944173495d550ad001f9a95abccd4f74323685e59ac77a96b9419846d8056.
+Giants room remains$8,079,279 (approved October20 proxy, not historic Week1 proof).
+
+Native addon begins hello from the loaded franchise menu; a failed cap restore
+retries on navigation, not every frame, and logs its actual refusal. Armed cap
+plans tolerate only an unchanged, zero-amount/zero-term balanced FA temporarily
+missing from the pool; every club-ownership/amount/bonus/term change still denies.
+Signing retains the selected-player identity checks and one-use permit. Rejected
+stock offers now show an explicitly unreviewed TERM/VALUE table and remain
+editable; no invented annual preview or bypass of the bonus-rounding check.
+
+Validation:full Python1,206pass/42.844s;20 targeted Windows tests;9 native Windows
+stages including actual rendering/early hello/cap rules/lifecycle/DLL reads and
+game --validate. Initial lifecycle invocation lacked its inert peer target; it
+was built and the lifecycle test passed. Addon compiled incrementally62.31+34.78s;
+EXE unchanged1e42420b…. Final DLLfff60b76e92d8d60bb6d438e60d32df44caf0f321ec323135272c303a61f47b5.
+Repaired-save Windows hello/all32 cap restore passes;108 existing local quotes
+retained. Component validation is not actual signing or gameplay acceptance.
+
+Private Deck stage:native-05ac4e9/native-fa-v3; current profile is still the old
+native-fa-v2/fresh-profile. 2k5-install-rookie-v3.py is staged, NOT run. It requires
+normal game/service exit, unchanged W1CAP/roster, no dialogue/signing journal,
+identical registry and220 protected main-save hashes. It backs up current W1CAP,
+NATIVE, DLL and context; preserves the active local policy byte-for-byte, including
+any disabled state. No control renewal, IAM, credential or budget changes.
+Await user's normal exit before the one combined installation, then relaunch
+same isolated profile and verify rookies, cap restore, legal negotiation/signing
+and save/reload. Original user-approved local signing remains active in v2 only;
+MyNFL1 untouched, normal Steam route restored, scheduled task remains off.
+
 ## W1CAP game-created opening — October 20
 
 User confirmed NATIVE → NEW Giants W1CAP → save/reload in the isolated profile.
@@ -38,10 +96,16 @@ and defaults signing off. It has NOT run. Current game remains the unbound copy.
 
 Final regression:1,202 tests pass in42.415s (2k5-w1cap-delivery-tests.log). No binary rebuild.
 
-Next: await normal exit and user's explicit offline-signing choice. Install once
-into isolated fresh-profile, keep normal Steam routing intact, relaunch and
-verify actual cap-bound load, legal FA signing (e.g. Will Clapp), cap room and
-save/reload. Cloud controls, credentials, budgets and scheduled task unchanged.
+User explicitly approved “Closed—enable offline signing for W1CAP.” Installer
+ran after confirming no game: both isolated W1CAP copies now51518d79…; prior
+W1CAP backed up under fresh-profile/pre-cap-save-backup. Context/policy installed,
+local signing enabled only in this profile,220 main files verified unchanged.
+Relaunched isolated EXE (PID338122); normal Steam route restored. No binary
+rebuild/replacement or cloud/control/budget changes. Await user confirmation
+that W1CAP → free-agent Will Clapp offer is open; no offer sent or live signing
+verified yet. His sourced asking draft is$6M/3yr/30%/Balanced ($2M first cap year).
+Next: verify live binding/all32 cap restore, negotiate once, check actual signing,
+cap room and save/reload. Scheduled task remains off.
 263 rights and five rookie-owner cases remain held; in-season FA proration held.
 
 ## Native preseason free-agent signing candidate — October20
