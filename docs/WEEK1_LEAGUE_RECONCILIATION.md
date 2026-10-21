@@ -1,5 +1,46 @@
 # Week 1 league reconciliation
 
+## W1CAP game-created opening — October 20
+
+User confirmed NATIVE → NEW Giants W1CAP → save/reload in the isolated profile.
+Physical and mirror FXG match:720044bytes, SHA256
+f57d682676e54a98b94f5c0145cc42f980654335495ea43199c6fd71b8587d38.
+All32 memberships/names,1773 actors,1695 fitted owned contracts and78 unsigned
+FA records match the hybrid. Initial import correctly stopped on raw-byte drift:
+1561 players have fresh state flags adjacent to DOB/remaining-contract bits.
+The pinned codec separates these unknown flags from actual DOB/experience/terms.
+Import now compares exact meaningful field masks, preserves all saved flags and
+binds subsequent runtime identities to the full actual-save bytes. Mutated DOB,
+photo, amount, experience, bonus or term still reject. No retail save was edited.
+
+Prepared NEW w1cap-bound-v2 with all32 exact modeled opening books; output SHA256
+51518d79b31d1282d8450a0de3d55885dbe0ebb405c0fa176869992e2c42d6c9.
+Giants:52 native deals,24 off-roster obligations,20 original rookie amendment
+locks; room$8,079,279, charges$293,120,721, cap$301,200,000. These are approved
+October20 proxy-calibrated balances, not certified historical Week1 amounts.
+Explicit --loaded-image-sha256 binds f67e6fc1cb76c9ea1f1ad504e4a6491ff126483d66a9da8ddb92950bbaf740ba
+before immutable opening/origin proof. No mod-name special case or post-hoc DB
+provenance edit. Narrow13 tests pass Mac and Windows; actual W1CAP Windows
+handshake and32 cap-restore plans pass. No game EXE/addon rebuild needed.
+
+Private local policy:793 unique GSIS-matched veteran APY/term comparables,110
+eligible Giants/FA profiles,108 quotes;11 disagreeing APY/term sources excluded.
+Actual sourced annual values are separate from fitted cap totals. No ratings,
+cap-room discounts, guessed zero stats or cloud requests. Signing stays off.
+Private script: week1-roster-v1/build-w1cap-market.py; inputs/report retained.
+The source game-created save remains untouched. Staged copy/DB/policy/installer:
+native-05ac4e9/native-fa-v2/w1cap-bound-v2 on Deck. Installer refuses a running
+game or changed W1CAP, backs up only isolated W1CAP, checks220 main-save hashes,
+and defaults signing off. It has NOT run. Current game remains the unbound copy.
+
+Final regression:1,202 tests pass in42.415s (2k5-w1cap-delivery-tests.log). No binary rebuild.
+
+Next: await normal exit and user's explicit offline-signing choice. Install once
+into isolated fresh-profile, keep normal Steam routing intact, relaunch and
+verify actual cap-bound load, legal FA signing (e.g. Will Clapp), cap room and
+save/reload. Cloud controls, credentials, budgets and scheduled task unchanged.
+263 rights and five rookie-owner cases remain held; in-season FA proration held.
+
 ## Native preseason free-agent signing candidate — October20
 
 Preseason/full-salary FA signing now has a bound journal, exact source cap target,

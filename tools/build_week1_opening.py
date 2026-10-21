@@ -35,23 +35,33 @@ def rookie_amendment_hold(archive,gsis,team,year):
     return False
 
 
-def build_opening(payload,roster,fit_receipt,assembly,charges,cap_book,archive,*,seed):
+def build_opening(payload,roster,fit_receipt,assembly,charges,cap_book,archive,*,seed,loaded_image_sha256=None):
     if sha256(roster).hexdigest()!=fit_receipt['output_sha256'] or set(charges['teams'])!=set(CLUBS) or set(cap_book['teams'])!=set(CLUBS):
         raise ValueError('Pinned fitted roster and complete all-team modeled books required')
     if (charges['input_sha256']!=cap_book['salary_input_sha256'] or charges['season_year']!=2026
             or cap_book['calibration_policy']!='published_room_target'):
         raise ValueError('Matching authorized opening calibration required')
     current=inspect_save(payload);expected=inspect_roster(roster)
+    initialized_flags = 0
     for team in (*TEAMS,'free_agents'):
         a=expected['free_agents'] if team=='free_agents' else expected['teams'][team]
         b=current['free_agents'] if team=='free_agents' else current['teams'][team]
         if a!=b:raise ValueError('Fresh franchise did not load the fitted hybrid membership/names')
         for player in a:
             slot=player['source_slot'];r=0xAFA8+slot*PLAYER_STRIDE;f=PLAYER_START+slot*PLAYER_STRIDE
-            for start,end in ((4,8),(10,12),(25,28),(36,40)):
-                if roster[r+start:r+end]!=payload[f+start:f+end]:
+            # The pinned roster codec separates DOB/contract fields from the
+            # adjacent unknown state flags. Fresh franchise creation changes
+            # those flags; keep them in the save and subsequent identity guard.
+            fields = ((4,255),(5,255),(6,255),(7,255),(10,255),(11,255),
+                      (25,255),(26,255),(27,15),(36,15),(37,31),(38,255),(39,15))
+            for offset,mask in fields:
+                if roster[r+offset]&mask != payload[f+offset]&mask:
                     raise ValueError('Fresh player biography/contract fields differ from the pinned hybrid')
+            if any(roster[r+offset]!=payload[f+offset] for offset in (27,36,37,39)):
+                initialized_flags += 1
     context=raw_context(payload);context.update(season_year=charges['season_year'],money_scale=fit_receipt['game_dollar_scale'])
+    if loaded_image_sha256 is not None:
+        context['loaded_image_sha256']=loaded_image_sha256
     if context['league_cap_raw']*1000*context['money_scale']!=charges['league_cap']:
         raise ValueError('Fresh franchise league cap differs from modeled scale')
     bindings=create_bindings(payload,seed=seed,game_context=context)
@@ -110,4 +120,5 @@ def build_opening(payload,roster,fit_receipt,assembly,charges,cap_book,archive,*
             rookie_or_unknown_amendments_held=len(rookies),original_rookie_contracts_locked=len(locked))
     return dict(format=1,source=source,seed=seed,teams=teams,cash=cash),bindings,dict(
         teams=report,free_agents=len(all_free),free_agent_pool_exhaustive=False,
-        game_verified=False,signing_authorized=False,source_roster_sha256=fit_receipt['output_sha256'])
+        game_verified=False,signing_authorized=False,source_roster_sha256=fit_receipt['output_sha256'],
+        initialized_state_flag_players=initialized_flags)

@@ -51,8 +51,29 @@ class OpeningBundleTests(unittest.TestCase):
         row.update(year_signed=2026,years=1)
         self.assertFalse(rookie_amendment_hold([row],'rookie','NYG',2026))
 
+    def test_franchise_state_flags_preserved_but_identity_and_contract_changes_denied(self):
+        from tools.inspect_franchise_save import PLAYER_START
+        inputs=list(self.inputs());saved=bytearray(inputs[0])
+        # Actual creation changes only state flags adjacent to DOB and terms.
+        saved[PLAYER_START+27]^=0x60;saved[PLAYER_START+36]^=0xf0
+        inputs[0]=bytes(saved)
+        _,bindings,report=build_opening(*inputs,seed='authored')
+        self.assertEqual(report['initialized_state_flag_players'],1)
+        self.assertEqual(inputs[0],bytes(saved))
+        for offset,bit in ((27,1),(36,1),(37,1),(38,0x10),(39,1),(6,1),(10,1)):
+            with self.subTest(offset=offset):
+                changed=bytearray(saved);changed[PLAYER_START+offset]^=bit
+                inputs[0]=bytes(changed)
+                with self.assertRaises(ValueError):build_opening(*inputs,seed='authored')
+
     def test_wrong_roster_membership_or_room_model_cannot_be_bound(self):
         inputs=list(self.inputs());inputs[2]['output_sha256']='b'*64
         with self.assertRaises(ValueError):build_opening(*inputs,seed='authored')
         inputs=list(self.inputs());inputs[5]['teams']['SF']['modeled_cap_room_dollars']+=1
         with self.assertRaises(ValueError):build_opening(*inputs,seed='authored')
+
+    def test_explicit_runtime_image_is_bound_before_opening_proof(self):
+        _,bindings,_=build_opening(*self.inputs(),seed='authored',loaded_image_sha256='a'*64)
+        self.assertEqual(bindings['game_context']['loaded_image_sha256'],'a'*64)
+        with self.assertRaises(ValueError):
+            build_opening(*self.inputs(),seed='authored',loaded_image_sha256='unverified')

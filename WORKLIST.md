@@ -1512,3 +1512,15 @@ October20 native free-agent continuation (v2; prior75/1770 counts superseded):
       then verify legal FA signing, owned negotiation, strict cap and save/reload.
       Await visible-screen confirmation. Installed Steam route remains unchanged;
       staged addon is off until the actual save is bound. Scheduled task stays off.
+
+October20 actual W1CAP opening continuation:
+
+- [x] User-created/reloaded W1CAP from NATIVE matches all32 memberships and1773
+      player identities. Preserve observed initialization flags; retain exact
+      DOB/portrait/experience/contract checks and raw runtime biography guards.
+- [x] Prepare new cap-bound copy/database with runtime-image provenance,32 opening
+      books and108 supported offline quotes; signing off.13 tests pass Mac/Windows;
+      actual-save Windows handshake/all32 cap-restore preflight passes.
+- [ ] Await normal exit/local-signing choice, then install/relaunch isolated W1CAP
+      and verify legal FA signing, cap limits and saved reload. Current running
+      W1CAP is still unbound. MyNFL1 protected; scheduled task stays off.

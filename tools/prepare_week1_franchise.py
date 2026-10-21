@@ -17,7 +17,7 @@ from franchise.snapshot_origin import bind as bind_origin
 from franchise.store import FranchiseStore
 
 
-def prepare(save,roster,fit,assembly,charges,cap_book,archive,output):
+def prepare(save,roster,fit,assembly,charges,cap_book,archive,output,*,loaded_image_sha256=None):
     save,output=Path(save),Path(output)
     if output.exists() or output.is_symlink() or output.resolve().is_relative_to(save.parent.resolve()):
         raise ValueError('New destination outside the source save container required')
@@ -32,7 +32,8 @@ def prepare(save,roster,fit,assembly,charges,cap_book,archive,output):
         raise ValueError('Valid native PC save signature required')
     paths=[Path(p) for p in (fit,assembly,charges,cap_book,archive)]
     raw=[p.read_bytes() for p in paths];data=[json.loads(b) for b in raw]
-    bundle,bindings,report=build_opening(payload,roster,*data[:4],data[4]['rows'],seed=secrets.token_hex(32))
+    bundle,bindings,report=build_opening(payload,roster,*data[:4],data[4]['rows'],seed=secrets.token_hex(32),
+        loaded_image_sha256=loaded_image_sha256)
     output.mkdir(parents=True,exist_ok=False)
     bootstrap=output/'bootstrap.json';bootstrap.write_text(json.dumps(bundle,indent=2)+'\n')
     (output/'bindings.json').write_text(json.dumps(bindings,indent=2)+'\n')
@@ -58,8 +59,10 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ('save','roster','fit','assembly','charges','cap-book','archive','output'):
         parser.add_argument('--'+name,required=True,type=Path)
+    parser.add_argument('--loaded-image-sha256',help='Explicit observed load-input hash for required runtime handshake')
     args=parser.parse_args()
-    r=prepare(args.save,args.roster,args.fit,args.assembly,args.charges,args.cap_book,args.archive,args.output)
+    r=prepare(args.save,args.roster,args.fit,args.assembly,args.charges,args.cap_book,args.archive,args.output,
+        loaded_image_sha256=args.loaded_image_sha256)
     print(json.dumps({k:v for k,v in r.items() if k not in ('bootstrap','opening')},indent=2))
 
 
