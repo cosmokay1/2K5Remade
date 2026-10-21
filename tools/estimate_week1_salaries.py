@@ -93,7 +93,7 @@ def estimate_opening_charges(weekly, contracts, rookie_reports, *, season_year, 
     for row in contracts:
         if row.get('gsis_id'):
             by_gsis[row['gsis_id']].append(row)
-    observed, peers = {}, []
+    observed, peers, zero_active = {}, [], set()
     for member in members:
         _experience(member)
         if not _position(member):
@@ -102,6 +102,11 @@ def estimate_opening_charges(weekly, contracts, rookie_reports, *, season_year, 
         entry = next(p for p in team['players'] if p['name'] == member['full_name'])
         key = (member['team'], member['full_name'])
         if entry['cap_dollars'] is None:
+            continue
+        if entry['cap_dollars'] == 0 and member['status'] in ('ACT', 'INA'):
+            # A source placeholder is not a playable active salary. Keep the
+            # archived zero as evidence while modeling the missing obligation.
+            zero_active.add(key)
             continue
         row = by_gsis[member['gsis_id']][0]
         annual = next(s for s in row['season_history'] if str(s.get('year')) in
@@ -125,6 +130,13 @@ def estimate_opening_charges(weekly, contracts, rookie_reports, *, season_year, 
             results.append(dict(entry, cap_dollars=cap, basis=basis))
             continue
         contract = _contract(by_gsis, member, season_year)
+        if key in zero_active:
+            entry['archived_zero_cap_placeholder_dollars'] = 0
+            if contract and contract['years'] == 1 and contract['year_signed'] == season_year:
+                results.append(dict(entry, cap_dollars=_dollars(contract['value']),
+                    basis='modeled_one_year_nominal_charge', nominal_total_preserved=True,
+                    method='positive_current_deal_with_zero_annual_placeholder'))
+                continue
         # A signed rookie total is stronger evidence than a veteran positional APY.
         if contract and contract.get('draft_year') == season_year:
             years = int(contract['years'])

@@ -58,7 +58,8 @@ def _before_books(store,db,bindings,payload,offer,guest_offer,team_id,*,owned=Fa
             raise Rejected('Explicit coverage of league cash obligations required before guest signing')
         contracts=saved[team]
         financial=ledger.financial_snapshot()
-        charges=checkpoint_charges(ledger,contracts) if owned else [
+        from franchise.opening_native import record as opening_record
+        charges=checkpoint_charges(ledger,contracts,include_opening_adjustments=opening_record(db) is not None) if owned else [
             sum(row[i] if i<len(row) else 0 for row in [c.charges() for c in contracts])
             for i in range(max((len(c.charges()) for c in contracts),default=0))]
         def trim(values):

@@ -1759,6 +1759,32 @@ int main(int argc,char** argv) {
             try { franchise::validate_result(bad,player_request); } catch(const std::exception&) { rejected=true; }
             if (!rejected) throw std::runtime_error("Invalid pending classification accepted");
         }
+        { // Recorded all-club opening recovery, without any signing permit.
+            using nlohmann::json;
+            const std::string hash(64,'a');
+            json request={{"operation","guest_cap_restore"},{"request_id","opening"},
+                {"loaded_payload_sha256",hash},{"live_identity_sha256",hash},{"source_epoch",7}};
+            json plan={{"format","native-cap-restore-v1"},{"source_epoch",7},{"team_index",0},
+                {"native_payroll_raw",100},{"enforced_payroll_raw",200},{"finance_sha256",hash},
+                {"identity_sha256",hash},{"canonical_payrolls",json::array()}};
+            for(unsigned i=0;i<32;++i)plan["canonical_payrolls"].push_back(200);
+            json more=json::array();
+            for(unsigned i=1;i<32;++i) {auto p=plan;p["team_index"]=i;more.push_back(p);}
+            json response={{"protocol",1},{"request_id","opening"},{"error",nullptr},
+                {"result",{{"request_id","opening"},{"loaded_payload_sha256",hash},
+                           {"cap_plan",plan},{"additional_cap_plans",more}}}};
+            franchise::validate_result(response,request);
+            for(unsigned scenario=0;scenario<5;++scenario) {
+                auto bad=response;auto& extra=bad["result"]["additional_cap_plans"];
+                if(scenario==0)extra.erase(extra.end()-1);
+                if(scenario==1)extra[0]["team_index"]=0;
+                if(scenario==2)extra[0]["source_epoch"]=8;
+                if(scenario==3)extra[0]["finance_sha256"]=std::string(64,'b');
+                if(scenario==4)extra[0]["canonical_payrolls"][0]=201;
+                bool held=false;try{franchise::validate_result(bad,request);}catch(const std::exception&){held=true;}
+                if(!held)throw std::runtime_error("Invalid all-club opening recovery accepted");
+            }
+        }
         std::cout << "Protocol envelope and contract validation passed" << std::endl;
         return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << std::endl; return 1; }

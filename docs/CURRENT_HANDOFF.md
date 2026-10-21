@@ -3,6 +3,48 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
+## Native opening reconciliation candidate — October20
+
+Compiled the combined Windows EXE/addon batch. All1695 active/inactive contracts
+have native cap-liability approximations;1167 retain sourced positive bonus
+allocations. Exact source base/non-base differences remain typed ledger records,
+not guarantees or known paid cash. Two active zero placeholders use labeled
+one-year nominal estimates. All2481 obligations and32 approved October20 proxy
+room targets reconcile (Giants$8,079,279); these are not certified Week1 balances.
+
+Qualified pool expanded58→75 using17 additional primary releases supported by
+actual vested-service lower bounds.267 rights/availability cases remain held,
+plus five rookie contracts without a cutoff owner. Not an exhaustive historical
+pool. The1770-record private fitted roster preserves native presentation;20
+missing gameplay profiles are sourced estimates. Required portrait cache72slots.
+Private candidate: week1-roster-v1/deck-candidate-v1; native fitted SHA256
+2819a7f1081e2caec11b42ca9e7f8ec3bea19ad5217a222b62c9beb208570f90.
+
+Opening checkpoint records and restores all32 enforced payrolls without signing
+authority or budget refills. Source-backed owned amendments retain non-base
+liabilities, count earned base and consume representation corrections once.
+Offline consent→issuance→settlement→DB reopen fixture passes. Original rookie
+amendments are held until the applicable completed-season boundary. Unknown
+legacy cash stays unknown. Full regression1189pass; later preparation/rights
+six tests and financial ten tests pass. Portable protocol/cap checks run locally;
+Windows compilation passed but Windows execution/game --validate still pending.
+
+New tools fit_week1_native_contracts.py, build_week1_opening.py and
+prepare_week1_franchise.py prepare only NEW isolated copies; MyNFL1 and existing
+DB/destination overwrites are refused. Actual game-created hybrid FXG is still
+required. Synthetic full-data fixture is explicitly NOT_FOR_DECK and excluded
+from the package. Runtime candidate is not installed; no game-load/signing/cap/
+save-reload acceptance claimed. Deck stopped resolving after compilation.
+
+Next: reconnect Deck, execute compiled checks and --validate in isolated profile,
+then load the NATIVE roster and create/save a NEW Giants franchise W1CAP. Bind
+that actual save to exact opening books with prepare_week1_franchise, install
+only after normal exit, and verify load/owned signing/cap/save-reload. Complete
+native free-agent issuance/checkpoint support before permitting FA signings:
+that path still rejects supplemental liabilities and cannot bypass them. Dynamic
+roster/elevation handling and remaining historical FA rights remain open.
+MyNFL1 untouched; task stays PAUSED; no screenshots/inference/IAM/control changes.
+
 ## Record assembly and gameplay estimates — October20
 
 Closed the11 explicit parser/identity reviews with pinned primary club evidence;

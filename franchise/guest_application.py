@@ -7,7 +7,7 @@ import hashlib
 import json
 import struct
 from types import SimpleNamespace
-from franchise.cap import Offer, Rejected
+from franchise.cap import Offer, Rejected, json_amount
 from franchise.legacy_amendments import amendment_scope_from_dict
 from franchise.guest_signing import _json, _hash, _access, _before_books
 from tools.franchise_finance_state import saved_finance_state
@@ -68,6 +68,12 @@ def prepare_amendment(store,team,proposal_id,request_id,*,bindings,before_payloa
                 _,flag,accumulator=struct.unpack_from('<III',finance,48+12*TEAMS.index(team))
                 if flag and accumulator:intent['accounted_accumulator_before_raw']=accumulator
             previous=ledger._legacy_amendments.get(offer.player_id)
+            from franchise.opening_native import record as opening_record
+            if previous is None and opening_record(db) is not None:
+                from franchise.legacy_contracts import imported_components
+                base,other=imported_components(ledger._opening_books,ledger._legacy_contracts[offer.player_id])
+                intent['source_components']=dict(base=[json_amount(v) for v in base],nonbase=[json_amount(v) for v in other],
+                    opening_books_sha256=store._checkpoint_hash(ledger._opening_books.to_dict()))
             if previous is not None:
                 intent['previous_amendment']=previous.to_dict()
             # Build and validate the representable cap target before reserving.
@@ -114,7 +120,7 @@ def read_amendment(store,db,request_id):
     team,state,text,before,after,proof=row;intent=json.loads(text)
     fields={'format','request_id','team_id','proposal_request_id','expected_revision','bindings','guest_offer',
             'before_payload_sha256','offer','scope','proposal_sha256','comparison','salary_clock','observation'}
-    if (not fields<=set(intent) or set(intent)-fields-{'previous_amendment','accounted_accumulator_before_raw'} or type(intent['format']) is not int or intent['format']!=2 or
+    if (not fields<=set(intent) or set(intent)-fields-{'previous_amendment','accounted_accumulator_before_raw','source_components'} or type(intent['format']) is not int or intent['format']!=2 or
             intent['request_id']!=request_id or intent['team_id']!=team or _hash(before)!=intent['before_payload_sha256']):
         raise ValueError('Amendment journal fingerprint mismatch')
     from franchise.salary_clock import bind_salary_clock
@@ -136,6 +142,16 @@ def read_amendment(store,db,request_id):
         if (current[offset+4:offset+12]!=recorded[offset+4:offset+12] or
                 struct.unpack_from('<I',current,offset+8)[0]!=value):
             raise ValueError('Recorded accumulator coverage changed')
+    if 'source_components' in intent:
+        from franchise.opening_native import record as opening_record
+        from franchise.legacy_contracts import imported_components
+        ledger=store._load(db,team)
+        original=ledger._legacy_contracts[Offer.from_dict(intent['offer']).player_id]
+        base,other=imported_components(ledger._opening_books,original)
+        expected=dict(base=[json_amount(v) for v in base],nonbase=[json_amount(v) for v in other],
+            opening_books_sha256=store._checkpoint_hash(ledger._opening_books.to_dict()))
+        if opening_record(db) is None or 'previous_amendment' in intent or intent['source_components']!=expected:
+            raise ValueError('Imported amendment components differ from recorded opening books')
     if 'previous_amendment' in intent:
         previous=intent['previous_amendment']
         prior=db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=? AND kind='legacy_amendment'",
@@ -185,7 +201,7 @@ def confirm_amendment(intent,before,after):
     proof=confirm_saved_amendment(intent['bindings'],before,normalized,
         expected_before_sha256=intent['before_payload_sha256'],offer=Offer.from_dict(intent['offer']),
         guest_offer=intent['guest_offer'],team_id=intent['team_id'],comparison=intent['comparison'],
-        previous_amendment=intent.get('previous_amendment'),
+        previous_amendment=intent.get('previous_amendment'),source_components=intent.get('source_components'),
         accounted_accumulator_before_raw=intent.get('accounted_accumulator_before_raw',0))
     proof.update(normalized_comparison_sha256=proof['after_payload_sha256'],after_payload_sha256=_hash(after),
         saved_enforced_payroll_raw=cap['enforced_payroll_raw'])
@@ -274,6 +290,13 @@ def restore_cap(store,request_id,payload,*,source_epoch,loaded_payload_sha256,li
         raise ValueError('Fresh loaded source and complete cached payroll sample required')
     _access(connection_check)
     with store._connection() as db:
+        from franchise.opening_native import restore_plans
+        opening=restore_plans(store,db,payload,source_epoch=source_epoch,
+            live_projection=live_projection,finance_payrolls=finance_payrolls)
+        if opening is not None:
+            _access(connection_check)
+            return dict(request_id=request_id,loaded_payload_sha256=loaded_payload_sha256,
+                        cap_plan=opening[0],additional_cap_plans=opening[1:])
         journals=[row[0] for row in db.execute("SELECT request_id FROM guest_signings WHERE state!='cancelled' AND json_extract(intent,'$.format')=2 ORDER BY rowid DESC LIMIT 1")]
         if not journals:
             return dict(request_id=request_id,loaded_payload_sha256=loaded_payload_sha256,cap_plan=None)

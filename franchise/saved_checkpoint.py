@@ -30,6 +30,8 @@ def verify(store,db,payload):
     row=db.execute("SELECT request_id FROM guest_signings WHERE state='settled' "
                    "AND json_extract(intent,'$.format')=2 ORDER BY rowid DESC LIMIT 1").fetchone()
     if row is None:
+        from franchise.opening_native import verify as verify_opening
+        if verify_opening(store,db,payload):return True
         if native!=payload:
             raise Rejected('Unrecorded saved payroll correction')
         return False
@@ -54,11 +56,16 @@ def verify(store,db,payload):
     return True
 
 
-def charges(ledger,records):
+def charges(ledger,records,*,include_opening_adjustments=False):
     """Exact current obligations, including already agreed salary/bonus layers."""
     schedules=[ledger._legacy_amendments[r.player_id].charges()
                if r.player_id in ledger._legacy_amendments else r.charges() for r in records]
     schedules.extend(r.annual_charges for r in ledger._opening_books.retained)
+    if include_opening_adjustments:
+        schedules.extend(r.annual_charges for r in ledger._opening_books.adjustments
+            if not any(r.record_id==prefix+player for player in ledger._legacy_amendments
+                       for prefix in ('native-base:','native-nonbase:')))
+        schedules.extend((r.amount,) for r in ledger._opening_books.tenders)
     return [sum(row[i] if i<len(row) else 0 for row in schedules)
             for i in range(max(map(len,schedules),default=0))]
 

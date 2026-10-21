@@ -93,3 +93,24 @@ class LegacyContract:
         if type(data) is not dict or set(data) not in (fields, fields | {'game_dollar_scale'}):
             raise ValueError('Complete original legacy contract record required')
         return cls(**data)
+
+
+def imported_components(books, contract):
+    """Source-backed base/non-base differences from the native approximation.
+
+    These named opening records belong to the original agreement only. Once it
+    is amended, the agreement carries its non-base obligations and replaces the
+    base; replay must not apply either representation correction a second time.
+    """
+    raw=original_annual_rows(contract.amount_word,contract.bonus_code,contract.shape_code,contract.original_years)[-contract.remaining_years:]
+    zero=(0,)*len(raw)
+    values={r.record_id:r.annual_charges for r in books.adjustments}
+    base=values.get('native-base:'+contract.player_id,zero)
+    nonbase=values.get('native-nonbase:'+contract.player_id,zero)
+    if len(base)!=len(raw) or len(nonbase)!=len(raw):
+        raise ValueError('Imported correction horizon differs from remaining native agreement')
+    salary=tuple(r['salary_dollars']*contract.game_dollar_scale+b for r,b in zip(raw,base))
+    other=tuple(r['allocated_bonus_dollars']*contract.game_dollar_scale+b for r,b in zip(raw,nonbase))
+    if any(s<0 or s+o<0 for s,o in zip(salary,other)):
+        raise ValueError('Imported source cannot create negative salary or cap liability')
+    return salary,other

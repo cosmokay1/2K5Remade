@@ -346,11 +346,13 @@ def classify_free_agent_candidates(candidates, membership, contracts, *, cutoff,
             reason = 'retired'
         elif gsis in disputed:
             reason = 'unresolved_latest_transaction'
-        elif candidate.get('fatype') in ('RFA','ERFA'):
-            reason = 'restricted_or_exclusive_rights_review'
         elif gsis in releases:
+            # Explicit current unrestricted termination supersedes a directory's
+            # older tender label. Never infer this from the label alone.
             reason = 'verified_vested_termination'
             player.update(eligible=True,evidence=releases[gsis])
+        elif candidate.get('fatype') in ('RFA','ERFA'):
+            reason = 'restricted_or_exclusive_rights_review'
         elif gsis in active_contracts:
             reason = 'unrostered_active_contract_review'
         else:

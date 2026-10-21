@@ -73,7 +73,8 @@ def reconcile_signing_context(bindings, payload, observation, store, *, expected
         except Rejected as error:
             raise ValueError('Ledger contract inventory differs from checkpoint') from error
         financial = ledger.financial_snapshot()
-        expected_charges = charges(ledger,contracts)
+        from franchise.opening_native import record as opening_record
+        expected_charges = charges(ledger,contracts,include_opening_adjustments=opening_record(db) is not None)
         if (financial['revision'] != expected_revision or inventory['financial_revision'] != expected_revision
                 or financial['cap'] != cap['league_cap_dollars'] * scale
                 or financial['signed_players'] != sorted(record.player_id for record in contracts)

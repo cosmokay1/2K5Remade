@@ -10769,3 +10769,94 @@ projections, opening modern ledger/native reconciliation and complete FA rights
 coverage remain, followed by real fresh-franchise load/signing/cap/save-reload.
 MyNFL1/Deck untouched, scheduled task stays PAUSED; no screenshots, inference,
 credentials, IAM or shutdown-control changes. No maintainer messages or releases.
+
+
+## October20 — native opening books and qualified hybrid candidate
+
+One combined source/native batch; scheduled task left PAUSED and MyNFL1 untouched.
+No runtime/save/Steam routing changes. Only existing private Deck compiler cache
+used. Windows game/addon targets compiled successfully (89.4s); Deck later stopped
+resolving at steamdeck.local, so compiled Windows execution and game --validate
+remain pending. Do not interpret compilation as boot or live gameplay evidence.
+
+`fit_week1_native_contracts` serializes1695 active/inactive schedules to the five
+native fields. Actual codec roundtrip and byte-boundary checks pass. Preserve
+1167 positive sourced prorated-bonus records instead of interpreting guarantees
+as signing bonuses; worst current-year native approximation error$20,000.
+Two positive active one-year deals had zero annual placeholder rows: Sam Williams
+and Jonnu Smith. Approved nominal missing-schedule estimates replace those zeros;
+raw sources and estimate labels remain. All2481 obligations/32 modeled target
+rooms reconcile; Giants$8,079,279 room and$293,120,721 obligations. Targets are
+October20 proxies, not certified September10 balances. Known source charges
+remain fixed; modeled club adjustments are explicit and cannot refill spending.
+
+`build_week1_opening` binds native inventory/photo/DOB/contract fields and creates
+exact32club opening books, typed per-player base/non-base representation
+corrections, off-roster obligations and unknown legacy-cash coverage. Unbound
+liabilities get stable separate IDs rather than collapsing under None. Original
+rookie contracts remain amendment-locked until the applicable completed-season
+boundary; no substitute veteran signing route. Full-data synthetic fixture:
+32teams/1770actors, Giants52 native players+24 off-roster obligations,20 original
+rookie amendment holds. Fixture labeled SYNTHETIC-NOT-FOR-DECK, never packaged.
+
+`opening_native` records pristine opening proof, rounds native current payroll
+up once perclub and supports all32 guarded restore plans. Native response/host
+queue and refresh mask retain every club instead of overwriting the previous
+one. Existing single-club recovery protocol remains supported. Proof restores
+only recorded funds: changed contracts/ownership/calendar/obligations are held.
+`imported_components` and the amendment journal preserve exact source base and
+positive non-base obligations; old negative contract credits expire on
+replacement. Earned base and carried non-base amounts survive settlement/reopen
+without double-applying approximation corrections. First source-backed journal
+pins the opening-books hash/components. Prior native-only path stays strict.
+Offline consent→preparation→one-use native issuance→authored save effects→settle
+→DB reopen passed; rollback to its before-save rejected. This is fixture evidence,
+not actual game negotiation/signing/save-load. Live source-backed FA issuance is
+still unsupported and rejects supplemental obligations; do not bypass that guard.
+Dynamic roster/elevation/reserve handling and season rollover remain separate.
+
+FA qualification uses actual primary latest release evidence plus an explicit
+vested termination or a lower bound of4 previous seasons with6 regular-season
+participation weeks each. Cached2020–24 snap archives total2,467,597bytes;
+PFR/GSIS links pinned. Injury/IR/settlement/failed-physical/PS and mixed/later
+transactions stay held.17 additional releases qualified,75 total (57 dated
+expired unrestricted,18 vested terminations). Current350-candidate dispositions:
+219 availability/waiver reviews,48 RFA/ERFA reviews,5 retired,3 club-owned.
+Five rookie archive records still lack a cutoff owner. These are unresolved
+rights, not proof of a complete historical pool. Waiver/rookie rule reference:
+https://operations.nfl.com/calendar-events/nfl-free-agency/contract-language
+and NFLPA2020CBA Article7. Age/draft position never substitutes for service rights.
+
+Assembled1770records:1698 native/39 Week1 creator/13 older creator/20 estimated
+profiles. One added sourced estimate for Robert Rochell; existing native images
+retained. Final fitted roster SHA256:
+2819a7f1081e2caec11b42ca9e7f8ec3bea19ad5217a222b62c9beb208570f90.
+Private deck-candidate-v1 is5.6MiB with actual NATIVE ROS container metadata/HMAC,
+72 required official portrait slots and source/fit receipts. All32 memberships,
+player bindings and serializer reload checked; unassigned/classic bytes preserved.
+Pinned MIT codec e19384123c23a3601949dda67c9a3ab754d65fd6 credited to Noah /
+2KFootballModTools contributors, FlyingFinn/GlenLeskinen/BAD_AL research retained.
+No downloaded source assets, headshots, secrets or saves committed/published.
+
+`prepare_week1_franchise` accepts an actual newly game-created matching FXG,
+refuses MyNFL1/existing outputs, creates separate DB/bindings/proof and re-signs
+only a copied container. Source signature/type/bytes checked; signing/AI remain
+off. Protection and exact32book replay tests pass. Must obtain a real fresh hybrid
+franchise, not install the synthetic test payload. Next Deck plan: isolated
+Windows component checks and --validate, load NATIVE hybrid, create/save W1CAP,
+normal exit, prepare separate cap-bound copy, then verify owned signing, money
+and save/reload under authorized controls. No screenshots or assumed menu inputs.
+
+Validation: full Python suite1189tests pass (38.785s, loopback permitted);
+subsequent preparation/rights6tests and source-component/opening financial10tests
+pass. Local compiled protocol boundary, native issuance/clock/deadline/one-use
+and cap stale/source/recomputation checks pass. Windows compilation passed,
+Windows execution and real game acceptance pending. Logs under /private/tmp:
+2k5-week1-final-suite.log,2k5-package-final-tests.log,
+2k5-final-financial-targets.log,2k5-week1-protocol-run.log,
+2k5-week1-cap-check.log,2k5-week1-application-check.log.
+Private receipts under week1-roster-v1: qualified-free-agent-eligibility.json,
+qualified-assembled-roster-receipt.json,qualified-native-contract-fit.json,
+native-opening-charges.json,native-opening-cap-book.json,
+opening-component-fixture-v4/receipt.json,deck-candidate-v1/candidate-receipt.json.
+No inference, new infrastructure, IAM/control renewals or automation re-enable.

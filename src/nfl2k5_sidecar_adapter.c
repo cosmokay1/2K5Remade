@@ -63,11 +63,11 @@ static NFL2K5AddonHost adapter_host;
 static SRWLOCK cap_lock=SRWLOCK_INIT;
 static FranchiseCapEnforcement cap_plans[32];
 static uint32_t cap_armed;
-static uint32_t cap_refresh=UINT32_MAX;
+static uint32_t cap_refresh;
 static volatile LONG cap_logged;
 static void cap_reset(void) {
     AcquireSRWLockExclusive(&cap_lock);
-    cap_armed=0;cap_refresh=UINT32_MAX;InterlockedExchange(&cap_logged,0);memset(cap_plans,0,sizeof(cap_plans));
+    cap_armed=0;cap_refresh=0;InterlockedExchange(&cap_logged,0);memset(cap_plans,0,sizeof(cap_plans));
     ReleaseSRWLockExclusive(&cap_lock);
 }
 #endif
@@ -507,7 +507,12 @@ int nfl2k5_franchise_publish_cap(const FranchiseCapEnforcement *plan) {
        plan->team_index>=32 || plan->enforced_payroll>INT32_MAX-1u ||
        !franchise_cap_state_matches(&plan->expected,&plan->expected)) return 0;
     AcquireSRWLockExclusive(&cap_lock);
-    cap_plans[plan->team_index]=*plan;cap_armed|=1u<<plan->team_index;cap_refresh=plan->team_index;InterlockedAnd(&cap_logged,(LONG)~(1u<<plan->team_index));
+    /* Accepted application/recovery binds the full league comparison image.
+     * Other clubs keep their amounts; their global contract guard advances too. */
+    for(unsigned i=0;i<32;++i)
+        if((cap_armed&(1u<<i)) && cap_plans[i].source_epoch==plan->source_epoch)
+            cap_plans[i].expected=plan->expected;
+    cap_plans[plan->team_index]=*plan;cap_armed|=1u<<plan->team_index;cap_refresh|=1u<<plan->team_index;InterlockedAnd(&cap_logged,(LONG)~(1u<<plan->team_index));
     ReleaseSRWLockExclusive(&cap_lock);return 1;
 #else
     (void)plan;return 0;
@@ -615,7 +620,10 @@ static int addon_event(const char *name,const void *data,size_t size) {
 static int addon_snapshot(const char *name,void *out,size_t capacity) {
 #ifdef _WIN32
     if(name && out && !strcmp(name,FRANCHISE_CAP_REFRESH) && capacity==sizeof(uint32_t)) {
-        AcquireSRWLockExclusive(&cap_lock);uint32_t index=cap_refresh;cap_refresh=UINT32_MAX;ReleaseSRWLockExclusive(&cap_lock);
+        AcquireSRWLockExclusive(&cap_lock);uint32_t index=0;
+        while(index<32 && !(cap_refresh&(1u<<index)))++index;
+        if(index<32)cap_refresh&=~(1u<<index);
+        ReleaseSRWLockExclusive(&cap_lock);
         if(index>=32) return 0;memcpy(out,&index,sizeof(index));return 1;
     }
 #endif

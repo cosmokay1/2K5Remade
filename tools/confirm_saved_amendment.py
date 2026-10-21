@@ -18,7 +18,7 @@ from tools.inspect_franchise_cap import inspect_cap
 from tools.inspect_franchise_save import TEAMS
 
 
-def confirm_saved_amendment(bindings,before,after,*,expected_before_sha256,offer,guest_offer,team_id,comparison,previous_amendment=None,accounted_accumulator_before_raw=0):
+def confirm_saved_amendment(bindings,before,after,*,expected_before_sha256,offer,guest_offer,team_id,comparison,previous_amendment=None,accounted_accumulator_before_raw=0,source_components=None):
     """The comparison must be frozen to recorded consent by the coordinator."""
     if (type(before) is not bytes or type(after) is not bytes or before==after
             or type(expected_before_sha256) is not str
@@ -76,9 +76,20 @@ def confirm_saved_amendment(bindings,before,after,*,expected_before_sha256,offer
             raise ValueError('Saved native terms differ from the prior agreement')
         required=list(previous.bonus_charges())
     else:
-        if current!=native_old:
-            raise ValueError('Current salary liabilities lack a prior agreement')
-        required=[row['allocated_bonus_dollars']*old.game_dollar_scale for row in rows]
+        if source_components is not None:
+            if (type(source_components) is not dict or set(source_components)!={'base','nonbase','opening_books_sha256'}
+                    or len(source_components['base'])!=len(rows) or len(source_components['nonbase'])!=len(rows)):
+                raise ValueError('Complete source-bound imported components required')
+            base=tuple(parse_amount(v) for v in source_components['base'])
+            nonbase=tuple(parse_amount(v) for v in source_components['nonbase'])
+            if any(v<0 for v in base) or tuple(a+b for a,b in zip(base,nonbase))!=current:
+                raise ValueError('Imported salary components disagree with consent')
+            required=[max(0,v) for v in nonbase]
+        else:
+            if current!=native_old:
+                raise ValueError('Current salary liabilities lack a prior agreement')
+            base=tuple(r['salary_dollars']*old.game_dollar_scale for r in rows)
+            required=[row['allocated_bonus_dollars']*old.game_dollar_scale for row in rows]
     if carried!=tuple(required):
         raise ValueError('Amendment removed or rescheduled retained bonus debt')
     added=list(native_new)
@@ -89,7 +100,7 @@ def confirm_saved_amendment(bindings,before,after,*,expected_before_sha256,offer
         if not isinstance(scope,InSeasonAmendmentScope):
             raise ValueError('First in-season amendment requires an independently matched prior salary schedule')
         from franchise.legacy_amendments import amendment_earned_base
-        earned_base=amendment_earned_base(scope,native_old[0]-rows[0]['allocated_bonus_dollars']*old.game_dollar_scale,previous)
+        earned_base=amendment_earned_base(scope,base[0] if previous is None else native_old[0]-rows[0]['allocated_bonus_dollars']*old.game_dollar_scale,previous)
         remaining=scope.remaining_base(offer.salaries[0])
         if (parse_amount(earned['earned_base_obligation'])!=earned_base or
                 parse_amount(earned['remaining_base_commitment'])!=remaining):

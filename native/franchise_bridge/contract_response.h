@@ -1053,22 +1053,35 @@ inline void validate_result(const nlohmann::json& response, const nlohmann::json
     const auto& result = response["result"];
     auto operation = request.at("operation").get<std::string>();
     if(operation=="guest_cap_restore") {
-        if(!result.is_object() || result.size()!=3 || result.at("request_id")!=request.at("request_id") ||
+        const bool league=result.is_object() && result.contains("additional_cap_plans");
+        if(!result.is_object() || result.size()!=(league?4:3) || result.at("request_id")!=request.at("request_id") ||
            result.at("loaded_payload_sha256")!=request.at("loaded_payload_sha256"))
             throw std::runtime_error("Invalid loaded cap recovery response");
+        auto validate_cap=[&](const nlohmann::json& plan) {
+            if(!plan.is_object() || plan.size()!=8 || plan.at("format")!="native-cap-restore-v1" ||
+               plan.at("source_epoch")!=request.at("source_epoch") ||
+               plan.at("identity_sha256")!=request.at("live_identity_sha256") ||
+               !plan.at("canonical_payrolls").is_array() || plan.at("canonical_payrolls").size()!=32)
+                throw std::runtime_error("Invalid restored cap binding");
+            for(const auto* key:{"source_epoch","team_index","native_payroll_raw","enforced_payroll_raw"}) integer_money(plan.at(key));
+            if(plan.at("source_epoch")==0 || plan.at("team_index")>=32 || plan.at("native_payroll_raw")>=2147483647 || plan.at("enforced_payroll_raw")>=2147483647)
+                throw std::runtime_error("Invalid restored cap bounds");
+            for(const auto& value:plan.at("canonical_payrolls")){integer_money(value);if(value>=2147483647)throw std::runtime_error("Invalid restored payroll");}
+            const auto hash=plan.at("finance_sha256").get<std::string>();
+            if(hash.size()!=64 || hash.find_first_not_of("0123456789abcdef")!=std::string::npos)throw std::runtime_error("Invalid restored cap hash");
+        };
         const auto& plan=result.at("cap_plan");
-        if(plan.is_null()) return;
-        if(!plan.is_object() || plan.size()!=8 || plan.at("format")!="native-cap-restore-v1" ||
-           plan.at("source_epoch")!=request.at("source_epoch") ||
-           plan.at("identity_sha256")!=request.at("live_identity_sha256") ||
-           !plan.at("canonical_payrolls").is_array() || plan.at("canonical_payrolls").size()!=32)
-            throw std::runtime_error("Invalid restored cap binding");
-        for(const auto* key:{"source_epoch","team_index","native_payroll_raw","enforced_payroll_raw"}) integer_money(plan.at(key));
-        if(plan.at("source_epoch")==0 || plan.at("team_index")>=32 || plan.at("native_payroll_raw")>=2147483647 || plan.at("enforced_payroll_raw")>=2147483647)
-            throw std::runtime_error("Invalid restored cap bounds");
-        for(const auto& value:plan.at("canonical_payrolls")){integer_money(value);if(value>=2147483647)throw std::runtime_error("Invalid restored payroll");}
-        const auto hash=plan.at("finance_sha256").get<std::string>();
-        if(hash.size()!=64 || hash.find_first_not_of("0123456789abcdef")!=std::string::npos)throw std::runtime_error("Invalid restored cap hash");
+        if(!league) {if(!plan.is_null())validate_cap(plan);return;}
+        validate_cap(plan);
+        const auto& more=result.at("additional_cap_plans");
+        if(plan.at("team_index")!=0 || !more.is_array() || more.size()!=31)
+            throw std::runtime_error("Complete opening league cap plans required");
+        for(size_t i=0;i<more.size();++i) {
+            validate_cap(more.at(i));
+            if(more.at(i).at("team_index")!=i+1 || more.at(i).at("finance_sha256")!=plan.at("finance_sha256") ||
+               more.at(i).at("canonical_payrolls")!=plan.at("canonical_payrolls"))
+                throw std::runtime_error("Opening plans disagree on the league checkpoint");
+        }
         return;
     }
     if(operation=="guest_signing_authorize") {

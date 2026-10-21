@@ -1451,3 +1451,32 @@ October20 record/transaction closure (supersedes the nine-record/11-review gap):
       then verify actual load/signing/cap/save-reload on Deck. Private assembled
       roster is a compatibility trial, not a playable financial delivery.
       MyNFL1 untouched; scheduled task remains off.
+
+
+October20 native opening candidate (supersedes older58/1753 counts):
+
+- [x] Fit all1695 native active/inactive contracts and preserve positive sourced
+      bonus allocations; label approximations and retain exact source differences.
+      Two active zero placeholders now receive approved missing-salary estimates.
+- [x] Prepare source-bound all32 opening books and durable native payroll restore;
+      preserve source non-base/earned salary through owned-contract settlement.
+      Offline full-data1770-actor fixture and end-to-end journal/reopen pass.
+- [x] Qualify17 additional primary released veterans using explicit release
+      evidence and actual participation;75 eligible FAs total. Stale tender
+      labels cannot override a verified current unrestricted termination.
+- [x] Assemble1770-player private roster/container and72 required official portrait
+      slots. New preparation CLI refuses MyNFL1 and existing output/DB overwrites.
+      MIT codec/upstream and source credits retained; private assets not published.
+- [ ] Complete267 remaining rights/availability cases and five unowned rookie
+      contracts; do not call the75-player subset historically exhaustive.
+- [ ] Finish native FA signing/settlement/checkpoint support for supplemental
+      opening obligations. Its current rejection remains in force; no cap bypass.
+- [ ] Run Windows component EXEs and game --validate, then actual fresh NATIVE
+      hybrid franchise load, initialize32books, owned negotiation, cap and
+      save/reload. Windows compilation and portable checks are separate evidence.
+      Deck currently not resolving; no new runtime installation or Steam reroute.
+      Synthetic save fixture is never a substitute for a game-created save.
+
+Candidate rooms match approved October20 published proxies, not verified Week1
+balances. Dynamic roster/elevation/reserve handling still needs integration.
+MyNFL1 remains untouched; scheduled task stays PAUSED.

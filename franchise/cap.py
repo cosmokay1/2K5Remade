@@ -235,6 +235,10 @@ class Ledger:
                     or self._tenders != {item.player_id: item.amount for item in opening_books.tenders}):
                 raise ValueError("Opening balances, ownership or tenders disagree with source books")
 
+        if opening_books is not None:
+            from franchise.legacy_contracts import imported_components
+            for original in self._legacy_contracts.values():
+                imported_components(opening_books,original)
         if rookie_pool_opening is not None:
             from franchise.rookie_opening import RookiePoolOpening
             if not isinstance(rookie_pool_opening, RookiePoolOpening) or opening_books is None:
@@ -1371,7 +1375,6 @@ class Ledger:
         remaining base. This is not a signing preview or settlement authority:
         earned pay, cash payment history and guest application are unverified.
         """
-        from franchise.legacy_contracts import original_annual_rows
         with self._lock:
             if type(expected_revision) is not int or expected_revision != self.revision:
                 raise Rejected('Amendment was based on stale franchise state')
@@ -1383,16 +1386,17 @@ class Ledger:
                 raise Rejected('Salary classification required for all proposed years')
             if any(salary < minimum for salary, minimum in zip(offer.salaries, minimums)):
                 raise Rejected('Veteran amendment is below an annual minimum salary')
-            rows = original_annual_rows(original.amount_word, original.bonus_code,
-                                       original.shape_code, original.original_years)
-            remaining = rows[original.original_years-original.remaining_years:]
-            old = original.charges()
-            carried = tuple(row['allocated_bonus_dollars'] * original.game_dollar_scale for row in remaining)
+            from franchise.legacy_contracts import imported_components
+            source_base,source_nonbase=imported_components(self._opening_books,original)
+            old = tuple(a+b for a,b in zip(source_base,source_nonbase))
+            # Old-contract credits expire with the replaced agreement; positive
+            # non-base obligations stay protected, including unknown paid bonuses.
+            carried = tuple(max(0,value) for value in source_nonbase)
             previous=self._legacy_amendments.get(offer.player_id)
             if previous is not None:
                 old,carried=previous.charges(),previous.bonus_charges()
             from franchise.legacy_amendments import amendment_earned_base,InSeasonAmendmentScope
-            earned=amendment_earned_base(scope,remaining[0]['salary_dollars'] * original.game_dollar_scale,previous)
+            earned=amendment_earned_base(scope,source_base[0],previous)
             proposed = list(offer.charges(self.max_bonus_years))
             if isinstance(scope,InSeasonAmendmentScope):
                 proposed[0]+=earned+scope.remaining_base(offer.salaries[0])-offer.salaries[0]

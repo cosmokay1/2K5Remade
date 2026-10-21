@@ -9,6 +9,7 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <vector>
 
 struct FranchiseHostClient {
     std::unique_ptr<franchise::PipeClient> transport;
@@ -28,8 +29,8 @@ struct FranchiseHostClient {
     franchise::NativeApplication application;
     FranchiseFinanceSnapshot application_before{};
     ULONGLONG application_submitted=0;
-    FranchiseCapEnforcement restored_cap{};
-    bool restored_cap_ready=false;
+    std::vector<FranchiseCapEnforcement> restored_caps;
+    size_t restored_cap_index=0;
 };
 static std::string signing_state_sha256(const unsigned char* bytes,size_t size) {
     BCRYPT_ALG_HANDLE algorithm=nullptr;unsigned char digest[32];
@@ -261,17 +262,23 @@ extern "C" FranchiseHostStatus franchise_host_take(FranchiseHostClient* client, 
             if (response.at("error") == "ai_disabled") client->ai_granted = false;
             const auto request=franchise::parse_frame(client->request);
             if(client->operation=="guest_cap_restore" && response.at("error").is_null()) {
-                client->restored_cap_ready=false;
-                const auto& plan=response.at("result").at("cap_plan");
-                if(!plan.is_null()) {
+                client->restored_caps.clear();client->restored_cap_index=0;
+                auto plans=nlohmann::json::array();
+                const auto& result=response.at("result");
+                if(!result.at("cap_plan").is_null())plans.push_back(result.at("cap_plan"));
+                if(result.contains("additional_cap_plans"))
+                    for(const auto& plan:result.at("additional_cap_plans"))plans.push_back(plan);
+                std::vector<FranchiseCapEnforcement> restored;
+                for(const auto& plan:plans) {
                     FranchiseCapEnforcement cap{};cap.expected=client->application_before;
                     cap.source_epoch=plan.at("source_epoch").get<uint64_t>();cap.team_index=plan.at("team_index").get<uint32_t>();
                     cap.native_payroll=plan.at("native_payroll_raw").get<uint32_t>();cap.enforced_payroll=plan.at("enforced_payroll_raw").get<uint32_t>();
                     for(unsigned i=0;i<32;++i)finance_put32(cap.expected.bytes+48+12*i,plan.at("canonical_payrolls")[i].get<uint32_t>());
                     if(signing_state_sha256(cap.expected.bytes,cap.expected.size)!=plan.at("finance_sha256"))
                         throw std::runtime_error("Restored cap differs from the loaded live state");
-                    client->restored_cap=cap;client->restored_cap_ready=true;
+                    restored.push_back(cap);
                 }
+                client->restored_caps=std::move(restored);
                 client->loaded_payload=response.at("result").at("loaded_payload_sha256").get<std::string>();
             }
             if(client->operation=="guest_signing_authorize" && response.at("error").is_null()) {
@@ -350,11 +357,11 @@ extern "C" FranchiseHostStatus franchise_host_restore_cap(FranchiseHostClient* c
             {"live_identity_sha256",signing_state_sha256(static_cast<const unsigned char*>(identity),identity_size)},
             {"finance_payrolls",payrolls}};
         client->application={};client->application_before={};client->application_before.size=static_cast<uint32_t>(size);
-        std::memcpy(client->application_before.bytes,finance,size);client->restored_cap_ready=false;
+        std::memcpy(client->application_before.bytes,finance,size);client->restored_caps.clear();client->restored_cap_index=0;
         const auto text=request.dump();return franchise_host_submit(client,text.data(),text.size());
     } catch(...){return FRANCHISE_HOST_SERVICE_FAILURE;}
 }
 extern "C" int franchise_host_take_restored_cap(FranchiseHostClient* client,FranchiseCapEnforcement *cap) {
-    if(!client || !cap || client->owner!=GetCurrentThreadId() || !client->restored_cap_ready)return 0;
-    *cap=client->restored_cap;client->restored_cap_ready=false;return 1;
+    if(!client || !cap || client->owner!=GetCurrentThreadId() || client->restored_cap_index>=client->restored_caps.size())return 0;
+    *cap=client->restored_caps[client->restored_cap_index++];return 1;
 }

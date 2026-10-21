@@ -43,6 +43,17 @@ class OpeningEstimateTests(unittest.TestCase):
         self.assertIsNone(result['teams']['NYG']['cap_room'])
         self.assertFalse(result['ready_for_franchise_test'])
 
+    def test_positive_one_year_deal_with_zero_annual_placeholder_is_not_free(self):
+        w,c=self.inputs();self.add(w,c,'placeholder',cap=0,apy=2)
+        row=c[-1];row.update(years=1,value=2)
+        row['contract_history'][0].update(yrs=1,total=2)
+        before=deepcopy(c)
+        entry=self.player(self.run_model(w,c),'placeholder')
+        self.assertEqual(entry['cap_dollars'],2000000)
+        self.assertEqual(entry['basis'],'modeled_one_year_nominal_charge')
+        self.assertEqual(entry['archived_zero_cap_placeholder_dollars'],0)
+        self.assertEqual(c,before)
+
     def test_published_comparison_is_labeled_as_estimated_not_historical(self):
         w,c=self.inputs();c[-1]['season_history'][0]['historical_annual_schedule_verified']=False
         p=self.player(self.run_model(w,c),'peer2')

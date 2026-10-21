@@ -267,8 +267,11 @@ void nfl2k5_franchise_poll(void)
             } else {
                 FranchiseCapEnforcement *cap=malloc(sizeof(*cap));
                 if(!cap) goto failed;
-                const int present=franchise_host_take_restored_cap(franchise_client,cap);
-                const int published=!present || nfl2k5_franchise_publish_cap(cap);free(cap);
+                int present=0,published=1;
+                while(franchise_host_take_restored_cap(franchise_client,cap)) {
+                    if(++present>32 || !nfl2k5_franchise_publish_cap(cap)) {published=0;break;}
+                }
+                free(cap);
                 if(!published) goto failed;
                 fprintf(stderr,"[FRANCHISE] Loaded cap checkpoint verified; restored_plan=%d no_signing_grant=1\n",present);
             }
