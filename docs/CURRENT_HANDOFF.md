@@ -3,6 +3,24 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
+## Authorized salary estimates — October20
+
+User now permits educated positional assumptions for undefined salaries. Do not
+keep exact historical rookie salary closure as a prerequisite to modeling.
+New tools/estimate_week1_salaries.py covers2526/2526 supplied club entries:
+1930 archived annual charges preserved,307 published matching-contract estimates,
+134 rookie allocations and155 positional estimates.148/150 earlier historical
+rookie gaps are club-listed and modeled; two off-list. Four archived rookies total
+need FA/rights review. No guessed availability or deletion of retained debt.
+Known rookie nominal totals preserved; position/experience/status peers price
+other gaps. No team-budget fitting or ratings.40 focused tests pass. This is an
+opening cap projection, not complete base/bonus/paid-cash contract authority.
+Native identities/encoding, membership corrections (including Slayton), retained
+charges, club adjustments and global FA pool remain. No ready Deck candidate or
+certified cap room. MyNFL1/Deck untouched; automation verified PAUSED. Source and
+model counts/CLI/evidence: WEEK1_LEAGUE_RECONCILIATION.md. Private modeled-opening-
+charges.json; no runtime, credentials, controls, inference or native build changes.
+
 ## Rookie source comparisons — October 18
 
 Audited459 archived current-year rookie contracts;309 published schedules match

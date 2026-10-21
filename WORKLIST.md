@@ -1310,6 +1310,22 @@ Scope is all 32 teams and the shared league-wide free-agent pool. No Giants-only
 delivery or unverified CPU-team cap books. Each club needs membership, contracts,
 reserves/PS, retained debt and adjustments reconciled at the same cutoff.
 
+October20 policy: user authorizes educated positional salary assumptions where
+sources cannot define a salary. Historical truth and modeled opening charges
+remain labeled separately; do not keep historical rookie salary gaps as an
+absolute blocker to modeling. This does not permit inventing player availability,
+discarding retained liabilities, altering known charges or fitting salaries to cap.
+
+- [x] Model every missing charge in the supplied32-club roster:1930 archived annual
+      figures preserved,307 published matching-contract estimates,134 rookie
+      allocations and155 positional estimates;2526/2526 covered. Rookie models
+      preserve known nominal totals and use nearest draft slots/same contract type.
+     40 focused checks pass. No native bindings, full cap book or import claimed.
+- [ ] Reconcile membership (including known releases), retained charges and club
+      adjustments; resolve four archived rookies without a Week1 club owner in
+      the FA/rights pass. Bind modeled salary/cap allocations to the actual hybrid
+      contract ledger and native encoding before the fresh-franchise Deck test.
+
 - [x] Run the shared whole-club audit across all32 teams.2526 club members,
       1930 annual figures matched,596 unresolved (including255 drafted2026 rookies).
       Refuse absent/unknown teams; one-club or cross-club ownership gaps cannot
@@ -1323,7 +1339,8 @@ reserves/PS, retained debt and adjustments reconciled at the same cutoff.
       Preserve replacement lineage, original bonus-debt boundary, source hashes,
       missing cash and stale/contradictory inputs.34 focused tests pass. Later
       published schedules are comparisons, not verified historical Week1 charges.
-- [ ] Resolve the150 rookie source exceptions, then the other annual/status gaps,
+- [ ] Retain the150 rookie historical-source exceptions for review; modeled
+      projections now cover148 club-listed cases. Then close annual/status gaps,
       retained liabilities, adjustments and global FA rights. Supplemental rookie
       comparisons cover307 club-listed entries;289 club entries still lack even
       a comparison. No complete opening book or Deck-ready hybrid is certified.

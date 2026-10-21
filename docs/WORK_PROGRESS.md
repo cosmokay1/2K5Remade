@@ -10624,3 +10624,38 @@ first-year summary, stale archive, missing/duplicate/conflicting batch inputs an
 existing whole-league/source fixtures. No runtime change or native rebuild;
 unchanged1119-test financial/runtime baseline was not rerun. MyNFL1/Deck untouched,
 no inference or credential/control changes. Automation rechecked PAUSED.
+
+
+## October20 — authorized missing-salary estimates across all teams
+
+User authorized positional educated estimates instead of waiting for exact
+salary definitions. Added deterministic opening charge estimator and CLI, with
+known annual figures immutable. Actual supplied weekly snapshot:2526 club-listed
+entries;1930 archived annual figures,307 published matching-contract estimates,
+134 modeled rookie allocations and155 positional estimates. Zero missing charge
+projections.148 of150 prior rookie historical exceptions are on club lists and
+now modeled; two are off-list. Four archived rookie contracts total have no
+Week1 club owner and remain FA/rights review, not invented roster additions.
+
+Rookie models preserve known signed nominal totals with nearest-slot/type peers.
+Veterans prefer known APY and positional cap/APY ratios; missing terms use peer
+medians with experience/status tiers and explicit thin-specialist fallbacks.
+Money uses integer dollars/Fractions. Practice and active prices stay separate;
+no reserve split reduction is invented. No ratings, team-room fitting or new
+paid-bonus/guarantee/cash facts. Cap-only projections are not complete contracts
+or ledger imports; actual native binding/encoding remains required.
+
+Inspected published September4 cap texture: only rounded percentages, not exact
+debt/adjustments. Rejected as a replacement for retained obligations or a reason
+to create credits. Confirmed primary Giants release record still conflicts with
+cached weekly membership for Slayton; no game roster changed. Model coverage is
+not membership certification, accurate final cap room or a complete global FA
+pool. Source-authorized modeling unblocks missing salary coverage only.
+
+40 focused source/model/identity/portrait/transaction checks pass. Fixtures verify
+known-charge preservation, budget independence, specialist role segregation,
+nominal-total conservation/nearest slots, missing peers, duplicate identities and
+unowned rookie rights review. No runtime/native rebuild, screenshots, inference,
+IAM/budget/control changes or Deck writes. MyNFL1 untouched. Automation PAUSED.
+Private model receipt and exact input hash recorded; next work is membership,
+retained/adjustments, FA rights and actual hybrid financial/native binding.
