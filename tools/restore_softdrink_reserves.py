@@ -1,4 +1,4 @@
-"""Copy-only SOFTDRINK v0.6.1 reserve ownership correction; no game/addon code.
+"""Restore omitted SOFTDRINK v0.6.1 players to playable rosters; no addon code.
 
 Requires the user's pack and its original Mod Studio RC112 codec. No retail
 assets or player database are distributed here. The recipe's existing records
@@ -32,7 +32,7 @@ def digest(data):
 
 
 def restore(payload, recipe, records, squads):
-    """Preserve all records/active lists; add already-authored RES ownership."""
+    """Append authored RES players to active lists; preserve existing members."""
     require(digest(payload) == ROSTER_SHA, 'Expected the unmodified v0.6.1 disc roster')
     roster = records.RosterDocument(payload, base=32, base_year=2026, reference_year=2026)
     squads.validate_roster(payload, strict_owners=True)
@@ -54,6 +54,8 @@ def restore(payload, recipe, records, squads):
         require(roster.club_of(player) is None and not roster.is_free_agent(player),
                 'Reserve is already owned or offered as a free agent')
         require(not player.record.on_injured_reserve, 'Existing IR state needs separate handling')
+        require(player.record.encode()[8] & 0x1c == 4,
+                'Restored record is not an eligible NFL player')
         pending[row['team']].append(row)
     require(len(seen) == 81, 'Pinned release reserve coverage changed')
     out = bytearray(payload)
@@ -61,26 +63,37 @@ def restore(payload, recipe, records, squads):
     restored = []
     for name, team in clubs.items():
         additions = pending[name]
-        ids = list(roster.reserves[team.index]) + [p['index'] for p in additions]
-        require(len(ids) <= roster.reserve_limit(team.index), 'Reserve capacity exceeded')
-        raw = squads.set_reserve_list(
-            payload[team.offset:team.offset + records.TEAM_SIZE], ids,
+        active = [(offset - roster.primary_table) // records.PLAYER_SIZE
+                  for offset in team.slots] + [p['index'] for p in additions]
+        reserves = list(roster.reserves[team.index])
+        require(len(active) <= records.TEAM_SLOTS and len(active) + len(reserves) <= 65,
+                'Active/physical roster capacity exceeded')
+        raw = squads.repack_team(
+            payload[team.offset:team.offset + records.TEAM_SIZE], active, reserves,
             team_offset=team.offset, player_pool_offset=roster.primary_table,
-            player_count=len(roster.by_pool('primary')))
+            player_count=len(roster.by_pool('primary')),
+            mark=bool(payload[team.offset + squads.VERSION_OFFSET]))
         out[team.offset:team.offset + records.TEAM_SIZE] = raw
-        # Existing pointers, active count, salary/stat caches and every player
-        # record are outside this write allowance.
+        # Existing active pointers, salary/stat caches and every player record
+        # are outside this allowance. Existing reserve pointers shift to make
+        # room for the new active entries; their identities/order stay intact.
         allowed.update(range(team.offset + len(team.slots) * 4, team.offset + 260))
-        allowed.update(team.offset + n for n in (squads.VERSION_OFFSET, squads.COUNT, squads.MARKER_OFFSET))
+        allowed.update(team.offset + n for n in (squads.VERSION_OFFSET, squads.COUNT,
+                                               squads.MARKER_OFFSET, squads.ACTIVE_COUNT))
         restored.extend(dict(team=name, index=p['index'], name=p['first'] + ' ' + p['last'],
                              gsis_id=p['gsis_id']) for p in additions)
     changed = [i for i, (a, b) in enumerate(zip(payload, out)) if a != b]
-    require(set(changed) <= allowed, 'Write escaped reserve pointer/metadata fields')
+    require(set(changed) <= allowed, 'Write escaped membership pointer/count fields')
     squads.validate_roster(bytes(out), strict_owners=True)
     fresh = records.RosterDocument(bytes(out), base=32, base_year=2026, reference_year=2026)
     for p in restored:
-        require(fresh.reserve_owner['primary', p['index']] == clubs[p['team']].index,
-                'Restored ownership did not round-trip')
+        player = fresh.by_offset[roster.primary_table + p['index'] * records.PLAYER_SIZE]
+        require(clubs[p['team']].index in player.teams
+                and ('primary', p['index']) not in fresh.reserve_owner,
+                'Restored player is not on the active roster')
+    for old, new in zip(roster.teams, fresh.teams):
+        require(new.slots[:len(old.slots)] == old.slots, 'Existing active players changed')
+        require(fresh.reserves[old.index] == roster.reserves[old.index], 'Existing reserves changed')
     mapped = {p['gsis_id'] for p in restored}
     unavailable = [p for p in recipe['roster_refresh']['unrepresented']
                    if p['status'] == 'RES' and p['gsis_id'] not in mapped]
@@ -88,9 +101,10 @@ def restore(payload, recipe, records, squads):
         source_roster_sha256=digest(payload), corrected_roster_sha256=digest(out),
         restored=restored, clubs_checked=32, changed_bytes=len(changed),
         unrepresented_without_authored_reserve_record=unavailable,
-        player_records_unchanged=True, active_lists_unchanged=True,
+        player_records_unchanged=True, existing_active_players_preserved=True,
+        existing_reserves_preserved=True, restored_to_active_rosters=True,
         free_agents_unchanged=True, alumni_lists_unchanged=True,
-        reserve_storage='existing SOFTDRINK squad list; not native franchise IR',
+        destination='playable active rosters; normal stock roster/cap rules apply',
         game_execution_verified=False, franchise_save_reload_verified=False)
 
 

@@ -73,16 +73,24 @@ class PrivateStockReserveTests(unittest.TestCase):
         result, receipt = restore(self.payload, self.recipe, self.records, self.squads)
         self.assertEqual(len(receipt['restored']), 81)
         self.assertEqual(len({p['team'] for p in receipt['restored']}), 32)
-        self.assertEqual(receipt['changed_bytes'], 257)
+        self.assertTrue(receipt['restored_to_active_rosters'])
         old = self.records.RosterDocument(self.payload, base=32, reference_year=2026)
         new = self.records.RosterDocument(result, base=32, reference_year=2026)
         for p in old.players:
             self.assertEqual(self.payload[p.offset:p.offset+84], result[p.offset:p.offset+84])
         for a, b in zip(old.teams, new.teams):
-            self.assertEqual(a.slots, b.slots)
+            self.assertEqual(a.slots, b.slots[:len(a.slots)])
+            self.assertEqual(old.reserves[a.index], new.reserves[a.index])
+            self.assertLessEqual(len(b.slots) + len(new.reserves[b.index]), 65)
+            if a.index >= 32:
+                self.assertEqual(a.slots, b.slots)
         self.assertEqual(old.free_agents, new.free_agents)
-        self.assertEqual(new.reserve_owner['primary', 987], 15)  # Dart
-        self.assertEqual(new.reserve_owner['primary', 958], 15)  # Burns
+        for index in (987, 958):  # Dart/Burns must be selectable, not hidden reserves.
+            self.assertNotIn(('primary', index), new.reserve_owner)
+            self.assertIn(new.primary_table + index * 84, new.teams[15].slots)
+        self.assertEqual(len(new.teams[15].slots), 56)
+        self.assertEqual(sum(len(t.slots) for t in new.teams[:32]) -
+                         sum(len(t.slots) for t in old.teams[:32]), 81)
 
     def test_mismatched_identity_and_duplicate_source_refused(self):
         for mode in ('name', 'duplicate'):

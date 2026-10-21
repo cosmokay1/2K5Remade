@@ -39,13 +39,13 @@ native roster-read sizes pass. Relaunched stock startup advances without logged
 stalls; control/match acceptance pending. Keep scheduled work OFF; do not resume
 franchise/hybrid deployment automatically. See [stock evidence](docs/SOFTDRINK_AI_BASE.md).
 
-- [ ] Stock-only reserve correction: restore81 already-authored RES players
-      across all32 clubs without addons/hybrid data. Only257 default-roster bytes
-      change; all player records/active lists/FA/alumni remain intact. Seven
-      targeted tests, full-volume stock recovery and six Deck native-reader
-      sizes pass. Staged separately; awaiting normal exit before activation,
-      then fresh-franchise reserve and save/reload checks. Other255 omitted RES
-      entries have no stock record and are reported, not synthesized.
+- [ ] Stock-only playable roster correction: reserve-only v1 did not meet the
+      user's playability intent. Active v2 restores81 existing players across
+      all32 clubs to playable lists; original players/records/reserves/FA/alumni
+      preserved. Only397 default-roster bytes change. Seven tests, full-volume
+      stock recovery and six Deck native-reader sizes pass. Installed after normal
+      exit, saves preserved. Need fresh-franchise roster/depth-chart/save-reload
+      acceptance. Other255 omitted source entries have no stock record.
       See [scope and validation](docs/SOFTDRINK_RESERVES.md).
 
 - [ ] Validate the separate SOFTDRINK v0.6.1 candidate on the Deck before switching

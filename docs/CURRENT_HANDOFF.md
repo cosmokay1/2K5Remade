@@ -3,27 +3,34 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
-## Stock-only all-team reserve correction — October21
+## Stock-only playable roster correction — October21
 
-User requests restoring missing reserves across all teams, no addon/hybrid.
-Stock working-menu confirmation received. Official recipe has81 complete RES
-records omitted from club ownership, including Dart987/Burns958. Restored to
-existing SOFTDRINK reserve-squad storage on all32 clubs; NOT native franchise IR.
-Only257 bytes of default ROST change. Every player record, active list, FA/alumni
-pointer and game executable stays intact. Other255 omitted RES entries have no
-stock record/name match; do not synthesize or claim all336 are restored.
+User could not see Dart/Burns after reserve-only v1 and explicitly wants them
+FULLY PLAYABLE across all teams. Supersedes v1's reserve-storage approach.
+Active v2 appends81 existing source-identified players to32 active club lists,
+preserving every original player/member and existing reserves. No addon/hybrid,
+ratings, contracts, portraits, depth-field, injury or free-agent edits. Counts
+54–58 active (Giants56), within65 physical slots including reserves. Normal
+stock depth-chart selection/cutdowns and cap accounting apply; no cap credits.
+Only397 default ROST bytes change. Other255 missing source entries still have
+no stock record and are NOT synthesized.
 
-Seven focused checks pass. Replacing corrected resource with original recovers
-official full-volume hash exactly. Corrected vc0 SHA56f08eaea4fe344058e035f182808b723d70d20523810e9412c4eff7887e49c5.
-Deck existing native reader matches six chunk sizes. Candidate staged separately
-at native-05ac4e9/softdrink-reserve-correction-v1; NOT activated. Original pack,
-saves and runtime untouched. Asked user normal exit; do not replace active data
-while process2892 runs. Private guarded installer in local reserve-validation/
-requires no game/service, exact stage hashes and expected stock selection;
-backs up selection and verifies current save/context hashes. After activation,
-verify a FRESH franchise retains Dart/Burns plus another club, then save/reload.
-Existing saves serialize their own rosters and are not migrated by this fix.
-No new code/IAM/inference/automation activation. See SOFTDRINK_RESERVES.md.
+Seven tests pass, including active membership/flags, original member/record
+preservation, reserves, alumni and capacity. Corrected vc0 SHA
+9b2d102c9c190c36738052b01db167fe13bd23ed37f8cda8b80948cb2c9990df;
+restoring stock ROST recovers official volume hash exactly. Deck native reader
+passes six chunk sizes. Staged native-05ac4e9/softdrink-active-correction-v2,
+Activated after user confirmed normal exit. Same Steam entry relaunched game
+process4252. Private install-active.py guarded process absence/selection/hashes;
+433 unique payload hashes recorded,457 protected inode/size/timestamp snapshots
+unchanged; large virtual disks not repeatedly hashed. Original pack/EXE retained,
+zero addons. Need fresh-franchise playable roster,
+depth-chart and save/reload proof after install; no screenshots/menu guessing.
+Scheduled task remains OFF. See SOFTDRINK_RESERVES.md.
+
+Prior v1 installed after normal exit;454 protected file hashes unchanged, original
+pack/EXE retained, zero addons. User's roster visibility test failed the intended
+playability outcome; don't treat v1's structural checks as gameplay acceptance.
 
 ## Current delivery: stock SOFTDRINK v0.6.1, no addon — October21
 
