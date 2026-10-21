@@ -6,6 +6,85 @@ verified membership, annual contracts, reserve/practice-squad obligations,
 retained/dead charges and club cap adjustments before the league is certified.
 A complete set of roster schedules alone does not establish a full cap book.
 
+## Membership, opening obligations and free agents — October 20, 2026
+
+The user also approved conservative estimates for missing retained/dead charges
+and club cap adjustments, with known figures fixed. These models are permitted
+for the fresh test franchise; they are not certified historical books. No
+availability or waiver-rights estimates were authorized.
+
+`tools/correct_week1_membership.py` reads pinned primary club tables and the
+validated secondary transaction feed. The September 1–10 pass captured 31 club
+tables (Dallas unavailable; Buffalo has no rows in that interval), extracted
+268 primary events and applied 48 unambiguous membership/status corrections to
+an isolated source copy. It retained 37 secondary-source conflicts and 92 review
+cases, including three possibly temporary practice-squad activations. The
+secondary feed attributes a Cleveland signing batch to Dallas; primary club
+sources take precedence. Extensions, conflicting same-day moves, waived/injured
+and temporary elevations do not silently become permanent ownership changes.
+40 outgoing-player debt reviews remain explicit unknown amounts, never zero.
+These are new reviews, not a complete retained-liability inventory.
+
+Repricing the corrected snapshot covers all 2,489 club-listed entries: 1,925
+archived annual amounts, 307 matching-contract comparisons, 134 rookie models
+and 123 positional estimates. No missing salary projections remain. This
+includes reserve and practice-squad obligations that cannot all fit on native
+team rosters; off-native obligations must remain in the sidecar ledger.
+
+`tools/model_opening_cap.py` uses independently published 2026 club figures from
+[OTC's cap-space table](https://overthecap.com/salary-cap-space), observed October
+20, as provisional proxies. For each club, the model derives its adjusted
+budget from published active spending + dead money + room, then subtracts our
+opening roster projection and debt. It does not derive adjustments from our
+roster deficit. Later totals may include post-cutoff releases or overlap opening
+roster obligations; they are not backdated facts or guaranteed upper bounds.
+Confirmed individual charges establish a floor inside the debt estimate, rather
+than being added twice; dated complete totals override proxies. Contradictory
+known totals and duplicate obligations are rejected. No known money is reduced.
+
+Seven clubs remain modeled over cap: BUF, CAR, KC, LA, MIN, NO and NYG. Giants:
+$257,551,522 roster projection + $44,642,264 retained proxy against a
+$300,195,334 adjusted budget (net adjustment -$1,004,666), leaving **-$1,998,452**.
+No balancing credits or roster cuts were invented to cure the deficit.
+
+The FA classifier reviewed 350 identities, including an omitted confirmed
+vested release. It exports 58 evidence-qualified candidates: 57 expired
+unrestricted contracts supported by the pinned same-cutoff archive and Darius
+Slayton's primary vested termination. It excludes 233 availability/waiver reviews,
+47 RFA/ERFA cases, six disputed latest transactions, five retired players and one
+club-owned player. This is a qualified subset, not an exhaustive historical pool.
+Archive status and observed source dates do not certify every earlier move.
+
+Private outputs under `.local-runtime/week1-roster-v1/`:
+`membership-corrections.json`, `weekly-corrected-input.json`,
+`corrected-modeled-charges.json`, `modeled-opening-cap-book.json` and
+`free-agent-eligibility.json`. Source captures/hashes remain private. Rebuild the
+cap model after any correction to roster, salary or known obligations:
+
+```sh
+python3 -m tools.model_opening_cap \
+  .local-runtime/week1-roster-v1/corrected-modeled-charges.json \
+  .local-runtime/week1-roster-v1/source-research/oct20-cap-proxies.txt \
+  --cutoff 2026-09-10 --observed-on 2026-10-20 \
+  --allow-modeled-missing-obligations \
+  --output .local-runtime/week1-roster-v1/modeled-opening-cap-book.json
+```
+
+Optional `--known-totals` accepts a JSON club dictionary with dated `source` and
+`as_of`, optional `retained_dollars`/`net_adjustment_dollars`, and optional
+`retained_components` (unique `obligation_id`, integer `dollars`, `source`,
+`as_of`). Complete totals and component floors must agree.
+
+54 focused source/model/identity/portrait/transaction checks pass. The model
+keeps signing and test-readiness false. Still required: resolve membership/FA
+reviews, bind corrected identities and contracts to native records without
+losing SOFTDRINK images, and verify fresh-franchise creation, cap enforcement,
+signing and save/reload on the Deck. The existing native identity pass binds
+1,558/1,937 source players; its 379 unresolved mappings are not resolved by
+salary estimates. No new Deck package is certified. MyNFL1, game files, controls
+and credentials were untouched; automation remains PAUSED. No screenshots,
+native rebuild, paid inference or Deck writes were used.
+
 ## Modeled opening charges — October 20, 2026
 
 The user authorized educated positional salary estimates where real salary data

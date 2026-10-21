@@ -1316,6 +1316,18 @@ remain labeled separately; do not keep historical rookie salary gaps as an
 absolute blocker to modeling. This does not permit inventing player availability,
 discarding retained liabilities, altering known charges or fitting salaries to cap.
 
+October20 extension: user also approves conservative missing retained/dead-money
+and adjustment estimates. Keep known amounts fixed; unknown availability/rights
+still require evidence. Later aggregate proxies are labeled, not backdated.
+
+- [x] Implement source correction and modeled obligations for all32 clubs.
+      48 membership corrections;92 review cases and37 feed conflicts retained.
+      Corrected2489 entries have salary projections. Independent published club
+      budgets/debt proxies preserve known totals and component floors, never fit
+      credits to roster deficits. Seven modeled clubs remain over cap (NYG~$2M).
+      FA pass qualifies58 candidates;292 excluded/reviewed, not a certified pool.
+      54 focused checks pass. See WEEK1_LEAGUE_RECONCILIATION.md for reproducible
+      cap CLI, source dates, current counts and native/test limitations.
 - [x] Model every missing charge in the supplied32-club roster:1930 archived annual
       figures preserved,307 published matching-contract estimates,134 rookie
       allocations and155 positional estimates;2526/2526 covered. Rookie models
@@ -1384,10 +1396,11 @@ discarding retained liabilities, altering known charges or fitting salaries to c
       trial preserves that reference's container and metadata, replacing only
       candidate data and its signature. Actual load/save/reload remains pending.
 - [ ] Build the requested hybrid using SOFTDRINK's player presentation/record bank
-      and verified preseason membership plus independently reconciled contracts.
-      Read-only name/decoded-DOB planner matches1380/1907 desired players;
-      Giants43/60. Resolve435 missing,84 DOB conflicts and8 ambiguous entries
-      before creating a hybrid; native slot/photo IDs must remain native.
+      and corrected Week1 membership plus modeled/reconciled contracts.
+      Latest historical identity pass binds1558/1937 desired players;379
+      unresolved (241 without a verified native image record,94 birthday conflicts,
+      36 unknown names,8 duplicate identities). Resolve or explicitly bind the
+      approved missing portraits; native slot/photo IDs must remain native.
       Direct import trial superseded; normal Steam routing restored exactly.
 - [ ] Recover a dated beginning-of-preseason roster and complete matching
       liabilities. MyNFL1 contains a late-September trade; the available contract

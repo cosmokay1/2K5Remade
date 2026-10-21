@@ -10659,3 +10659,30 @@ unowned rookie rights review. No runtime/native rebuild, screenshots, inference,
 IAM/budget/control changes or Deck writes. MyNFL1 untouched. Automation PAUSED.
 Private model receipt and exact input hash recorded; next work is membership,
 retained/adjustments, FA rights and actual hybrid financial/native binding.
+
+
+## October 20 — Corrected membership and modeled all-team opening obligations
+
+User approved conservative estimates for missing retained/dead charges and club
+adjustments, keeping known amounts fixed. Implemented correct_week1_membership:
+pinned primary-club evidence beats conflicting secondary attribution; identity,
+date, same-day, extension, waiver/injury and temporary-elevation guards preserve
+review cases.31 club tables/268 primary events produce48 corrections,92 reviews,
+37 feed conflicts and40 outgoing-player debt reviews. Dallas primary unavailable;
+Buffalo interval empty. No disappearing salary/debt or guessed FA clearance.
+
+Corrected2489 club entries have complete salary projections:1925 archived annual,
+307 comparison,134 rookie and123 positional estimates. New model_opening_cap CLI
+uses externally implied club budgets and later aggregate debt proxies, not roster
+deficits. Dated known totals override estimates; known components establish a
+floor without double counting. Seven over-cap clubs persist; Giants-$1,998,452.
+Later aggregates are modeled, potentially overlapping post-cutoff activity; no
+historical cap certification. FA classifier exports58 qualified candidates out
+of350;292 excluded/reviewed. Source dates/hashes and private artifacts documented
+in WEEK1_LEAGUE_RECONCILIATION.md.54 focused checks pass in0.089s.
+
+No Deck/game/save/credential/control changes, screenshots, paid inference or
+native rebuild. MyNFL1 untouched. Scheduled automation verified PAUSED. Native
+identity/image binding still1558/1937;379 unresolved. No Deck-ready hybrid or
+actual boot/signing/cap/save-reload proof claimed. Next: close membership/rights
+reviews and native encoding/contract binding, then one isolated Deck candidate.

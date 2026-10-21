@@ -3,6 +3,26 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
+## Modeled obligations and source corrections — October20
+
+User approved conservative missing retained/dead/adjustment estimates; keep known
+figures fixed. New source tooling applies48 isolated membership corrections,
+retains92 reviews/37 feed conflicts and40 outgoing debt reviews (unknown≠zero).
+31 primary club tables/268 events; DAL unavailable, BUF interval empty. Corrected
+2489 club entries priced (1925 archived,307 comparison,134 rookie,123 positional).
+All32 books have independently derived budget/debt proxies; known totals/floors
+preserved. Seven remain modeled over cap, Giants-$1,998,452. Later aggregates can
+overlap post-cutoff events; modeled projections, not historical certification.
+FA350 reviewed/58 qualified;292 excluded/reviewed, not exhaustive.54 checks pass.
+CLI/evidence: WEEK1_LEAGUE_RECONCILIATION.md. Private receipts: membership-
+corrections.json, corrected-modeled-charges.json, modeled-opening-cap-book.json,
+free-agent-eligibility.json under week1-roster-v1. No ready Deck hybrid: resolve
+membership/rights, native identities/images (1558/1937 bound,379 unresolved),
+contract encoding and real fresh-franchise cap/signing/save/reload. MyNFL1/Deck
+untouched. No native rebuild, screenshots, inference or IAM/control changes.
+Automation verified PAUSED. Older exact-source-only blockers below are superseded
+by approved labeled modeling, not by guessed availability or native bindings.
+
 ## Authorized salary estimates — October20
 
 User now permits educated positional assumptions for undefined salaries. Do not
