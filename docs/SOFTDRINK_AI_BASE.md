@@ -3,6 +3,36 @@
 On October 14, 2026 the user chose SOFTDRINK if usable. Prefer the Xbox Remade
 pack path and defer NFL 2K27/PCSX2 migration. This is a direction, not compatibility proof.
 
+## Stock v0.6.1 Deck delivery — October 21, 2026
+
+The user now requests the official SOFTDRINK pack without the franchise addon or
+hybrid roster. The existing Steam entry selects a fresh stock profile at
+`native-05ac4e9/softdrink-v0.6.1-stock`; no addon directory/DLL, provider, sidecar,
+franchise DB, hybrid save, custom portrait overlay or custom patch is installed
+there. Previous saves/profiles are retained separately. Scheduled follow-up OFF.
+
+The new pack initially froze even without the addon. The actual native overlay
+reader returned incorrect roster bytes because the trimmed Deck disc was missing
+`update.xbe`, `dashupdate.xbe` and `vc_53450030/{a,b,c,d,e,f}`. Source-copy patches
+borrow bytes from these files even when gameplay never opens them directly. The
+reader silently left the old retail destination bytes when a copy source could
+not open. The standalone native regression first failed at roster byte11195
+(file0 offset3826619, copy source dashupdate offset234367).
+
+Restored all eight missing originals from the user's existing clean disc copy,
+2,207,105,024bytes, with no existing file overwritten. All19 baseline file hashes
+now match the official patch's `before` hashes. The exact native reader matches
+the entire verified stock roster at six read sizes:593792,65536,32768,4096,2048,311.
+Future pack transfers must verify the COMPLETE declared retail input set on the
+target device; verification on the build Mac alone does not establish that.
+
+The clean worker-fixed EXE below is retained; no diagnostic sampler or franchise
+addon is active. Relaunched stock process reports no mapped franchise DLL or
+sidecar, no logged crashes/stalls, and advancing startup/vblank events. Menu
+control confirmation and match acceptance are pending. This does not establish
+franchise signing/cap/save-reload acceptance. Older hybrid notes below are
+historical evidence, not the selected deployment or current user direction.
+
 ## v0.6.1 integration candidate — October 21, 2026
 
 Official [v0.6.1](https://github.com/cruuz/softdrink-2k28/releases/tag/v0.6.1)

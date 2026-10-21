@@ -31,6 +31,14 @@ sparsely. Preserve unique assets, saves, ledgers and source/rollback evidence.
 
 ## Current priority — core franchise negotiation
 
+**Current user direction (October21): stock SOFTDRINK v0.6.1 without the franchise
+addon or hybrid.** The Steam entry now uses a fresh addon-free stock profile;
+previous franchises are retained separately. Missing retail copy sources caused
+the stock startup freeze: eight originals restored, all19 source hashes and six
+native roster-read sizes pass. Relaunched stock startup advances without logged
+stalls; control/match acceptance pending. Keep scheduled work OFF; do not resume
+franchise/hybrid deployment automatically. See [stock evidence](docs/SOFTDRINK_AI_BASE.md).
+
 - [ ] Validate the separate SOFTDRINK v0.6.1 candidate on the Deck before switching
       the active pack. Patch reconstruction, native identity/portrait mappings,
       all32 opening books and local pricing pass the Windows preflight. The new

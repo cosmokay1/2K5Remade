@@ -3,36 +3,48 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
-## SOFTDRINK v0.6.1 candidate — October21
+## Current delivery: stock SOFTDRINK v0.6.1, no addon — October21
 
-Separate Deck profile staged at native-05ac4e9/softdrink-v0.6.1-test/profile.
-All17 transferred overlay files verified;434 protected save/context files and
-established EXEs unchanged. Windows hello/all32 cap-restoration pass,397 offline
-quotes, no inference. New source-derived opening namespace:2064 actors/32 books,
-Giants room$8,079,279. Preserve Week1 hybrid/portrait cache, not new October14
-stock roster. All1985 native-origin identity/portrait bindings match uniquely.
-Signing/submission OFF; preview-only (negotiation hold=0, preview/edit=1).
-Initial preview+hold=1/submit=0 config was invalid; corrected without policy change.
+User wants newest SOFTDRINK WITHOUT hybrid roster or franchise addon. Do not
+resume hybrid/franchise work or the old-pack comparison automatically. Scheduled
+task remains OFF. Existing Steam entry16147863382609887232 now persistently uses
+native-05ac4e9/softdrink-v0.6.1-stock/run-stock.sh; previous route backed up there.
+Fresh stock saves, official October14 roster/content, no custom portrait overlays
+or patch files, NO addons directory/DLL, NO provider/context DB or sidecar.
+Keep old MyNFL1/W1CAP/PLAYW1 profiles and journals separate and unchanged.
 
-Live v0.6.1 exposed a changed I/O worker0004D810: native manual helper read its
-removed jump table0004D8C0 and aborted at state11/90909090. Worker omitted from
-generated dirty map; packs now execute that worker via existing interpreter before
-native frame/table accesses. Retail native path preserved.2 targeted tests pass.
-Built deployed source plus worker fix only52.06s; no unrelated dirty diagnostics.
-Generated-local freshness check passes; paired game validation exit0/3.47s.
-New test EXEa53550db… with addon7ee654d8…; normal Steam route restored.
-Actual process7587 reports loaded-image9465382b…; original worker abort cleared.
-Watchdog then reports10s guest-lock stall: last guest call00035983, owner native
-sub_0014EC70. Asked user what is visible; usable menu NOT confirmed. No menu inputs
-or screenshots. Do not replace loaded binaries or promote pack yet. Next: resolve
-screen/stall, then franchise context, match/post-play and signing/cap/save-reload.
-Private receipts/scripts: .local-runtime/softdrink-v0.6.1/ and same Deck stage.
-Scheduled task OFF; no controls/IAM/budgets renewed. See SOFTDRINK_AI_BASE.md.
+STARTUP CAUSE VERIFIED AND REPAIRED: trimmed Deck retail disc lacked eight files
+referenced by source-copy extents: update.xbe, dashupdate.xbe, vc/a,b,c,d,e,f.
+Native kernel_overlay.c silently kept old destination bytes when these copy
+sources failed to open. Exact native reader check failed at roster byte11195
+(vc0 offset3826619), copying from dashupdate offset234367. This produced invalid
+runtime roster/history data; it was NOT proof of a corrupt official roster or a
+franchise/AI bug. Restored2,207,105,024bytes from the existing clean user disc,
+adding only absent files with exclusive links; zero existing files overwritten.
+All19 declared retail source SHA256s now verified on Deck. Native reader matches
+the verified593792-byte official roster for chunks593792/65536/32768/4096/2048/311.
+Retain every declared source file even if the base game doesn't otherwise use it.
+Do not trim commentary/update files out of an overlay installation.
 
-Prior PLAYW1 signing remains unresolved: user saw Hernandez join, then left
-without saving. Disk save still13476ae3… (pre-signing), latest journal prepared,
-live_application_matches=false. Preserve pending journal/history; no cancelled
-second attempt or save/reload proof. This isolated candidate does not resolve it.
+Stock pack XBE9465382b… unchanged. Clean worker-fixed Remade EXEa53550db…;
+core worker repair(fabe075) is needed for the new loader and is separate from
+franchise addon support. Diagnostic EXE0b987e78… is NOT selected. Temporary GGL
+sampler source restored to originalcd0f3443…; no new game rebuild for data repair.
+All434 prior protected save/context files verified unchanged at stock preparation;
+restoration and launch touch only original disc additions and the new stock profile.
+
+Relaunched stock process9930. Current text evidence: correct stock path, franchise
+DLL NOT mapped, zero sidecars, zero crashes/stalls, vblank300 and boot state ticks
+advance beyond the old freeze. Asked user whether controls respond; confirmation
+still pending. Do NOT claim match/playability or franchise save/reload acceptance.
+Private evidence/scripts: .local-runtime/softdrink-v0.6.1/stock-repair-and-launch.log,
+overlay-roster-check.c, restore-retail-sources.py; same Deck test stage receipts.
+No native binary replacement while running. No controls/IAM/inference renewals.
+
+Prior discarded hybrid PLAYW1 acceptance/signing persistence remains unverified:
+Hernandez appeared signed, user left without saving; disk13476ae3… pre-signing,
+latest journal prepared/live_application_matches=false. Preserve it; do not reset
+or migrate it into stock. Hybrid comparison/diagnostic plans are superseded.
 
 ## Live cap/negotiation repair and corrected FA candidate — October20
 
