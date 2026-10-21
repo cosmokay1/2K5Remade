@@ -3,6 +3,34 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
+## Record assembly and gameplay estimates — October20
+
+Closed the11 explicit parser/identity reviews with pinned primary club evidence;
+65 membership corrections, two injury/rights holds preserved. No blanket waiver
+clearance;58 qualified FAs remain a subset, five rookie contracts lack a Week1
+owner. All2481 club obligations reprojected and32 modeled cap rooms recalibrated
+to the approved October20 proxy targets (NYG$8,079,279); no historical/native
+cap certification. Source adjudicated-opening-cap-book.json is the newest book.
+
+Nine active record gaps: Ward recovered from older creator roster, Van Pran
+strict shortened-name native binding, seven absent profiles estimated. User now
+requests stats/creator estimates or draft position, replacing generic defaults.
+Nineteen missing profiles total (seven active,12 qualified FAs) use sourced NFL
+production, measured forty, creator-based missing-sample priors or six verified
+SOFTDRINK LS peers. Explicit approximations, not exact current V2 ratings; never
+used for negotiation/pricing. See WEEK1_GAMEPLAY_PROFILES.md.
+
+Pinned MIT upstream codec losslessly round-trips all3 roster sources. Assembled
+593984-byte private trial binds1753 players/all32 clubs, verified on serializer
+reload; unassigned/classic records unchanged.36 more approved headshots encoded.
+Private week1-roster-v1/assembly-plan-rated.json, assembled-roster-receipt.json,
+missing-gameplay-estimates.json and assembly-official-headshot-cache/receipt.json.
+No Deck-ready financial hybrid yet: native contracts are display projections;
+need modern opening ledger/native reconciliation, complete FA rights/pool and
+actual fresh-franchise load, signing, cap enforcement/save-reload. MyNFL1/Deck
+untouched; automation stays PAUSED. No screenshots, native build, inference or
+credential/control changes. Source tests pass; see WORK_PROGRESS for count.
+
 ## Room calibration and club portrait closure — October20
 
 User now permits modeled details to target sourced real-life room. Explicit cap

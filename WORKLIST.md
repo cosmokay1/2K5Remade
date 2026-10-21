@@ -1429,3 +1429,25 @@ still require evidence. Later aggregate proxies are labeled, not backdated.
 
 Evidence and source limitations: [PRESEASON_OPENING.md](docs/PRESEASON_OPENING.md).
 Scheduled task stays PAUSED.
+
+October20 record/transaction closure (supersedes the nine-record/11-review gap):
+
+- [x] Adjudicate11 specific parser/identity cases from pinned primary sources;
+      preserve injury/rights holds, debt reviews and unknown FA clearance.
+- [x] Recover Ward/Van Pran and assemble all1695 active/inactive records with
+      sourced estimates for the seven absent profiles; user requested stats,
+      creator approximations and draft position instead of create-player defaults.
+      Twelve additional qualified-FA records also receive labeled estimates.
+      See docs/WEEK1_GAMEPLAY_PROFILES.md; these ratings never drive pricing.
+- [x] Verify all32 native memberships and1753 player bindings by lossless roster
+      serialization/reload; preserve unassigned/classic records and photo IDs.
+      Codec credit/license preserved; private assets not published.36 additional
+      approved portraits encoded; actual rendering remains unverified.
+- [x] Reproject2481 adjudicated club entries and recalibrate32 modeled rooms to
+      approved October20 proxy targets; NYG$8,079,279. Historical balances remain
+      uncertified. Preserve known charges and separate simulation adjustments.
+- [ ] Complete historical FA/rights coverage beyond the58 qualified subset,
+      initialize modern opening ledgers against native contracts/fresh UUIDs,
+      then verify actual load/signing/cap/save-reload on Deck. Private assembled
+      roster is a compatibility trial, not a playable financial delivery.
+      MyNFL1 untouched; scheduled task remains off.

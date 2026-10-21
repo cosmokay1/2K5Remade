@@ -118,6 +118,24 @@ class Week1IdentityTests(unittest.TestCase):
         rows[0]['jersey_number']='15';rows[0]['height']='71'
         self.assertTrue(resolve()['unresolved_source'])
 
+    def test_historical_jersey_can_bind_identity_but_never_establish_availability(self):
+        import struct
+        native=fixtures.HybridPlanTests().roster();source=bytearray(native)
+        for data in (native,source):
+            data[0xAFA8+0x2B]=74;data[0xAFA8+0x2A]=60
+            struct.pack_into('<I',data,0xAFA8+0x20,15<<3)
+        source[0xAFA8+0x1A]=3
+        historical={**self.rows()[0], 'season':'2025', 'height':'72', 'weight':'200',
+                    'position':'QB', 'jersey_number':'15'}
+        r=resolve_week1(bytes(native),bytes(source),self.rows()[1:],season_year=2026,
+            historical_identity_rows=[historical],allow_biography_corrections=True,
+            allow_profile_corroboration=True)
+        matched=next(x for x in r['matched'] if x['gsis_id']=='test-1')
+        self.assertEqual(matched['source_identity_method'],'unique_sourced_name_corroborated_profile')
+        self.assertFalse(r['free_agent_pool_verified'])
+        self.assertEqual(r['source_identities']['test-1']['identity_evidence_seasons'],[2025])
+        self.assertEqual(r['source_identities']['test-1']['statuses'],[])
+
     def test_excluding_corrupt_source_pool_keeps_duplicate_fa_out_of_club_identity(self):
         import struct
         native=bytes(fixtures.HybridPlanTests().roster());source=bytearray(native)

@@ -10713,3 +10713,59 @@ fresh-franchise Deck execution remain. No installable hybrid is claimed.
 Deck/save/credential/control changes. MyNFL1 untouched; automation PAUSED.
 See WEEK1_LEAGUE_RECONCILIATION.md for exact methods, counts, named remaining
 record gaps, source dates and private artifact paths.
+
+## October20 — transaction closure, sourced gameplay estimates and native assembly
+
+User requested stats/creator approximations or draft position for missing records,
+replacing generic create-player defaults. Read primary club/college profiles and
+pinned upstream creator M2/V2 methods. Existing community attributes preserved;
+19 missing profiles use explicit performance/draft/low-volume estimates or six
+verified SOFTDRINK long-snapper peers. These ratings never enter franchise pricing
+or negotiation. Current V2 output is not claimed: the private approximation uses
+M2 reference/model and V2 draft priors for missing early-career samples. See
+WEEK1_GAMEPLAY_PROFILES.md for player evidence, formula limits and provenance.
+
+All11 explicit transaction parser/identity questions adjudicated against pinned
+primary club captures. Two injury/rights holds remain unavailable; debt/waiver
+clearance is not inferred.65 membership corrections;58 eligible FA candidates
+unchanged and still nonexhaustive. Five rookie contracts still lack a cutoff
+owner. Reprojection prices2481 club entries:1923 archived annual charges,
+307 matching published comparisons,133 rookie and118 positional estimates.
+All32 simulated rooms match the approved later October20 proxy targets;
+NYG$8,079,279. Native/historical cap authority remains unverified.
+
+Ward's older native community profile and Van Pran's corroborated shortened name
+resolve two of nine gaps; seven active and12 FA records require the explicit
+estimates. Pinned MIT upstream codec round-trips all3 source banks byte-for-byte.
+New assembler reuses only explicitly proven unprotected FA slots, retains classic
+records, and refuses generic/unsourced, wrong-identity or future-stat estimates.
+All1753 serialized bindings/all32 active lists/58 FA pointers, portraits, birthdays
+and19 attribute estimates match on reload; unassigned/classic records remain
+byte-identical.593984-byte trial SHA256:
+722cb2f20df9936dcbc9a23ebdb3cc718d46d1c05a7b55192491f1064114919b.
+Two overlong source names require explicit shortened display aliases, recorded
+with unchanged GSIS identity.36 additional approved official portraits encoded
+and decode-checked (17664 bytes each); no game rendering proven.
+
+Validation:63 source/identity/model/assembly checks plus five reconciliation and
+five container checks pass (73 total). A nonexistent test-module name in the
+expanded invocation was corrected by running tests.test_roster_trial separately;
+that loader error is not counted as a passing check. Real private serialization
+exposed/fixed long-name handling, legacy WAS team naming and primary/secondary
+record index collision in the preservation assertion. No full runtime repeat or
+native rebuild is needed for these offline source tools.
+
+Private latest inputs/outputs under week1-roster-v1: adjudicated-membership.json,
+weekly-adjudicated-input.json, adjudicated-modeled-charges.json,
+adjudicated-opening-cap-book.json, adjudicated-free-agent-eligibility.json,
+assembly-plan-rated.json, missing-gameplay-estimates.json,
+assembled-roster-receipt.json and assembly-official-headshot-cache/receipt.json.
+Existing output/source receipts retained. Scripts rate-missing-profiles.py and
+assemble-rated.py retained privately for reproducibility. No downloaded assets,
+roster/save bytes, raw club pages or headshots committed.
+
+Not a Deck-ready financial hybrid: native contract fields are still display
+projections, opening modern ledger/native reconciliation and complete FA rights
+coverage remain, followed by real fresh-franchise load/signing/cap/save-reload.
+MyNFL1/Deck untouched, scheduled task stays PAUSED; no screenshots, inference,
+credentials, IAM or shutdown-control changes. No maintainer messages or releases.

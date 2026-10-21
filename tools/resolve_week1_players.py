@@ -57,7 +57,9 @@ def resolve_week1(native_payload, source_payload, weekly_rows, *, season_year,
         if current:
             identity['statuses'].add((row.get('team', ''), row.get('status', '')))
         identity['last_names'].add(normalize_name(row.get('last_name', '')))
-        if current and str(row.get('jersey_number','')).isdigit():
+        # Historical jerseys corroborate identity only. Current rows replace
+        # that identity's historical biography above; ownership stays separate.
+        if str(row.get('jersey_number','')).isdigit():
             identity['jerseys'].add(int(row['jersey_number']))
         identity['colleges'].update(normalize_name(c) for c in (row.get('college') or '').split(';') if c.strip())
         try:
