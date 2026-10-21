@@ -3,6 +3,27 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
+## SOFTDRINK v0.6.1 candidate — October21
+
+User requested the new official pack. Reconstructed and hash-verified v0.6.1
+in `.local-runtime/softdrink-v0.6.1/`, never activated/deployed. XBE9465382b…;
+key financial/signing spans unchanged, but section count28→29 needs live proof.
+All1985 native-origin hybrid identity/portrait bindings match uniquely; keep
+Week1 hybrid, approved79 added profiles and portrait cache, not the October14
+stock roster. Separate source-derived opening candidate:32 books/2064 actors,
+397 local quotes, signing OFF; existing saves/DBs/history untouched.11 targeted
+checks pass. See SOFTDRINK_AI_BASE.md for pins and acceptance gates.
+Deck DNS unavailable; asked user to wake it and report game state. Next: stage
+separate profile, verify actual image/boot/play/load, then signing/cap/save-reload.
+Do not deploy other dirty native diagnostics or automatically upgrade hybrid saves.
+Scheduled task OFF; no controls/IAM/budgets renewed.
+
+Prior PLAYW1 signing remains unresolved: user saw Hernandez join, then left
+without saving. Disk save still13476ae3… (pre-signing), latest journal prepared,
+live_application_matches=false. Preserve pending journal/history; no cancelled
+second attempt or save/reload proof. This isolated candidate does not resolve it.
+
+
 ## Live cap/negotiation repair and corrected FA candidate — October20
 
 User closed normally; e77968115bb17e944ee4729749ce7c0ac53c323d6083273867dd312053575c48

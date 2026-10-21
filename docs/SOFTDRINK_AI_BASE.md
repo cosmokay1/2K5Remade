@@ -3,6 +3,49 @@
 On October 14, 2026 the user chose SOFTDRINK if usable. Prefer the Xbox Remade
 pack path and defer NFL 2K27/PCSX2 migration. This is a direction, not compatibility proof.
 
+## v0.6.1 integration candidate — October 21, 2026
+
+Official [v0.6.1](https://github.com/cruuz/softdrink-2k28/releases/tag/v0.6.1)
+is pinned at `8de98db980c4dbe88e1ec1614e322df5ef35d636`. Its patch is
+1,021,040,707 bytes, SHA256
+`bf9c1ebc210a0ca832a586b884c0db714960f4434b227d21f644f464f964eac6`.
+The release requires Studio beta-77.1/RC112. Its format-3, reader-4,
+source-copy-v1 patch reconstructs with the existing pack importer: retail source
+hashes and every changed output verify. The private overlay is about716MiB;
+no full ISO or replacement native EXE was generated. Reconstructed default.xbe:
+`9465382bfd617b6d1aeadc5653fefef256678c12a65a5f828705495291e40610`.
+
+Static comparison finds unchanged shared signing/judgment/offer access routines,
+interactive-dispatch span, payroll/roster helpers, offer descriptor and salary
+clock descriptor range. The XBE section layout changes (28 to29 sections), so
+these comparisons do **not** establish interpreter, hook or runtime compatibility.
+
+Preserve the user's Week1 hybrid rather than replacing it with the pack's
+October14 roster. The new stock roster roundtrips losslessly using the official
+RC112 core modules pinned at `a292dbfe0e3d72b8a338670e26415b706675baf4`.
+All1985 native-origin hybrid identities uniquely match name/date-of-birth in the
+new stock roster, with zero portrait-ID changes. Retain the hybrid's other79
+approved profiles and existing portrait cache. This is identity evidence, not
+proof that portraits render in the new runtime. Do not automatically apply the
+Studio franchise-upgrade command to the custom hybrid.
+
+A separate candidate namespace was prepared from the original game-created
+PLAYW1 opening save, without changing deployed saves, DBs or pending journals.
+It contains32 opening books and2064 actors; its cap-bound save matches the prior
+opening payload byte-for-byte. The Giants retain modeled room$8,079,279.
+Rebuilt local pricing has793 sourced comparables and397 quotes; signing defaults
+OFF, with zero inference requests. These remain the approved simulation books,
+not certified historical Week1 financial statements. This candidate is a fresh
+compatibility test, not a migration of existing negotiation history.
+
+Private receipts: `.local-runtime/softdrink-v0.6.1/` contains release/download,
+reconstruction, boundary/roster audits and `franchise-candidate/` receipts.
+Eleven importer-contract, opening-preparation and market-export tests pass.
+No assets or save payloads are committed. Deck DNS was unavailable at staging;
+installation, actual loaded-image verification, boot, post-play transitions,
+negotiation/signing, cap receipts and save/reload remain required. Keep the
+scheduled task off and do not renew controls, credentials or budgets.
+
 ## Inspected evidence
 
 [SOFTDRINK v0.6](https://github.com/cruuz/softdrink-2k28/releases/tag/v0.6)

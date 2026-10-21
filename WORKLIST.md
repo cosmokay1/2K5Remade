@@ -31,6 +31,12 @@ sparsely. Preserve unique assets, saves, ledgers and source/rollback evidence.
 
 ## Current priority — core franchise negotiation
 
+- [ ] Validate the separate SOFTDRINK v0.6.1 candidate on the Deck before switching
+      the active pack. Patch reconstruction, native identity/portrait mappings,
+      all32 opening books and local pricing are prepared; loaded image, boot,
+      post-play, signing/cap and save/reload remain unverified. Preserve the Week1
+      hybrid and existing franchise histories. See [compatibility evidence](docs/SOFTDRINK_AI_BASE.md).
+
 - [ ] Verify the startup repair on the Deck, then complete one actual negotiation
       and signing/save/reload test. The register-local patch wrapper previously
       overwrote nested-call arguments and the pushed guest return slot. A small
