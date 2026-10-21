@@ -7,7 +7,7 @@ labels and same-day moves require review before availability can be established.
 from datetime import date
 import hashlib
 from html.parser import HTMLParser
-from urllib.parse import urljoin, urlsplit, unquote, urlencode
+from urllib.parse import urljoin, urlsplit
 
 CATEGORIES = ('trades', 'signings', 'reserve-list', 'waivers', 'terminations', 'other')
 
@@ -37,9 +37,9 @@ class WirePage(HTMLParser):
                     raise ValueError('Transaction pagination left its original NFL month')
                 if not there.query.startswith('after=') or '&' in there.query or there.fragment:
                     raise ValueError('Unsupported transaction cursor')
-                # Encode the opaque base64 token as a query value. Literal +
-                # must not become a space, nor trailing = a cache-key variant.
-                target = there._replace(query=urlencode({'after': unquote(there.query[6:])})).geturl()
+                # Preserve the provider's opaque cursor URL exactly. Encoding
+                # its trailing base64 '=' returned page one on the live wire.
+                # Content/row loop checks below still reject repeated pages.
                 self.next_urls.add(target)
 
     def handle_data(self, data):
@@ -58,8 +58,8 @@ class WirePage(HTMLParser):
             if mm != self.month:
                 raise ValueError('Transaction belongs to a different month')
             profile = [x for x in cells[3]['links'] if x.startswith('/players/')]
-            if len(profile) != 1:
-                raise ValueError('Unique NFL player profile required')
+            if len(profile) > 1:
+                raise ValueError('Ambiguous NFL player profile')
             clubs = []
             for cell in cells[:2]:
                 links = [x for x in cell['links'] if x.startswith('/teams/')]
@@ -67,7 +67,7 @@ class WirePage(HTMLParser):
                     raise ValueError('Unsupported transaction club cell')
                 clubs.append(links[0] if links else None)
             self.rows.append({'date': date(self.year, mm, dd).isoformat(),
-                              'player': cells[3]['text'].strip(), 'profile': profile[0],
+                              'player': cells[3]['text'].strip(), 'profile': profile[0] if profile else None,
                               'from_club': clubs[0], 'to_club': clubs[1],
                               'transaction': cells[5]['text'].strip()})
 
@@ -80,7 +80,7 @@ def collect_month(fetch, *, year, month, category, cutoff, max_pages=100):
             or type(max_pages) is not int or not 1 <= max_pages <= 100):
         raise ValueError('Explicit cutoff year/month and supported category required')
     url = f'https://www.nfl.com/transactions/league/{category}/{year}/{month}'
-    seen, receipts, rows = set(), [], []
+    seen, row_pages, receipts, rows = set(), set(), [], []
     for _ in range(max_pages):
         if url in seen:
             raise ValueError('Transaction cursor repeated; month is incomplete')
@@ -94,6 +94,10 @@ def collect_month(fetch, *, year, month, category, cutoff, max_pages=100):
             raise ValueError('Ambiguous transaction pagination')
         if not page.rows:
             raise ValueError('Empty transaction page requires explicit provider review')
+        fingerprint=tuple(tuple(sorted(row.items())) for row in page.rows)
+        if fingerprint in row_pages:
+            raise ValueError('Transaction page content repeated; month is incomplete')
+        row_pages.add(fingerprint)
         receipts.append({'url': url, 'sha256': hashlib.sha256(payload).hexdigest(),
                          'bytes': len(payload), 'rows': len(page.rows)})
         rows.extend(row for row in page.rows if row['date'] <= cutoff)

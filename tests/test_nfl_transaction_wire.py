@@ -23,14 +23,19 @@ class WireTests(unittest.TestCase):
         self.assertTrue(report['pagination_complete'])
         self.assertFalse(report['availability_verified'])
 
-    def test_cursor_is_opaque_and_encoded_and_repeating_page_refuses_completion(self):
+    def test_provider_cursor_is_preserved_exactly_and_repeating_page_refuses_completion(self):
         urls = []
         def fetch(url):
             urls.append(url)
             return html(next_url='?after=abc+def=')
         with self.assertRaisesRegex(ValueError, 'repeated'):
             self.collect(fetch)
-        self.assertEqual(urls[1].split('?', 1)[1], 'after=abc%2Bdef%3D')
+        self.assertEqual(urls[1].split('?', 1)[1], 'after=abc+def=')
+
+    def test_unlinked_source_row_is_retained_without_inventing_a_player_profile(self):
+        report=self.collect(lambda _:html().replace(b'<a href="/players/authored-player/">',b'<span>').replace(b'Authored Player</a>',b'Authored Player</span>'))
+        self.assertIsNone(report['rows'][0]['profile'])
+        self.assertFalse(report['availability_verified'])
 
     def test_outside_month_host_or_page_limit_refuses(self):
         for next_url in ('https://example.test/?after=x',

@@ -55,5 +55,31 @@ int main(){
         if(kind==3)bad["result"]["application_plan"]["after_finance_sha256"]=std::string(64,'0');
         bool rejected=false;try{franchise::NativeApplication::capture(request,bad,prepared,before,100,fingerprint);}catch(...){rejected=true;}require(rejected);
     }
-    puts("Native acceptance/clock/state/deadline and one-use application checks passed");
+    // Only the selected free agent may become the receiving team's player.
+    // Its owner may be absent while the offer screen has removed it from pool.
+    for(uint32_t owner:{32u,UINT32_MAX,1u}) {
+        auto source=before,destination=after;
+        finance_put32(source.bytes+FRANCHISE_FINANCE_HEADER+7,owner);
+        finance_put32(destination.bytes+FRANCHISE_FINANCE_HEADER+7,0);
+        auto fa_plan=plan;auto fa_request=request;auto fa_response=response;
+        fa_plan["before_finance_sha256"]=fingerprint(source.bytes,source.size);
+        fa_plan["after_finance_sha256"]=fingerprint(destination.bytes,destination.size);
+        fa_plan["finance_changes"]=json::array();
+        for(uint32_t i=0;i<source.size;++i)if(source.bytes[i]!=destination.bytes[i])
+            fa_plan["finance_changes"].push_back({i,destination.bytes[i]});
+        fa_request["live_finance_sha256"]=fa_plan["before_finance_sha256"];
+        fa_response["result"]["application_plan"]=fa_plan;
+        bool denied=false;
+        try{auto p=franchise::NativeApplication::capture(fa_request,fa_response,prepared,source,100,fingerprint);
+            require(p.cap.expected.bytes[FRANCHISE_FINANCE_HEADER+7]==0);}
+        catch(...){denied=true;}
+        require(denied==(owner==1u));
+    }
+    auto outside=response,wrong_source=prepared;
+    outside["result"]["application_plan"]["source_slot"]=1;
+    wrong_source["observation"]["biography"]["source_slot"]=1;
+    bool denied=false;
+    try{franchise::NativeApplication::capture(request,outside,wrong_source,before,100,fingerprint);}catch(...){denied=true;}
+    require(denied);
+    puts("Native acceptance/clock/state/deadline, free-agent ownership and one-use application checks passed");
 }

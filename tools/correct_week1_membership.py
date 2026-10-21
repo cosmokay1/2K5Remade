@@ -344,12 +344,16 @@ def classify_free_agent_candidates(candidates, membership, contracts, *, cutoff,
             reason = 'club_owned'
         elif gsis in retired or candidate.get('historical_status') == 'retirement_review':
             reason = 'retired'
+            player['evidence']=candidate.get('retirement_evidence')
         elif gsis in disputed:
             reason = 'unresolved_latest_transaction'
         elif gsis in releases:
             # Explicit current unrestricted termination supersedes a directory's
             # older tender label. Never infer this from the label alone.
             reason = 'verified_vested_termination'
+            if (releases[gsis].get('qualification')=='explicit_nfl_termination' and
+                    releases[gsis]['evidence']['transaction']['transaction']=='Terminated Via Waivers, all contracts'):
+                reason='verified_waiver_termination'
             player.update(eligible=True,evidence=releases[gsis])
         elif candidate.get('fatype') in ('RFA','ERFA'):
             reason = 'restricted_or_exclusive_rights_review'

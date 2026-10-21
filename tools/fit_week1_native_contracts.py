@@ -118,6 +118,16 @@ def fit_roster(codec, payload, assembly_receipt, charges, archive, *, scale):
                 source_base.append(salary)
             records[gsis] = dict(team=code,source_slot=target.index,basis=basis,
                 source_base_dollars=source_base,source_nonbase_dollars=[cap-base for cap,base in zip(schedule,source_base)],**fit)
+    # A qualified unsigned player has no active contract with the receiving club.
+    # Clear stale creator-roster terms; prior-club debt stays in source books.
+    free={g:players[s] for g,s in bindings.items() if players[s].offset in doc.free_agents}
+    if set(free)!=set(bindings)-set(records) or len(free)!=len(doc.free_agents):
+        raise ValueError('Complete qualified free-agent inventory required')
+    unsigned=dict(zip(FIELDS,(0,0,2,0,0)))
+    for player in free.values():
+        player.record.values.update(unsigned)
+        allowed.update(range(player.offset+10,player.offset+12))
+        allowed.update(range(player.offset+36,player.offset+40))
     result = doc.to_body(normalise_commentary=False)
     if len(result) != len(payload) or any(a!=b and i not in allowed for i,(a,b) in enumerate(zip(payload,result))):
         raise ValueError('Non-contract roster bytes changed')
@@ -128,7 +138,11 @@ def fit_roster(codec, payload, assembly_receipt, charges, archive, *, scale):
         actual = reloaded.by_pool('primary')[record['source_slot']].record.values
         if any(actual[k] != v for k,v in record['fields'].items()):
             raise ValueError('Reloaded native terms differ')
+    for player in free.values():
+        if any(reloaded.by_pool('primary')[player.index].record.values[k]!=v for k,v in unsigned.items()):
+            raise ValueError('Qualified free agent retains an active contract')
     return result, dict(format='week1-native-contract-fit-v1',input_sha256=sha256(payload).hexdigest(),
         output_sha256=sha256(result).hexdigest(),game_dollar_scale=scale,players=records,
+        cleared_free_agent_contracts=sorted(free),
         exact_sources_preserved=True,native_terms_are_approximations=True,
         game_load_verified=False,signing_authorized=False)

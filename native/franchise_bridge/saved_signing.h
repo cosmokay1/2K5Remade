@@ -18,7 +18,7 @@ inline nlohmann::json saved_signing_prepare(const nlohmann::json& request,const 
         {"timeout_ms",10000},{"team_id",checkpoint.at("team_id")},{"proposal_request_id",proposal},
         {"guest_offer",request.at("guest_offer")},{"expected_revision",checkpoint.at("financial_revision")},
         {"expected_before_sha256",checkpoint.at("saved_payload_sha256")}};
-    if(result.at("outcome")=="accepted_amendment_proposal") {
+    if(request.contains("salary_clock")) {
         prepared["salary_clock"]=request.at("salary_clock");prepared["observation"]=request.at("observation");
     }
     return prepared;

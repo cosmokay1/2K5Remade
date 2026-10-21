@@ -10860,3 +10860,131 @@ qualified-assembled-roster-receipt.json,qualified-native-contract-fit.json,
 native-opening-charges.json,native-opening-cap-book.json,
 opening-component-fixture-v4/receipt.json,deck-candidate-v1/candidate-receipt.json.
 No inference, new infrastructure, IAM/control renewals or automation re-enable.
+
+
+## October20 — source-bound native preseason FA signing and v2 hybrid
+
+Implemented accepted FA coordination using optional pinned native_source on the
+existing journal, preserving classic saved-only journals and imported amendments.
+Native source binds clock/biography, live finance/identity, accepted preview and
+immutable opening-books hash. Exact all32 books, cash coverage, current ownership
+and revision are checked before preparation. Full/pending pool states are bounded
+to the selected saved free agent. Native target retains all current supplemental
+obligations, rounds aggregate payroll up once and leaves other clubs unchanged.
+The owner-thread permit now allows only that FA's owner32/absent→receiving team
+change; another club's player cannot transfer through it. Clock/observation are
+carried through captured FA preparation. Authorization stays one-use with the
+existing5000ms submission deadline and current access/quiescence checks.
+
+Saved confirmation normalizes private comparison copies only, verifies isolated
+raw owner/contract effects, then checks enforced cap and exact accepted posting.
+Settled FA journals join the saved checkpoint chain; modern newly signed inventory
+is checked against exact saved terms rather than rejected merely for being modern.
+Retained obligations remain untouched. Opening recovery now accepts an exactly
+saved pending application only after verifying its before checkpoint and accepted
+target; all32 budgets restore without new signing authority or auto-settlement.
+Tampered/dropped charges, changed owners/source and disabled access remain held.
+In-season FA salary proration is still unsupported; reject before inference and
+preparation once periods elapsed. No full-year overcharge workaround. Preseason
+and start-of-season full-salary periods are the supported native FA scope.
+
+Offline tests cover consent→preparation→one-use issuance→authored saved effects
+→settlement→DB reopen, both complete and temporarily absent FA pool identity;
+all32 restore, pending FA/owned save recovery, an owned amendment after FA signing,
+source-liability refusal, no-inference bridge dispatch, period hold and4:1units.
+The scaled case preserves$5M retained charges: new$19.064M first-year contract
+posts$43.128M aggregate with native payroll10782. This is fixture execution only.
+Portable compiled native protocol and ownership/clock/deadline/one-use checks pass;
+wrong existing-team ownership transfers are denied. Previous Windows game EXE is
+unchanged; current addon/header changes require Windows addon/check rebuild and
+execution. Do not claim a compiled/booted new Windows addon. No loaded replacement.
+
+Primary NFL root captures:16pages/239rows; explicit vested or via-waiver all-contract
+terminations, independently matched to latest verified club release within3days,
+close Desmond Ridder,Lecitus Smith,Justin Osborne. Later/ambiguous/owned/injury cases
+remain held. Retirement sources corroborate Rob Havenstein and Lavonte David's
+existing exclusions and newly exclude Ryan Kelly:
+https://www.therams.com/news/rams-rob-havenstein-stayed-true-to-himself-across-an-11-year-nfl-career
+https://www.buccaneers.com/news/buccaneer-icon-lavonte-david-concludes-legendary-nfl-career
+https://www.vikings.com/news/center-ryan-kelly-announces-retirement
+Raw source hashes/excerpts captured privately. Current350candidate dispositions:
+57 dated expired unrestricted+20 vested terminations+1 explicit waiver termination
+=78qualified;216 availability/waiver reviews+47 RFA/ERFA reviews=263 held;
+6retired and3owned excluded.5 unowned rookie contracts remain unresolved. No
+complete historical FA pool or inferred waiver clearance claimed.
+
+Pagination investigation: one raw provider cursor produced a different page,
+but fresh three-page/full collection still repeats rows. Preserve exact provider
+URLs instead of re-encoding opaque tokens and reject repeated row-page content,
+even if URL tokens differ. Missing profile links are retained as None, not dropped
+or assigned invented identities.54 month/category attempts yield22complete results
+(133rows),32 incomplete/empty failures; these do not certify whole-wire coverage.
+Primary partial results prove their individual records only. No repeated source
+queries can substitute for missing cutoff evidence. Full-wire collection and raw
+cursor probes retained in native-fa-rights-v2 private receipts, not published.
+
+Reassembled1773bindings:1699 native,39 Week1 creator,13 earlier creator,22 sourced
+estimates. Lecitus Smith/Justin Osborne receive existing creator-based missing-
+sample profiles; ratings never price negotiation. Two new approved official NFL
+portraits(224096 downloaded bytes) encoded and decoded successfully using existing
+assets/tooling.74 required portrait slots packaged; existing SOFTDRINK images
+preserved. All1695 contracts fit/reload,1167 preserve sourced positive bonus;
+opening maximum native approximation error$20K unchanged. All2481 obligations
+and32 modeled target rooms reconcile; Giants$8,079,279/293,120,721 obligations.
+Targets remain approved October20 proxies, not verified Week1 history.
+Private fitted roster SHA256:
+9942f1d581df47a189eeffbbd2142c4029671f881d4412421cb95986f7302e10.
+Full-data opening fixture:32clubs/1773actors; explicitly synthetic and excluded
+from deck-candidate-v2. NATIVE metadata/HMAC and guarded new-franchise preparation
+retained. Native addon four-source patch carries expected-before/after hashes;
+no game EXE rebuild required. Package not installed; Windows rebuild/runtime
+checks and actual game-created W1CAP save still required. MyNFL1/Steam unchanged.
+
+Validation logs:2k5-fa-delivery-suite.log1199tests/42.605s OK;
+2k5-wire-parser-tests.log6tests OK after the later collector changes;
+2k5-fa-rights-final.log23tests OK including club/profile corroboration;
+2k5-fa-recovery-final.log10tests OK;2k5-fa-unit-scale.log6tests OK;
+2k5-fa-protocol-run.log and2k5-fa-application-run.log native checks pass;
+2k5-wire-opening-fixture.log full-data books pass. Private v2 receipts under
+week1-roster-v1/deck-candidate-v2 and source-research/native-fa-rights-v2.
+The pinned MIT codec/research/creator credits remain; no retail assets, saves,
+headshots, source HTML, credentials or personal DBs committed. No paid inference,
+new infrastructure, IAM/control changes, maintainer messages or automation enable.
+Deck continues failing DNS resolution; requested awake/SSH connection once.
+
+Final private roster audit found4 qualified FAs with stale positive remaining
+terms (one with a positive bonus). Native fit now clears contract fields for all
+78 unsigned records, preserves biographies/noncontract bytes and re-verifies
+lossless reload. Prior-club liabilities remain in source books. Updated private
+v2 container signatures/receipt; actual game initialization still unverified.
+2k5-fa-roster-final.log8tests pass.
+
+Deck reconnection/Windows continuation: cached expected-before hashes matched;
+updated addon and three affected checks compiled in54.67s (game EXE unchanged).
+Eight isolated Windows stages passed: protocol, application, cap enforcement,
+production load/read and save/read, captured saved signing with/without runtime
+binding, and game --validate. Initial cmd launcher did not start checks; direct
+runinprefix produced child output. Saved-signing EXE was first invoked without
+its required fixture arguments; correct tools.check_native_saved_signing driver
+passed both modes. These were harness invocation failures, not accepted test
+results. Receipt: native-05ac4e9/native-fa-v2/validation-receipt.json on Deck.
+Validation emitted existing mirror/tiled-aperture warnings and is not rendered
+or on-field acceptance. No installed files, Steam route, MyNFL1, controls, IAM,
+inference budget or scheduled task changed.
+
+Final source verification caught embedded Python313._pth ignoring PYTHONPATH and
+pointing at an older service checkout. A private runtime copy now binds candidate
+service-source/tests and existing dependencies explicitly; no installed Python
+configuration changed. Both saved-signing fixture modes reran successfully against
+candidate source. The six new NativeFreeAgentTests pass under Windows (14.181s).
+Exact fresh SOFTDRINK profile --validate passes (2.87s), with selected pinned v0.6
+pack/14 overlay files and1287 differing converted functions on interpreter path.
+Existing mirror/tiled-aperture warnings remain; no rendered acceptance claimed.
+Private fresh-profile prepared with NATIVE,74 portrait slots and copied settings;
+no franchise/ledger or credentials, addon disabled until real FXG binding.220
+main save files hash-identical during preparation, Steam route unchanged. macOS
+AppleDouble archive entries caused the first preparation inventory assertion;
+that incomplete never-launched staging directory was removed after ROS-only/no
+EXE checks, then recreated from resource-fork-free archive. Candidate preparation
+and Windows receipts copied locally to deck-candidate-v2/deck-checks. Await user
+current-screen confirmation before launch/inputs. MyNFL1 protected; task off.

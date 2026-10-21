@@ -235,8 +235,7 @@ class Bridge:
                         raise Rejected('Current save differs from the captured before-save')
                     result=dict(request_id=request_id,state='prepared',before_payload_sha256=digest,write_authorized=False)
                     self._require_frame(request_id,result) # Before reserving the league journal.
-                    from franchise.guest_application import prepare_amendment
-                    prepare=prepare_amendment if amendment else guest_signing.prepare
+                    prepare=guest_signing.prepare
                     result=prepare(self.store,request['team_id'],request['proposal_request_id'],request_id,
                         bindings=self.guest_snapshot[0],before_payload=payload,guest_offer=request['guest_offer'],
                         expected_before_sha256=digest,expected_revision=request['expected_revision'],access_check=guarded,
@@ -325,6 +324,12 @@ class Bridge:
                     return checkpoint_reply
                 checkpoint = checkpoint_reply['result']
                 inspected = checkpoint['offer_context']
+                if amendment_rule is None and 'salary_clock' in request:
+                    # The checkpoint already bound these descriptor/calendar
+                    # fields to its current server-owned save. No second read.
+                    calendar=request['observation']['calendar']
+                    if calendar['phase_01_raw']==9 or (calendar['phase_01_raw']==8 and calendar['step_05_raw']):
+                        raise Rejected('In-season free-agent salary proration is not yet supported; offer not sent')
                 expected_outcome='amendment_comparison' if amendment_rule is not None else 'eligible_preview'
                 if inspected['outcome'] != expected_outcome:
                     raise Rejected(inspected['reason'] or 'Amendment comparison does not authorize negotiation or settlement')

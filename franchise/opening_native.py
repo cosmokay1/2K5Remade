@@ -135,15 +135,31 @@ def restore_plans(store,db,payload,*,source_epoch,live_projection,finance_payrol
     from franchise.saved_checkpoint import projection,verify as verify_checkpoint
     proof=record(db)
     if proof is None:return None
-    verify_checkpoint(store,db,payload)
+    pending=db.execute("SELECT request_id FROM guest_signings WHERE state='prepared' AND "
+        "(json_extract(intent,'$.format')=2 OR json_type(intent,'$.native_source')='object') LIMIT 1").fetchone()
+    replacement=None
+    if pending:
+        from franchise.guest_signing import _read,_confirm
+        intent,_,before,_,_=_read(store,db,pending[0])
+        if payload!=before:
+            # Recovery may rebind an exactly saved accepted application while
+            # settlement remains pending/AI disabled. It grants no new permit.
+            verify_checkpoint(store,db,before)
+            if intent['format']==2:
+                from franchise.guest_application import confirm_amendment
+                confirm_amendment(intent,before,payload)
+            else:_confirm(intent,before,payload)
+            replacement=(TEAMS.index(intent['team_id']),projection(before)[1])
+    if replacement is None:verify_checkpoint(store,db,payload)
     native,finance,identity=projection(payload)
     observed=bytearray(finance)
     for i,value in enumerate(finance_payrolls):struct.pack_into('<I',observed,48+12*i,value)
     if live_projection!={'finance':_hash(bytes(observed)),'identity':_hash(identity)}:
         raise Rejected('Live opening contracts or ownership differ from saved source')
     ledgers=store._load_teams(db,TEAMS)
-    payrolls=current_payrolls(ledgers,proof['game_dollar_scale'],finance)
+    payrolls=current_payrolls(ledgers,proof['game_dollar_scale'],replacement[1] if replacement else finance)
     expected=[struct.unpack_from('<I',finance,48+12*i)[0] for i in range(32)]
+    if replacement:payrolls[replacement[0]]=expected[replacement[0]]
     if payrolls!=expected:
         raise Rejected('Recorded budgets disagree with current saved payrolls')
     raw=projection(native)[1]

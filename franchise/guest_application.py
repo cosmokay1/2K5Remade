@@ -252,7 +252,15 @@ def authorize(store,request_id,journal_id,current_payload,*,access_check,live_pr
             if live_projection!=_check: raise Rejected('Live amendment source changed')
             target,identity,cap=amendment_target(intent,before)
             pre=projection(before)[1]
+            pre_identity=identity
             epoch=intent['salary_clock']['source_epoch']
+        elif 'native_source' in intent:
+            from franchise.free_agent_application import live_source,target as free_target
+            pre,pre_identity=live_source(intent['bindings'],before,intent['offer']['player_id'],live_projection)
+            if live_projection!=intent['native_source']['live_projection']:
+                raise Rejected('Native free-agent source changed after preparation')
+            target,identity,cap=free_target(intent,before)
+            epoch=intent['native_source']['salary_clock']['source_epoch']
         else:
             raise Rejected('Live issuance currently requires an imported amendment with a bound salary clock')
         # Other writes are already blocked by the pending journal. Recheck the
@@ -260,14 +268,19 @@ def authorize(store,request_id,journal_id,current_payload,*,access_check,live_pr
         from franchise.saved_checkpoint import verify
         verify(store,db,before)
         ledger=store._load(db,intent['team_id'])
-        comparison=store._preview_legacy_amendment(db,intent['team_id'],ledger,Offer.from_dict(intent['offer']),
-            intent['expected_revision'],scope=amendment_scope_from_dict(intent['scope']))
-        if comparison!=intent['comparison']: raise Rejected('Accepted finances changed before issuance')
+        if intent['format']==2:
+            comparison=store._preview_legacy_amendment(db,intent['team_id'],ledger,Offer.from_dict(intent['offer']),
+                intent['expected_revision'],scope=amendment_scope_from_dict(intent['scope']))
+            accepted=intent['comparison']
+        else:
+            comparison=ledger.preview_offer(Offer.from_dict(intent['offer']),intent['expected_revision'])
+            accepted=intent['native_source']['preview']
+        if comparison!=accepted: raise Rejected('Accepted finances changed before issuance')
         changes=[[i,value] for i,value in enumerate(target) if value!=pre[i]]
         if len(changes)>32: raise Rejected('Unexpected native amendment effect coverage')
         plan=dict(format='native-signing-permit-v1',journal_request_id=journal_id,source_epoch=epoch,
-            team_index=TEAMS.index(intent['team_id']),source_slot=intent['observation']['biography']['source_slot'],
-            guest_offer=intent['guest_offer'],before_finance_sha256=_hash(pre),identity_sha256=_hash(identity),
+            team_index=TEAMS.index(intent['team_id']),source_slot=(intent['observation'] if intent['format']==2 else intent['native_source']['observation'])['biography']['source_slot'],
+            guest_offer=intent['guest_offer'],before_finance_sha256=_hash(pre),identity_sha256=_hash(pre_identity),
             after_finance_sha256=_hash(target),finance_changes=changes,native_payroll_raw=cap['native_payroll_after_raw'],
             enforced_payroll_raw=cap['enforced_payroll_raw'],valid_for_ms=5000)
         db.execute('CREATE TABLE IF NOT EXISTS guest_signing_authorizations (journal_id TEXT PRIMARY KEY REFERENCES guest_signings(request_id), request_id TEXT UNIQUE NOT NULL, plan TEXT NOT NULL)')

@@ -1469,8 +1469,9 @@ October20 native opening candidate (supersedes older58/1753 counts):
       MIT codec/upstream and source credits retained; private assets not published.
 - [ ] Complete267 remaining rights/availability cases and five unowned rookie
       contracts; do not call the75-player subset historically exhaustive.
-- [ ] Finish native FA signing/settlement/checkpoint support for supplemental
-      opening obligations. Its current rejection remains in force; no cap bypass.
+- [x] Add native FA signing/settlement/checkpoint support for supplemental
+      opening obligations in preseason/full-salary periods (v2 below). Later
+      in-season salary proration remains held; no cap bypass.
 - [ ] Run Windows component EXEs and game --validate, then actual fresh NATIVE
       hybrid franchise load, initialize32books, owned negotiation, cap and
       save/reload. Windows compilation and portable checks are separate evidence.
@@ -1480,3 +1481,34 @@ October20 native opening candidate (supersedes older58/1753 counts):
 Candidate rooms match approved October20 published proxies, not verified Week1
 balances. Dynamic roster/elevation/reserve handling still needs integration.
 MyNFL1 remains untouched; scheduled task stays PAUSED.
+
+
+October20 native free-agent continuation (v2; prior75/1770 counts superseded):
+
+- [x] Add preseason/full-salary FA native issuance against recorded exact32club
+      books. Bind accepted preview, live source clock/biography and one-use permit;
+      preserve supplemental obligations and verify saved owner/terms/payroll.
+- [x] Verify FA→owned renegotiation, scaled units and pending-save recovery without
+      new authority. All32 budgets restore from accepted proof; no auto-settlement.
+- [x] Qualify three more FAs from primary NFL termination outcomes with independently
+      bound club releases. Corroborate three retirement notices (one new exclusion).
+      78 eligible;263 rights reviews remain held;5 rookie-owner cases unchanged.
+- [x] Reassemble1773-record hybrid and74 portrait slots, re-fit1695contracts and
+      reconcile32 opening books. Stage private v2 roster/container and addon source
+      patch. Preserve MyNFL1 and existing Steam route; do not install synthetic FXG.
+- [x] Improve wire ingestion: preserve provider cursor URLs, reject repeated row
+      pages and retain missing-profile records. Live pagination remains unreliable;
+      do not certify a complete month/pool from partial pages or provider errors.
+- [ ] Resolve remaining216 availability/waiver and47 tender cases from reliable
+      cutoff evidence. Six retirees/three owned players excluded. No guessed rights.
+- [ ] Implement in-season FA proration before allowing offers after salary periods
+      have elapsed; current hold occurs before inference. New modern-contract
+      renegotiation/season rollover and roster/elevation handling remain separate.
+- [x] Reconnect Deck; rebuild addon/checks only. Eight Windows stages pass, plus
+      six new FA tests under candidate-configured Windows Python and exact
+      SOFTDRINK profile --validate. Existing rendered-memory warnings remain;
+      validation is not gameplay. Isolated profile staged;220 main files unchanged.
+- [ ] Launch isolated NATIVE and create actual fresh W1CAP, bind32 opening books,
+      then verify legal FA signing, owned negotiation, strict cap and save/reload.
+      Await visible-screen confirmation. Installed Steam route remains unchanged;
+      staged addon is off until the actual save is bound. Scheduled task stays off.

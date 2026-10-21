@@ -28,17 +28,17 @@ def verify(store,db,payload):
     """Bind an enforced checkpoint to its latest settled saved transaction."""
     native,finance,identity=projection(payload)
     row=db.execute("SELECT request_id FROM guest_signings WHERE state='settled' "
-                   "AND json_extract(intent,'$.format')=2 ORDER BY rowid DESC LIMIT 1").fetchone()
+                   "AND (json_extract(intent,'$.format')=2 OR json_type(intent,'$.native_source')='object') ORDER BY rowid DESC LIMIT 1").fetchone()
     if row is None:
         from franchise.opening_native import verify as verify_opening
         if verify_opening(store,db,payload):return True
         if native!=payload:
             raise Rejected('Unrecorded saved payroll correction')
         return False
-    from franchise.guest_application import read_amendment
+    from franchise.guest_signing import _read
     after=None
-    for journal, in db.execute("SELECT request_id FROM guest_signings WHERE state='settled' AND json_extract(intent,'$.format')=2 ORDER BY rowid").fetchall():
-        _,_,_,after,_=read_amendment(store,db,journal)
+    for journal, in db.execute("SELECT request_id FROM guest_signings WHERE state='settled' AND (json_extract(intent,'$.format')=2 OR json_type(intent,'$.native_source')='object') ORDER BY rowid").fetchall():
+        _,_,_,after,_=_read(store,db,journal)
     _,expected_finance,expected_identity=projection(after)
     from franchise.local_runtime import saved_calendar_tick
     from tools.inspect_franchise_calendar import inspect_calendar
@@ -52,7 +52,7 @@ def verify(store,db,payload):
     for offset in (16,20,28,32,40):
         comparable[offset:offset+4]=expected[offset:offset+4]
     if (bytes(comparable),identity)!=(bytes(expected),expected_identity):
-        raise Rejected('Saved checkpoint differs from the latest settled amendment')
+        raise Rejected('Saved checkpoint differs from the latest settled native signing')
     return True
 
 
@@ -75,10 +75,11 @@ def verify_terms(ledger,records,*,original_sources):
     from franchise.legacy_contracts import LegacyContract
     for record in records:
         expected=ledger._legacy_contracts.get(record.player_id)
-        if expected is None:
-            raise Rejected('Supported imported contract inventory required')
-        if record.player_id in ledger._legacy_amendments:
-            offer=ledger._legacy_amendments[record.player_id].offer
+        active=ledger.active_contract(record.player_id) if expected is None else None
+        if expected is None and (active is None or active.elapsed_years or active.bonus_layers):
+            raise Rejected('Supported imported or newly signed contract inventory required')
+        if record.player_id in ledger._legacy_amendments or active is not None:
+            offer=ledger._legacy_amendments[record.player_id].offer if active is None else active.offer
             # Use the registered constants; no mod-name-driven policy.
             from franchise.guest_contracts import SOFTDRINK_CONTRACT_FORMAT,GUEST_CONTRACT_FORMAT
             fmt=SOFTDRINK_CONTRACT_FORMAT if record.game_dollar_scale==4 else GUEST_CONTRACT_FORMAT

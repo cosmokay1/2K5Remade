@@ -34,13 +34,19 @@ struct NativeApplication {
         result.cap.native_payroll=p.at("native_payroll_raw").get<uint32_t>();
         result.cap.enforced_payroll=p.at("enforced_payroll_raw").get<uint32_t>();
         const auto record=FRANCHISE_FINANCE_HEADER+p.at("source_slot").get<uint32_t>()*FRANCHISE_FINANCE_RECORD;
+        if(record>=finance.size || finance.size-record<FRANCHISE_FINANCE_RECORD)
+            throw std::runtime_error("Permit source is outside the captured player bank");
         const auto team=48+12*result.cap.team_index;
         for(const auto& delta:p.at("finance_changes")) {
             const auto i=delta[0].get<uint32_t>();
-            if(i>=finance.size || !((i>=record && i<record+7) || (i>=team && i<team+4) || (i>=team+8 && i<team+12)))
+            if(i>=finance.size || !((i>=record && i<record+FRANCHISE_FINANCE_RECORD) || (i>=team && i<team+4) || (i>=team+8 && i<team+12)))
                 throw std::runtime_error("Permit changes unrelated financial fields");
             result.cap.expected.bytes[i]=delta[1].get<unsigned char>();
         }
+        const auto old_owner=finance_get32(finance.bytes+record+7);
+        const auto new_owner=finance_get32(result.cap.expected.bytes+record+7);
+        if(new_owner!=old_owner && (new_owner!=result.cap.team_index || (old_owner!=32 && old_owner!=UINT32_MAX)))
+            throw std::runtime_error("Permit changes ownership outside a bound free-agent signing");
         if(hash(result.cap.expected.bytes,finance.size)!=p.at("after_finance_sha256") ||
            finance_get32(result.cap.expected.bytes+team)!=result.cap.enforced_payroll ||
            !franchise_cap_state_matches(&result.cap.expected,&result.cap.expected))

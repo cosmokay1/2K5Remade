@@ -1,5 +1,68 @@
 # Week 1 league reconciliation
 
+## Native preseason free-agent signing candidate — October20
+
+Preseason/full-salary FA signing now has a bound journal, exact source cap target,
+one-use native permit and saved-effects confirmation. Only the selected free
+agent can change ownership, including temporary pool removal on its offer screen.
+Keep source retained/dead/adjustment obligations; no return to roster-only cap.
+A settled FA can be followed by an owned-player amendment.32club cap recovery
+also handles exact saved-but-unsettled accepted applications without granting
+another permit or automatically settling/renewing controls. Imported original
+books remain immutable; new modern inventory is validated against saved terms.
+In-season FA proration is NOT implemented: held before inference/preparation.
+
+Rights:78 qualified (57 expired unrestricted,20 vested terminations,1 explicit
+waiver termination),216 availability/waiver reviews,47 RFA/ERFA reviews,6 retired,
+3 club-owned. Three newly qualified: Desmond Ridder,Lecitus Smith,Justin Osborne.
+Primary retirement notices corroborate Havenstein/David; Kelly newly excluded.
+Five rookie-owner cases remain.263 unresolved rights cases are NOT cleared.
+NFL wire root collection pinned16pages/239rows. Raw cursors advanced once but
+repeated in subsequent/full runs;22 complete month/category results/133rows,
+32 incomplete/empty results. No whole-wire/pool certification. Provider cursor
+URLs preserved exactly; repeated row pages rejected; missing profile links stay
+explicitly None. Do not infer clearance from waived status or elapsed time.
+
+Hybrid v2:1773 bindings (1695 club+78FA),22 sourced gameplay estimates,74 required
+official portrait slots,593984bytes; fitted roster SHA256
+9942f1d581df47a189eeffbbd2142c4029671f881d4412421cb95986f7302e10.
+All1695 contract fits/32 opening books revalidated; Giants modeled room remains
+$8,079,279 against approved October20 proxies, not certified Week1 balances.
+Private: week1-roster-v1/deck-candidate-v2; no MyNFL1 or synthetic save included.
+
+Full Python regression1199pass; later rights/wire23pass and roster8pass.
+Real-input1773-actor opening fixture passes, explicitly SYNTHETIC-NOT-FOR-DECK.
+Deck reconnected: updated Windows addon/checks compiled in54.67s, with unchanged
+EXE. Eight Windows stages pass: protocol, native application, cap enforcement,
+production DLL load/read and save/read, authored saved-signing driver with/without
+runtime binding, and game --validate. Console checks use direct Proton runinprefix;
+the cmd wrapper did not run, and the saved checker requires its Python driver.
+EXE SHA256:1e42420b0efd4484688a689c5088ba17bfcf05a895ad081924ece82086e51552.
+Addon SHA256:d1f9b76414f0cff1fbdacd0745d33f0a7ef78187a64badceffb97b15daf16107.
+Validation is not rendered gameplay: it retained prior memory-aperture warnings.
+No installed runtime, Steam route, main save, inference, IAM/control or scheduled
+task changes. Preserve unrelated dirty edits.
+
+Final Windows source checks: embedded Python originally ignored PYTHONPATH;
+private Python _pth now points only to this candidate and its pinned dependencies.
+Both saved-signing modes reran against the candidate and passed. Six new FA tests
+also pass under Windows. Exact SOFTDRINK profile --validate passes: pinned v0.6
+XBE/overlay selected,1287 differing functions dispatched to interpreter. Neither
+validation run proves rendered gameplay or fresh-franchise acceptance.
+
+Fresh test profile is prepared at native-05ac4e9/native-fa-v2/fresh-profile on Deck:
+1773-player NATIVE roster,74 portrait slots, copied settings, no franchise/ledger
+or credentials, addon disabled until an actual FXG is bound.220 main save files
+verified unchanged during preparation. Steam routing stays unchanged. Private
+receipts copied to deck-candidate-v2/deck-checks. Await current-screen confirmation
+before launch/inputs; do not assume the visible screen from background validation.
+
+Next: launch the isolated profile after normal exit. NATIVE roster → NEW Giants
+W1CAP → save/normal exit → prepare a
+NEW cap-bound copy with prepare_week1_franchise → verify legal preseason FA
+signing, owned renegotiation, strict cap and save/reload. No actual fresh hybrid
+FXG or game negotiation/signing/reload acceptance yet. MyNFL1 protected; task off.
+
 ## Native opening reconciliation candidate — October20
 
 Compiled the combined Windows EXE/addon batch. All1695 active/inactive contracts

@@ -31,7 +31,7 @@ def _access(check):
         raise Rejected('Required authorization/quiescence check did not succeed')
 
 
-def _before_books(store,db,bindings,payload,offer,guest_offer,team_id,*,owned=False):
+def _before_books(store,db,bindings,payload,offer,guest_offer,team_id,*,owned=False,native_signing=False):
     members=resolve_bindings(bindings,payload)
     player=[p for p in members.values() if p['player_id']==offer.player_id]
     if len(player)!=1 or player[0]['team']!=(team_id if owned else 'free_agents'):
@@ -46,7 +46,9 @@ def _before_books(store,db,bindings,payload,offer,guest_offer,team_id,*,owned=Fa
         raise Rejected('Complete supported league books required')
     from franchise.saved_checkpoint import projection,verify,charges as checkpoint_charges,verify_terms
     native,_,_=projection(payload)
-    recorded=verify(store,db,payload) if owned else False
+    recorded=verify(store,db,payload) if owned or native_signing else False
+    if native_signing and not recorded:
+        raise Rejected('Native free-agent signing requires recorded complete cap books')
     cap=inspect_cap(native)
     if not recorded and any(row['original_team_flag_raw'] and row['original_first_year_accumulator_dollars']
            for row in cap['teams'].values()):
@@ -59,7 +61,7 @@ def _before_books(store,db,bindings,payload,offer,guest_offer,team_id,*,owned=Fa
         contracts=saved[team]
         financial=ledger.financial_snapshot()
         from franchise.opening_native import record as opening_record
-        charges=checkpoint_charges(ledger,contracts,include_opening_adjustments=opening_record(db) is not None) if owned else [
+        charges=checkpoint_charges(ledger,contracts,include_opening_adjustments=opening_record(db) is not None) if owned or native_signing else [
             sum(row[i] if i<len(row) else 0 for row in [c.charges() for c in contracts])
             for i in range(max((len(c.charges()) for c in contracts),default=0))]
         def trim(values):
@@ -70,7 +72,7 @@ def _before_books(store,db,bindings,payload,offer,guest_offer,team_id,*,owned=Fa
                 or financial['signed_players']!=sorted(c.player_id for c in contracts)
                 or trim(ledger.charges)!=trim(charges)):
             raise Rejected('Saved roster charges differ from league books; guest projection is unsupported')
-        if owned:
+        if owned or native_signing:
             verify_terms(ledger,contracts,original_sources=not recorded)
             continue
         for record in contracts:
@@ -99,7 +101,7 @@ def _read(store,db,request_id):
         return read_amendment(store,db,request_id)
     fields={'format','request_id','team_id','proposal_request_id','expected_revision','proposal_sha256',
             'bindings','bindings_sha256','before_payload_sha256','guest_offer','offer','contract_format'}
-    if (type(intent) is not dict or set(intent)!=fields or intent['format']!=1
+    if (type(intent) is not dict or not fields<=set(intent) or set(intent)-fields-{'native_source'} or intent['format']!=1
             or type(intent['format']) is not int or type(intent['expected_revision']) is not int
             or intent['request_id']!=request_id or intent['team_id']!=team
             or _hash(before)!=intent['before_payload_sha256']
@@ -115,19 +117,43 @@ def _read(store,db,request_id):
             or event['evidence']['financial_revision']!=intent['expected_revision']
             or event.get('contract_format')!=intent['contract_format']):
         raise ValueError('Journal intent differs from accepted proposal')
+    if 'native_source' in intent:
+        from franchise.salary_clock import bind_salary_clock
+        n=intent['native_source']
+        if type(n) is not dict or set(n)!={'salary_clock','observation','live_projection','preview','opening_books_sha256'}:
+            raise ValueError('Complete native free-agent source required')
+        if bind_salary_clock(intent['bindings'],before,n['observation'],n['salary_clock']).elapsed_periods:
+            raise ValueError('Native free-agent journal lacks supported remaining-salary accounting')
+        from tools.franchise_snapshot_bindings import resolve_signing_candidate
+        candidate=resolve_signing_candidate(intent['bindings'],before,n['observation']['biography'])
+        if candidate['candidate_player_id']!=intent['offer']['player_id'] or n['observation']['team']['table_index']!=TEAMS.index(team):
+            raise ValueError('Native free-agent journal player/team changed')
+        from franchise.free_agent_application import live_source,target
+        live_source(intent['bindings'],before,intent['offer']['player_id'],n['live_projection'])
+        ledger=store._load(db,team)
+        if n['preview']!=event['proposal_preview'] or n['opening_books_sha256']!=store._checkpoint_hash(ledger._opening_books.to_dict()):
+            raise ValueError('Native free-agent source or accepted finances changed')
+        target(intent,before)
     sign=db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=? AND kind='sign'",(team,'sign:'+request_id)).fetchone()
     proof=None
     if state=='settled':
         if after is None or confirmation is None or sign is None:
             raise ValueError('Settled journal has no saved proof or ledger signing')
-        proof=confirm_saved_signing(intent['bindings'],before,after,
-            expected_before_sha256=intent['before_payload_sha256'],offer=Offer.from_dict(intent['offer']),
-            guest_offer=intent['guest_offer'],team_id=team)
+        proof=_confirm(intent,before,after)
         if _json(proof)!=_json(json.loads(confirmation)) or json.loads(sign[0]).get('proposal_request_id')!=intent['proposal_request_id']:
             raise ValueError('Saved signing proof differs from journal or ledger')
     elif state not in ('prepared','cancelled') or after is not None or confirmation is not None or sign is not None:
         raise ValueError('Unsettled journal has inconsistent saved or financial effects')
     return intent,state,before,after,proof
+
+
+def _confirm(intent,before,after):
+    if 'native_source' in intent:
+        from franchise.free_agent_application import confirm
+        return confirm(intent,before,after)
+    return confirm_saved_signing(intent['bindings'],before,after,
+            expected_before_sha256=intent['before_payload_sha256'],offer=Offer.from_dict(intent['offer']),
+            guest_offer=intent['guest_offer'],team_id=intent['team_id'])
 
 
 def _validate_live_projection(live_projection):
@@ -161,12 +187,26 @@ def _check_live_preparation(payload, bindings, player_id, live_projection):
 
 
 def prepare(store,team_id,proposal_request_id,request_id,*,bindings,before_payload,guest_offer,
-            expected_before_sha256,expected_revision,access_check,live_projection=None):
+            expected_before_sha256,expected_revision,access_check,live_projection=None,observation=None,salary_clock=None):
     """Persist original save/accepted terms. This does not authorize guest writes."""
     if (any(type(v) is not str or not v.strip() for v in (team_id,proposal_request_id,request_id))
             or request_id==proposal_request_id or type(before_payload) is not bytes
             or _hash(before_payload)!=expected_before_sha256 or type(expected_revision) is not int):
         raise ValueError('Distinct journal identities, pinned save and exact revision required')
+    native=salary_clock is not None or observation is not None
+    if native:
+        with store._connection() as db:
+            proposal=db.execute("SELECT payload FROM events WHERE team_id=? AND request_key=? AND kind='dialogue'",(team_id,'dialogue:'+proposal_request_id)).fetchone()
+        if proposal and json.loads(proposal[0])['event']['outcome']=='accepted_amendment_proposal':
+            from franchise.guest_application import prepare_amendment
+            return prepare_amendment(store,team_id,proposal_request_id,request_id,bindings=bindings,
+                before_payload=before_payload,guest_offer=guest_offer,expected_before_sha256=expected_before_sha256,
+                expected_revision=expected_revision,access_check=access_check,live_projection=live_projection,
+                observation=observation,salary_clock=salary_clock)
+        from franchise.salary_clock import bind_salary_clock
+        scope=bind_salary_clock(bindings,before_payload,observation,salary_clock)
+        if scope.elapsed_periods:
+            raise Rejected('In-season free-agent salary proration is not yet supported; no full-year overcharge')
     bindings=json.loads(_json(bindings));guest_offer=json.loads(_json(guest_offer))
     with store._connection(write=True,guest_recovery=True) as db:
         _access(access_check)
@@ -177,7 +217,12 @@ def prepare(store,team_id,proposal_request_id,request_id,*,bindings,before_paylo
                     or before!=before_payload or _json(intent['bindings'])!=_json(bindings)
                     or _json(intent['guest_offer'])!=_json(guest_offer) or intent['expected_revision']!=expected_revision):
                 raise Rejected('Journal preparation retry changed or is already resolved')
-            _check_live_preparation(before_payload, bindings, intent['offer']['player_id'], live_projection)
+            if native:
+                if intent.get('native_source',{}).get('salary_clock')!=salary_clock or intent['native_source']['observation']!=observation or intent['native_source']['live_projection']!=live_projection:
+                    raise Rejected('Native free-agent preparation retry changed')
+                from franchise.free_agent_application import live_source
+                live_source(bindings,before_payload,intent['offer']['player_id'],live_projection)
+            else:_check_live_preparation(before_payload, bindings, intent['offer']['player_id'], live_projection)
             return {'request_id':request_id,'state':'prepared','before_payload_sha256':expected_before_sha256,'write_authorized':False}
         if db.execute("SELECT 1 FROM guest_signings WHERE state='prepared'").fetchone():
             raise Rejected('Another guest signing awaits recovery')
@@ -186,8 +231,11 @@ def prepare(store,team_id,proposal_request_id,request_id,*,bindings,before_paylo
             raise Rejected('Journal request already belongs to financial or negotiation history')
         story=store._settlement_story(db,team_id,proposal_request_id,request_id)
         offer=Offer.from_dict(story['offer'])
-        _check_live_preparation(before_payload, bindings, offer.player_id, live_projection)
-        contract_format,ledger=_before_books(store,db,bindings,before_payload,offer,guest_offer,team_id)
+        if native:
+            from franchise.free_agent_application import live_source
+            live_source(bindings,before_payload,offer.player_id,live_projection)
+        else:_check_live_preparation(before_payload, bindings, offer.player_id, live_projection)
+        contract_format,ledger=_before_books(store,db,bindings,before_payload,offer,guest_offer,team_id,native_signing=native)
         if (story.get('contract_format')!=contract_format or expected_revision!=story['evidence']['financial_revision']
                 or store._checkpoint_hash(ledger.preview_offer(offer,expected_revision))!=store._checkpoint_hash(story['proposal_preview'])):
             raise Rejected('Journal proposal, format or financial preview changed')
@@ -198,6 +246,15 @@ def prepare(store,team_id,proposal_request_id,request_id,*,bindings,before_paylo
             expected_revision=expected_revision,proposal_sha256=_hash(_json(json.loads(source[0])['event']).encode()),
             bindings=bindings,bindings_sha256=_hash(_json(bindings).encode()),before_payload_sha256=expected_before_sha256,
             guest_offer=guest_offer,offer=offer.to_dict(),contract_format=contract_format)
+        if native:
+            from tools.reconcile_signing_context import reconcile_signing_context
+            checkpoint=reconcile_signing_context(bindings,before_payload,observation,store,expected_revision=expected_revision)
+            if checkpoint['team_id']!=team_id or checkpoint['player_id']!=offer.player_id:
+                raise Rejected('Native free-agent ownership context changed')
+            intent['native_source']=dict(salary_clock=salary_clock,observation=observation,live_projection=live_projection,
+                preview=story['proposal_preview'],opening_books_sha256=store._checkpoint_hash(ledger._opening_books.to_dict()))
+            from franchise.free_agent_application import target
+            target(intent,before_payload)
         db.execute("INSERT INTO guest_signings VALUES (?,?,'prepared',?,?,NULL,NULL)",(request_id,team_id,_json(intent),before_payload))
         _access(access_check)
         return {'request_id':request_id,'state':'prepared','before_payload_sha256':expected_before_sha256,'write_authorized':False}
@@ -219,9 +276,7 @@ def settle(store,request_id,after_payload,*,access_check,receipt_check=None):
         if state=='settled':
             if after_payload!=after: raise Rejected('Settled retry changed the confirmed save')
         else:
-            proof=confirm_saved_signing(intent['bindings'],before,after_payload,
-                expected_before_sha256=intent['before_payload_sha256'],offer=Offer.from_dict(intent['offer']),
-                guest_offer=intent['guest_offer'],team_id=intent['team_id'])
+            proof=_confirm(intent,before,after_payload)
             db.execute("UPDATE guest_signings SET state='settled',after_payload=?,confirmation=? WHERE request_id=?",
                        (after_payload,_json(proof),request_id))
         receipt=store._sign(intent['team_id'],request_id,None,intent['expected_revision'],
@@ -261,9 +316,7 @@ def inspect(store,request_id,current_payload,*,live_projection=None):
                     from franchise.guest_application import confirm_amendment
                     candidate=confirm_amendment(intent,before,current_payload)
                 else:
-                    candidate=confirm_saved_signing(intent['bindings'],before,current_payload,
-                        expected_before_sha256=intent['before_payload_sha256'],offer=Offer.from_dict(intent['offer']),
-                        guest_offer=intent['guest_offer'],team_id=intent['team_id'])
+                    candidate=_confirm(intent,before,current_payload)
             except ValueError:
                 pass
             else:
@@ -279,6 +332,9 @@ def inspect(store,request_id,current_payload,*,live_projection=None):
             if intent['format']==2:
                 from franchise.guest_application import amendment_target
                 finance,identity,_=amendment_target(intent,before);target=(finance,identity)
+            elif 'native_source' in intent:
+                from franchise.free_agent_application import target as free_target
+                finance,identity,_=free_target(intent,before);target=(finance,identity)
             else:
                 target=expected_signed_state(intent['bindings'],before,
                     offer=Offer.from_dict(intent['offer']),guest_offer=intent['guest_offer'],team_id=intent['team_id'])

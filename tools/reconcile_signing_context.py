@@ -66,7 +66,7 @@ def reconcile_signing_context(bindings, payload, observation, store, *, expected
         ledger = store._load(db,name)
         inventory = store._contract_generations_from_ledger(name,ledger)
         recorded=verify(store,db,payload)
-        if inventory['generations']:
+        if inventory['generations'] and not recorded:
             raise ValueError('Ledger contract inventory differs from pinned legacy snapshot')
         try:
             verify_terms(ledger,contracts,original_sources=not recorded)

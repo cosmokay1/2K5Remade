@@ -1031,6 +1031,12 @@ int main(int argc,char** argv) {
             {"relationships",checkpoint["player_context"]["relationships"]},{"performance",checkpoint["performance_context"]}};
         franchise::validate_result(captured_reply,captured_request);
         const auto preparation=franchise::saved_signing_prepare(captured_request,captured_reply);
+        auto clocked_fa=captured_request;
+        clocked_fa["salary_clock"]={{"source_epoch",7},{"descriptor_hex",std::string(32,'0')}};
+        const auto clocked_preparation=franchise::saved_signing_prepare(clocked_fa,captured_reply);
+        if(clocked_preparation.at("salary_clock")!=clocked_fa.at("salary_clock") ||
+           clocked_preparation.at("observation")!=clocked_fa.at("observation"))
+            throw std::runtime_error("Captured free-agent source clock/observation lost");
         if(preparation!=nlohmann::json{{"protocol",1},{"request_id","captured-proposal-guest"},
             {"operation","guest_signing_prepare"},{"timeout_ms",10000},{"team_id",checkpoint["team_id"]},
             {"proposal_request_id","captured-proposal"},{"guest_offer",captured_request["guest_offer"]},
