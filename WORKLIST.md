@@ -1327,6 +1327,10 @@ additions, excluding known conflicts. Historical uncertainty is a documented
 simulation baseline rather than a delivery blocker.369-FA candidate preserves327
 creator records plus42 additions;10 extra candidates held for safe native record
 capacity. Existing cap rules, debt and spending limits remain authoritative.
+Live PLAYW1 Hernandez offer accepted by local agent, but native signing not yet
+verified. Corrected the guard that mistook the current inline offer for a
+competing pending offer; all other queue/identity/one-use checks remain. Five
+Windows checks and59 signing/recovery tests pass. Await actual apply/save/reload.
 
 - [x] Match all32 modeled opening rooms to published targets with labeled
       calibration. Repriced2480 club obligations; Giants modeled room$8,079,279.

@@ -61,6 +61,20 @@ int main(void) {
         put(row,0x2000A8);if(!expect(&host,api,1)) return 9;
         memset(memory+row,0,0x10);
     }
+    /* Live interactive context is an inline offer row, not a separate buffer.
+     * Its own active bits clear in the native commit before cleanup. Exempting
+     * it must never exempt another offer for the same player or grant signing. */
+    for(unsigned selected=0;selected<100;++selected) {
+        const uint32_t context=0xE3C600u+selected*0x10u;
+        put(context,0x200054);memory[context+0xB]=0x2D;
+        if(!franchise_pending_signing_clear(&host,context)) return 18;
+        const uint32_t other=0xE3C600u+((selected+1)%100)*0x10u;
+        put(other,0x200054);memory[other+0xB]=1;
+        if(franchise_pending_signing_clear(&host,context)) return 19;
+        memory[other+0xB]=0;
+        if(!franchise_pending_signing_clear(&host,context)) return 20;
+        memset(memory+other,0,0x10);memset(memory+context,0,0x10);
+    }
     for(unsigned i=1;i<=10;++i) {
         calls=0;fail_call=i;if(franchise_pending_signing_clear(&host,0x11000)) return 10;
     }

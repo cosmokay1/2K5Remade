@@ -11160,3 +11160,55 @@ Text startup shows one added asset group; no screenshots/input automation.
 Creation-only addon remains disabled and native signing held until actual new
 PLAYW1 save/reload is supplied and its all32 books are bound. No game binaries
 rebuilt, no main save/ledger rewrite, no inference/control/automation changes.
+
+### October20 — game-created PLAYW1 and cap-bound negotiation preparation
+
+User confirmed fresh PLAYW1 save/reload. Read-only copied FXG720044bytes with
+valid PC HMAC, hashfdb73d92…; all32 memberships,369FA and1695 owned schedules
+match fa-v5.1737 legitimate initialized state flags preserved. New prepared copy
+13476ae3… binds32 modeled books, Giants$8,079,279 room/$293,120,721 charges,
+52 native deals and24 off-roster obligations; source remains untouched.
+Windows actual-payload hello and32 cap restore pass,397 offline quotes from793
+matched veteran comparables;11 source disagreements held. Zero inference,
+no binary rebuild, no renewed control/IAM/budget/automation. Existing v0.6 pack
+selected and actual XBE file hashf67e6fc1… verified. User explicitly approved
+normal exit plus offline signing for PLAYW1; guarded install launched, receipt
+pending. Actual signing, post-signing money and save/reload remain unverified.
+
+PLAYW1 installation completed after confirmed exit.220 main save hashes and158
+W1CAP save/context hashes unchanged. Both PLAYW1 physical/mirror payloads now
+13476ae3… with verified PC signatures; originals backed up. Offline signing
+explicitly enabled only in this new context. Existing addonfff60b76… reused;
+EXEe7796811… unchanged. No paid generation or credentials/control changes.
+
+Relaunched PLAYW1 via existing Steam entry PID3564, original routing restored.
+Text loaded-image trace confirms f67e6fc1…; main-menu namespace still unbound.
+User asked one checked Hernandez offer$24M/3yr/30%/Balanced if Send available,
+then report response without retry/save. This fits$8M first-year charge against
+$8,079,279 room; no accepted transaction or post-signing save verification yet.
+
+### October20 — Hernandez acceptance exposed self-blocking pending-offer guard
+
+Live PLAYW1 local agent accepted$24M/3yr/30%/Balanced; exact preview$8M annual,
+room$79,279. Journal game-sign-proposal-316-744220-3-guest prepared and native
+permit issued, but no dispatch/settlement. Saved payload remains13476ae3….
+Current inline context0xE3C600 was itself active in the100-row offer array, so
+the blanket pending guard denied it. Exempt only the exact current row; competing
+offers/trades and all selection/identity/deadline/one-use checks remain.323D80
+clears its active bits before2BB6E0 cleanup. No arbitrary memory-write API added.
+Fixture now covers all100 inline-context positions and competing duplicates;
+portable check passes.59 financial/signing/recovery tests pass after correcting
+an initial wrong test/import invocation. Existing offline Windows container
+rebuilt only addon/checks in24.73s; five Windows checks pass, including actual
+DLL load/read and two-stage one-use authority. Candidate DLL7ee654d8…; EXE
+unchanged. User confirmed normal exit; paired clean validation and guarded install
+started, with stopped unchanged-save cancellation of only this unapplied journal.
+Agreement history/books/policy retained; actual application/save/reload unverified.
+
+Clean paired game/addon validation passed with exit0/2.67s. After normal exit,
+installed7ee654d8… DLL only. Stopped unchanged-save recovery cancelled only the
+prepared attempt; all32 config strings/event count, save bytes and policy bytes
+preserved. MyNFL1/W1CAP save and W1CAP DB hashes unchanged. Prior DLL/DB backed
+up under pre-application-fix. Existing Steam route relaunched PID5134 and restored
+normal routing. User asked same Hernandez offer once; actual native apply and
+saved settlement remain unverified. Scheduled task stays off.

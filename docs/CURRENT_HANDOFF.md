@@ -57,8 +57,51 @@ Preparation verified220 main save files and145 W1CAP files unchanged. Only NEW
 profile files created; addon disabled/native signing held for initial creation.
 Existing Steam entry launched EXE PID3073; normal route restored byte-for-byte.
 Text startup confirms one added asset group; no screenshots/menu inputs.
-User asked NATIVE → NEW Giants → PLAYW1 save/reload; awaiting actual FXG.
-Actual fresh save creation/load, accepted signing and save/reload remain to verify.
+User confirmed PLAYW1 save/reload. Actual game-created FXG720044bytes,
+SHAfdb73d92f44035fb046457408fcb71d113846867a9153eb040545be50aecee0c;
+PC signature valid.369FA/1695 owned contracts/all32 memberships match pinned
+hybrid exactly;1737 initialized state flags preserved. Selected pack's actual
+file hash matches expected loaded-image f67e6fc1…; startup selects v0.6 overlay.
+New playw1-bound-v5 save SHA13476ae3e7435711f913e6c4012021ddffe09d662f76ad075daaa72eca59f31f.
+All32 modeled books reconcile; Giants52 deals/24 off-roster obligations,
+20 original rookie amendment locks, opening charges$293,120,721/room$8,079,279.
+This retains approved proxy calibration, not certified historical Week1 balances.
+Windows service preflight:hello plus32 cap restore pass;397 local quotes from793
+matched veteran comparables/400 eligible profiles;11 APY/term disagreements held.
+No inference requests. Preparation and preflight signing disabled. Source save
+untouched; no EXE/addon rebuild or repeated unchanged full regression.
+User explicitly approved normal exit and offline signing for PLAYW1. Guarded
+installer completed:220 main save files and158 W1CAP save/context files unchanged.
+PLAYW1 alone now13476ae3…; offline signing enabled, old save backed up.
+Existing EXE/addon reused; no cloud credentials or control changes. Relaunched
+via normal Steam entry PID3564; normal route restored. Live load-image trace
+confirms f67e6fc1…; namespace not yet bound at main menu, so no live signing proof.
+User submitted Hernandez$24M/3yr/30%/Balanced once. Live agent accepted;
+proposal preview$8M annual cap/$79,279 remaining. Prepared journal
+`game-sign-proposal-316-744220-3-guest`, source slot2371, revision1; one-use permit
+issued, but no native application dispatch or settlement. Original save remained
+13476ae3…; acceptance alone is NOT signing proof.
+
+Found exact blocker: pending_signing.h treated the current interactive offer
+(0xE3C600, flags byteB low bits active) as a competing queued offer. Exempt only
+the exact context address, retaining all other offer/trade, current selection,
+identity, state, deadline and two-stage one-use guards. Native323D80 clears its
+own active bits before2BB6E0 cleanup; do not exempt another row for this player.
+Authored fixture covers all100 context rows plus duplicate competing rows;
+portable fixture passes.59 financial/signing/recovery tests pass (initial
+invocation had wrong module/import path; corrected PYTHONPATH=.:tests).
+Addon-only build24.73s; five Windows checks pass including production DLL load/
+read and one-use application. New addon7ee654d89a2f16c5f4a38f96fa1ce951800b3a0c197964dc128cd5692fbbf0cb.
+No game EXE rebuild or unrelated native/menu/credential edits included.
+User confirmed normal exit. Clean paired game/addon --validate exited0/2.67s.
+Guarded DLL-only install completed, then existing Steam entry relaunched PID5134
+and normal route restored. Built-in stopped-game recovery cancelled only the
+unapplied prepared journal after exact original-save comparison. Accepted
+dialogue/event count, all32 books, save bytes and enabled offline policy unchanged.
+Protected MyNFL1/W1CAP saves and W1CAP DB hashes unchanged. Rollback DLL/DB in
+fa-fresh-profile/pre-application-fix. No cloud/control/budget/automation changes.
+User asked retry Hernandez same terms once, report response/screen closing before
+save/retry. Actual native signing, post-signing cap and save/reload unverified.
 
 ## Combined rookie-term, opening-cap and offer-table repair — October 20
 

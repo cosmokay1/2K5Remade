@@ -24,9 +24,14 @@ static int franchise_pending_signing_clear(const NFL2K5AddonHost *host,uint32_t 
         for(unsigned j=0;j<3;++j)
             if(finance_get32(row+0xC+4*j)==player || finance_get32(row+0x24+4*j)==player) return 0;
     }
-    /* 323060 uses 322840/322BA0: 100 inline records, byte B low two bits active. */
+    /* 323060 uses 322840/322BA0: 100 inline records, byte B low two bits active.
+     * The interactive editor itself occupies one of these rows. It is not a
+     * competing offer: 323D80 clears its active bits before 2BB6E0 cleanup.
+     * Exempt only the exact context address; another row for this player still
+     * blocks. Selection, terms and the one-use permit are checked separately. */
     for(unsigned i=0;i<100;++i)
-        if((offers[i*0x10+0xB]&3u) && finance_get32(offers+i*0x10)==player) return 0;
+        if(0xE3C600u+i*0x10u!=context && (offers[i*0x10+0xB]&3u) &&
+           finance_get32(offers+i*0x10)==player) return 0;
     /* Detect changes while sampling; this is not a mutation lock or ABA proof. */
     return finance_read(host,context,check,sizeof(raw)) && !memcmp(raw,check,sizeof(raw)) &&
         finance_read(host,0xB72918u,check,sizeof(root)) && !memcmp(root,check,sizeof(root)) &&
