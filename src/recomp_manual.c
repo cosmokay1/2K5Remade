@@ -5,6 +5,7 @@
 #include <math.h>
 #include <windows.h>
 #include "xbox_memory_layout.h"
+#include "interp/x86_interp.h"
 /* Host yields in guest context must give up the guest CPU (RECOMP_GGL). */
 #include "xbox_ggl.h"
 #include "recomp_funcs.h"
@@ -2533,6 +2534,13 @@ static void nfl2k5_d3d_set_state_42ade0(void)
  * destinations, preserving its state transitions and guest stack. */
 static void nfl2k5_io_worker(void)
 {
+    /* This omitted routine is not in the generated dirty-function map. Packs
+     * can replace its state machine and jump table; execute their guest code
+     * before touching the retail frame or reading retail dispatch addresses. */
+    if (g_interp_active) {
+        recomp_interp_call(0x0004D810u);
+        return;
+    }
     PUSH32(g_esp, g_esi);
     if (MEM32(0x00A7D300u) != 13u) {
         g_esi = 1;
@@ -2727,7 +2735,6 @@ static void sub_004952F8(void)
  * functions run in the interpreter, where the gen patches SCOREBUG_* and
  * LIVE_QB_SAMPLE never run and the pack's bug stayed on screen under an HTML
  * package. The interpreter calls the same hooks at the patches' anchors. */
-#include "interp/x86_interp.h"
 extern void nfl2k5_scorebug_hide(void);
 extern void nfl2k5_scorebug_native_hook(void);
 extern void nfl2k5_scorebug_native_place(uint32_t matrix);

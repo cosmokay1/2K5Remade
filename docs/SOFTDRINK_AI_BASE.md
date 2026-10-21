@@ -12,7 +12,8 @@ is pinned at `8de98db980c4dbe88e1ec1614e322df5ef35d636`. Its patch is
 The release requires Studio beta-77.1/RC112. Its format-3, reader-4,
 source-copy-v1 patch reconstructs with the existing pack importer: retail source
 hashes and every changed output verify. The private overlay is about716MiB;
-no full ISO or replacement native EXE was generated. Reconstructed default.xbe:
+no full ISO was generated. A later worker compatibility repair required one
+native EXE rebuild, described below. Reconstructed default.xbe:
 `9465382bfd617b6d1aeadc5653fefef256678c12a65a5f828705495291e40610`.
 
 Static comparison finds unchanged shared signing/judgment/offer access routines,
@@ -41,10 +42,37 @@ compatibility test, not a migration of existing negotiation history.
 Private receipts: `.local-runtime/softdrink-v0.6.1/` contains release/download,
 reconstruction, boundary/roster audits and `franchise-candidate/` receipts.
 Eleven importer-contract, opening-preparation and market-export tests pass.
-No assets or save payloads are committed. Deck DNS was unavailable at staging;
-installation, actual loaded-image verification, boot, post-play transitions,
-negotiation/signing, cap receipts and save/reload remain required. Keep the
-scheduled task off and do not renew controls, credentials or budgets.
+No assets or save payloads are committed.
+
+Deck staging now verifies all17 transferred overlay files, preserves434 protected
+save/context files, and passes the Windows handshake and all32 cap-restoration
+checks. Reuse the existing addon7ee654d8… and shared runtime dependencies. New
+profile: `native-05ac4e9/softdrink-v0.6.1-test/profile`; signing/submission OFF,
+preview-only. Normal Steam routing is restored after the one-time launch.
+The initial preview/hold/submit flag combination was invalid and was corrected
+without changing policy or binaries.
+
+Actual startup then exposed a replaced I/O worker at guest0004D810: v0.6.1 uses
+a different state machine and removes the old0004D8C0 jump table. The manual
+native worker still read it and aborted at state11/target90909090. Because the
+routine is absent from the generated dirty-function map, route it through the
+existing interpreter whenever pack interpretation is active, before any native
+frame/table access. Retail retains the native path. The portable worker ABI/
+routing fixture and existing interpreter-hook fixture pass. Deployed source
+plus only this repair rebuilt in52.06s, generated-local freshness check passed,
+and paired game validation exited0 in3.47s. Candidate EXE:
+`a53550db1dae565fee099aa0588f6ed59b68d9ebc3143231b4146ff8f92f586a`.
+The build-output hardlink was broken before linking; existing profile EXEs and
+all434 protected files remain unchanged. Unrelated dirty native edits were not
+included in the build.
+
+The repaired process runs and the addon reports the exact9465382b… loaded image;
+this clears the observed worker abort, not full boot acceptance. A later watchdog
+reports a10s guest-lock stall (last guest call00035983, owner PC in native
+sub_0014EC70). User-visible menu state is requested and not yet confirmed.
+Usable boot, post-play transitions, franchise load/context, signing/cap receipts
+and save/reload remain required. Do not promote this profile or replace the
+established pack yet. Keep the scheduled task off; no controls/IAM/budgets renewed.
 
 ## Inspected evidence
 

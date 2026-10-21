@@ -5,24 +5,34 @@ Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
 ## SOFTDRINK v0.6.1 candidate — October21
 
-User requested the new official pack. Reconstructed and hash-verified v0.6.1
-in `.local-runtime/softdrink-v0.6.1/`, never activated/deployed. XBE9465382b…;
-key financial/signing spans unchanged, but section count28→29 needs live proof.
-All1985 native-origin hybrid identity/portrait bindings match uniquely; keep
-Week1 hybrid, approved79 added profiles and portrait cache, not the October14
-stock roster. Separate source-derived opening candidate:32 books/2064 actors,
-397 local quotes, signing OFF; existing saves/DBs/history untouched.11 targeted
-checks pass. See SOFTDRINK_AI_BASE.md for pins and acceptance gates.
-Deck DNS unavailable; asked user to wake it and report game state. Next: stage
-separate profile, verify actual image/boot/play/load, then signing/cap/save-reload.
-Do not deploy other dirty native diagnostics or automatically upgrade hybrid saves.
-Scheduled task OFF; no controls/IAM/budgets renewed.
+Separate Deck profile staged at native-05ac4e9/softdrink-v0.6.1-test/profile.
+All17 transferred overlay files verified;434 protected save/context files and
+established EXEs unchanged. Windows hello/all32 cap-restoration pass,397 offline
+quotes, no inference. New source-derived opening namespace:2064 actors/32 books,
+Giants room$8,079,279. Preserve Week1 hybrid/portrait cache, not new October14
+stock roster. All1985 native-origin identity/portrait bindings match uniquely.
+Signing/submission OFF; preview-only (negotiation hold=0, preview/edit=1).
+Initial preview+hold=1/submit=0 config was invalid; corrected without policy change.
+
+Live v0.6.1 exposed a changed I/O worker0004D810: native manual helper read its
+removed jump table0004D8C0 and aborted at state11/90909090. Worker omitted from
+generated dirty map; packs now execute that worker via existing interpreter before
+native frame/table accesses. Retail native path preserved.2 targeted tests pass.
+Built deployed source plus worker fix only52.06s; no unrelated dirty diagnostics.
+Generated-local freshness check passes; paired game validation exit0/3.47s.
+New test EXEa53550db… with addon7ee654d8…; normal Steam route restored.
+Actual process7587 reports loaded-image9465382b…; original worker abort cleared.
+Watchdog then reports10s guest-lock stall: last guest call00035983, owner native
+sub_0014EC70. Asked user what is visible; usable menu NOT confirmed. No menu inputs
+or screenshots. Do not replace loaded binaries or promote pack yet. Next: resolve
+screen/stall, then franchise context, match/post-play and signing/cap/save-reload.
+Private receipts/scripts: .local-runtime/softdrink-v0.6.1/ and same Deck stage.
+Scheduled task OFF; no controls/IAM/budgets renewed. See SOFTDRINK_AI_BASE.md.
 
 Prior PLAYW1 signing remains unresolved: user saw Hernandez join, then left
 without saving. Disk save still13476ae3… (pre-signing), latest journal prepared,
 live_application_matches=false. Preserve pending journal/history; no cancelled
 second attempt or save/reload proof. This isolated candidate does not resolve it.
-
 
 ## Live cap/negotiation repair and corrected FA candidate — October20
 

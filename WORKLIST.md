@@ -33,8 +33,10 @@ sparsely. Preserve unique assets, saves, ledgers and source/rollback evidence.
 
 - [ ] Validate the separate SOFTDRINK v0.6.1 candidate on the Deck before switching
       the active pack. Patch reconstruction, native identity/portrait mappings,
-      all32 opening books and local pricing are prepared; loaded image, boot,
-      post-play, signing/cap and save/reload remain unverified. Preserve the Week1
+      all32 opening books and local pricing pass the Windows preflight. The new
+      image is reported by the running addon after repairing a changed I/O worker;
+      usable boot remains blocked on a startup stall/screen confirmation.
+      Post-play, signing/cap and save/reload remain unverified. Preserve the Week1
       hybrid and existing franchise histories. See [compatibility evidence](docs/SOFTDRINK_AI_BASE.md).
 
 - [ ] Verify the startup repair on the Deck, then complete one actual negotiation
