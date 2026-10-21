@@ -31,6 +31,12 @@ sparsely. Preserve unique assets, saves, ledgers and source/rollback evidence.
 
 ## Current priority — core franchise negotiation
 
+- [ ] rspencer86 realism settings: installed21 sliders, penalties/options and
+     10played/5sim after normal exit; original saves, SOFTDRINK coaching and
+     roster pack preserved. Settings load and completed-game play-count tuning
+     remain; target120–135 combined offensive plays. Sim quarters stay5.
+     See [settings and acceptance](docs/REALISM_SETTINGS.md).
+
 **Current user direction (October21): stock SOFTDRINK v0.6.1 without the franchise
 addon or hybrid.** The Steam entry now uses a fresh addon-free stock profile;
 previous franchises are retained separately. Missing retail copy sources caused

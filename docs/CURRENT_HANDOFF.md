@@ -3,6 +3,24 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
+## rspencer86 settings installed — October21
+
+User explicitly selected rspencer's set, preserve SOFTDRINK coaching profiles,
+5-minute sim quarters and tune played clock from real play counts. No franchise
+exists yet. After confirmed normal exit, Settings1 installed into stock profile
+physical UDATA83C3760943CB and organized settings/Settings1.21 authored sliders
+and gameplay mirrors,10 penalty floats/max enable,Normal speed,EQ/hot routes off;
+played10/sim5 baseline.105 changed bytes against signed old Settings1 template;
+21 slider values/mirrors verified independently, PC signature valid, old source
+and28 other current save files unchanged. SHAfc382432f7a65cec01ed9c29579e73ee7d1b842d62ce9d2659f453a99ff3c49a.
+EXE/pack/coaching profiles unchanged; no addon or scheduled-task activation.
+Same Steam entry relaunch requested. Need actual Settings1 load, complete played
+regulation game, pass/rush attempts+sacks allowed for both teams; target120–135
+combined plays, near126.5. Adjust only played minutes based on measured count;
+sim stays5. Clock NOT calibrated yet. See REALISM_SETTINGS.md. Previous old-save
+slider import remains unapplied/superseded. Post-play crash still unresolved;
+diagnostic source staged but not built/installed. Do not claim crash repaired.
+
 ## Stock-only playable roster correction — October21
 
 User could not see Dart/Burns after reserve-only v1 and explicitly wants them

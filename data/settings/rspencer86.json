@@ -1,0 +1,23 @@
+{
+  "name": "rspencer86 realism sliders",
+  "source": "https://forums.operationsports.com/forums/forum/football/nfl-2k/espn-nfl-2k5-football/espn-nfl-2k5-sliders/121121-rspencer86-s-realism-sliders-gameplan-settings",
+  "source_platform": "PS2 retail; SOFTDRINK calibration unverified",
+  "played_minutes": 10,
+  "simulated_minutes": 5,
+  "human": {
+    "Blocking": 18, "Passing": 0, "Running": 0, "Catching": 40,
+    "Coverage": 0, "Pursuit": 10, "Tackling": 10, "Kicking": 0, "Fatigue": 20
+  },
+  "cpu": {
+    "Blocking": 35, "Passing": 40, "Running": 31, "Catching": 40,
+    "Coverage": 33, "Pursuit": 10, "Tackling": 10, "Kicking": 0, "Fatigue": 30
+  },
+  "shared": {"Injury": 25, "Fumble": 24, "Interception": 20},
+  "penalties": 40,
+  "game_speed": "Normal",
+  "performance_eq": false,
+  "multiple_hot_routes": false,
+  "coaching_profiles": "preserve SOFTDRINK; do not apply author's gameplan edits",
+  "played_clock_status": "baseline, not calibrated for SOFTDRINK's 20-second accelerated clock",
+  "target_combined_offensive_plays": [120, 135]
+}
