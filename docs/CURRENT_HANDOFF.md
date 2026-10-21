@@ -3,6 +3,28 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
+## Stock-only all-team reserve correction — October21
+
+User requests restoring missing reserves across all teams, no addon/hybrid.
+Stock working-menu confirmation received. Official recipe has81 complete RES
+records omitted from club ownership, including Dart987/Burns958. Restored to
+existing SOFTDRINK reserve-squad storage on all32 clubs; NOT native franchise IR.
+Only257 bytes of default ROST change. Every player record, active list, FA/alumni
+pointer and game executable stays intact. Other255 omitted RES entries have no
+stock record/name match; do not synthesize or claim all336 are restored.
+
+Seven focused checks pass. Replacing corrected resource with original recovers
+official full-volume hash exactly. Corrected vc0 SHA56f08eaea4fe344058e035f182808b723d70d20523810e9412c4eff7887e49c5.
+Deck existing native reader matches six chunk sizes. Candidate staged separately
+at native-05ac4e9/softdrink-reserve-correction-v1; NOT activated. Original pack,
+saves and runtime untouched. Asked user normal exit; do not replace active data
+while process2892 runs. Private guarded installer in local reserve-validation/
+requires no game/service, exact stage hashes and expected stock selection;
+backs up selection and verifies current save/context hashes. After activation,
+verify a FRESH franchise retains Dart/Burns plus another club, then save/reload.
+Existing saves serialize their own rosters and are not migrated by this fix.
+No new code/IAM/inference/automation activation. See SOFTDRINK_RESERVES.md.
+
 ## Current delivery: stock SOFTDRINK v0.6.1, no addon — October21
 
 User wants newest SOFTDRINK WITHOUT hybrid roster or franchise addon. Do not
