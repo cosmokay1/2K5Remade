@@ -6,6 +6,78 @@ verified membership, annual contracts, reserve/practice-squad obligations,
 retained/dead charges and club cap adjustments before the league is certified.
 A complete set of roster schedules alone does not establish a full cap book.
 
+## Cap-room targets and club image bindings — October 20, 2026
+
+The user now prioritizes realistic real-life club cap room over reconstructing
+every accounting detail. Explicit `--calibrate-to-published-room` therefore sets
+missing simulation adjustments to match each independently published room target.
+Known annual charges, retained obligations and complete known adjustments are not
+rewritten; a conflict with a known adjustment is reported as a room difference.
+This supersedes the earlier no-calibration policy, not the distinction between
+modeled and verified history. Targets currently come from the October20 OTC
+capture; these are later proxies for the Week1 opening situation, not verified
+September10 balances. No source date is backdated. Future salaries/transactions
+still consume that budget; this is an opening calibration, not automatic refills.
+
+Recomputed corrected source:2480 club entries,1923 archived annual figures,
+307 published comparisons,133 rookie projections and117 positional estimates.
+All32 projected rooms match their published targets. Giants modeled room is
+$8,079,279, with a separately labeled $10,077,731 calibration beyond the prior
+independent-budget estimate. The new modeled net adjustment is $9,073,065.
+No known contract or liability was reduced. Private output:
+`calibrated-opening-cap-book.json`; add `--calibrate-to-published-room` to the
+cap CLI below to reproduce this policy. Native game/ledger application is pending.
+
+Transaction parsing now isolates web documents by their source headers, including
+inline separators; the previous collector had wrongly attributed some later
+pages to the preceding club. It handles plural/present/postfix/narrative actions,
+separates group actors, narrows ambiguous names only with a unique explicit
+position family, and preserves unknown same-name identities. Proven temporary
+elevations keep the underlying practice-squad status; extensions preserve
+ownership while retaining a separate contract-terms review. Primary waiver
+claims supersede causally preceding same-day waivers, with retained debt review.
+A practice-squad injury does not become a free player. This yields64 corrections,
+11 review cases,11 secondary conflicts and50 outgoing debt reviews. There are7
+nonownership events resolved without a permanent move. The FA subset remains58 qualified of350; no exhaustive
+pool certification or inferred waiver clearance.
+
+`resolve_week1_players` now offers explicit profile corroboration. A unique full
+name plus college or a current jersey/year match must also satisfy native
+position and bounded height/weight checks. Surname/initial aliases need exact
+DOB or college corroboration as well. Every method is recorded, source bytes
+stay unchanged, and ambiguous identities are refused. The corrupt source FA
+pool is explicitly excluded from the club-binding pass rather than repaired by
+portrait guesses. The earlier379 total gaps included186 FA cases and were not
+all missing club players.
+
+All1696 downloaded club records now have identity/image bindings:1528 verified
+SOFTDRINK records and168 user-approved official NFL fallbacks. Two additional
+approved portraits (Aiyuk/Moton) were downloaded and encoded in the existing
+native cache format. `bind_hybrid_images` checks pinned roster hashes, exact club
+record coverage, source slots, native photo IDs and official cache hashes. Its
+private preview changes only portrait uint16 fields; free-agent bytes, contracts
+and other record fields remain untouched. These are byte-level bindings, not
+proof that the game rendered the assets.
+
+**The corrected hybrid is not ready to install.** Corrected active/inactive
+membership has1694 entries;155 are outside the downloaded club roster.146 have a
+unique verified SOFTDRINK record. Nine lack a verified record binding: Jihad Ward,
+Zach Wood, Thomas Odukoya, Sedrick Van Pran-Granger, Garrett Dellinger, Jimmy Horn
+Jr., Ricky Barber, Johnathan Edwards and Beau Gardner. Van Pran exists under a
+shorter native name but is not yet identity-bound. The others lack readable
+matching records in both cached banks. Do not invent their game attributes or
+silently omit them. Native bank/string relocation, corrected team/depth lists,
+clean FA replacement, contract encoding and actual new-franchise/load/save tests
+are still required. The11 source reviews include same-name Jaylon/Christian
+Jones records, SF activation semantics, Tyreak Sapp's same-day PS/PS-injured
+moves and four waiver/injury cases. These remain quarantined, not cleared FAs.
+
+Private receipts: `resolved-college-identities.json` (includes the named profile
+and jersey methods), `bound-club-images/receipt.json`, and
+`bound-club-images/NOT_FOR_INSTALL.roster-preview`. Official assets remain private.
+65 focused checks pass; no EXE build, screenshots, inference, live Deck writes or
+credential/control changes. MyNFL1 untouched. Automation verified PAUSED.
+
 ## Membership, opening obligations and free agents — October 20, 2026
 
 The user also approved conservative estimates for missing retained/dead charges

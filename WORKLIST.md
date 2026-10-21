@@ -1316,6 +1316,24 @@ remain labeled separately; do not keep historical rookie salary gaps as an
 absolute blocker to modeling. This does not permit inventing player availability,
 discarding retained liabilities, altering known charges or fitting salaries to cap.
 
+Latest October20 policy: user prioritizes realistic club cap room over exact
+missing accounting detail. Explicit room calibration may fill modeled adjustments
+against sourced real-life targets; preserve known contracts/liabilities and known
+adjustments, report conflicts. Current targets are an October20 proxy, not verified
+Week1 balances. Never silently refill budgets after subsequent spending.
+
+- [x] Match all32 modeled opening rooms to published targets with labeled
+      calibration. Repriced2480 club obligations; Giants modeled room$8,079,279.
+      No native ledger/game application yet. Known-adjustment conflicts stay visible.
+- [x] Bind all1696 downloaded club images (1528 SOFTDRINK,168 official fallbacks).
+      Explicit profile/jersey/college corroboration; exclude damaged source FA pool.
+      Hash/slot/coverage and portrait-only byte checks.65 focused tests pass.
+- [ ] Finish the corrected active roster:155 active/inactive players are outside
+      that downloaded club list;146 map uniquely to native records,9 still need
+      binding/record sources.11 transaction cases remain quarantined. Rebuild
+      corrected memberships/depth, clean FA pool, native contracts and ledger,
+      then verify fresh-franchise/save/reload on Deck. No installable package yet.
+
 October20 extension: user also approves conservative missing retained/dead-money
 and adjustment estimates. Keep known amounts fixed; unknown availability/rights
 still require evidence. Later aggregate proxies are labeled, not backdated.

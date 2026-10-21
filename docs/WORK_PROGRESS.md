@@ -10686,3 +10686,30 @@ native rebuild. MyNFL1 untouched. Scheduled automation verified PAUSED. Native
 identity/image binding still1558/1937;379 unresolved. No Deck-ready hybrid or
 actual boot/signing/cap/save-reload proof claimed. Next: close membership/rights
 reviews and native encoding/contract binding, then one isolated Deck candidate.
+
+
+## October20 — Real-life room calibration and club portrait closure
+
+New user policy permits modeled details to target real-life cap room. Added
+explicit room-calibration mode; all32 modeled rooms match the later published
+October20 snapshot without altering known salaries/liabilities or complete known
+adjustments. Giants$8,079,279; calibration component$10,077,731. Repriced2480 club
+entries,1923 archived/307 comparison/133 rookie/117 positional. This is labeled
+simulation calibration, not verified Week1 accounting or native game application.
+
+Fixed capture-document attribution (inline separators), narrative/group/postfix
+transaction grammar, per-actor ambiguity, explicit position-family narrowing,
+practice elevations and same-day waiver/claim causality.64 corrected memberships,
+11 remaining reviews,11 feed conflicts,50 outgoing debt reviews.58 qualified FAs
+remain a subset of350. Added explicit corroborated biography methods and source
+FA exclusion. All1696 downloaded club images bound:1528 native/168 official.
+Two additional approved official images encoded; byte-constrained preview and
+cache receipts private. Corrected active/inactive roster differs:155 incoming
+players,146 unique native records,9 unbound. Native record sources/identity,
+11 transaction reviews, full FA rights, bank/string/depth/contract encoding and
+fresh-franchise Deck execution remain. No installable hybrid is claimed.
+
+65 focused tests pass in0.204s. No paid inference, game rebuild, screenshots,
+Deck/save/credential/control changes. MyNFL1 untouched; automation PAUSED.
+See WEEK1_LEAGUE_RECONCILIATION.md for exact methods, counts, named remaining
+record gaps, source dates and private artifact paths.

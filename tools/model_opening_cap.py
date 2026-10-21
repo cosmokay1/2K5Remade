@@ -1,7 +1,8 @@
-"""Independent opening liability/adjustment estimates, never deficit-filling credits.
+"""Opening liability estimates and explicitly authorized room calibration.
 
 Later published club totals are proxies, not backdated facts. Known complete
-totals take precedence. An over-cap club remains over cap and needs compliance.
+totals take precedence. Independent-budget mode leaves deficits in place; room
+calibration is separately labeled and never rewrites known obligations.
 """
 from datetime import date
 import hashlib
@@ -49,7 +50,7 @@ def published_club_proxies(text, *, season_year, base_cap, as_of):
 
 
 def model_opening_cap(charges, proxies, *, cutoff, allow_modeled_missing_obligations=False,
-                      known_totals=None):
+                      known_totals=None, calibrate_to_published_room=False):
     """Use observed external club budgets, not the opening roster's cap deficit.
 
     known_totals contains dated complete totals and/or retained_components.
@@ -90,6 +91,11 @@ def model_opening_cap(charges, proxies, *, cutoff, allow_modeled_missing_obligat
         salary = charges['teams'][code]['roster_charge_subtotal']
         if type(salary) is not int or salary < 0:
             raise ValueError('Complete nonnegative club roster charge required')
+        independent_adjustment = adjustment
+        if calibrate_to_published_room and 'net_adjustment_dollars' not in known:
+            # Explicit simulation policy: reconcile to an external room target.
+            # This is not a claim about actual rollover, credits or NFL liabilities.
+            adjustment = salary+retained+source['observed_room']-charges['league_cap']
         budget = charges['league_cap']+adjustment
         if budget <= 0:
             raise ValueError('Club adjusted budget must remain positive')
@@ -102,9 +108,15 @@ def model_opening_cap(charges, proxies, *, cutoff, allow_modeled_missing_obligat
             confirmed_retained_subtotal_dollars=floor,
             unallocated_retained_dollars=retained-floor,
             retained_proxy_raised_to_known_floor=('retained_dollars' not in known and floor > source['observed_dead']),
-            adjustment_basis='known_complete_total' if 'net_adjustment_dollars' in known else 'independent_published_budget_proxy',
+            adjustment_basis=('known_complete_total' if 'net_adjustment_dollars' in known else
+                              'simulation_room_calibration' if calibrate_to_published_room else
+                              'independent_published_budget_proxy'),
+            published_room_target_dollars=source['observed_room'],
+            room_difference_from_target_dollars=room-source['observed_room'],
+            simulation_calibration_dollars=adjustment-independent_adjustment,
             known_source=known or None)
     return dict(cutoff=cutoff,teams=teams,proxy_source=proxies,
+                calibration_policy=('published_room_target' if calibrate_to_published_room else 'independent_budget_proxy'),
                 salary_input_sha256=charges['input_sha256'],
                 over_cap_clubs=[code for code,t in teams.items() if t['requires_cap_compliance']],
                 complete_historical_books_verified=False,free_agent_pool_verified=False,
@@ -123,6 +135,8 @@ if __name__ == '__main__':
     parser.add_argument('--observed-on', required=True, help='Actual later source date, never backdated')
     parser.add_argument('--known-totals', type=Path, help='Dated complete totals and/or retained_components by club')
     parser.add_argument('--allow-modeled-missing-obligations', action='store_true')
+    parser.add_argument('--calibrate-to-published-room', action='store_true',
+                        help='Explicit simulation calibration; preserve known adjustments and report conflicts')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     inputs = [args.charges, args.capture] + ([args.known_totals] if args.known_totals else [])
@@ -133,6 +147,7 @@ if __name__ == '__main__':
                                     base_cap=charges['league_cap'], as_of=args.observed_on)
     result = model_opening_cap(charges, proxies, cutoff=args.cutoff,
         allow_modeled_missing_obligations=args.allow_modeled_missing_obligations,
+        calibrate_to_published_room=args.calibrate_to_published_room,
         known_totals=json.loads(args.known_totals.read_text()) if args.known_totals else None)
     args.output.write_text(json.dumps(result, indent=2, allow_nan=False)+'\n')
     print(json.dumps(dict(clubs=len(result['teams']),over_cap_clubs=result['over_cap_clubs'],

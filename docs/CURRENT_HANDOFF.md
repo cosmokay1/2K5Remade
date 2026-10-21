@@ -3,6 +3,25 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
+## Room calibration and club portrait closure — October20
+
+User now permits modeled details to target sourced real-life room. Explicit cap
+CLI calibration matches32 published October20 proxy targets (NYG$8,079,279),
+preserves known contracts/debt/adjustments and reports conflicts. Not certified
+Week1 balances/native application. Corrected2480 club obligations priced.
+Capture splitting/parser fixes yield64 membership corrections,11 reviews,
+11 feed conflicts/50 debt reviews;58 qualified FA candidates remain a subset.
+All1696 downloaded club images now bound (1528 native,168 approved official),
+using explicit jersey/college/profile corroboration and excluding corrupt FAs.
+Corrected1694 active/inactive entries need155 incoming records:146 native matches,
+9 unbound (names/evidence in WEEK1_LEAGUE_RECONCILIATION.md). No ready Deck hybrid:
+close record/identity and11 transaction gaps, then native bank/string/depth/FA/
+contract/ledger encoding and actual fresh-franchise load/sign/cap/save-reload.
+65 tests pass. Private bound-club-images preview is NOT_FOR_INSTALL; no game
+rendering proven. MyNFL1/Deck untouched; automation verified PAUSED. No native
+build, screenshots, inference, IAM or control changes. Older379 count included
+186 damaged-pool FA cases and is superseded by separate club/pool accounting.
+
 ## Modeled obligations and source corrections — October20
 
 User approved conservative missing retained/dead/adjustment estimates; keep known

@@ -7,6 +7,7 @@ No roster, image, contract or cap writes are performed.
 from collections import defaultdict
 from datetime import date
 import re
+import struct
 import unicodedata
 
 from tools.inspect_roster_save import inspect_roster
@@ -22,7 +23,8 @@ def normalize_name(name):
 
 
 def resolve_week1(native_payload, source_payload, weekly_rows, *, season_year,
-                  allow_biography_corrections=False, historical_identity_rows=()):
+                  allow_biography_corrections=False, historical_identity_rows=(),
+                  allow_profile_corroboration=False, include_source_free_agents=True):
     if type(season_year) is not int:
         raise ValueError('Explicit integer season year required')
     identities, aliases = {}, defaultdict(set)
@@ -49,12 +51,15 @@ def resolve_week1(native_payload, source_payload, weekly_rows, *, season_year,
         if gsis in identities and identities[gsis]['birth_date'] != birthday:
             raise ValueError('Week 1 identity has conflicting birth dates')
         identities.setdefault(gsis, {'birth_date': birthday, 'names': set(), 'statuses': set(),
-                                    'physical': set(), 'last_names': set(), 'evidence_seasons': set()})
+                                    'physical': set(), 'colleges': set(), 'jerseys': set(), 'last_names': set(), 'evidence_seasons': set()})
         identity = identities[gsis]
         identity['evidence_seasons'].add(int(row['season']))
         if current:
             identity['statuses'].add((row.get('team', ''), row.get('status', '')))
         identity['last_names'].add(normalize_name(row.get('last_name', '')))
+        if current and str(row.get('jersey_number','')).isdigit():
+            identity['jerseys'].add(int(row['jersey_number']))
+        identity['colleges'].update(normalize_name(c) for c in (row.get('college') or '').split(';') if c.strip())
         try:
             identity['physical'].add((int(row['height']), int(row['weight']), row['position']))
         except (KeyError, ValueError, TypeError):
@@ -81,10 +86,49 @@ def resolve_week1(native_payload, source_payload, weekly_rows, *, season_year,
                    and payload[at+0x35] in positions.get(position, set())
                    for height, weight, position in identity['physical'])
 
+    def profile_corroborates(payload, player, identity, *, require_college=False):
+        # A wrong roster DOB needs independent evidence beyond a unique name.
+        # College or a current jersey/year match, plus position and bounded physical
+        # variation, provide corroboration. Every alternate method stays labeled.
+        at = 0xAFA8 + player['source_slot']*0x54
+        plausible = any(abs(payload[at+0x2B]-height) <= 2
+                   and abs(payload[at+0x2A]+150-weight) <= 35
+                   and payload[at+0x35] in (positions.get(position,set()) | ({16} if position=='LB' else set()))
+                   for height,weight,position in identity['physical'])
+        if not plausible:
+            return False
+        jersey = (struct.unpack_from('<I',payload,at+0x20)[0]>>3)&127
+        if (not require_college and jersey in identity['jerseys'] and player['birth_date']
+                and abs(date.fromisoformat(player['birth_date']).year-date.fromisoformat(identity['birth_date']).year)<=1):
+            return True
+        entry = at+struct.unpack_from('<i',payload,at)[0]-1
+        table = 0x64+struct.unpack_from('<i',payload,0x64)[0]-1
+        count = struct.unpack_from('<I',payload,0x60)[0]
+        if (not 0 < count <= 400 or not 0 <= table <= len(payload)-count*8
+                or not table <= entry < table+count*8 or (entry-table)%8):
+            return False
+        start = entry+struct.unpack_from('<i',payload,entry)[0]-1
+        if not 0x75960 <= start < len(payload)-2 or start%2:
+            return False
+        end = start
+        while end+2 <= len(payload) and end-start < 160 and payload[end:end+2] != b'\0\0':
+            end += 2
+        if end-start >= 160 or end+2 > len(payload):
+            return False
+        try:
+            college = normalize_name(payload[start:end].decode('utf-16le'))
+        except UnicodeDecodeError:
+            return False
+        if not college or college not in identity['colleges']:
+            return False
+        return True
+
     def resolve(payload, *, include_unassigned):
         roster = inspect_roster(payload, include_unassigned=include_unassigned)
         matched, unresolved = {}, []
         for player in _players(payload, roster):
+            if not include_unassigned and not include_source_free_agents and player['team']=='free_agents':
+                continue
             candidates = aliases[normalize_name(player['first_name']+' '+player['last_name'])]
             exact = sorted(gsis for gsis in candidates
                            if identities[gsis]['birth_date'] == player['birth_date'])
@@ -96,12 +140,22 @@ def resolve_week1(native_payload, source_payload, weekly_rows, *, season_year,
                 if len(candidates) == 1:
                     exact = [gsis for gsis in candidates if physical_matches(payload, player, identities[gsis])]
                     method = 'unique_sourced_name_and_physical_profile'
+                    if not exact and allow_profile_corroboration:
+                        exact = [gsis for gsis in candidates if profile_corroborates(payload,player,identities[gsis])]
+                        method = 'unique_sourced_name_corroborated_profile'
                 elif not candidates:
                     exact = [gsis for gsis, identity in identities.items()
                              if normalize_name(player['last_name']) in identity['last_names']
                              and player['birth_date'] == identity['birth_date']
                              and physical_matches(payload, player, identity)]
                     method = 'unique_surname_birth_date_and_physical_profile'
+                    if not exact and allow_profile_corroboration:
+                        exact = [gsis for gsis, identity in identities.items()
+                            if normalize_name(player['last_name']) in identity['last_names']
+                            and any(normalize_name(n).startswith(normalize_name(player['first_name'])[:1]) for n in identity['names'])
+                            and profile_corroborates(payload,player,identity,
+                                require_college=player['birth_date']!=identity['birth_date'])]
+                        method = 'unique_surname_initial_corroborated_profile'
             if len(exact) == 1:
                 gsis = exact[0]
                 matched.setdefault(gsis, []).append({**player, 'identity_method': method,
@@ -154,7 +208,9 @@ def resolve_week1(native_payload, source_payload, weekly_rows, *, season_year,
             entry['blocker'] = 'missing_dated_availability_evidence'
         free_agents.append(entry)
     return {'season_year': season_year, 'source_sha256': source['payload_sha256'],
+            'source_free_agents_included': include_source_free_agents,
             'native_sha256': native['payload_sha256'], 'matched': matches,
+            'native_identities': {gsis:members for gsis,members in native_ids.items()},
             'unresolved_source': blocked, 'unresolved_native': native_unknown,
             'source_identities': {gsis: {'birth_date': identities[gsis]['birth_date'],
                                        'names': sorted(identities[gsis]['names']),

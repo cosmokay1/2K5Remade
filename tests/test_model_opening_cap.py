@@ -77,3 +77,18 @@ class OpeningCapModelTests(unittest.TestCase):
         known.pop('retained_dollars')
         known['retained_components']*=2
         with self.assertRaises(ValueError):self.build(charges,proxy,known_totals={'NYG':known})
+
+    def test_explicit_calibration_matches_external_room_without_changing_charges(self):
+        _,proxy,charges=self.inputs()
+        charges['teams']['NYG']['roster_charge_subtotal']+=5_000_000
+        original=deepcopy(charges)
+        r=self.build(charges,proxy,calibrate_to_published_room=True)['teams']['NYG']
+        self.assertEqual(r['modeled_cap_room_dollars'],1_200_000)
+        self.assertEqual(r['simulation_calibration_dollars'],5_000_000)
+        self.assertEqual(r['adjustment_basis'],'simulation_room_calibration')
+        self.assertEqual(charges,original)
+        known={'NYG':dict(source='dated known adjustment',as_of='2026-09-09',
+                          net_adjustment_dollars=-1_000_000)}
+        r=self.build(charges,proxy,known_totals=known,calibrate_to_published_room=True)['teams']['NYG']
+        self.assertEqual(r['net_adjustment_dollars'],-1_000_000)
+        self.assertNotEqual(r['room_difference_from_target_dollars'],0)

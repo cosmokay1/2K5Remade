@@ -2,7 +2,7 @@ from copy import deepcopy
 import unittest
 
 from tools.correct_week1_membership import (club_table_rows, transaction_events, correct_membership,
-                                          classify_free_agent_candidates)
+                                          classify_free_agent_candidates, primary_capture_rows)
 
 
 class MembershipTests(unittest.TestCase):
@@ -51,7 +51,6 @@ class MembershipTests(unittest.TestCase):
     def test_unordered_same_day_moves_and_temporary_activations_stay_in_review(self):
         w=[self.member()]
         for clauses in [('Signed Authored Player to practice squad.','Released Authored Player.'),
-                        ('Elevated Authored Player from practice squad.',),
                         ('Activated Authored Player to active roster.',),
                         ('Waived Authored Player with injury designation.',)]:
             events=self.extract([dict(date='2026-09-05',team='CLE',description=c) for c in clauses],w)
@@ -66,7 +65,7 @@ class MembershipTests(unittest.TestCase):
         self.assertEqual({r['gsis_id']:r['status'] for r in events},{'authored':'DEV','other':'CUT'})
         events=self.extract([dict(date='2026-09-05',team='CLE',description=
              'Signed Authored Player to a two-year extension.')],w)
-        self.assertIsNone(events[0]['status'])
+        self.assertEqual(events[0]['status'],'AMENDMENT')
 
     def test_wrong_club_year_future_evidence_and_ambiguous_names_fail_safely(self):
         with self.assertRaises(ValueError):
@@ -112,3 +111,41 @@ class MembershipTests(unittest.TestCase):
         self.assertFalse(r['eligible'])
         with self.assertRaises(ValueError):
             classify_free_agent_candidates(candidates+[base],m,[],cutoff='2026-09-10')
+
+    def test_primary_pages_split_at_headers_even_with_inline_separators(self):
+        capture=('Colts (https://www.colts.com/team/transactions/)\n'
+                 'L1: 09/01 | Signed Authored Player. -----------------------\n'
+                 'Jaguars (https://www.jaguars.com/team/transactions/)\n'
+                 'L1: 09/01 | Signed Another Player.\n')
+        rows=primary_capture_rows(capture,season_year=2026)
+        self.assertEqual([r['team'] for r in rows],['IND','JAX'])
+        with self.assertRaises(ValueError):
+            club_table_rows(capture,team='IND',season_year=2026,
+                            source_url='https://www.colts.com/team/transactions/')
+
+    def test_unambiguous_batch_members_are_not_poisoned_by_one_ambiguous_name(self):
+        w=[self.member(),self.member('Shared Name','one'),self.member('Shared Name','two')]
+        rows=[dict(date='2026-09-05',team='CLE',description=
+                   'Signed Authored Player and Shared Name to practice squad.')]
+        events=self.extract(rows,w)
+        self.assertEqual(next(e['status'] for e in events if e['gsis_id']=='authored'),'DEV')
+        self.assertTrue(all(e['status'] is None for e in events if e['gsis_id']!='authored'))
+
+    def test_present_postfix_narrative_actions_and_settlements_keep_actors_separate(self):
+        w=[self.member(),self.member('Another Player','other',status='RES')]
+        rows=[dict(date='2026-09-05',team='CLE',description=
+            'The Cleveland Browns sign Authored Player to the active roster and waive Another Player from injured reserve with an injury settlement.')]
+        events=self.extract(rows,w)
+        self.assertEqual({e['gsis_id']:e['status'] for e in events},{'authored':'ACT','other':'CUT'})
+        events=self.extract([dict(date='2026-09-05',team='CLE',description=
+            'Authored Player and Another Player signed to the practice squad')],w)
+        self.assertTrue(all(e['status']=='DEV' for e in events))
+
+    def test_temporary_elevation_preserves_confirmed_practice_owner_without_fa_clearance(self):
+        w=[self.member()]
+        events=self.extract([dict(date='2026-09-05',team='CLE',description=
+             'Elevated Authored Player from practice squad.')],w)
+        r=correct_membership(w,events,cutoff='2026-09-10')
+        self.assertEqual(r['rows'],w);self.assertFalse(r['reviews'])
+        self.assertEqual(len(r['nonownership_events']),1)
+        self.assertFalse(r['verified_unrestricted_releases'])
