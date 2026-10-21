@@ -11,6 +11,7 @@ import hashlib
 import json
 import re
 import unicodedata
+from html.parser import HTMLParser
 from urllib.parse import urlsplit
 
 from tools.reconcile_week1_contracts import CLUBS
@@ -20,6 +21,32 @@ VERBS = ('Signed|Re-signed|Waived|Released|Placed|Claimed|Acquired|Traded|Announ
          'Sign|Waive|Release|Place|Reverted|Reverts|Awarded|Reached')
 ACTIVE = {'ACT','INA','RES','DEV','EXE'}
 PRIMARY_DOMAINS = {'ARI': 'azcardinals.com', 'ATL': 'atlantafalcons.com', 'BAL': 'baltimoreravens.com', 'BUF': 'buffalobills.com', 'CAR': 'panthers.com', 'CHI': 'chicagobears.com', 'CIN': 'bengals.com', 'CLE': 'clevelandbrowns.com', 'DAL': 'dallascowboys.com', 'DEN': 'denverbroncos.com', 'DET': 'detroitlions.com', 'GB': 'packers.com', 'HOU': 'houstontexans.com', 'IND': 'colts.com', 'JAX': 'jaguars.com', 'KC': 'chiefs.com', 'LA': 'therams.com', 'LAC': 'chargers.com', 'LV': 'raiders.com', 'MIA': 'miamidolphins.com', 'MIN': 'vikings.com', 'NE': 'patriots.com', 'NO': 'neworleanssaints.com', 'NYG': 'giants.com', 'NYJ': 'newyorkjets.com', 'PHI': 'philadelphiaeagles.com', 'PIT': 'steelers.com', 'SEA': 'seahawks.com', 'SF': '49ers.com', 'TB': 'buccaneers.com', 'TEN': 'tennesseetitans.com', 'WAS': 'commanders.com'}
+
+
+class _ClubTable(HTMLParser):
+    """Read full primary HTML, avoiding truncation in rendered search captures."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.rows, self.cells, self.cell = [], None, None
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'tr': self.cells = []
+        elif tag == 'td' and self.cells is not None: self.cell = ''
+        elif tag == 'br' and self.cell is not None: self.cell += ' '
+
+    def handle_data(self, data):
+        if self.cell is not None: self.cell += data
+
+    def handle_endtag(self, tag):
+        if tag == 'p' and self.cell is not None: self.cell += ' '
+        elif tag == 'td' and self.cell is not None:
+            self.cells.append(re.sub(r'\s+', ' ', self.cell).strip())
+            self.cell = None
+        elif tag == 'tr' and self.cells is not None:
+            if len(self.cells) == 2 and re.fullmatch(r'\d\d/\d\d', self.cells[0]):
+                mm, dd = self.cells[0].split('/')
+                self.rows.append((mm, dd, self.cells[1]))
+            self.cells, self.cell = None, None
 
 
 def club_table_rows(text, *, team, season_year, source_url):
@@ -37,7 +64,13 @@ def club_table_rows(text, *, team, season_year, source_url):
             raise ValueError('Split multi-document captures before assigning a source club')
     digest = hashlib.sha256(text.encode()).hexdigest()
     result = []
-    for mm, dd, raw in re.findall(r'(?m)^L\d+: (\d\d)/(\d\d)\s*\|\s*(.+)',text):
+    if '<table' in text.lower():
+        page = _ClubTable()
+        page.feed(text)
+        entries = page.rows
+    else:
+        entries = re.findall(r'(?m)^L\d+: (\d\d)/(\d\d)\s*\|\s*(.+)',text)
+    for mm, dd, raw in entries:
         description = re.sub(r'cite[^†\n]*†([^\n]*)',r'\1',raw)
         split = re.match(r'^(.+?)\s+-\s+(.+)$',description)
         if split:
@@ -152,7 +185,11 @@ def transaction_events(rows, registry, *, start, cutoff, source_url, source_sha2
                     if role not in ('QB','RB','WR','TE','OL','G','T','C','DL','DT','DE','LB','DB','CB','S','K','P','LS','EDGE'):
                         role = after[0].upper() if after else ''
                     family = {'DT':{'DT','DL'},'DE':{'DE','DL','EDGE'},'CB':{'CB','DB'},
-                              'S':{'S','DB'},'G':{'G','OL'},'T':{'T','OL'},'C':{'C','OL'}}.get(role,{role})
+                              'S':{'S','DB','FS','SS','SAF'},'G':{'G','OG','OL'},
+                              'T':{'T','OT','OL'},'C':{'C','OL'},
+                              'OL':{'OL','OT','OG','T','G','C','LT','RT','LG','RG'},
+                              'DL':{'DL','DT','NT','DE','EDGE'},
+                              'LB':{'LB','ILB','OLB'},'DB':{'DB','CB','S','SAF','FS','SS'}}.get(role,{role})
                     narrowed = {g for g in gsis if player_positions[g] & family}
                     if len(narrowed) == 1:
                         gsis = narrowed
@@ -301,7 +338,7 @@ def correct_membership(weekly, events, *, cutoff):
 
 
 def classify_free_agent_candidates(candidates, membership, contracts, *, cutoff, identity_rows=(),
-                                   archive_receipt=None):
+                                   archive_receipt=None, primary_events=()):
     """Export an evidence-qualified subset; an unknown right is never a free player."""
     day = date.fromisoformat(cutoff)
     if membership.get('cutoff') != cutoff:
@@ -317,6 +354,11 @@ def classify_free_agent_candidates(candidates, membership, contracts, *, cutoff,
     disputed = {r['gsis_id'] for r in membership['reviews']}
     releases = {r['gsis_id']:r for r in membership['verified_unrestricted_releases']}
     active_contracts = {r['gsis_id'] for r in contracts if r.get('gsis_id') and r.get('is_active') is True}
+    primary = defaultdict(list)
+    for event in primary_events:
+        if (event.get('gsis_id') and event.get('primary_club_verified') is True
+                and date(day.year, 1, 1) <= date.fromisoformat(event['date']) <= day):
+            primary[event['gsis_id']].append(event)
     candidates = deepcopy(list(candidates))
     included = {g for c in candidates for g in c.get('archived_gsis_ids',[])}
     missing_release_identities = []
@@ -338,6 +380,9 @@ def classify_free_agent_candidates(candidates, membership, contracts, *, cutoff,
         player = dict(player=candidate['player'],otc_id=otc,gsis_id=ids[0] if len(ids) == 1 else None,
                       eligible=False,evidence=None)
         gsis = player['gsis_id']
+        history = primary[gsis]
+        latest = max((e['date'] for e in history), default=None)
+        last_primary = [e for e in history if e['date'] == latest]
         if not gsis:
             reason = 'identity_review'
         elif gsis in owners:
@@ -347,6 +392,13 @@ def classify_free_agent_candidates(candidates, membership, contracts, *, cutoff,
             player['evidence']=candidate.get('retirement_evidence')
         elif gsis in disputed:
             reason = 'unresolved_latest_transaction'
+        elif any(e.get('status') != 'CUT' or re.search(
+                r'injur|reserve|failed physical|settlement|practice squad', e['clause'], re.I)
+                for e in last_primary):
+            # An old expiry/release cannot override a later signing, reserve
+            # placement, coaching hire or unresolved action in a full club page.
+            reason = 'latest_primary_event_review'
+            player['evidence'] = last_primary
         elif gsis in releases:
             # Explicit current unrestricted termination supersedes a directory's
             # older tender label. Never infer this from the label alone.
@@ -378,3 +430,38 @@ def classify_free_agent_candidates(candidates, membership, contracts, *, cutoff,
                 missing_release_identities=sorted(missing_release_identities),
                 contract_archive_receipt=archive_receipt,
                 exhaustive_pool_verified=False,signing_authorized=False,writes_performed=False)
+
+
+def playable_free_agent_pool(baseline, qualified, *, owned_ids, unavailable_ids):
+    """User-selected simulation baseline plus independently qualified additions.
+
+    This deliberately does not certify historical waiver/tender availability.
+    Preserve the creator's native records; known ownership, retirement, reserve
+    and coaching exclusions still win. Local source-only IDs are not NFL IDs.
+    """
+    blocked = set(owned_ids) | set(unavailable_ids)
+    players, excluded, seen = {}, [], set()
+    for row in baseline:
+        identity = row['gsis_id']
+        if not isinstance(identity, str) or not identity or identity in seen:
+            raise ValueError('Unique explicit baseline player identities required')
+        seen.add(identity)
+        if identity in blocked:
+            excluded.append(identity)
+            continue
+        players[identity] = dict(row, eligible=True,
+            status='creator_pool_simulation_baseline', historical_availability_verified=False)
+    for row in qualified:
+        identity = row['gsis_id']
+        if not identity or row.get('eligible') is not True:
+            raise ValueError('Only qualified additional players may extend the baseline')
+        if identity in blocked:
+            continue
+        if identity in players:
+            players[identity]['qualified_evidence'] = row
+        else:
+            players[identity] = dict(row)
+    return dict(players=list(players.values()), eligible=list(players.values()),
+                excluded_baseline_ids=sorted(excluded),
+                availability_policy='creator_baseline_plus_qualified_additions',
+                exhaustive_pool_verified=False, signing_authorized=False, writes_performed=False)

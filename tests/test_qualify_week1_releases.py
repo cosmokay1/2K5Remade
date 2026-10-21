@@ -1,9 +1,25 @@
 import unittest
-from tools.qualify_week1_releases import qualify_releases,qualify_wire_terminations
+from tools.qualify_week1_releases import qualify_releases,qualify_wire_terminations,participation_lower_bounds
 from tools.correct_week1_membership import classify_free_agent_candidates
 
 
 class ReleaseQualificationTests(unittest.TestCase):
+    def test_explicit_crosswalk_recovers_linemen_without_name_matching(self):
+        ids = [dict(gsis_id='lineman', pfr_id='explicit-id', display_name='Any Name')]
+        row = dict(season='2024', game_type='REG', week='1', pfr_player_id='explicit-id',
+                   offense_snaps='60', defense_snaps='0', st_snaps='0')
+        snaps = [{**row, 'week': str(w)} for w in range(1, 7)]
+        snaps += [row, {**row, 'week': '7', 'offense_snaps': '0'},
+                  {**row, 'week': '8', 'game_type': 'POST'}, {**row, 'season': '2026'}]
+        result = participation_lower_bounds(ids, snaps, season_year=2026)
+        self.assertEqual(result, {'lineman': [dict(season=2024, regular_season_weeks=list(range(1, 7)))]})
+        self.assertEqual(participation_lower_bounds(
+            ids+[dict(gsis_id='other-person', pfr_id='explicit-id')], snaps, season_year=2026), {})
+        self.assertEqual(participation_lower_bounds(
+            ids+[dict(gsis_id='lineman', pfr_id='different-id')], snaps, season_year=2026), {})
+        self.assertEqual(participation_lower_bounds(
+            [dict(gsis_id='lookalike', display_name='Any Name')], snaps, season_year=2026), {})
+
     def sample(self):
         membership=dict(cutoff='2026-09-10',rows=[],reviews=[],verified_unrestricted_releases=[])
         event=dict(gsis_id='one',team='NYG',date='2026-08-31',status='CUT',primary_club_verified=True,

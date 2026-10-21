@@ -3,6 +3,63 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
+## Live cap/negotiation repair and corrected FA candidate — October20
+
+User closed normally; e77968115bb17e944ee4729749ce7c0ac53c323d6083273867dd312053575c48
+EXE installed alone, addonfff60b76… unchanged. Clean --validate exited0 in2.57s
+without concurrent live game (earlier concurrent attempt printed pass then
+hung120s; not counted). All145 isolated save files,220 main-profile saves and
+context/policy bytes unchanged at installation. Existing Steam route restored.
+Actual W1CAP77dc23a9… loaded,32 cap hooks executed. Giants computed60329 →
+enforced73281; exact ledger room remains$8,079,279, revision1. Over-cap offers
+reject. User reports Hernandez lowball rejection; text receipts verify reject
+and respect0.50→0.45, then same-window higher offers rejected without reopening.
+Zero guest signing journals. Accepted signing/save-reload still NOT verified.
+Offline local-rules only; scheduled task OFF; no credentials/control/budget renewals.
+
+Cause of Request failed was stale build/gen-locals/recomp_0005.c, despite patched
+src/recomp/gen source. Freshness audit found2/36 stale files(0005,0011); refreshed
+and rebuilt EXE62.23s; --check now0 stale across33530 functions. Added non-writing
+check and portable regression. Direct CMake game builds must refresh/check actual
+configured locals directory; source patch presence alone is insufficient.
+
+Latest user policy: the strict historical subset is too incomplete; prioritize a
+pretty accurate, playable save. Use SOFTDRINK's clean creator FA pool plus verified
+additions, excluding known owned/reserve/retired/coaching cases. This supersedes
+prior instructions to hold every uncertain waiver/tender case. Label this as a
+simulation baseline; never claim historical availability certification.
+
+Full-page31-club audit and explicit GSIS/PFR crosswalk remain useful evidence.
+Strict historical subset110 is retained privately, not the final playable pool.
+New fa-v5-deck-candidate:369 unsigned FA (327 creator records+42 qualified
+additions),2064 actors.50 creator entries excluded for known conflicts.10 further
+qualified additions held for native record capacity; prioritize creator coverage
+and veteran additions. Reuse only explicitly vacated modern-team/FA slots, never
+selected, classic, reserve, unassigned, draft or CAP records. Source off-roster
+money stays in opening books even when its old native record is vacated.
+Two source-only creator identities keep local keys, not fabricated NFL IDs.
+All327 creator ratings/native slots/portraits preserved; all1695 owned contract
+schedules and32 opening cap targets unchanged.1167 positive sourced bonus fits
+retained; maximum opening native representation error$20K unchanged.
+Roster SHA256:1f08b8101214aac8fe3ada3423651278650953b6068cfcd1794a969622d62c70.
+Fixed-size codec reload and PC HMAC pass.13 added portrait bins/229632bytes merge
+into existing Week1Portraits cache, without adding asset-team registrations.
+No game EXE/addon rebuild. Targeted28 tests pass; full working-tree delivery suite1217pass/52.071s.
+
+Preserve W1CAP's actual dialogue/relationship history; never reset it via the
+opening-only preparation tools. MyNFL1 stays untouched. The previous110-pool
+fa-v4/fa-fresh-profile has no confirmed saved FAW1. Prepare the revised roster in
+a separate native-fa-v5/fa-fresh-profile; creation addon stays off, native signing
+held until an actual game-created franchise is bound to NEW all32 cap books.
+No cloud credentials, controls, budgets or automation changes. Scheduled task off.
+Installed new native-fa-v5/fa-fresh-profile after the prior process had exited.
+Preparation verified220 main save files and145 W1CAP files unchanged. Only NEW
+profile files created; addon disabled/native signing held for initial creation.
+Existing Steam entry launched EXE PID3073; normal route restored byte-for-byte.
+Text startup confirms one added asset group; no screenshots/menu inputs.
+User asked NATIVE → NEW Giants → PLAYW1 save/reload; awaiting actual FXG.
+Actual fresh save creation/load, accepted signing and save/reload remain to verify.
+
 ## Combined rookie-term, opening-cap and offer-table repair — October 20
 
 Live W1CAP logs matched image f67e6fc1… and loaded payload51518d79…. User's open
@@ -50,16 +107,18 @@ EXE unchanged1e42420b…. Final DLLfff60b76e92d8d60bb6d438e60d32df44caf0f321ec32
 Repaired-save Windows hello/all32 cap restore passes;108 existing local quotes
 retained. Component validation is not actual signing or gameplay acceptance.
 
-Private Deck stage:native-05ac4e9/native-fa-v3; current profile is still the old
-native-fa-v2/fresh-profile. 2k5-install-rookie-v3.py is staged, NOT run. It requires
-normal game/service exit, unchanged W1CAP/roster, no dialogue/signing journal,
-identical registry and220 protected main-save hashes. It backs up current W1CAP,
-NATIVE, DLL and context; preserves the active local policy byte-for-byte, including
-any disabled state. No control renewal, IAM, credential or budget changes.
-Await user's normal exit before the one combined installation, then relaunch
-same isolated profile and verify rookies, cap restore, legal negotiation/signing
-and save/reload. Original user-approved local signing remains active in v2 only;
-MyNFL1 untouched, normal Steam route restored, scheduled task remains off.
+Installed after user's confirmed normal exit on October20. Guarded installer
+verified no game/service, unchanged opening W1CAP/roster, no dialogue/signing
+journal and identical player registry. New W1CAP77dc23a9… and addonfff60b76…
+installed in native-fa-v2/fresh-profile; prior containers/DLL/context backed up
+under pre-rookie-repair. Active policy preserved byte-for-byte, offline signing
+still enabled. All220 normal-profile save hashes unchanged; MyNFL1 untouched.
+No control renewal, IAM, credential, budget or automation changes. Source batch
+5983043 pushed. Relaunched via existing Steam entry (PID343184); normal Steam
+routing restored, startup text log advancing. User asked to load W1CAP, confirm
+Reese/Mauigoa four-year term, then open Will Clapp without sending. Actual rookie
+display, legal signing and save/reload remain to verify; installation/startup
+receipts alone do not prove those outcomes.
 
 ## W1CAP game-created opening — October 20
 

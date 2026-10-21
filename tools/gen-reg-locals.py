@@ -25,6 +25,8 @@ src/recomp/gen is left untouched (apply-gen-patches anchors keep matching).
 CMake compiles build/gen-locals when NFL2K5_REG_LOCALS is ON. Outputs are
 rewritten only when their content changes, so an unchanged chunk does not
 rebuild. Run by tools/build.ps1 after apply-gen-patches.py.
+Use --check before a direct incremental CMake build to reject stale inputs
+without rewriting them.
 """
 import glob
 import importlib.util
@@ -143,10 +145,15 @@ def transform(text, patch_lines, warnings, name):
 
 def main():
     patch_lines = load_patches()
-    os.makedirs(OUT, exist_ok=True)
+    check = "--check" in sys.argv
+    if not check:
+        os.makedirs(OUT, exist_ok=True)
     warnings = []
     written = total = 0
     srcs = sorted(glob.glob(os.path.join(GEN, "recomp_*.c")))
+    if check and not srcs:
+        print("[reg-locals] no generated sources: " + GEN)
+        return 1
     for path in srcs:
         name = os.path.basename(path)
         with open(path, encoding="utf-8", newline="") as f:
@@ -160,17 +167,25 @@ def main():
             with open(dst, encoding="utf-8", newline="") as f:
                 old = f.read()
         if old != text:
-            with open(dst, "w", encoding="utf-8", newline="") as f:
-                f.write(text)
+            if check:
+                print("[reg-locals] stale or missing: " + dst)
+            else:
+                with open(dst, "w", encoding="utf-8", newline="") as f:
+                    f.write(text)
             written += 1
     keep = {os.path.basename(p) for p in srcs}
     for stale in glob.glob(os.path.join(OUT, "*.c")):
         if os.path.basename(stale) not in keep:
-            os.remove(stale)
+            if check:
+                print("[reg-locals] obsolete: " + stale)
+                written += 1
+            else:
+                os.remove(stale)
     for w in warnings[:40]:
         print("[reg-locals] warning: " + w)
-    print("[reg-locals] %d functions, %d of %d files rewritten -> %s" % (total, written, len(srcs), OUT))
-    return 0
+    print("[reg-locals] %d functions, %d of %d files %s -> %s" %
+          (total, written, len(srcs), "stale" if check else "rewritten", OUT))
+    return 1 if check and written else 0
 
 
 if __name__ == "__main__":

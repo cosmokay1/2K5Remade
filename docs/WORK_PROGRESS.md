@@ -11087,3 +11087,76 @@ Await user's normal exit before the one combined installation, then relaunch
 same isolated profile and verify rookies, cap restore, legal negotiation/signing
 and save/reload. Original user-approved local signing remains active in v2 only;
 MyNFL1 untouched, normal Steam route restored, scheduled task remains off.
+
+
+### October20 — repaired W1CAP load; stale payroll compilation input
+
+After normal exit, guarded v3 installation preserved220 main save files, all
+player IDs and active offline-signing policy. Actual repaired save77dc23a9…
+loaded; all32 cap restoration plans accepted. Will Clapp slot2364 context still
+rejected: native Giants payroll60329 versus canonical73281. No offer/signing.
+The actual Ninja input build/gen-locals/recomp_0005.c lacked the payroll patch
+present in src/recomp/gen. Full freshness audit found exactly2/36 stale chunks
+(0005,0011). Regeneration plus new non-writing --check reports0 stale across33530
+functions. Four targeted tests pass; incremental EXE build62.23s succeeds with
+candidatee77968115bb17e944ee4729749ce7c0ac53c323d6083273867dd312053575c48.
+Validation printed pass but did not exit within120s while live W1CAP remained
+running; clean-exit validation remains unverified. Do not label this a full pass.
+Await normal exit, validate without concurrent game, then replace only isolated
+EXE using guarded installer and test real cap/signing/save-reload. No new save,
+policy, automation, credential or inference changes; MyNFL1 untouched.
+
+
+### October20 — live cap enforcement and lowball rejection verified; FA source repair
+
+Clean executable validation exited0 in2.57s after normal game exit. Installed
+only EXEe7796811…;145 isolated saves,220 main saves and context/policy unchanged.
+Actual32 payroll hooks executed; Giants60329→73281. Hernandez rejected the
+lowball, respect0.50→0.45 persisted in next context; subsequent higher offers
+could not reopen that negotiation window. Zero signing journals; accepted
+signing and save/reload still unverified. Local-rules only, no model requests.
+
+Full primary club HTML avoids clipped early-month captures;31 clubs fetched,
+Dallas404. Explicit NFLverse GSIS/PFR crosswalk restores missing OL participation
+links; names/age never assign a link. Expanded registry includes older homonyms;
+unique position families disambiguate. Later primary status overrides stale
+expiry evidence. Corrected source cohort110 eligible/365 candidates,35 additions
+and3 removals; no missing release identity links, still not exhaustive.
+
+Native candidate110 unsigned FA/1805 actors, SHA194d3760…; all1695 owned contract
+schedules and32 current cap targets unchanged;1167 positive bonus fits retained.
+16 additional official portrait slots/282624bytes; existing verified mod photos
+preserved. Fixed593984byte roster roundtrip and save signature pass. Private
+1.4MB archive staged separately; no existing franchise rewritten. W1CAP now has
+negotiation history and cannot use an opening-only reset. Fresh franchise game
+verification and a supported live-pool migration remain required.
+
+Final combined regression1,211 tests passed in44.440s outside the socket-restricted
+sandbox. Earlier run1209tests had11 localhost bind permission errors; those
+modules passed separately, and the final full suite includes all new source tests.
+
+### October20 — playable creator free-agent baseline
+
+User accepted a practical accuracy goal after the110-player strict subset still
+missed SOFTDRINK FAs. Added explicit creator-baseline merge, honoring known
+owned/unavailable exclusions and keeping historical certification false. Final
+369-pool keeps327 original profiles/slots/portraits,42 qualified additions;50 known
+creator conflicts excluded and10 additions held for slot capacity. Two creator-only
+identities remain scoped local IDs, never fabricated GSIS. Explicit vacated modern
+team/FA reuse has selected/classic/reserve/draft/CAP protection. All1695 owned
+financial schedules and32 room targets unchanged;1167 positive sourced bonus fits.
+Private roster1f08b810… roundtrip/HMAC verified.13 new bins merge existing portrait
+cache without spurious team.json registrations. No native rebuild, no live ledger
+reset, no MyNFL1 changes, no cloud/control/budget/automation changes. Targeted28
+checks pass. Full working-tree suite1217pass/52.071s; includes concurrent user
+changes left unstaged. Initial private preparation stopped on macOS metadata
+file before any saves or Steam routing were selected; corrected the folder filter.
+Final isolated deployment receipt follows below.
+
+Isolated native-fa-v5/fa-fresh-profile preparation completed:220 main save files
+and145 W1CAP files verified unchanged. Prior process had exited; new EXE PID3073
+launched using existing Steam entry and normal route restored byte-for-byte.
+Text startup shows one added asset group; no screenshots/input automation.
+Creation-only addon remains disabled and native signing held until actual new
+PLAYW1 save/reload is supplied and its all32 books are bound. No game binaries
+rebuilt, no main save/ledger rewrite, no inference/control/automation changes.

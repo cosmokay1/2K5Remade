@@ -2,10 +2,75 @@ from copy import deepcopy
 import unittest
 
 from tools.correct_week1_membership import (club_table_rows, transaction_events, correct_membership,
-                                          classify_free_agent_candidates, primary_capture_rows)
+                                          classify_free_agent_candidates, primary_capture_rows,
+                                          playable_free_agent_pool)
 
 
 class MembershipTests(unittest.TestCase):
+    def test_playable_creator_pool_preserves_unresolved_baseline_but_never_known_owners(self):
+        baseline = [dict(gsis_id=g, source_slot=i) for i,g in enumerate(
+            ('veteran', 'native-only:1', 'owned', 'retired', 'shared'))]
+        qualified = [dict(gsis_id=g, eligible=True, evidence='dated release')
+                     for g in ('shared', 'addition', 'owned')]
+        result = playable_free_agent_pool(baseline, qualified,
+            owned_ids={'owned'}, unavailable_ids={'retired'})
+        self.assertEqual([r['gsis_id'] for r in result['eligible']],
+                         ['veteran', 'native-only:1', 'shared', 'addition'])
+        self.assertEqual(result['eligible'][2]['source_slot'], 4)
+        self.assertIn('qualified_evidence', result['eligible'][2])
+        self.assertFalse(result['eligible'][0]['historical_availability_verified'])
+        self.assertFalse(result['signing_authorized'])
+        with self.assertRaises(ValueError):
+            playable_free_agent_pool(baseline+baseline, [], owned_ids=set(), unavailable_ids=set())
+        with self.assertRaises(ValueError):
+            playable_free_agent_pool([], [dict(gsis_id='held',eligible=False)],
+                                     owned_ids=set(),unavailable_ids=set())
+
+    def test_position_family_disambiguates_homonyms_but_not_same_position(self):
+        registry = [dict(full_name='Shared Name', gsis_id='offense', position='OT'),
+                    dict(full_name='Shared Name', gsis_id='defense', position='DE')]
+        rows = [dict(date='2026-09-01', team='CLE', description='Released OL Shared Name.')]
+        events = self.extract(rows, registry)
+        self.assertEqual([(e['gsis_id'], e['status']) for e in events], [('offense', 'CUT')])
+        registry[1]['position'] = 'OT'
+        self.assertTrue(all(e['status'] is None for e in self.extract(rows, registry)))
+
+    def test_new_primary_action_blocks_old_expiry_or_release(self):
+        base = dict(player='Candidate', otc_id=100, archived_gsis_ids=['candidate'], fatype='UFA',
+                    archived_history=[dict(status='Expired', year_signed=2025, yrs=1)])
+        m = correct_membership([], [], cutoff='2026-09-10')
+        m['verified_unrestricted_releases'] = [dict(gsis_id='candidate')]
+        receipt = dict(url='https://example.test/archive', sha256='a'*64, archive_as_of='2026-09-10')
+        for status, clause in ((None, 'Hired Candidate as assistant coach.'),
+                               ('ACT', 'Signed Candidate.'), ('RES', 'Placed Candidate on Reserve/Injured'),
+                               ('CUT', 'Released Candidate (failed physical).')):
+            event = dict(gsis_id='candidate', date='2026-08-01', primary_club_verified=True,
+                         status=status, clause=clause)
+            r = classify_free_agent_candidates([base], m, [], cutoff='2026-09-10',
+                archive_receipt=receipt, primary_events=[event])
+            self.assertEqual(r['players'][0]['status'], 'latest_primary_event_review')
+            self.assertFalse(r['eligible'])
+        # A later unambiguous release supersedes an earlier signing. Existing
+        # unrestricted evidence remains necessary; this guard creates none.
+        release = {**event, 'date': '2026-08-02', 'status': 'CUT', 'clause': 'Released Candidate.'}
+        r = classify_free_agent_candidates([base], m, [], cutoff='2026-09-10',
+            archive_receipt=receipt, primary_events=[event, release])
+        self.assertEqual(len(r['eligible']), 1)
+
+    def test_full_html_keeps_earlier_months_and_medical_qualifiers(self):
+        html = ('<table><tr><th>Date</th><th>Transaction</th></tr>'
+                '<tr><td>09/01</td><td><p>Signed <a>Authored Player</a>.</p></td></tr>'
+                '</table><table><tr><td>02/16</td><td><p>Released Another Player '
+                '(failed physical).</p><p>Waived Third Player.</p></td></tr></table>')
+        rows = club_table_rows(html, team='MIA', season_year=2026,
+                              source_url='https://www.miamidolphins.com/team/transactions/')
+        self.assertEqual([r['date'] for r in rows], ['2026-09-01', '2026-02-16'])
+        self.assertEqual(rows[0]['description'], 'Signed Authored Player.')
+        self.assertEqual(rows[1]['description'],
+                         'Released Another Player (failed physical). Waived Third Player.')
+        self.assertTrue(all(r['primary_club_verified'] for r in rows))
+        self.assertEqual(rows[0]['source_sha256'], rows[1]['source_sha256'])
+
     def member(self, name='Authored Player', gsis='authored', team='CLE', status='DEV'):
         return dict(full_name=name,gsis_id=gsis,team=team,status=status,
                     season=2026,week=1,game_type='REG')

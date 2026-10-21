@@ -26,6 +26,11 @@ cost; the game's inference budget is separate.
    the full regression suite once for a delivery candidate where required; do
    not repeat it for unchanged bytes. Reuse the existing compiler, build tree,
    dependencies and test profiles.
+   Before direct CMake game builds, regenerate register-local inputs with
+   `python tools/gen-reg-locals.py` (using configured `--gen`/`--out` paths),
+   then run the same command with `--check`. Source patch checks alone do not
+   verify the generated copy actually compiled into the EXE. This is unnecessary
+   for addon-only builds.
 5. Run long builds/checks as a predetermined shell sequence with logs on disk,
    exit codes and completion receipts. Inspect completion or a meaningful failure,
    not every compiler line. Space necessary status checks 30–60 seconds apart;

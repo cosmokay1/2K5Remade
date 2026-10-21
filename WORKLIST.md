@@ -1322,6 +1322,12 @@ against sourced real-life targets; preserve known contracts/liabilities and know
 adjustments, report conflicts. Current targets are an October20 proxy, not verified
 Week1 balances. Never silently refill budgets after subsequent spending.
 
+Latest playable-pool policy: retain SOFTDRINK's clean unsigned pool and verified
+additions, excluding known conflicts. Historical uncertainty is a documented
+simulation baseline rather than a delivery blocker.369-FA candidate preserves327
+creator records plus42 additions;10 extra candidates held for safe native record
+capacity. Existing cap rules, debt and spending limits remain authoritative.
+
 - [x] Match all32 modeled opening rooms to published targets with labeled
       calibration. Repriced2480 club obligations; Giants modeled room$8,079,279.
       No native ledger/game application yet. Known-adjustment conflicts stay visible.
@@ -1521,9 +1527,8 @@ October20 actual W1CAP opening continuation:
 - [x] Prepare new cap-bound copy/database with runtime-image provenance,32 opening
       books and108 supported offline quotes; signing off.13 tests pass Mac/Windows;
       actual-save Windows handshake/all32 cap-restore preflight passes.
-- [ ] Await normal exit/local-signing choice, then install/relaunch isolated W1CAP
-      and verify legal FA signing, cap limits and saved reload. Current running
-      W1CAP is still unbound. MyNFL1 protected; scheduled task stays off.
+- [x] User approved local W1CAP signing; install/relaunch cap-bound isolated profile.
+      Actual legal signing/save-reload remains open below. MyNFL1 protected.
 
 October20 combined rookie/offer/cap regression repair:
 
@@ -1536,6 +1541,28 @@ October20 combined rookie/offer/cap regression repair:
       while allowing zero-liability FA pool removal. Show rejected stock offers as
       unreviewed editable terms.1,206 Python tests/20 Windows tests/9 native stages
       and actual repaired-save32club preflight pass. No EXE rebuild.
-- [ ] After normal exit, install staged combined v3 fix once; verify actual loaded
-      rookie terms, cap restoration, legal local signing, balances and save/reload.
-      Current v2 still running. MyNFL1 untouched; scheduled task stays off.
+- [x] Install combined v3 after confirmed normal exit. Actual repaired W1CAP load
+      and32 restored plans verified;220 normal save hashes and signing policy preserved.
+- [x] Repair stale compiled generated-local copy and verify all32 live cap hooks.
+      Source patch missing from actual compilation input caused60329 vs73281
+      rejection. Corrected EXE installed; context and offline rejection verified.
+      Accepted signing/save-reload remain open; MyNFL1 untouched, task off.
+
+October20 live cap repair and free-agent pool correction:
+
+- [x] Repair actual compiled generated-local inputs, not only source markers.
+      Add --check;2/36 stale chunks refreshed; EXE clean validation and32 live cap
+      hooks pass. Giants payroll60329→73281; context and over-cap denial verified.
+- [x] Verify offline lowball rejection/relationship consequence and same-window
+      refusal to reopen. No accepted signing or saved reload claimed.
+- [x] Parse full official club transaction HTML; recover missing earlier months.
+      Use explicit GSIS/PFR participation crosswalk for OL and unique position
+      family disambiguation for homonyms. Keep later primary events authoritative.
+- [x] Prepare110 qualified FA (35 additions/3 removals) in native roster with1805
+      bound actors; preserve all1695 owned schedules/32 cap targets. Native unsigned
+      fields, portraits, codec reload and save signature validated. Source pool is
+      still incomplete; unresolved rights/medical/identity cases remain held.
+- [ ] Verify corrected roster in a fresh isolated franchise. Keep existing W1CAP
+      and its new dialogue history intact; opening-only preparation cannot migrate
+      that profile. Resolve remaining FA source gaps and add a verified existing-
+      franchise migration before claiming the live pool fixed. MyNFL1 untouched.

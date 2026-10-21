@@ -14,6 +14,41 @@ from tools.correct_week1_membership import _name
 from tools.reconcile_week1_contracts import CLUBS
 
 
+def participation_lower_bounds(crosswalk, snaps, *, season_year):
+    """Use explicit GSIS/PFR links, including linemen missing from stats rosters.
+
+    Conflicting IDs are held. Names, age and draft year never supply a link.
+    Only actual snaps in completed regular seasons count toward this lower bound.
+    """
+    by_pfr, by_gsis = defaultdict(set), defaultdict(set)
+    for row in crosswalk:
+        gsis, pfr = row.get('gsis_id'), row.get('pfr_id')
+        if gsis and pfr:
+            by_pfr[pfr].add(gsis)
+            by_gsis[gsis].add(pfr)
+    weeks = defaultdict(lambda: defaultdict(set))
+    for row in snaps:
+        year = int(row['season'])
+        if row['game_type'] != 'REG' or not season_year-10 <= year < season_year:
+            continue
+        pfr = row['pfr_player_id']
+        ids = by_pfr[pfr]
+        if len(ids) != 1:
+            continue
+        gsis = next(iter(ids))
+        if len(by_gsis[gsis]) != 1:
+            continue
+        counts = [int(row[k]) for k in ('offense_snaps', 'defense_snaps', 'st_snaps')]
+        week = int(row['week'])
+        if any(n < 0 for n in counts) or not 1 <= week <= 18:
+            raise ValueError('Nonnegative actual snaps and regular week required')
+        if sum(counts):
+            weeks[gsis][year].add(week)
+    return {gsis: [dict(season=year, regular_season_weeks=sorted(sample))
+                   for year, sample in sorted(years.items())]
+            for gsis, years in weeks.items()}
+
+
 def qualify_releases(membership, events, participation, *, cutoff):
     day=date.fromisoformat(cutoff)
     if membership['cutoff']!=cutoff or not (date(day.year,3,15)<=day<date(day.year,10,1)):

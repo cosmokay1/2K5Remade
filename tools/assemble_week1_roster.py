@@ -32,11 +32,25 @@ def gameplay_profile(codec, assignment, gsis, season_year):
     return dict(ratings)
 
 
+def validate_reusable_slots(doc, reusable, protected):
+    """Only explicitly vacated modern-team or FA records may be repurposed."""
+    primary = {p.index for p in doc.by_pool('primary')}
+    available = {doc.by_offset[o].index for o in doc.free_agents}
+    available.update(doc.by_offset[o].index for t in doc.teams[:32] for o in t.slots)
+    protected = set(protected)
+    protected.update(doc.by_offset[o].index for t in doc.teams[32:] for o in t.slots)
+    protected.update(i for indices in doc.reserves.values() for i in indices)
+    if (len(set(reusable)) != len(reusable) or not set(reusable) <= primary & available
+            or set(reusable) & protected):
+        raise ValueError('Reuse requires explicit unprotected active/free-agent records')
+
+
 def assemble(codec, payloads, plan):
-    """Plan contains verified GSIS assignments and explicit reusable FA slots.
+    """Plan contains explicit identity bindings and reusable real-player slots.
 
     Every input hash, including the XBE, is pinned. No unassigned or draft slot
-    can be reused. Classic-team and reserve references are protected too.
+    can be reused. Explicitly vacated modern-team records are permitted.
+    Classic-team and reserve references are protected too.
     """
     if any(sha256(payloads[k]).hexdigest()!=h for k,h in plan['input_sha256'].items()):
         raise ValueError('Source changed since planning')
@@ -66,9 +80,7 @@ def assemble(codec, payloads, plan):
             if slot not in by_slot or slot in used:raise ValueError('Duplicate/missing native binding')
             used.add(slot);protected.add(slot)
     reusable=plan['reusable_native_slots']
-    native_free={doc.by_offset[off].index for off in doc.free_agents}
-    if len(set(reusable))!=len(reusable) or not set(reusable)<=native_free or set(reusable)&protected:
-        raise ValueError('Reuse requires explicit unprotected free-agent records')
+    validate_reusable_slots(doc, reusable, protected)
     reusable=iter(reusable);bound={};created=[];foreign=[];unknown_colleges=[]
     # Long identities first give the existing string allocator the best chance.
     order=sorted(assignments,key=lambda g:-len(assignments[g]['biography']['last_name']))

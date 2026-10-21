@@ -2,7 +2,7 @@ from copy import deepcopy
 from types import SimpleNamespace
 import unittest
 
-from tools.assemble_week1_roster import gameplay_profile
+from tools.assemble_week1_roster import gameplay_profile, validate_reusable_slots
 
 
 class EstimatedGameplayProfileTests(unittest.TestCase):
@@ -43,3 +43,20 @@ class EstimatedGameplayProfileTests(unittest.TestCase):
             change(changed['gameplay_estimate'])
             with self.assertRaises(ValueError):
                 gameplay_profile(codec, changed, 'player', 2026)
+
+
+class ReusableRosterSlotTests(unittest.TestCase):
+    def document(self):
+        players = {i: SimpleNamespace(index=i) for i in range(8)}
+        return SimpleNamespace(by_pool=lambda pool: list(players.values()),
+            by_offset=players, free_agents=[0, 1],
+            teams=[SimpleNamespace(slots=[2, 3]) for _ in range(32)] +
+                  [SimpleNamespace(slots=[4, 5])], reserves={'reserve': [6]})
+
+    def test_vacated_active_and_free_records_can_preserve_full_creator_pool(self):
+        validate_reusable_slots(self.document(), [0, 2], {1, 3})
+
+    def test_selected_classic_reserve_unassigned_and_duplicate_records_rejected(self):
+        for slots in ([1], [4], [6], [7], [8], [0, 0]):
+            with self.subTest(slots=slots), self.assertRaises(ValueError):
+                validate_reusable_slots(self.document(), slots, {1, 3})

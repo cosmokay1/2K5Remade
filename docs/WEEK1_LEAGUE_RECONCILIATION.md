@@ -622,3 +622,49 @@ Detailed source limits and FA investigation: [PRESEASON_OPENING.md](PRESEASON_OP
 Validation: 24 focused league/contract/identity/portrait/transaction tests pass.
 The preceding unchanged financial/runtime baseline passed 1,119 tests. This
 source-only batch did not repeat the full runtime suite or claim game execution.
+
+
+## October20 full-page free-agent correction
+
+The78-player pool was an evidence-qualified subset, not a complete opening
+market. Rendered club captures clipped earlier months; full HTML now yields
+those rows with original page hashes. The explicit NFLverse player GSIS/PFR
+crosswalk recovers offensive-line participation omitted by the stats-oriented
+mapping. Conflicting ID links and same-position homonyms stay held. No age,
+name-only or draft-year inference creates an identity or salary-service credit.
+
+Full31-club captures plus cached release evidence yield110 qualified players
+from365 candidates:35 additions and3 removals. Later primary events override old
+contract expiries. Ugo Amadi stays eligible after his later vested release;
+Clapp's coaching hire, Firkser's reserve placement and Michael Davis's unresolved
+identity exclude them. Dallas's transaction endpoint returned404; other medical,
+waiver and rights cases remain unresolved. This is not full historical coverage.
+
+Private `source-research/fa-full-primary-v3/expanded-eligibility.json` and
+`fa-v4-deck-candidate/receipt.json` record the evidence/package. Native unsigned
+FA fields,1805 bindings, all1695 unchanged owned schedules,32 unchanged current
+cap targets and16 new official portrait slots were checked. No MyNFL1 or live
+W1CAP roster/database was replaced. Test a fresh franchise before migration;
+retain W1CAP's actual negotiation history.
+
+Player-ID data: https://github.com/nflverse/nflverse-data/releases/tag/players
+Official club transaction URLs and captured hashes are retained per event in
+the private source receipts. Public source code contains no roster/game assets.
+
+## Playable creator-pool policy (October20, supersedes strict subset as delivery gate)
+
+User now prioritizes a reasonably accurate playable save over exhaustive historical
+free-agent certification. Merge the clean SOFTDRINK pool and qualified additions;
+exclude known ownership, reserve, retirement and coaching conflicts. Uncertain
+historical availability is explicitly a simulation baseline, not verified rights.
+
+Final candidate:369 unsigned FA, including327 creator records and42 additions.
+50 creator records excluded;10 additional qualified players held for native slot
+capacity. Original source records remain immutable. Only explicitly vacated
+modern-team/FA slots are reused; draft, CAP, classic and selected records remain
+protected. Off-roster money remains in the financial books independently of its
+old native slot.327 creator profiles/portraits,1695 owned schedules and32 cap
+targets are preserved.13 new portrait bins merge into the existing cache folder;
+no extra asset teams. Private fa-v5-deck-candidate contains signatures/codec and
+per-player checks. Existing W1CAP negotiation history and MyNFL1 stay untouched.
+This is a fresh-franchise candidate; accepted signing/save-reload still unverified.
