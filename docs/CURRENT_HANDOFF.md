@@ -3,6 +3,23 @@
 Repository: `/Users/cosmokay/Documents/ChatGPT/2k5`
 Branch: `codex/franchise-negotiation`. Scheduled task must remain PAUSED.
 
+## Repeated mid-game crash — October21
+
+Second actual session ended at identical AV C0000005 host1411F4BAA on installed
+EXEa53550db, with identical recorded guest registers. No game process remained.
+Private latest log preserved under post-play-crash-v1/latest-midgame-session.log.
+This reproduces the fault across two sessions; it does not establish root cause.
+Bounded opt-in native-register capture dispatch regression passes all four
+handled faults, disabled/default paths and unknown-exception passthrough. One
+incremental EXE build passed (87.22s), generated register locals checked fresh.
+No-addon Windows --validate exited0 with Validation passed (3.72s). Installed
+f662b13175afa3368d375c39a5e0a06498725d63d821ea01f45358b3c08e9953
+after process-absence check, capture flag enabled;156 save files unchanged. Old
+EXE/launcher backed up under post-play-crash-v1. NOT a crash fix: next actual
+fault needs bounded native-register evidence. User can launch same Steam entry.
+Rspencer sliders and clock remain unchanged.
+No addon, screenshot, menu input, scheduled task or inference activation.
+
 ## rspencer86 settings installed — October21
 
 User explicitly selected rspencer's set, preserve SOFTDRINK coaching profiles,
